@@ -292,8 +292,6 @@ export class WorldInfoIntegration {
           <div id="paws-wb-available-list" style="
             max-height: 200px;
             overflow-y: auto;
-            overflow-x: hidden;
-            width: 100%;
             border: 1px solid var(--SmartThemeBorderColor);
             border-radius: 5px;
             padding: 5px;
@@ -330,9 +328,7 @@ export class WorldInfoIntegration {
             <div id="paws-wb-activated-list" style="
               max-height: 250px;
               overflow-y: auto;
-              overflow-x: hidden;
               min-height: 50px;
-              width: 100%;
             ">
               <div style="text-align: center; padding: 20px; opacity: 0.6; font-size: 0.9em;">
                 暂无激活的条目
@@ -590,8 +586,6 @@ export class WorldInfoIntegration {
         transition: all 0.2s;
         gap: 6px;
         font-size: 0.85em;
-        width: 100%;
-        box-sizing: border-box;
       `;
 
       item.addEventListener('mouseenter', () => {
@@ -893,8 +887,6 @@ export class WorldInfoIntegration {
       border-radius: 5px;
       gap: 10px;
       opacity: ${item.enabled ? '1' : '0.5'};
-      width: 100%;
-      box-sizing: border-box;
     `;
 
     // 拖拽手柄
@@ -1205,7 +1197,7 @@ export class WorldInfoIntegration {
   }
 
   /**
-   * 删除条目
+   * 删除条目（已激活条目直接删除，不需要确认）
    */
   deleteItem(id) {
     const item = this.selectedItems.find(i => i.id === id);
