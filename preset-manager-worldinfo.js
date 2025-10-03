@@ -1211,27 +1211,25 @@ export class WorldInfoIntegration {
     const item = this.selectedItems.find(i => i.id === id);
     if (!item) return;
 
-    if (confirm(`确定要删除"${item.name}"吗？`)) {
-      // ✅ 先清空提示词注入
-      const key = `paws_wi_${item.id}`;
-      setExtensionPrompt(
-        key,
-        '',
-        extension_prompt_types.IN_CHAT,
-        0,
-        false,
-        extension_prompt_roles.SYSTEM
-      );
-      console.log(`[WorldInfoTool] 🗑️ 删除并清空注入: ${item.name}`);
+    // ✅ 先清空提示词注入
+    const key = `paws_wi_${item.id}`;
+    setExtensionPrompt(
+      key,
+      '',
+      extension_prompt_types.IN_CHAT,
+      0,
+      false,
+      extension_prompt_roles.SYSTEM
+    );
+    console.log(`[WorldInfoTool] 🗑️ 删除并清空注入: ${item.name}`);
 
-      // 从列表中移除
-      this.selectedItems = this.selectedItems.filter(i => i.id !== id);
-      this.saveSelectedItems();
-      this.renderActivatedItems();
+    // 从列表中移除
+    this.selectedItems = this.selectedItems.filter(i => i.id !== id);
+    this.saveSelectedItems();
+    this.renderActivatedItems();
 
-      if (typeof toastr !== 'undefined') {
-        toastr.success('已删除');
-      }
+    if (typeof toastr !== 'undefined') {
+      toastr.success('已删除');
     }
   }
 
