@@ -584,7 +584,7 @@ export class WorldInfoIntegration {
       });
 
       const name = document.createElement('span');
-      name.style.cssText = 'flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: default;';
+      name.style.cssText = 'flex: 1; min-width: 0; max-width: calc(100% - 50px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: default;';
       name.textContent = entry.comment || '未命名条目';
 
       // ✅ 添加+号按钮
@@ -1050,13 +1050,13 @@ export class WorldInfoIntegration {
         
         <!-- 第一行：激活方式 + 深度 + 顺序 + 触发率 -->
         <div class="flex-container" style="margin-top: 10px; gap: 10px; align-items: flex-end;">
-          <div style="flex: 0 0 110px;">
+          <div style="flex: 0 0 50px;">
             <label for="paws-edit-constant" style="display: block; margin-bottom: 5px; font-size: 0.9em;">
               激活方式
             </label>
             <select id="paws-edit-constant" class="text_pole">
-              <option value="false" ${!item.constant ? 'selected' : ''}>🟢 关键词</option>
-              <option value="true" ${item.constant ? 'selected' : ''}>🔵 常驻</option>
+              <option value="false" ${!item.constant ? 'selected' : ''}>🟢</option>
+              <option value="true" ${item.constant ? 'selected' : ''}>🔵</option>
             </select>
           </div>
 
