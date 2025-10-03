@@ -750,10 +750,10 @@ class NestingManager {
    * 保存收纳数据
    */
   saveNestingData() {
-    extension_settings.paws_puffs = extension_settings.paws_puffs || {};
-    extension_settings.paws_puffs.presetManager = extension_settings.paws_puffs.presetManager || {};
+    extension_settings['Acsus-Paws-Puffs'] = extension_settings['Acsus-Paws-Puffs'] || {};
+    extension_settings['Acsus-Paws-Puffs'].presetManager = extension_settings['Acsus-Paws-Puffs'].presetManager || {};
 
-    extension_settings.paws_puffs.presetManager.nesting = {
+    extension_settings['Acsus-Paws-Puffs'].presetManager.nesting = {
       data: Array.from(this.nestingData.entries()),
       collapsed: Array.from(this.collapsedState)
     };
@@ -765,7 +765,7 @@ class NestingManager {
    * 加载收纳数据
    */
   loadNestingData() {
-    const saved = extension_settings.paws_puffs?.presetManager?.nesting;
+    const saved = extension_settings['Acsus-Paws-Puffs']?.presetManager?.nesting;
     if (saved) {
       this.nestingData = new Map(saved.data || []);
       this.collapsedState = new Set(saved.collapsed || []);
@@ -865,10 +865,10 @@ export class PresetManagerModule {
    */
   async loadSettings() {
     try {
-      extension_settings.paws_puffs = extension_settings.paws_puffs || {};
-      extension_settings.paws_puffs.presetManager = extension_settings.paws_puffs.presetManager || {};
+      extension_settings['Acsus-Paws-Puffs'] = extension_settings['Acsus-Paws-Puffs'] || {};
+      extension_settings['Acsus-Paws-Puffs'].presetManager = extension_settings['Acsus-Paws-Puffs'].presetManager || {};
 
-      const settings = extension_settings.paws_puffs.presetManager;
+      const settings = extension_settings['Acsus-Paws-Puffs'].presetManager;
       this.enabled = settings.enabled !== false;
 
       console.log('[PresetManager] 设置已加载，启用状态:', this.enabled);
@@ -883,9 +883,9 @@ export class PresetManagerModule {
    */
   async saveSettings() {
     try {
-      extension_settings.paws_puffs = extension_settings.paws_puffs || {};
-      extension_settings.paws_puffs.presetManager = extension_settings.paws_puffs.presetManager || {};
-      extension_settings.paws_puffs.presetManager.enabled = this.enabled;
+      extension_settings['Acsus-Paws-Puffs'] = extension_settings['Acsus-Paws-Puffs'] || {};
+      extension_settings['Acsus-Paws-Puffs'].presetManager = extension_settings['Acsus-Paws-Puffs'].presetManager || {};
+      extension_settings['Acsus-Paws-Puffs'].presetManager.enabled = this.enabled;
 
       saveSettingsDebounced();
       console.log('[PresetManager] 设置已保存');
