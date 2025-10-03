@@ -492,9 +492,13 @@
   font-size: 0.85em;
 }
 
-.menu_button {
-  display: inline-block !important;
-  width: auto !important;
+/* 移除全局 !important，避免覆盖官方的 display: none 规则 */
+/* 如果需要强制显示特定按钮，请使用更具体的选择器 */
+
+/* 强制隐藏官方的用户设定锁定按钮（修复扩展导致这些按钮错误显示的问题） */
+.avatar-container:not(.locked_to_chat) .locked_to_chat_label,
+.avatar-container:not(.locked_to_character) .locked_to_character_label {
+  display: none !important;
 }
 
 .menu_button.compact-btn {
