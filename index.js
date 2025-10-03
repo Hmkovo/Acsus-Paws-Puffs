@@ -36,7 +36,16 @@ import { PresetManagerUI } from "./preset-manager-ui.js";
 
 
 // ========================================
-// 第三步：定义扩展的默认设置
+// 第三步：定义扩展常量和路径
+// ========================================
+
+// 扩展ID和路径（重要：必须和文件夹名一致！）
+const EXT_ID = "Acsus-Paws-Puffs";
+const extensionFolderPath = `scripts/extensions/third-party/${EXT_ID}`;
+
+
+// ========================================
+// 第四步：定义扩展的默认设置
 // ========================================
 
 // 这是扩展第一次安装时的默认配置
@@ -84,13 +93,13 @@ let presetManager = null;  // 预设管理器实例
 // ========================================
 
 async function initPawsPuffs() {
-  console.log('Paws-Puffs 开始初始化...');
+  console.log('Acsus-Paws-Puffs 开始初始化...');
 
-  // 5.1 检查并初始化设置
-  if (!extension_settings.paws_puffs) {
+  // 5.1 检查并初始化设置（使用EXT_ID作为键名）
+  if (!extension_settings[EXT_ID]) {
     // 如果是第一次运行，使用默认设置
     console.log('首次运行，使用默认设置');
-    extension_settings.paws_puffs = defaultSettings;
+    extension_settings[EXT_ID] = defaultSettings;
     saveSettingsDebounced();
   }
 
@@ -124,9 +133,8 @@ async function initSettingsPanel() {
       return;
     }
 
-    // 2. 加载settings.html文件（像LittleWhiteBox那样）
-    const extensionPath = 'scripts/extensions/third-party/Paws-Puffs';
-    const response = await fetch(`${extensionPath}/settings.html`);
+    // 2. 加载settings.html文件（使用动态路径）
+    const response = await fetch(`${extensionFolderPath}/settings.html`);
     const settingsHtml = await response.text();
 
     // 3. 把HTML添加到设置容器中
