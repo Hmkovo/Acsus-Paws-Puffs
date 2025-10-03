@@ -1,0 +1,12 @@
+{
+  "display_name": "Paws-Puffs",
+  "loading_order": 1,
+  "requires": [],
+  "optional": [],
+  "js": "index.js",
+  "css": "style.css",
+  "author": "SGTY",
+  "version": "2.0.0",
+  "homePage": "https://github.com/Hmkovo/Acsus-Paws-Puffs",
+  "auto_update": false
+}

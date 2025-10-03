@@ -1,0 +1,147 @@
+<div id="paws-puffs-settings-panel">
+
+  <!-- 主折叠栏 -->
+  <div class="inline-drawer">
+    <div class="inline-drawer-toggle inline-drawer-header">
+      <b>˚₊·⸅ 毛球点心铺 ⸅·₊˚</b>
+      <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+    </div>
+
+    <div class="inline-drawer-content">
+
+      <!-- 标签页导航 -->
+      <div class="paws-tabs">
+        <div class="paws-tab active" data-tab="css-enhancer">CSS增强</div>
+        <div class="paws-tab" data-tab="visual-editor">可视化</div>
+        <div class="paws-tab" data-tab="font-manager">字体管理</div>
+        <div class="paws-tab" data-tab="preset-manager">预设管理</div>
+        <div class="paws-tab" data-tab="about">关于</div>
+      </div>
+
+      <!-- 标签页内容 -->
+      <div class="paws-tab-content active" id="tab-css-enhancer">
+        <p>CSS增强处理器开发中...</p>
+      </div>
+
+      <div class="paws-tab-content" id="tab-visual-editor">
+        <p>可视化编辑器开发中...</p>
+      </div>
+
+      <div class="paws-tab-content" id="tab-font-manager">
+        <!-- 字体管理器UI会渲染到这里 -->
+        <div id="paws-puffs-font-panel"></div>
+      </div>
+
+      <div class="paws-tab-content" id="tab-preset-manager">
+        <!-- 预设管理器UI会渲染到这里 -->
+        <div id="paws-puffs-preset-panel"></div>
+      </div>
+
+      <div class="paws-tab-content" id="tab-about">
+        <!-- 关于页面手风琴容器 -->
+        <div class="about-accordion-container">
+          <!-- 卡片1：功能模块 -->
+          <div class="about-accordion-card active" data-card="features">
+            <div class="about-accordion-header" data-card="features">
+              <div class="about-accordion-tab">
+                <i class="fa-solid fa-puzzle-piece"></i>
+                <strong>功能模块</strong>
+              </div>
+            </div>
+            <div class="about-accordion-body">
+              <h4 style="margin-top: 0; color: var(--SmartThemeQuoteColor);">已实现功能</h4>
+              <ul class="about-feature-list">
+                <li><i class="fa-solid fa-check-circle"></i> <strong>字体管理系统</strong> - 自由添加、管理、应用自定义字体</li>
+                <li><i class="fa-solid fa-check-circle"></i> <strong>预设管理</strong> - 世界书工具，独立管理世界书条目</li>
+              </ul>
+
+              <h4 style="color: var(--SmartThemeQuoteColor);">开发中功能</h4>
+              <ul class="about-feature-list">
+                <li><i class="fa-solid fa-clock"></i> <strong>JS执行</strong> - 考虑是否接入中...</li>
+                <li><i class="fa-solid fa-code"></i> <strong>可视化编辑器</strong> - 正在肝...</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- 卡片2：关于信息 -->
+          <div class="about-accordion-card" data-card="info">
+            <div class="about-accordion-header" data-card="info">
+              <div class="about-accordion-tab">
+                <i class="fa-solid fa-circle-info"></i>
+                <strong>扩展信息</strong>
+              </div>
+            </div>
+            <div class="about-accordion-body">
+              <div class="about-info-grid">
+                <div class="about-info-item">
+                  <span class="about-label">扩展名称</span>
+                  <span class="about-value">˚₊·⸅ 毛球点心铺 ⸅·₊˚</span>
+                </div>
+                <div class="about-info-item">
+                  <span class="about-label">版本</span>
+                  <span class="about-value">2.0.0</span>
+                </div>
+                <div class="about-info-item">
+                  <span class="about-label">作者</span>
+                  <span class="about-value">白沉 ＆ 溯</span>
+                </div>
+                <div class="about-info-item">
+                  <span class="about-label">命名</span>
+                  <span class="about-value">和小伙伴 @Dough 一起取名</span>
+                </div>
+                <div class="about-info-item">
+                  <span class="about-label">说明</span>
+                  <span class="about-value">两人需求的自用产物，暂无公开意向</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 卡片3：感谢 -->
+          <div class="about-accordion-card" data-card="thanks">
+            <div class="about-accordion-header" data-card="thanks">
+              <div class="about-accordion-tab">
+                <i class="fa-solid fa-heart"></i>
+                <strong>特别感谢</strong>
+              </div>
+            </div>
+            <div class="about-accordion-body">
+              <div class="about-thanks-content">
+                <pre
+                  style="font-size: 0.85em; text-align: center; margin-bottom: 10px; line-height: 1.2; font-family: monospace;">
+ ___  _  _  ___ 
+/ __>| || |/ __>
+\_  \| \/ |\_  \
+<___/`____/<___/
+      论证了头顶着猫也可以当扩展。</pre>
+                <div class="about-thanks-item">
+                  <i class="fa-solid fa-heart" style="color: #ff6b9d;"></i>
+                  <div>
+                    <strong>@DoughDough</strong>
+                    <p>为我大量测试，云端酒馆和各种操作问题，爱她。</p>
+                  </div>
+                </div>
+                <div class="about-thanks-item">
+                  <i class="fa-solid fa-code" style="color: #4a9eff;"></i>
+                  <div>
+                    <strong>扩展 - 小白X</strong>
+                    <p>作者：别离</p>
+                  </div>
+                </div>
+                <div class="about-thanks-item">
+                  <i class="fa-solid fa-code" style="color: #4a9eff;"></i>
+                  <div>
+                    <strong>扩展 - 酒馆助手</strong>
+                    <p>作者：KAKAA，青空莉想做舞台少女的狗</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,1488 @@
+/**
+ * Paws-Puffs 扩展样式
+ * 
+ * 这个文件定义扩展的所有样式（颜色、大小、布局等）
+ * 所有类名都加 paws-puffs- 前缀，避免跟ST的样式冲突
+ */
+
+/* ========================================
+   预设管理器优化（全局）
+   ======================================== */
+
+/* 电脑端隐藏拖拽手柄（移动端需要手柄拖拽，电脑端整个条目都可拖拽） */
+@media (min-width: 769px) {
+
+  #completion_prompt_manager_list .drag-handle,
+  #prompt_manager_list .drag-handle {
+    display: none;
+  }
+}
+
+/* 所有类型的预设提示词图标都与拖拽手柄保持一致间距（5px） */
+/* 包括：Marker (fa-thumb-tack)、Global Prompt (fa-square-poll-horizontal)、Important Prompt (fa-star)、Preset Prompt (fa-asterisk) */
+#completion_prompt_manager_list .prompt_manager_prompt_name>.fa-fw:first-child,
+#prompt_manager_list .prompt_manager_prompt_name>.fa-fw:first-child {
+  margin-left: 5px;
+}
+
+/* ========================================
+   设置面板整体样式
+   ======================================== */
+
+#paws-puffs-settings {
+  padding: 10px;
+  /* 使用ST的原生背景色变量 */
+  background-color: var(--SmartThemeBlurTintColor);
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+#paws-puffs-settings h3 {
+  /* 使用ST的强调色变量（通常是绿色） */
+  color: var(--SmartThemeQuoteColor);
+  font-size: 1.2em;
+  margin-bottom: 10px;
+  border-bottom: 2px solid var(--SmartThemeBorderColor);
+  padding-bottom: 5px;
+}
+
+#paws-puffs-settings h4 {
+  font-size: 1em;
+  margin-top: 10px;
+  margin-bottom: 8px;
+  /* 使用ST的文字颜色变量 */
+  color: var(--SmartThemeBodyColor);
+}
+
+
+/* ========================================
+   功能模块区域样式
+   ======================================== */
+
+.paws-puffs-section {
+  margin-bottom: 10px;
+  padding: 10px;
+  background-color: color-mix(in srgb, var(--SmartThemeBodyColor) 3%, var(--SmartThemeBlurTintColor) 97%);
+  border-radius: 4px;
+}
+
+.paws-puffs-section label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.paws-puffs-section input[type="checkbox"] {
+  margin-right: 8px;
+}
+
+
+/* ========================================
+   字体管理器样式（具体的后面再加）
+   ======================================== */
+
+#paws-puffs-font-panel {
+  margin-top: 10px;
+}
+
+/* 字体列表容器 */
+.paws-puffs-font-list {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  padding: 5px;
+  background-color: color-mix(in srgb, var(--SmartThemeBodyColor) 2%, var(--SmartThemeBlurTintColor) 98%);
+}
+
+/* 单个字体条目 */
+.paws-puffs-font-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  margin-bottom: 5px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+/* 鼠标悬停效果 */
+.paws-puffs-font-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--SmartThemeQuoteColor);
+}
+
+/* 当前应用的字体（高亮） */
+.paws-puffs-font-item.active {
+  border-color: var(--SmartThemeQuoteColor);
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+/* 字体名称 */
+.paws-puffs-font-name {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+/* 字体预览文本 */
+.paws-puffs-font-preview {
+  font-size: 0.9em;
+  color: #999;
+  margin-left: 10px;
+}
+
+/* 字体标签 */
+.paws-puffs-font-tags {
+  display: flex;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.paws-puffs-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 0.8em;
+  background-color: rgba(76, 175, 80, 0.2);
+  border-radius: 10px;
+  color: var(--SmartThemeBodyColor);
+}
+
+/* 按钮组 */
+.paws-puffs-font-buttons {
+  display: flex;
+  gap: 5px;
+}
+
+.paws-puffs-font-buttons button {
+  padding: 4px 8px;
+  font-size: 0.85em;
+  cursor: pointer;
+  border: 1px solid var(--SmartThemeBorderColor);
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--SmartThemeBodyColor);
+  border-radius: 3px;
+  transition: all 0.2s ease;
+}
+
+.paws-puffs-font-buttons button:hover {
+  background-color: var(--SmartThemeQuoteColor);
+  color: white;
+}
+
+
+/* ========================================
+   输入框和表单样式
+   ======================================== */
+
+.paws-puffs-input {
+  /* 使用ST的原生输入框类 */
+  padding: 8px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 3px;
+  background-color: color-mix(in srgb, var(--SmartThemeBodyColor) 3%, var(--SmartThemeBlurTintColor) 97%);
+  color: var(--SmartThemeBodyColor);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.paws-puffs-input:focus {
+  outline: none;
+  border-color: var(--SmartThemeQuoteColor);
+}
+
+
+/* ========================================
+   工具栏按钮样式
+   ======================================== */
+
+.paws-puffs-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.paws-puffs-toolbar button {
+  padding: 6px 12px;
+  font-size: 0.9em;
+  cursor: pointer;
+  border: 1px solid var(--SmartThemeBorderColor);
+  background-color: var(--SmartThemeQuoteColor);
+  color: white;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.paws-puffs-toolbar button:hover {
+  opacity: 0.8;
+  transform: translateY(-1px);
+}
+
+
+/* ========================================
+   空状态提示样式
+   ======================================== */
+
+.paws-puffs-empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+}
+
+.paws-puffs-empty-state .icon {
+  font-size: 3em;
+  margin-bottom: 10px;
+  opacity: 0.5;
+}
+
+.paws-puffs-empty-state .message {
+  font-size: 1.1em;
+  margin-bottom: 5px;
+}
+
+.paws-puffs-empty-state .hint {
+  font-size: 0.9em;
+  opacity: 0.7;
+}
+
+
+/* ========================================
+   标签页导航样式
+   ======================================== */
+
+.paws-tabs {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 1px;
+  border-bottom: 1px solid var(--SmartThemeBorderColor);
+  overflow-x: auto;
+  /* 允许左右滑动 */
+  overflow-y: hidden;
+  white-space: nowrap;
+  /* 美化滚动条 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--SmartThemeBorderColor) transparent;
+}
+
+.paws-tabs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.paws-tabs::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.paws-tabs::-webkit-scrollbar-thumb {
+  background: var(--SmartThemeBorderColor);
+  border-radius: 2px;
+}
+
+.paws-tabs::-webkit-scrollbar-thumb:hover {
+  background: var(--SmartThemeQuoteColor);
+}
+
+.paws-tab {
+  padding: 5px 14px;
+  cursor: pointer;
+  border-radius: 0;
+  background: var(--SmartThemeBlurTintColor);
+  color: var(--SmartThemeBodyColor);
+  font-size: 15px;
+  user-select: none;
+  opacity: 0.7;
+  flex-shrink: 0;
+  /* 防止标签页被压缩 */
+}
+
+.paws-tab:hover {
+  opacity: 1;
+}
+
+.paws-tab.active {
+  background: var(--SmartThemeQuoteColor);
+  opacity: 1;
+  font-weight: 600;
+}
+
+
+/* ========================================
+   标签页内容样式
+   ======================================== */
+
+.paws-tab-content {
+  display: none;
+  padding: 0 0 5px 0;
+  /* 上0 右0 下5px 左0 */
+  animation: fadeIn 0.3s ease-in;
+}
+
+.paws-tab-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+
+/* ========================================
+   关于页面样式
+   ======================================== */
+
+.about-content {
+  line-height: 1.6;
+}
+
+.about-content h4 {
+  margin-top: 0;
+  color: var(--SmartThemeBodyColor);
+}
+
+.about-content p {
+  margin: 3px 0;
+}
+
+.about-content ul {
+  margin: 5px 0;
+  padding-left: 20px;
+  list-style: none;
+}
+
+.about-content li {
+  margin: 3px 0;
+}
+
+
+/* ==================== 字体管理开始 ==================== */
+
+/* 字体功能开关区域 */
+.font-enable-section-compact {
+  padding: 3px 0;
+  margin-bottom: 3px;
+  border-bottom: 1px solid var(--SmartThemeBorderColor);
+}
+
+.font-enable-section-compact .checkbox_label {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.9em;
+}
+
+.font-enable-section-compact .hint-inline {
+  margin-left: 8px;
+  font-size: 0.8em;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+/* 预设管理功能开关区域（和字体管理保持一致） */
+.preset-enable-section-compact {
+  padding: 3px 0;
+  margin-bottom: 3px;
+  border-bottom: 1px solid var(--SmartThemeBorderColor);
+}
+
+.preset-enable-section-compact .checkbox_label {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.9em;
+}
+
+.preset-enable-section-compact .hint-inline {
+  margin-left: 8px;
+  font-size: 0.8em;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+/* 字体添加区域 */
+.font-add-section {
+  background: color-mix(in srgb, var(--SmartThemeBodyColor) 3%, var(--SmartThemeBlurTintColor) 97%);
+  border-radius: 4px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.font-add-header {
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+}
+
+.font-add-header:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, var(--SmartThemeBlurTintColor) 90%);
+}
+
+.font-add-header h4 {
+  margin: 0;
+}
+
+.font-add-content {
+  padding: 12px;
+}
+
+/* 字体库区域 */
+.font-warehouse-section {
+  background: color-mix(in srgb, var(--SmartThemeBodyColor) 3%, var(--SmartThemeBlurTintColor) 97%);
+  border-radius: 4px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.font-warehouse-header {
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+}
+
+.font-warehouse-header:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, var(--SmartThemeBlurTintColor) 90%);
+}
+
+.font-warehouse-header h4 {
+  margin: 0;
+  font-size: 0.95em;
+  font-weight: bold;
+  color: var(--SmartThemeQuoteColor);
+}
+
+.font-warehouse-content {
+  padding: 12px;
+}
+
+/* 字体输入区域 */
+.font-add-input textarea {
+  width: 100%;
+  min-height: 60px;
+  border-radius: 3px;
+  padding: 6px;
+  resize: vertical;
+  font-family: monospace;
+  font-size: 0.8em;
+}
+
+.font-add-controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: center;
+}
+
+.font-add-controls input {
+  flex: 1;
+}
+
+/* 按钮样式 */
+.menu_button.compact {
+  padding: 4px 8px;
+  font-size: 0.85em;
+}
+
+.menu_button {
+  display: inline-block !important;
+  width: auto !important;
+}
+
+.menu_button.compact-btn {
+  padding: 3px 10px;
+  font-size: 0.8em;
+}
+
+.menu_button.icon-only {
+  padding: 4px 6px;
+}
+
+input.compact,
+select.compact {
+  padding: 4px 8px;
+  font-size: 0.85em;
+}
+
+.compact-checkbox {
+  font-size: 0.8em;
+  margin-right: 5px;
+}
+
+.compact-checkbox span {
+  font-size: 0.85em;
+}
+
+/* 字体工具栏 */
+.font-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  flex-wrap: wrap;
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+/* 字体列表容器 */
+.font-list-container {
+  min-height: 150px;
+  position: relative;
+}
+
+.font-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.font-item.current:first-child {
+  border-top: 2px solid var(--SmartThemeQuoteColor);
+  margin-top: 0;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--SmartThemeBorderColor) 30%, transparent 70%);
+}
+
+/* 字体项 */
+.font-item {
+  background: color-mix(in srgb, var(--SmartThemeBodyColor) 3%, var(--SmartThemeBlurTintColor) 97%);
+  border-radius: 4px;
+  border: 1px solid transparent;
+  transition: all 0.3s;
+  font-size: 0.85em;
+  overflow: hidden;
+}
+
+.font-item:hover {
+  background: rgba(var(--SmartThemeQuoteColor-rgb), 0.15);
+}
+
+.font-item.current {
+  background: rgba(var(--SmartThemeQuoteColor-rgb), 0.25);
+  border-color: var(--SmartThemeQuoteColor);
+}
+
+.font-item.expanded {
+  border-color: var(--SmartThemeQuoteColor);
+}
+
+.font-item.dragging {
+  opacity: 0.5;
+}
+
+/* 字体项主信息行 */
+.font-item-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  gap: 8px;
+}
+
+.font-item-header {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.expand-icon {
+  font-size: 0.8em;
+  opacity: 0.7;
+  transition: transform 0.3s;
+}
+
+.font-item-name {
+  font-weight: bold;
+  font-size: 0.95em;
+  /* 👈 字体名称大小（原来0.9em） */
+}
+
+.current-badge {
+  color: var(--SmartThemeQuoteColor);
+  font-size: 0.85em;
+  /* 👈 "当前"标记大小 */
+}
+
+/* 字体标签 */
+.font-item-tags {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-left: auto;
+  margin-right: 8px;
+}
+
+.font-tag {
+  background: var(--SmartThemeQuoteColor);
+  color: var(--SmartThemeBodyColor);
+  padding: 2px 6px;
+  /* 👈 标签内边距（原来1px 5px） */
+  border-radius: 8px;
+  font-size: 0.75em;
+  /* 👈 标签文字大小（原来0.7em） */
+  white-space: nowrap;
+}
+
+.font-tag-empty {
+  opacity: 0.5;
+  font-size: 0.8em;
+  font-style: italic;
+}
+
+/* 字体操作按钮 */
+.font-item-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.font-action-btn {
+  padding: 4px 7px;
+  /* 👈 按钮内边距（原来3px 5px） */
+  background: transparent;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 0.75em;
+  /* 👈 按钮文字大小（原来0.7em） */
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.font-action-btn:hover {
+  background: var(--SmartThemeQuoteColor);
+  color: var(--SmartThemeBodyColor);
+  opacity: 1;
+}
+
+.font-action-btn i {
+  font-size: 0.9em;
+}
+
+/* 字体详情展开区域 */
+.font-item-details {
+  padding: 8px;
+  background: color-mix(in srgb, var(--SmartThemeBodyColor) 2%, var(--SmartThemeBlurTintColor) 98%);
+  border-top: 1px solid var(--SmartThemeBorderColor);
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+
+  to {
+    opacity: 1;
+    max-height: 300px;
+  }
+}
+
+/* 标签编辑器 */
+.tag-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tag-section {
+  padding: 6px;
+  background: color-mix(in srgb, var(--SmartThemeBodyColor) 2%, var(--SmartThemeBlurTintColor) 98%);
+  border-radius: 3px;
+}
+
+.tag-section h6 {
+  margin: 0 0 6px 0;
+  font-size: 0.85em;
+  color: var(--SmartThemeQuoteColor);
+}
+
+/* 当前标签列表 */
+.current-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tag-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--SmartThemeQuoteColor);
+  color: var(--SmartThemeBodyColor);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 0.75em;
+}
+
+.remove-tag-btn {
+  background: none;
+  border: none;
+  color: var(--SmartThemeBodyColor);
+  cursor: pointer;
+  font-size: 1.2em;
+  line-height: 1;
+  padding: 0;
+  opacity: 0.8;
+}
+
+.remove-tag-btn:hover {
+  opacity: 1;
+  color: #ff4444;
+}
+
+.no-tags {
+  font-size: 0.8em;
+  opacity: 0.6;
+  font-style: italic;
+}
+
+/* 添加标签输入 */
+.tag-input-group {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.tag-new-input {
+  flex: 1;
+  padding: 4px 6px;
+  font-size: 0.8em;
+  border-radius: 3px;
+}
+
+.add-new-tag-btn {
+  padding: 4px 10px;
+  font-size: 0.8em;
+  cursor: pointer;
+  background: var(--SmartThemeQuoteColor);
+  color: var(--SmartThemeBodyColor);
+  border: none;
+  border-radius: 3px;
+}
+
+.add-new-tag-btn:hover {
+  opacity: 0.8;
+}
+
+/* 现有标签选择 */
+.existing-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.tag-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  background: color-mix(in srgb, var(--SmartThemeBodyColor) 2%, var(--SmartThemeBlurTintColor) 98%);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.8em;
+}
+
+.tag-checkbox:hover {
+  background: rgba(var(--SmartThemeQuoteColor-rgb), 0.2);
+}
+
+.tag-checkbox input {
+  margin: 0;
+  width: auto;
+}
+
+.tag-checkbox span {
+  user-select: none;
+}
+
+.apply-tags-btn {
+  padding: 4px 10px;
+  font-size: 0.8em;
+  background: var(--SmartThemeQuoteColor);
+  color: var(--SmartThemeBodyColor);
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.apply-tags-btn:hover {
+  opacity: 0.8;
+}
+
+/* 标签管理器区域（统一样式：和添加新字体一样） */
+.tag-manager-section-compact {
+  background: color-mix(in srgb, var(--SmartThemeBodyColor) 3%, var(--SmartThemeBlurTintColor) 97%);
+  border-radius: 4px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.tag-manager-header {
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+}
+
+.tag-manager-header:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, var(--SmartThemeBlurTintColor) 90%);
+}
+
+.tag-manager-header h4 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95em;
+  font-weight: bold;
+  color: var(--SmartThemeQuoteColor);
+}
+
+.tag-manager-content-compact {
+  padding: 8px;
+}
+
+.tag-manager-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* 标签管理项 */
+.tag-manager-item-compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 8px;
+  background: color-mix(in srgb, var(--SmartThemeBodyColor) 2%, var(--SmartThemeBlurTintColor) 98%);
+  border-radius: 3px;
+  transition: background 0.2s;
+  font-size: 0.85em;
+}
+
+.tag-manager-item-compact:hover {
+  background: rgba(var(--SmartThemeQuoteColor-rgb), 0.1);
+}
+
+.tag-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.tag-name {
+  font-weight: bold;
+  font-size: 0.9em;
+  color: var(--SmartThemeQuoteColor);
+}
+
+.tag-usage {
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+
+/* 标签删除按钮 */
+.tag-delete-btn-compact {
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.75em;
+  opacity: 0.8;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.tag-delete-btn-compact:hover {
+  background: #ff4444;
+  border-color: #ff4444;
+  color: white;
+  opacity: 1;
+}
+
+.tag-manager-empty {
+  text-align: center;
+  padding: 20px;
+  opacity: 0.6;
+}
+
+.tag-manager-empty p {
+  margin: 0;
+  font-size: 0.9em;
+}
+
+/* 空状态 */
+.font-empty-state {
+  text-align: center;
+  padding: 30px;
+  color: var(--SmartThemeBodyColor);
+  opacity: 0.6;
+}
+
+.font-empty-state i {
+  margin-bottom: 8px;
+  opacity: 0.5;
+}
+
+.font-empty-state p {
+  margin: 5px 0;
+  font-size: 0.85em;
+}
+
+/* 提示文字 */
+.hint {
+  font-size: 0.8em;
+  opacity: 0.7;
+  margin: 4px 0;
+  font-style: italic;
+}
+
+.hint-inline {
+  display: inline;
+}
+
+/* 折叠箭头样式（带圆圈，比原生小） */
+.font-add-header i,
+.font-warehouse-header i,
+.tag-manager-header i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(var(--SmartThemeQuoteColor-rgb), 0.2);
+  border: 1px solid var(--SmartThemeQuoteColor);
+  font-size: 10px;
+  transition: all 0.3s;
+}
+
+.font-add-header:hover i,
+.font-warehouse-header:hover i,
+.tag-manager-header:hover i {
+  background: rgba(var(--SmartThemeQuoteColor-rgb), 0.3);
+  transform: scale(1.1);
+}
+
+/* 分页导航样式 */
+.pagination-container {
+  margin-top: 12px;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: color-mix(in srgb, var(--SmartThemeBodyColor) 2%, var(--SmartThemeBlurTintColor) 98%);
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+.pagination-info {
+  color: var(--SmartThemeBodyColor);
+  opacity: 0.8;
+}
+
+.pagination-controls {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.pagination-current {
+  margin: 0 6px;
+  color: var(--SmartThemeBodyColor);
+  font-weight: 500;
+}
+
+.pagination-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--SmartThemeBorderColor);
+  background: var(--SmartThemeBlurTintColor);
+  color: var(--SmartThemeBodyColor);
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.pagination-btn:hover:not([disabled]) {
+  background: var(--SmartThemeQuoteColor);
+  border-color: var(--SmartThemeQuoteColor);
+  color: var(--SmartThemeEmColor);
+  transform: scale(1.05);
+}
+
+.pagination-btn:active:not([disabled]) {
+  transform: scale(0.95);
+}
+
+.pagination-btn[disabled] {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.pagination-btn i {
+  font-size: 12px;
+}
+
+/* ==================== 字体管理结束 ==================== */
+
+/* ========================================
+   预设管理手风琴样式
+   ======================================== */
+
+.preset-accordion-container {
+  display: flex;
+  gap: 0;
+  margin-bottom: 10px;
+  /* 和字体管理保持一致：只有底部margin，没有顶部margin */
+  height: 200px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--SmartThemeBlurTintColor);
+}
+
+/* ========== 手风琴卡片 ========== */
+.preset-accordion-card {
+  flex: 0 0 35px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  border-right: 1px solid var(--SmartThemeBorderColor);
+}
+
+.preset-accordion-card:last-child {
+  border-right: none;
+}
+
+/* 展开的卡片 */
+.preset-accordion-card.active {
+  flex: 1;
+}
+
+/* ========== 卡片标题（垂直标签） ========== */
+.preset-accordion-header {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 35px;
+  height: 100%;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 15%, var(--SmartThemeBlurTintColor) 85%);
+  transition: all 0.3s ease;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preset-accordion-header:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 60%, var(--SmartThemeBlurTintColor) 40%);
+}
+
+/* 垂直标签内容 */
+.preset-accordion-tab {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 15px 5px;
+  color: var(--SmartThemeBodyColor);
+  white-space: nowrap;
+}
+
+.preset-accordion-tab i {
+  transform: rotate(90deg);
+  font-size: 1.1em;
+  color: var(--SmartThemeQuoteColor);
+}
+
+.preset-accordion-tab strong {
+  font-size: 0.95em;
+}
+
+/* 展开的卡片：隐藏垂直标签 */
+.preset-accordion-card.active .preset-accordion-header {
+  display: none;
+}
+
+/* ========== 卡片内容 ========== */
+.preset-accordion-body {
+  margin-left: 35px;
+  padding: 20px;
+  font-size: 0.9em;
+  line-height: 1.6;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 美化滚动条 */
+.preset-accordion-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.preset-accordion-body::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--SmartThemeBorderColor) 30%, transparent 70%);
+  border-radius: 3px;
+}
+
+.preset-accordion-body::-webkit-scrollbar-thumb {
+  background: var(--SmartThemeQuoteColor);
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+.preset-accordion-body::-webkit-scrollbar-thumb:hover {
+  background: var(--SmartThemeUnderlineColor);
+}
+
+/* 展开的卡片：显示内容 */
+.preset-accordion-card.active .preset-accordion-body {
+  margin-left: 0;
+  opacity: 1;
+  visibility: visible;
+}
+
+.preset-accordion-body p {
+  margin: 0 0 10px 0;
+  color: var(--SmartThemeBodyColor);
+}
+
+.preset-accordion-body p:last-child {
+  margin-bottom: 0;
+}
+
+.preset-feature-list {
+  margin: 10px 0 0 0;
+  padding-left: 20px;
+  list-style: none;
+}
+
+.preset-feature-list li {
+  position: relative;
+  margin-bottom: 8px;
+  padding-left: 0;
+}
+
+.preset-feature-list li::before {
+  content: "▸";
+  color: var(--SmartThemeQuoteColor);
+  font-weight: bold;
+  position: absolute;
+  left: -15px;
+}
+
+.preset-steps-list {
+  margin: 10px 0 0 0;
+  padding-left: 20px;
+  counter-reset: step-counter;
+  list-style: none;
+}
+
+.preset-steps-list li {
+  counter-increment: step-counter;
+  margin-bottom: 8px;
+  padding-left: 8px;
+  position: relative;
+}
+
+.preset-steps-list li::before {
+  content: counter(step-counter) ".";
+  color: var(--SmartThemeQuoteColor);
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.preset-status-bar {
+  margin-top: 15px;
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--SmartThemeUnderlineColor) 5%, var(--SmartThemeBlurTintColor) 95%);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 6px;
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.status-item {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+}
+
+.status-label {
+  font-size: 0.8em;
+  color: var(--SmartThemeUnderlineColor);
+  font-weight: 500;
+}
+
+.status-value {
+  font-size: 0.85em;
+  color: var(--SmartThemeBodyColor);
+  font-weight: 600;
+}
+
+/* 移动端响应式 */
+@media (max-width: 768px) {
+  .preset-cards-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==================== 预设管理样式结束 ==================== */
+
+/* ========================================
+   关于页面手风琴样式
+   ======================================== */
+
+.about-accordion-container {
+  display: flex;
+  gap: 0;
+  margin: 15px 0;
+  height: 300px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--SmartThemeBlurTintColor);
+}
+
+/* ========== 手风琴卡片 ========== */
+.about-accordion-card {
+  flex: 0 0 35px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  border-right: 1px solid var(--SmartThemeBorderColor);
+}
+
+.about-accordion-card:last-child {
+  border-right: none;
+}
+
+/* 展开的卡片 */
+.about-accordion-card.active {
+  flex: 1;
+}
+
+/* ========== 卡片标题（垂直标签） ========== */
+.about-accordion-header {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 35px;
+  height: 100%;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 15%, var(--SmartThemeBlurTintColor) 85%);
+  transition: all 0.3s ease;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.about-accordion-header:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 60%, var(--SmartThemeBlurTintColor) 40%);
+}
+
+/* 垂直标签内容 */
+.about-accordion-tab {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 15px 5px;
+  color: var(--SmartThemeBodyColor);
+  white-space: nowrap;
+}
+
+.about-accordion-tab i {
+  transform: rotate(90deg);
+  font-size: 1.1em;
+  color: var(--SmartThemeQuoteColor);
+}
+
+.about-accordion-tab strong {
+  font-size: 0.95em;
+}
+
+/* 展开的卡片：隐藏垂直标签 */
+.about-accordion-card.active .about-accordion-header {
+  display: none;
+}
+
+/* ========== 卡片内容 ========== */
+.about-accordion-body {
+  margin-left: 35px;
+  padding: 20px;
+  font-size: 0.9em;
+  line-height: 1.6;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 美化滚动条 */
+.about-accordion-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.about-accordion-body::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--SmartThemeBorderColor) 30%, transparent 70%);
+  border-radius: 3px;
+}
+
+.about-accordion-body::-webkit-scrollbar-thumb {
+  background: var(--SmartThemeQuoteColor);
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+.about-accordion-body::-webkit-scrollbar-thumb:hover {
+  background: var(--SmartThemeUnderlineColor);
+}
+
+/* 展开的卡片：显示内容 */
+.about-accordion-card.active .about-accordion-body {
+  margin-left: 0;
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ========== 功能列表样式 ========== */
+.about-feature-list {
+  margin: 10px 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.about-feature-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 8px;
+  background: color-mix(in srgb, var(--SmartThemeBodyColor) 3%, var(--SmartThemeBlurTintColor) 97%);
+  border-radius: 5px;
+  border-left: 3px solid var(--SmartThemeQuoteColor);
+}
+
+.about-feature-list li i {
+  margin-top: 2px;
+  font-size: 1em;
+  color: var(--SmartThemeQuoteColor);
+  flex-shrink: 0;
+}
+
+.about-feature-list li strong {
+  color: var(--SmartThemeQuoteColor);
+}
+
+/* ========== 扩展信息网格 ========== */
+.about-info-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.about-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px;
+  background: color-mix(in srgb, var(--SmartThemeBodyColor) 3%, var(--SmartThemeBlurTintColor) 97%);
+  border-radius: 5px;
+  border-left: 3px solid var(--SmartThemeUnderlineColor);
+}
+
+.about-label {
+  font-size: 0.85em;
+  color: var(--SmartThemeUnderlineColor);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.about-value {
+  font-size: 1em;
+  color: var(--SmartThemeBodyColor);
+}
+
+/* ========== 感谢内容样式 ========== */
+.about-thanks-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.about-thanks-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  padding: 15px;
+  background: color-mix(in srgb, var(--SmartThemeBodyColor) 3%, var(--SmartThemeBlurTintColor) 97%);
+  border-radius: 8px;
+  border: 1px solid var(--SmartThemeBorderColor);
+}
+
+.about-thanks-item i {
+  font-size: 1.5em;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.about-thanks-item div {
+  flex: 1;
+}
+
+.about-thanks-item strong {
+  display: block;
+  color: var(--SmartThemeQuoteColor);
+  font-size: 1.1em;
+  margin-bottom: 5px;
+}
+
+.about-thanks-item p {
+  margin: 0;
+  color: var(--SmartThemeBodyColor);
+  line-height: 1.5;
+}
+
+/* ==================== 关于页面样式结束 ==================== */
