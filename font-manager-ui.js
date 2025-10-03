@@ -67,6 +67,37 @@ export class FontManagerUI {
             <i class="fa fa-chevron-${this.uiState.fontAddExpanded ? 'up' : 'down'}" id="font-add-icon"></i>
           </div>
           <div class="font-add-content" id="font-add-content" style="${this.uiState.fontAddExpanded ? '' : 'display: none;'}">
+            <!-- 字体网站链接 -->
+            <div style="margin-bottom: 8px; padding: 6px 10px; background: color-mix(in srgb, var(--SmartThemeBodyColor) 5%, var(--SmartThemeBlurTintColor) 95%); border-radius: 4px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-globe" style="color: var(--SmartThemeBodyColor); opacity: 0.7;"></i>
+                <a href="https://fonts.zeoseven.com/browse/" target="_blank" style="color: var(--SmartThemeBodyColor); text-decoration: underline; flex: 1;">
+                  前往字体网站浏览和选择字体
+                </a>
+              </div>
+            </div>
+            
+            <!-- 使用教程折叠 -->
+            <details style="margin-bottom: 10px; padding: 6px 10px; background: color-mix(in srgb, var(--SmartThemeBodyColor) 3%, var(--SmartThemeBlurTintColor) 97%); border-radius: 4px;">
+              <summary style="cursor: pointer; font-size: 0.9em; opacity: 0.8; padding: 2px 0;">
+                <i class="fa-solid fa-lightbulb"></i> 新手使用指南（点击展开）
+              </summary>
+              <div style="margin-top: 8px; padding: 8px; font-size: 0.85em; line-height: 1.5; opacity: 0.9; border-left: 2px solid var(--SmartThemeBodyColor); padding-left: 10px;">
+                <p style="margin: 4px 0;"><strong>💡 实用技巧：</strong></p>
+                <p style="margin: 4px 0;">• 定期使用导出功能备份字体包，防止丢失</p>
+                <p style="margin: 4px 0;">• 喜欢的字体可以打上自定义标签（如"我喜欢"），方便分类查找</p>
+                <p style="margin: 4px 0;">• 云端酒馆用户：卸载扩展前请先清空所有字体</p>
+                <p style="margin: 4px 0;">• 可以用标签管理删除不需要的标签</p>
+                
+                <p style="margin: 8px 0 4px 0;"><strong>⚠️ 字体无法使用时：</strong></p>
+                <p style="margin: 4px 0;">1. 先检查字体网站是否删除了该字体</p>
+                <p style="margin: 4px 0;">2. 测试其他字体：</p>
+                <p style="margin: 4px 0 4px 12px;">• 所有字体都不能用 → 扩展问题</p>
+                <p style="margin: 4px 0 4px 12px;">• 部分字体可用 + 网站未删除 → 等待一段时间再试</p>
+                <p style="margin: 4px 0 4px 12px;">• 单独几个字体不能用 → 给这些字体打上"问题"标签，稍后测试或删除</p>
+              </div>
+            </details>
+            
             <textarea id="font-input" placeholder='支持多种格式：
 1. 完整字体代码：
 @import url("https://fontsapi.zeoseven.com/256/main/result.css");
