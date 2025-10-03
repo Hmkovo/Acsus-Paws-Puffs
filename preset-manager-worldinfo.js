@@ -335,10 +335,16 @@ export class WorldInfoIntegration {
               </div>
             </div>
             <!-- 分页 -->
-            <div id="paws-wb-activated-pagination" style="display: none; margin-top: 8px; text-align: center;">
-              <button class="menu_button paws-wb-activated-page-btn" data-page="prev" style="padding: 4px 12px; font-size: 0.85em;">上一页</button>
-              <span id="paws-wb-activated-page-info" style="margin: 0 10px; font-size: 0.85em;">1 / 1</span>
-              <button class="menu_button paws-wb-activated-page-btn" data-page="next" style="padding: 4px 12px; font-size: 0.85em;">下一页</button>
+            <div id="paws-wb-activated-pagination" style="display: none; margin-top: 8px;">
+              <div style="display: flex; justify-content: center; align-items: center; gap: 10px;">
+                <button class="menu_button paws-wb-activated-page-btn" data-page="prev" style="padding: 6px 10px; font-size: 1em;">
+                  <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <span id="paws-wb-activated-page-info" style="font-size: 0.85em;">1 / 1</span>
+                <button class="menu_button paws-wb-activated-page-btn" data-page="next" style="padding: 6px 10px; font-size: 1em;">
+                  <i class="fa-solid fa-chevron-right"></i>
+                </button>
+              </div>
             </div>
           </div>
         </div>
