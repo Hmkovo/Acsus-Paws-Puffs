@@ -1331,8 +1331,8 @@ export class WorldInfoIntegration {
    * 保存已选条目
    */
   saveSelectedItems() {
-    extension_settings.paws_puffs = extension_settings.paws_puffs || {};
-    extension_settings.paws_puffs.worldBookTool = {
+    extension_settings['Acsus-Paws-Puffs'] = extension_settings['Acsus-Paws-Puffs'] || {};
+    extension_settings['Acsus-Paws-Puffs'].worldBookTool = {
       items: this.selectedItems
     };
     saveSettingsDebounced();
@@ -1342,7 +1342,7 @@ export class WorldInfoIntegration {
    * 加载已选条目
    */
   loadSelectedItems() {
-    const saved = extension_settings.paws_puffs?.worldBookTool?.items;
+    const saved = extension_settings['Acsus-Paws-Puffs']?.worldBookTool?.items;
     if (saved && Array.isArray(saved)) {
       this.selectedItems = saved;
     }
