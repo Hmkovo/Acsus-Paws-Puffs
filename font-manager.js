@@ -36,20 +36,20 @@ export class FontManager {
    */
   async init() {
     // 确保设置对象存在
-    extension_settings.paws_puffs = extension_settings.paws_puffs || {};
-    extension_settings.paws_puffs.fontManager = extension_settings.paws_puffs.fontManager || {};
+    extension_settings['Acsus-Paws-Puffs'] = extension_settings['Acsus-Paws-Puffs'] || {};
+    extension_settings['Acsus-Paws-Puffs'].fontManager = extension_settings['Acsus-Paws-Puffs'].fontManager || {};
 
     // 加载保存的字体数据
     await this.loadFonts();
 
     // 加载字体功能开关状态
-    const savedEnabled = extension_settings.paws_puffs.fontManager.enabled;
+    const savedEnabled = extension_settings['Acsus-Paws-Puffs'].fontManager.enabled;
     if (savedEnabled !== undefined) {
       this.fontEnabled = savedEnabled;
     }
 
     // 加载当前选中的字体
-    const savedCurrent = extension_settings.paws_puffs.fontManager.currentFont;
+    const savedCurrent = extension_settings['Acsus-Paws-Puffs'].fontManager.currentFont;
     if (savedCurrent && this.fonts.has(savedCurrent)) {
       this.currentFont = savedCurrent;
     }
@@ -70,7 +70,7 @@ export class FontManager {
    */
   async setEnabled(enabled) {
     this.fontEnabled = enabled;
-    extension_settings.paws_puffs.fontManager.enabled = enabled;
+    extension_settings['Acsus-Paws-Puffs'].fontManager.enabled = enabled;
     saveSettingsDebounced();
 
     // 如果关闭，清除应用的字体
@@ -266,7 +266,7 @@ export class FontManager {
       // 如果是当前字体，更新引用
       if (this.currentFont === fontName) {
         this.currentFont = updates.name;
-        extension_settings.paws_puffs.fontManager.currentFont = this.currentFont;
+        extension_settings['Acsus-Paws-Puffs'].fontManager.currentFont = this.currentFont;
       }
     } else {
       this.fonts.set(fontName, { ...font, ...updates });
@@ -296,7 +296,7 @@ export class FontManager {
     // 如果删除的是当前字体，清空选择
     if (this.currentFont === fontName) {
       this.currentFont = null;
-      extension_settings.paws_puffs.fontManager.currentFont = null;
+      extension_settings['Acsus-Paws-Puffs'].fontManager.currentFont = null;
       this.clearAppliedFont();
       eventSource.emit('pawsFontChanged', null);
     }
@@ -319,7 +319,7 @@ export class FontManager {
 
     // 保存选择
     this.currentFont = fontName;
-    extension_settings.paws_puffs.fontManager.currentFont = fontName;
+    extension_settings['Acsus-Paws-Puffs'].fontManager.currentFont = fontName;
     await this.saveFonts();
 
     // 如果功能开启，应用字体
@@ -470,13 +470,13 @@ export class FontManager {
       // 导入当前字体
       if (data.currentFont && this.fonts.has(data.currentFont)) {
         this.currentFont = data.currentFont;
-        extension_settings.paws_puffs.fontManager.currentFont = this.currentFont;
+        extension_settings['Acsus-Paws-Puffs'].fontManager.currentFont = this.currentFont;
       }
 
       // 导入开关状态
       if (data.fontEnabled !== undefined) {
         this.fontEnabled = data.fontEnabled;
-        extension_settings.paws_puffs.fontManager.enabled = this.fontEnabled;
+        extension_settings['Acsus-Paws-Puffs'].fontManager.enabled = this.fontEnabled;
       }
 
       await this.saveFonts();
@@ -530,9 +530,9 @@ export class FontManager {
       currentFont: this.currentFont
     };
 
-    extension_settings.paws_puffs.fontManager.fonts = data;
-    extension_settings.paws_puffs.fontManager.currentFont = this.currentFont;
-    extension_settings.paws_puffs.fontManager.enabled = this.fontEnabled;
+    extension_settings['Acsus-Paws-Puffs'].fontManager.fonts = data;
+    extension_settings['Acsus-Paws-Puffs'].fontManager.currentFont = this.currentFont;
+    extension_settings['Acsus-Paws-Puffs'].fontManager.enabled = this.fontEnabled;
     saveSettingsDebounced();
   }
 
@@ -540,7 +540,7 @@ export class FontManager {
    * 从存储加载字体
    */
   async loadFonts() {
-    const data = extension_settings.paws_puffs.fontManager.fonts;
+    const data = extension_settings['Acsus-Paws-Puffs'].fontManager.fonts;
 
     if (data) {
       // 恢复字体Map
@@ -560,7 +560,7 @@ export class FontManager {
     }
 
     // 兼容旧版本：尝试从单独的字段读取
-    const separateCurrentFont = extension_settings.paws_puffs.fontManager.currentFont;
+    const separateCurrentFont = extension_settings['Acsus-Paws-Puffs'].fontManager.currentFont;
     if (separateCurrentFont && this.fonts.has(separateCurrentFont)) {
       this.currentFont = separateCurrentFont;
     }
@@ -606,8 +606,8 @@ export class FontManager {
 
     this.clearAppliedFont();
 
-    extension_settings.paws_puffs.fontManager.fonts = null;
-    extension_settings.paws_puffs.fontManager.currentFont = null;
+    extension_settings['Acsus-Paws-Puffs'].fontManager.fonts = null;
+    extension_settings['Acsus-Paws-Puffs'].fontManager.currentFont = null;
     saveSettingsDebounced();
 
     eventSource.emit('pawsFontAllCleared');
