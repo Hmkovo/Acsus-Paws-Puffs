@@ -279,7 +279,9 @@
   border-radius: 2px;
 }
 
-.paws-tabs::-webkit-scrollbar-thumb:hover {
+/* 添加 :active 防止 ST 1.12 的 dynamic-styles.js 自动转换 */
+.paws-tabs::-webkit-scrollbar-thumb:hover,
+.paws-tabs::-webkit-scrollbar-thumb:active {
   background: var(--SmartThemeQuoteColor);
 }
 
@@ -1170,7 +1172,9 @@ select.compact {
   transition: background 0.2s;
 }
 
-.preset-accordion-body::-webkit-scrollbar-thumb:hover {
+/* 添加 :active 防止 ST 1.12 的 dynamic-styles.js 自动转换 */
+.preset-accordion-body::-webkit-scrollbar-thumb:hover,
+.preset-accordion-body::-webkit-scrollbar-thumb:active {
   background: var(--SmartThemeUnderlineColor);
 }
 
@@ -1380,7 +1384,9 @@ select.compact {
   transition: background 0.2s;
 }
 
-.about-accordion-body::-webkit-scrollbar-thumb:hover {
+/* 添加 :active 防止 ST 1.12 的 dynamic-styles.js 自动转换 */
+.about-accordion-body::-webkit-scrollbar-thumb:hover,
+.about-accordion-body::-webkit-scrollbar-thumb:active {
   background: var(--SmartThemeUnderlineColor);
 }
 
