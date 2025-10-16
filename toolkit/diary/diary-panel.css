@@ -1176,7 +1176,8 @@
 
 .diary-actions {
   position: absolute;
-  bottom: 35px;
+  bottom: max(35px, env(safe-area-inset-bottom));
+  /* 添加安全区域支持，避免被浏览器底部工具栏遮挡 */
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -1401,13 +1402,14 @@
   }
 
   .diary-nav-buttons {
-    bottom: 70px;
-    /* 在操作按钮上方（操作按钮38px + 间距20px） */
+    bottom: max(85px, calc(70px + env(safe-area-inset-bottom)));
+    /* 移动端：增加底部距离 + 安全区域，避免被浏览器工具栏遮挡 */
   }
 
   /* 操作按钮变小，放在最下面 */
   .diary-actions {
-    bottom: 20px;
+    bottom: max(30px, calc(20px + env(safe-area-inset-bottom)));
+    /* 移动端：增加底部距离 + 安全区域，确保在所有浏览器都可见 */
     width: calc(100vw - 40px);
     /* 手机端左右各留20px，更贴近屏幕边缘 */
   }
@@ -1690,20 +1692,29 @@
 }
 
 /* 预设对话框（自定义弹窗） */
+/* 使用和日记编辑器相同的居中方式 */
 .diary-preset-dialog-overlay {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
+  width: 100vw;
+  height: 100vh;
   background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(var(--SmartThemeBlurStrength));
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.diary-preset-dialog-overlay.active {
+  opacity: 1;
 }
 
 .diary-preset-dialog-container {
+  position: relative;
   background: var(--SmartThemeBlurTintColor);
   border: 1px solid var(--SmartThemeBorderColor);
   border-radius: 12px;

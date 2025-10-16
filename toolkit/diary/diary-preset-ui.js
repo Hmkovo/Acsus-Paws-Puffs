@@ -520,6 +520,11 @@ export class DiaryPresetUI {
 
       document.body.appendChild(overlay);
 
+      // 显示动画（和日记编辑器一样）
+      requestAnimationFrame(() => {
+        overlay.classList.add('active');
+      });
+
       // 绑定事件
       const cancelBtn = overlay.querySelector('.diary-preset-dialog-cancel');
       const okBtn = overlay.querySelector('.diary-preset-dialog-ok');
