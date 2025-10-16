@@ -1,0 +1,1409 @@
+/**
+ * @file 属性控件样式
+ * @description 22个小控件的CSS样式，复用官方SillyTavern风格
+ * 
+ * 样式规范：
+ * - 复用官方.neo-range-slider（已在style.css定义）
+ * - 使用官方CSS变量（--SmartTheme*）
+ * - 保持视觉统一
+ * 
+ * 参考：
+ * - SillyTavern/public/style.css 第4176-4243行（官方拉条样式）
+ * - 【讨论记录】第1296-1405行（设计决策）
+ */
+
+/* ========================================
+   通用拉条组件（SliderWithInput）
+   ======================================== */
+
+/**
+ * 双列布局容器
+ * 
+ * 用途：Position控件、Transform控件等需要左右两列拉条
+ * 示例：上偏移 | 下偏移
+ *      左偏移 | 右偏移
+ */
+.two-column-slider-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+/**
+ * 单个拉条容器
+ * 
+ * 包含：label、拉条+输入框、范围标签
+ */
+.ppc-slider-with-input {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/**
+ * 标签文字
+ */
+.ppc-slider-with-input .slider-label {
+  font-size: 13px;
+  color: var(--SmartThemeBodyColor);
+  margin-bottom: 3px;
+}
+
+/**
+ * 拉条+输入框容器
+ * 
+ * 布局：[拉条占大部分空间][输入框固定宽度]
+ */
+.ppc-slider-with-input .slider-input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/**
+ * 拉条本体
+ * 
+ * 注：使用官方.neo-range-slider类名，样式已在style.css定义
+ * 这里只设置flex布局比例
+ */
+.ppc-slider-with-input .slider-range {
+  flex: 1;
+  /* 拉条占据剩余空间 */
+}
+
+/**
+ * 输入框
+ * 
+ * 显示：数值+单位（如"-15px"）
+ * 交互：可输入超范围值
+ */
+.ppc-slider-with-input .value-input {
+  width: 70px;
+  height: 28px;
+  text-align: center;
+  font-size: 13px;
+  padding: 4px 8px;
+  border: 1px solid var(--SmartThemeBodyColor);
+  border-radius: 4px;
+  background: var(--SmartThemeBlurTintColor);
+  color: var(--SmartThemeBodyColor);
+  transition: all 0.2s ease;
+}
+
+.ppc-slider-with-input .value-input:focus {
+  outline: 1px solid var(--interactable-outline-color);
+  background: var(--SmartThemeEmColor);
+}
+
+/**
+ * 范围标签（min、center、max）
+ * 
+ * 显示：-100    0    100
+ * 可选：某些拉条可能不需要显示
+ */
+.ppc-slider-with-input .range-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--grey70);
+  margin-top: 2px;
+}
+
+.ppc-slider-with-input .range-labels .min-label {
+  text-align: left;
+}
+
+.ppc-slider-with-input .range-labels .center-label {
+  text-align: center;
+}
+
+.ppc-slider-with-input .range-labels .max-label {
+  text-align: right;
+}
+
+/* ========================================
+   PositionControl 定位控件
+   ======================================== */
+
+/**
+ * 控件容器
+ */
+.ppc-position-control {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 10px;
+}
+
+/**
+ * 定位方式选择器
+ */
+.ppc-position-control .position-type-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ppc-position-control .section-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--SmartThemeBodyColor);
+  margin-bottom: 5px;
+}
+
+/**
+ * 单选按钮组
+ */
+.ppc-position-control .radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ppc-position-control .radio-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.ppc-position-control .radio-option:hover {
+  background-color: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent);
+}
+
+.ppc-position-control .radio-option input[type="radio"] {
+  cursor: pointer;
+}
+
+.ppc-position-control .radio-option span {
+  font-size: 13px;
+  color: var(--SmartThemeBodyColor);
+}
+
+/**
+ * 九宫格快速定位
+ */
+.ppc-position-control .nine-grid-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ppc-position-control .grid-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  max-width: 200px;
+  margin: 0 auto;
+}
+
+.ppc-position-control .grid-btn {
+  width: 100%;
+  aspect-ratio: 1;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  border: 2px solid var(--SmartThemeBodyColor);
+  border-radius: 6px;
+  background: var(--SmartThemeBlurTintColor);
+  color: var(--SmartThemeBodyColor);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ppc-position-control .grid-btn:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 20%, var(--SmartThemeBlurTintColor));
+  border-color: var(--SmartThemeQuoteColor);
+  transform: scale(1.05);
+}
+
+.ppc-position-control .grid-btn.active {
+  background: var(--SmartThemeQuoteColor);
+  border-color: var(--SmartThemeQuoteColor);
+  color: var(--white);
+  font-weight: bold;
+}
+
+/**
+ * 偏移滑块容器
+ */
+.ppc-position-control .offset-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/**
+ * 层级控制容器
+ */
+.ppc-position-control .zindex-control {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ppc-position-control .single-column-layout {
+  width: 100%;
+}
+
+/**
+ * 智能提示框
+ */
+.ppc-position-control .smart-tip {
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, var(--SmartThemeBlurTintColor));
+  border-left: 3px solid var(--SmartThemeQuoteColor);
+}
+
+.ppc-position-control .smart-tip .tip-text {
+  font-size: 12px;
+  color: var(--SmartThemeBodyColor);
+  line-height: 1.4;
+}
+
+/* ========================================
+   MessageElementPositionControl 气泡元素定位控件
+   ======================================== */
+
+/**
+ * 控件容器
+ */
+.ppc-message-element-position-control {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 10px;
+}
+
+/**
+ * 模式选择器
+ */
+.ppc-message-element-position-control .mode-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ppc-message-element-position-control .section-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--SmartThemeBodyColor);
+  margin-bottom: 5px;
+}
+
+/**
+ * 模式按钮容器
+ */
+.ppc-message-element-position-control .mode-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.ppc-message-element-position-control .mode-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 10px;
+  border: 2px solid var(--SmartThemeBodyColor);
+  border-radius: 8px;
+  background: var(--SmartThemeBlurTintColor);
+  color: var(--SmartThemeBodyColor);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ppc-message-element-position-control .mode-btn:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 20%, var(--SmartThemeBlurTintColor));
+  border-color: var(--SmartThemeQuoteColor);
+  transform: translateY(-2px);
+}
+
+.ppc-message-element-position-control .mode-btn.active {
+  background: var(--SmartThemeQuoteColor);
+  border-color: var(--SmartThemeQuoteColor);
+  color: var(--white);
+  font-weight: bold;
+}
+
+.ppc-message-element-position-control .mode-btn i {
+  font-size: 20px;
+}
+
+.ppc-message-element-position-control .mode-btn span {
+  font-size: 13px;
+}
+
+/**
+ * 模式提示（不支持flex时显示）
+ */
+.ppc-message-element-position-control .mode-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, var(--SmartThemeBlurTintColor));
+  border-left: 3px solid var(--SmartThemeQuoteColor);
+}
+
+.ppc-message-element-position-control .mode-note i {
+  color: var(--SmartThemeQuoteColor);
+  font-size: 14px;
+}
+
+.ppc-message-element-position-control .mode-note span {
+  font-size: 12px;
+  color: var(--SmartThemeBodyColor);
+  line-height: 1.4;
+}
+
+/**
+ * 九宫格选择器（复用 PositionControl 的样式）
+ */
+.ppc-message-element-position-control .nine-grid-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ppc-message-element-position-control .grid-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  max-width: 200px;
+  margin: 0 auto;
+}
+
+.ppc-message-element-position-control .grid-btn {
+  width: 100%;
+  aspect-ratio: 1;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  border: 2px solid var(--SmartThemeBodyColor);
+  border-radius: 6px;
+  background: var(--SmartThemeBlurTintColor);
+  color: var(--SmartThemeBodyColor);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ppc-message-element-position-control .grid-btn:hover:not(.disabled) {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 20%, var(--SmartThemeBlurTintColor));
+  border-color: var(--SmartThemeQuoteColor);
+  transform: scale(1.05);
+}
+
+.ppc-message-element-position-control .grid-btn.active {
+  background: var(--SmartThemeQuoteColor);
+  border-color: var(--SmartThemeQuoteColor);
+  color: var(--white);
+  font-weight: bold;
+}
+
+.ppc-message-element-position-control .grid-btn.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  border-style: dashed;
+}
+
+/**
+ * 偏移滑块容器
+ */
+.ppc-message-element-position-control .offset-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/**
+ * 智能提示框
+ */
+.ppc-message-element-position-control .smart-tip {
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, var(--SmartThemeBlurTintColor));
+  border-left: 3px solid var(--SmartThemeQuoteColor);
+}
+
+.ppc-message-element-position-control .smart-tip .tip-text {
+  font-size: 12px;
+  color: var(--SmartThemeBodyColor);
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ppc-message-element-position-control .smart-tip .tip-text i {
+  color: var(--SmartThemeQuoteColor);
+}
+
+.ppc-message-element-position-control .smart-tip code {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 20%, transparent);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+}
+
+/* ========================================
+   响应式调整
+   ======================================== */
+
+/**
+ * 小屏幕优化（宽度<768px）
+ * 
+ * 双列布局改为单列（避免拉条太窄）
+ */
+@media (max-width: 768px) {
+  .two-column-slider-layout {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* 九宫格按钮在小屏幕稍小 */
+  .ppc-position-control .grid-btn,
+  .ppc-message-element-position-control .grid-btn {
+    min-height: 40px;
+    font-size: 18px;
+  }
+
+  /* 模式按钮在小屏幕改为单列 */
+  .ppc-message-element-position-control .mode-buttons {
+    flex-direction: column;
+  }
+}
+
+/* ========================================
+   TransformControl 专用样式
+   ======================================== */
+
+.ppc-transform-control {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ========================================
+   ShadowControl 阴影控件
+   ======================================== */
+
+/**
+ * 阴影控件容器
+ */
+.ppc-shadow-control {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px;
+}
+
+/**
+ * 外阴影/内阴影切换
+ */
+.ppc-shadow-control .shadow-type-toggle {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--SmartThemeBorderColor);
+  margin-bottom: 5px;
+}
+
+.ppc-shadow-control .shadow-type-toggle>label:first-child {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--SmartThemeBodyColor);
+  min-width: 70px;
+}
+
+.ppc-shadow-control .shadow-type-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.ppc-shadow-control .shadow-type-option:hover {
+  background-color: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent);
+}
+
+.ppc-shadow-control .shadow-type-option input[type="radio"] {
+  cursor: pointer;
+}
+
+.ppc-shadow-control .shadow-type-option span {
+  font-size: 13px;
+  color: var(--SmartThemeBodyColor);
+}
+
+/**
+ * 阴影层列表容器
+ */
+.ppc-shadow-control .shadow-layers {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin: 10px 0;
+}
+
+.ppc-shadow-control .empty-state {
+  padding: 20px;
+  text-align: center;
+  color: var(--grey70);
+  font-size: 13px;
+  font-style: italic;
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 50%, transparent);
+  border: 1px dashed var(--SmartThemeBorderColor);
+  border-radius: 6px;
+}
+
+/**
+ * 单个阴影层
+ */
+.ppc-shadow-control .shadow-layer {
+  padding: 12px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 6px;
+  background: var(--SmartThemeBlurTintColor);
+}
+
+.ppc-shadow-control .shadow-layer .layer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--SmartThemeBorderColor);
+}
+
+.ppc-shadow-control .shadow-layer .layer-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--SmartThemeBodyColor);
+}
+
+.ppc-shadow-control .shadow-layer .delete-layer {
+  padding: 4px 8px;
+  background: transparent;
+  color: var(--SmartThemeBodyColor);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.ppc-shadow-control .shadow-layer .delete-layer:hover {
+  background: color-mix(in srgb, var(--red) 10%, transparent);
+  border-color: var(--red);
+  color: var(--red);
+}
+
+/**
+ * 颜色与透明度行
+ */
+.ppc-shadow-control .color-opacity-row {
+  display: flex;
+  gap: 15px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--SmartThemeBorderColor);
+}
+
+.ppc-shadow-control .color-picker-group,
+.ppc-shadow-control .opacity-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ppc-shadow-control .color-picker-group {
+  flex: 1;
+}
+
+.ppc-shadow-control .opacity-group {
+  flex: 1;
+}
+
+.ppc-shadow-control .color-picker-group label,
+.ppc-shadow-control .opacity-group label {
+  font-size: 13px;
+  color: var(--SmartThemeBodyColor);
+  white-space: nowrap;
+}
+
+.ppc-shadow-control .shadow-color {
+  width: 40px;
+  height: 32px;
+  padding: 2px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.ppc-shadow-control .shadow-color-text {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  background: var(--SmartThemeBlurTintColor);
+  color: var(--SmartThemeBodyColor);
+  font-size: 13px;
+}
+
+.ppc-shadow-control .shadow-opacity {
+  flex: 1;
+}
+
+.ppc-shadow-control .opacity-value {
+  font-size: 13px;
+  color: var(--SmartThemeBodyColor);
+  min-width: 40px;
+  text-align: right;
+}
+
+/**
+ * 添加阴影层按钮
+ */
+.ppc-shadow-control .add-shadow-layer {
+  width: 100%;
+  padding: 8px 16px;
+  background: var(--SmartThemeQuoteColor);
+  color: var(--white);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.ppc-shadow-control .add-shadow-layer:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 80%, var(--black));
+  transform: translateY(-1px);
+}
+
+.ppc-shadow-control .add-shadow-layer:disabled {
+  background: var(--grey70);
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+}
+
+/* ========================================
+   BorderControl 边框控件
+   ======================================== */
+
+.ppc-border-control {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px;
+}
+
+/**
+ * 边框样式选择
+ */
+.ppc-border-control .border-style-select {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ppc-border-control .border-style-select label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--SmartThemeBodyColor);
+  min-width: 80px;
+}
+
+.ppc-border-control .border-style {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  background: var(--SmartThemeBlurTintColor);
+  color: var(--SmartThemeBodyColor);
+  font-size: 13px;
+}
+
+/**
+ * 统一/分别切换
+ */
+.ppc-border-control .unified-toggle {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.ppc-border-control .unified-toggle label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--SmartThemeBodyColor);
+}
+
+.ppc-border-control .unified-checkbox {
+  cursor: pointer;
+}
+
+/**
+ * 边框颜色选择
+ */
+.ppc-border-control .border-color-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--SmartThemeBorderColor);
+}
+
+.ppc-border-control .border-color-section label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--SmartThemeBodyColor);
+  min-width: 80px;
+}
+
+.ppc-border-control .border-color {
+  width: 40px;
+  height: 32px;
+  padding: 2px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.ppc-border-control .border-color-text {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  background: var(--SmartThemeBlurTintColor);
+  color: var(--SmartThemeBodyColor);
+  font-size: 13px;
+}
+
+/* ========================================
+   BorderRadiusControl 圆角控件
+   ======================================== */
+
+.ppc-border-radius-control {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px;
+}
+
+/**
+ * 模式选择
+ */
+.ppc-border-radius-control .mode-select {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ppc-border-radius-control .mode-select label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--SmartThemeBodyColor);
+  min-width: 80px;
+}
+
+.ppc-border-radius-control .radius-mode {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  background: var(--SmartThemeBlurTintColor);
+  color: var(--SmartThemeBodyColor);
+  font-size: 13px;
+}
+
+/**
+ * 圆角控制容器
+ */
+.ppc-border-radius-control .radius-controls {
+  margin-top: 5px;
+}
+
+/* ========================================
+   SizeControl 尺寸控件
+   ======================================== */
+
+.ppc-size-control {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px;
+}
+
+/**
+ * 基础尺寸区域
+ */
+.ppc-size-control .size-basic-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ppc-size-control .size-two-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+/**
+ * auto值显示
+ */
+.ppc-size-control .size-auto-display {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  padding: 15px;
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 50%, transparent);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 6px;
+}
+
+.ppc-size-control .auto-value-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ppc-size-control .auto-value-item label {
+  font-size: 13px;
+  color: var(--SmartThemeBodyColor);
+}
+
+.ppc-size-control .auto-value {
+  font-size: 13px;
+  color: var(--grey70);
+  font-style: italic;
+  font-weight: 500;
+}
+
+/**
+ * 单位选择器
+ */
+.ppc-size-control .size-unit-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.ppc-size-control .size-unit-selector label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--SmartThemeBodyColor);
+  min-width: 50px;
+}
+
+.ppc-size-control .unit-select {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  background: var(--SmartThemeBlurTintColor);
+  color: var(--SmartThemeBodyColor);
+  font-size: 13px;
+}
+
+/**
+ * 限制尺寸展开按钮
+ */
+.ppc-size-control .size-limits-toggle {
+  margin: 5px 0;
+}
+
+.ppc-size-control .toggle-limits-btn {
+  width: 100%;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--SmartThemeBlurTintColor);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  color: var(--SmartThemeBodyColor);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+}
+
+.ppc-size-control .toggle-limits-btn:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, var(--SmartThemeBlurTintColor));
+}
+
+/**
+ * 限制尺寸区域（可折叠）
+ */
+.ppc-size-control .size-limits-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 50%, transparent);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 6px;
+  margin-top: 5px;
+}
+
+/**
+ * 宽高比选择
+ */
+.ppc-size-control .size-aspect-ratio {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--SmartThemeBorderColor);
+}
+
+.ppc-size-control .size-aspect-ratio label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--SmartThemeBodyColor);
+  min-width: 70px;
+}
+
+.ppc-size-control .aspect-ratio-select {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  background: var(--SmartThemeBlurTintColor);
+  color: var(--SmartThemeBodyColor);
+  font-size: 13px;
+}
+
+/* ========================================
+   ColorControl 颜色控件（基础样式）
+   ======================================== */
+
+.ppc-color-control {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px;
+}
+
+/**
+ * 模式选择器（纯色/渐变切换）
+ */
+.ppc-color-control .mode-selector {
+  display: flex;
+  gap: 8px;
+  padding: 4px;
+  background: var(--SmartThemeBlurTintColor);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 6px;
+}
+
+.ppc-color-control .mode-btn {
+  flex: 1;
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--SmartThemeBodyColor);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.ppc-color-control .mode-btn.active {
+  background: var(--SmartThemeQuoteColor);
+  color: var(--white);
+}
+
+.ppc-color-control .mode-btn:hover:not(.active) {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 20%, transparent);
+}
+
+/**
+ * 纯色模式
+ */
+.ppc-color-control .solid-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ppc-color-control .color-picker-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ppc-color-control .color-picker {
+  width: 50px;
+  height: 36px;
+  padding: 2px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.ppc-color-control .color-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  background: var(--SmartThemeBlurTintColor);
+  color: var(--SmartThemeBodyColor);
+  font-size: 13px;
+}
+
+.ppc-color-control .opacity-slider-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ppc-color-control .opacity-slider-wrapper label {
+  font-size: 13px;
+  color: var(--SmartThemeBodyColor);
+  min-width: 60px;
+}
+
+.ppc-color-control .opacity-slider {
+  flex: 1;
+}
+
+.ppc-color-control .opacity-value {
+  font-size: 13px;
+  color: var(--SmartThemeBodyColor);
+  min-width: 40px;
+  text-align: right;
+  font-weight: 500;
+}
+
+/**
+ * 渐变模式
+ */
+.ppc-color-control .gradient-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ppc-color-control .gradient-direction {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  background: var(--SmartThemeBlurTintColor);
+  color: var(--SmartThemeBodyColor);
+  font-size: 13px;
+}
+
+.ppc-color-control .color-stops {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 50%, transparent);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 6px;
+}
+
+.ppc-color-control .color-stop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  background: var(--SmartThemeBlurTintColor);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+}
+
+.ppc-color-control .add-color-stop {
+  width: 100%;
+  padding: 6px 12px;
+  background: transparent;
+  color: var(--SmartThemeBodyColor);
+  border: 1px dashed var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.ppc-color-control .add-color-stop:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent);
+  border-color: var(--SmartThemeQuoteColor);
+  border-style: solid;
+}
+
+/* ========================================
+   通用控件样式（P1优先级）
+   ======================================== */
+
+/**
+ * NumberControl - 数字输入控件
+ */
+.ppc-number-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+}
+
+.ppc-number-control input[type="number"] {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  background: var(--SmartThemeBlurTintColor);
+  color: var(--SmartThemeBodyColor);
+  font-size: 13px;
+}
+
+.ppc-number-control .unit-suffix {
+  font-size: 13px;
+  color: var(--grey70);
+}
+
+/**
+ * TextControl - 文本输入控件
+ */
+.ppc-text-control {
+  padding: 8px;
+}
+
+.ppc-text-control input[type="text"] {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  background: var(--SmartThemeBlurTintColor);
+  color: var(--SmartThemeBodyColor);
+  font-size: 13px;
+}
+
+.ppc-text-control input[type="text"]:focus {
+  outline: 1px solid var(--interactable-outline-color);
+  background: var(--SmartThemeEmColor);
+}
+
+/**
+ * SelectControl - 选择控件
+ */
+.ppc-select-control {
+  padding: 8px;
+}
+
+.ppc-select-control select {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  background: var(--SmartThemeBlurTintColor);
+  color: var(--SmartThemeBodyColor);
+  font-size: 13px;
+}
+
+/**
+ * CheckboxControl - 复选框控件
+ */
+.ppc-checkbox-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.ppc-checkbox-control input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.ppc-checkbox-control label {
+  font-size: 13px;
+  color: var(--SmartThemeBodyColor);
+  cursor: pointer;
+}
+
+/**
+ * FontControl - 字体控件
+ */
+.ppc-font-control {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+}
+
+.ppc-font-control .font-family-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  background: var(--SmartThemeBlurTintColor);
+  color: var(--SmartThemeBodyColor);
+  font-size: 13px;
+}
+
+.ppc-font-control .font-weight-select {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  background: var(--SmartThemeBlurTintColor);
+  color: var(--SmartThemeBodyColor);
+  font-size: 13px;
+}
+
+/* ========================================
+   特殊控件样式（P2优先级 - 简化版）
+   ======================================== */
+
+/**
+ * SpacingControl - 间距控件
+ */
+.ppc-spacing-control {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px;
+}
+
+/**
+ * FlexControl - Flex布局控件
+ */
+.ppc-flex-control {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px;
+}
+
+/**
+ * FilterControl - 滤镜控件
+ */
+.ppc-filter-control {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+}
+
+/* ========================================
+   通用折叠功能（所有控件共用）
+   ======================================== */
+
+/**
+ * 可折叠内容容器
+ * 
+ * 用途：所有需要折叠的区域都使用这个class
+ * 控制：通过添加/移除 .collapsed 和 .expanded 类来控制状态
+ */
+.collapsible-content {
+  transition: max-height 0.3s ease, opacity 0.2s ease;
+  overflow: hidden;
+}
+
+/**
+ * 折叠状态（隐藏内容）
+ */
+.collapsible-content.collapsed {
+  max-height: 0 !important;
+  opacity: 0;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/**
+ * 展开状态（显示内容）
+ */
+.collapsible-content.expanded {
+  max-height: 2000px;
+  opacity: 1;
+}
+
+/**
+ * 折叠图标（chevron箭头）
+ * 
+ * 用途：▼ ↔ ▶ 切换动画
+ */
+.toggle-icon {
+  transition: transform 0.2s ease;
+  font-size: 12px;
+  margin-right: 5px;
+  color: var(--SmartThemeBodyColor);
+}
+
+/**
+ * 可点击的标题行（用于折叠触发）
+ */
+.clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.clickable:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 5%, transparent);
+  border-radius: 4px;
+}
+
+/**
+ * 标题行的左侧部分（图标+文字）
+ */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ========================================
+   响应式调整（扩展）
+   ======================================== */
+
+@media (max-width: 768px) {
+
+  /* SizeControl 响应式 */
+  .ppc-size-control .size-two-columns,
+  .ppc-size-control .size-auto-display {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* ShadowControl 响应式 */
+  .ppc-shadow-control .color-opacity-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* ColorControl 响应式 */
+  .ppc-color-control .color-picker-wrapper {
+    flex-wrap: wrap;
+  }
+}

@@ -1,0 +1,563 @@
+/**
+ * 日记视觉设置面板样式
+ * 
+ * 包含：
+ * - 视觉设置面板容器
+ * - 折叠分组样式
+ * - 颜色选择器
+ * - 滑块样式
+ * - 图片预存网格（三列）
+ * - 响应式设计
+ */
+
+/* ========================================
+   [PANEL] 视觉设置面板容器
+   ======================================== */
+
+.diary-visual-settings-panel {
+  position: absolute;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100vw - 280px);
+  background: var(--SmartThemeBlurTintColor);
+  backdrop-filter: blur(20px);
+  padding: 15px;
+  border-radius: 20px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  z-index: 96;
+
+  /* 默认隐藏 */
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--SmartThemeQuoteColor) 20%, transparent 80%);
+}
+
+.diary-visual-settings-panel.active {
+  max-height: 70vh;
+  opacity: 1;
+  margin-top: 5px;
+  overflow-y: auto;
+  pointer-events: auto;
+}
+
+/* ========================================
+   [HEADER] 面板头部
+   ======================================== */
+
+.diary-visual-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--SmartThemeBorderColor);
+}
+
+.diary-visual-header h3 {
+  font-size: calc(var(--mainFontSize) * 1.2);
+  color: var(--SmartThemeBodyColor);
+  margin: 0;
+}
+
+.diary-visual-reset-all {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: color-mix(in srgb, var(--fullred) 20%, transparent 80%);
+  border: 1px solid var(--fullred);
+  border-radius: 50%;
+  color: var(--fullred);
+  font-size: calc(var(--mainFontSize) * 1.0);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.diary-visual-reset-all:hover {
+  background: color-mix(in srgb, var(--fullred) 30%, transparent 70%);
+  transform: scale(1.1);
+}
+
+/* ========================================
+   [GROUP] 折叠分组
+   ======================================== */
+
+.diary-visual-settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 提示文字 */
+.diary-visual-hint {
+  font-size: calc(var(--mainFontSize) * 0.85);
+  color: var(--SmartThemeEmColor);
+  padding: 6px 10px;
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%);
+  border-radius: 6px;
+  border-left: 3px solid var(--SmartThemeQuoteColor);
+  margin-top: 5px;
+}
+
+.diary-visual-group {
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 30%, transparent 70%);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.diary-visual-group:hover {
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 50%, transparent 50%);
+  border-color: var(--SmartThemeQuoteColor);
+}
+
+.diary-visual-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 15%, transparent 85%);
+  border-bottom: 1px solid var(--SmartThemeBorderColor);
+  color: var(--SmartThemeBodyColor);
+  font-weight: 600;
+  font-size: var(--mainFontSize);
+  cursor: default;
+}
+
+/* 可折叠的分组标题 */
+.diary-visual-collapsible .diary-visual-group-header {
+  cursor: pointer;
+  user-select: none;
+}
+
+.diary-visual-collapsible .diary-visual-group-header:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 25%, transparent 75%);
+}
+
+/* 折叠图标 */
+.diary-visual-collapse-icon {
+  margin-left: auto;
+  font-size: calc(var(--mainFontSize) * 0.9);
+  transition: transform 0.2s;
+}
+
+/* 折叠状态 */
+.diary-visual-collapsible.collapsed .diary-visual-group-content {
+  display: none;
+}
+
+.diary-visual-collapsible.collapsed .diary-visual-group-header {
+  border-bottom: none;
+}
+
+.diary-visual-group-content {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ========================================
+   [SLIDER] 滑块样式
+   ======================================== */
+
+.diary-visual-slider-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.diary-visual-slider-wrapper label {
+  font-size: calc(var(--mainFontSize) * 0.95);
+  color: var(--SmartThemeBodyColor);
+  min-width: 80px;
+}
+
+.diary-visual-slider {
+  flex: 1;
+  height: 6px;
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 50%, transparent 50%);
+  border-radius: 3px;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.diary-visual-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--SmartThemeQuoteColor);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.diary-visual-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 8px var(--SmartThemeQuoteColor);
+}
+
+.diary-visual-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--SmartThemeQuoteColor);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.diary-visual-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 8px var(--SmartThemeQuoteColor);
+}
+
+.diary-visual-slider-value {
+  font-size: calc(var(--mainFontSize) * 0.9);
+  color: var(--SmartThemeQuoteColor);
+  font-weight: 600;
+  min-width: 40px;
+  text-align: right;
+}
+
+/* ========================================
+   [COLOR] 颜色选择器
+   ======================================== */
+
+.diary-visual-color-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.diary-visual-color-item label {
+  font-size: calc(var(--mainFontSize) * 0.95);
+  color: var(--SmartThemeBodyColor);
+  min-width: 60px;
+}
+
+.diary-visual-color-item input[type="color"] {
+  width: 50px;
+  height: 32px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 8px;
+  cursor: pointer;
+  background: transparent;
+  transition: all 0.2s;
+}
+
+.diary-visual-color-item input[type="color"]:hover {
+  border-color: var(--SmartThemeQuoteColor);
+  transform: scale(1.05);
+}
+
+.diary-visual-color-item input[type="color"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.diary-visual-reset-btn {
+  padding: 4px 12px;
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 50%, transparent 50%);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 6px;
+  color: var(--SmartThemeBodyColor);
+  font-size: calc(var(--mainFontSize) * 0.85);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.diary-visual-reset-btn:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 20%, transparent 80%);
+  color: var(--SmartThemeQuoteColor);
+  border-color: var(--SmartThemeQuoteColor);
+}
+
+/* ========================================
+   [CHECKBOX] 复选框
+   ======================================== */
+
+.diary-visual-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--SmartThemeBodyColor);
+  font-size: var(--mainFontSize);
+  cursor: pointer;
+}
+
+.diary-visual-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* ========================================
+   [INPUT] 输入框
+   ======================================== */
+
+.diary-visual-input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.diary-visual-input-group input[type="text"] {
+  flex: 1;
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 50%, transparent 50%);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 8px;
+  color: var(--SmartThemeBodyColor);
+  font-size: var(--mainFontSize);
+  outline: none;
+  transition: all 0.2s;
+}
+
+.diary-visual-input-group input[type="text"]:focus {
+  border-color: var(--SmartThemeQuoteColor);
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 70%, transparent 30%);
+}
+
+.diary-visual-save-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: var(--SmartThemeQuoteColor);
+  border: 1px solid var(--SmartThemeQuoteColor);
+  border-radius: 50%;
+  color: var(--SmartThemeBlurTintColor);
+  font-size: calc(var(--mainFontSize) * 1.0);
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.diary-visual-save-btn:hover {
+  opacity: 0.9;
+  transform: scale(1.1);
+}
+
+/* ========================================
+   [PRESET] 预存图片网格
+   ======================================== */
+
+.diary-visual-preset-images {
+  margin-top: 8px;
+}
+
+.diary-visual-preset-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--SmartThemeBorderColor);
+}
+
+.diary-visual-preset-header span {
+  font-size: calc(var(--mainFontSize) * 0.9);
+  color: var(--SmartThemeEmColor);
+  font-weight: 500;
+}
+
+.diary-preset-images-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.diary-preset-image-item {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background-size: cover;
+  background-position: center;
+  border-radius: 10px;
+  border: 2px solid var(--SmartThemeBorderColor);
+  cursor: pointer;
+  transition: all 0.2s;
+  overflow: hidden;
+}
+
+.diary-preset-image-item:hover {
+  border-color: var(--SmartThemeQuoteColor);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--SmartThemeQuoteColor) 30%, transparent 70%);
+}
+
+.diary-preset-image-delete {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 28px;
+  height: 28px;
+  background: color-mix(in srgb, var(--fullred) 90%, transparent 10%);
+  border: 1px solid var(--fullred);
+  border-radius: 6px;
+  color: white;
+  font-size: calc(var(--mainFontSize) * 0.9);
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.diary-preset-image-item:hover .diary-preset-image-delete {
+  opacity: 1;
+}
+
+.diary-preset-image-delete:hover {
+  background: var(--fullred);
+  transform: scale(1.1);
+}
+
+.diary-visual-preset-empty {
+  text-align: center;
+  padding: 30px 20px;
+  color: var(--SmartThemeEmColor);
+  font-size: calc(var(--mainFontSize) * 0.95);
+  border: 1px dashed var(--SmartThemeBorderColor);
+  border-radius: 8px;
+}
+
+/* 预存图片滚动条 */
+.diary-preset-images-grid::-webkit-scrollbar {
+  width: 4px;
+}
+
+.diary-preset-images-grid::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 30%, transparent 70%);
+  border-radius: 2px;
+}
+
+.diary-preset-images-grid::-webkit-scrollbar-thumb {
+  background: var(--SmartThemeQuoteColor);
+  border-radius: 2px;
+}
+
+.diary-preset-images-grid::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 80%, var(--SmartThemeBodyColor) 20%);
+}
+
+/* ========================================
+   [BUTTON] 视觉设置切换按钮（工具栏）
+   ======================================== */
+
+.diary-visual-toggle-btn {
+  width: 36px;
+  height: 36px;
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 50%, transparent 50%);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 50%;
+  color: var(--SmartThemeBodyColor);
+  font-size: calc(var(--mainFontSize) * 1.1);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--SmartThemeQuoteColor) 20%, transparent 80%);
+}
+
+.diary-visual-toggle-btn:hover {
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 70%, transparent 30%);
+  color: var(--SmartThemeQuoteColor);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--SmartThemeQuoteColor) 30%, transparent 70%);
+}
+
+.diary-visual-toggle-btn.active {
+  background: var(--SmartThemeQuoteColor);
+  color: var(--SmartThemeBlurTintColor);
+  border-color: var(--SmartThemeQuoteColor);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--SmartThemeQuoteColor) 50%, transparent 50%);
+}
+
+/* ========================================
+   [RESPONSIVE] 响应式设计
+   ======================================== */
+
+@media (max-width: 900px) {
+
+  /* 面板宽度匹配手机端 */
+  .diary-visual-settings-panel {
+    width: calc(100vw - 40px);
+  }
+
+  /* 头部按钮缩小 */
+  .diary-visual-header h3 {
+    font-size: var(--mainFontSize);
+  }
+
+  .diary-visual-reset-all {
+    padding: 4px 10px;
+    font-size: calc(var(--mainFontSize) * 0.85);
+  }
+
+  /* 分组内边距缩小 */
+  .diary-visual-group-content {
+    padding: 10px;
+  }
+
+  /* 颜色选择器缩小 */
+  .diary-visual-color-item input[type="color"] {
+    width: 40px;
+    height: 28px;
+  }
+
+  /* 滑块标签缩小 */
+  .diary-visual-slider-wrapper label {
+    min-width: 60px;
+    font-size: calc(var(--mainFontSize) * 0.9);
+  }
+
+  /* 预存图片网格保持三列，缩小间距 */
+  .diary-preset-images-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    max-height: 250px;
+  }
+
+  .diary-preset-image-item {
+    border-width: 1px;
+  }
+
+  .diary-preset-image-delete {
+    width: 24px;
+    height: 24px;
+    font-size: calc(var(--mainFontSize) * 0.8);
+  }
+
+  /* 工具栏按钮缩小 */
+  .diary-visual-toggle-btn {
+    width: 32px;
+    height: 32px;
+    font-size: var(--mainFontSize);
+  }
+
+  /* 输入框缩小 */
+  .diary-visual-input-group input[type="text"] {
+    padding: 6px 10px;
+    font-size: calc(var(--mainFontSize) * 0.95);
+  }
+
+  .diary-visual-save-btn {
+    padding: 6px 12px;
+    font-size: calc(var(--mainFontSize) * 0.85);
+  }
+}

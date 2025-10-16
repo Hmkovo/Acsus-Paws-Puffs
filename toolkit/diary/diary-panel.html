@@ -1,0 +1,459 @@
+<!-- 日记面板 - 轮播图模式 -->
+<div class="diary-panel" id="diaryPanel">
+  <!-- 顶部工具栏：左侧功能组 + 右侧关闭 -->
+  <div class="diary-toolbar">
+    <!-- 左侧功能组：设置 + 搜索 + 筛选 + 周切换 -->
+    <div class="diary-toolbar-left">
+      <!-- 设置按钮 -->
+      <button class="diary-settings-btn" id="diarySettingsBtn" title="日记设置">
+        <span class="fa-solid fa-cog"></span>
+      </button>
+
+      <!-- 搜索按钮 -->
+      <button class="diary-search-toggle-btn" id="diarySearchToggleBtn" title="搜索日记">
+        <span class="fa-solid fa-search"></span>
+      </button>
+
+      <!-- 预设按钮 -->
+      <button class="diary-preset-toggle-btn" id="diaryPresetBtn" title="预设管理">
+        <span class="fa-solid fa-list"></span>
+      </button>
+
+      <!-- 视觉设置按钮 -->
+      <button class="diary-visual-toggle-btn" id="diaryVisualBtn" title="自定义视觉">
+        <span class="fa-solid fa-user-cog"></span>
+      </button>
+
+      <!-- 筛选下拉 -->
+      <select class="diary-filter-select" id="diaryFilterSelect">
+        <option value="all">全部</option>
+        <option value="user">我的</option>
+        <option value="ai">AI的</option>
+        <option value="week">本周</option>
+        <option value="month">本月</option>
+        <option value="date">日期</option>
+      </select>
+    </div>
+
+    <!-- 右侧关闭按钮 -->
+    <button class="diary-close-btn" title="关闭">
+      <span class="fa-solid fa-times"></span>
+    </button>
+  </div>
+
+  <!-- 展开式设置面板（默认隐藏） -->
+  <div class="diary-settings-panel" id="diarySettingsPanel">
+    <div class="diary-settings-content">
+
+      <!-- 标题：生成评论时包含的上下文 -->
+      <div class="diary-setting-group-title">📝 生成评论时包含的上下文：</div>
+
+      <!-- 用户设定 -->
+      <label class="diary-setting-item diary-setting-checkbox">
+        <input type="checkbox" id="diaryIncludePersonaDescription" checked />
+        <span>用户设定 (Persona Description)</span>
+      </label>
+
+      <!-- 角色信息 -->
+      <label class="diary-setting-item diary-setting-checkbox">
+        <input type="checkbox" id="diaryIncludeCharDescription" checked />
+        <span>角色描述 (Description)</span>
+      </label>
+
+      <label class="diary-setting-item diary-setting-checkbox">
+        <input type="checkbox" id="diaryIncludeCharPersonality" checked />
+        <span>角色性格 (Personality)</span>
+      </label>
+
+      <label class="diary-setting-item diary-setting-checkbox">
+        <input type="checkbox" id="diaryIncludeCharScenario" checked />
+        <span>角色场景 (Scenario)</span>
+      </label>
+
+      <!-- 世界书 -->
+      <label class="diary-setting-item diary-setting-checkbox">
+        <input type="checkbox" id="diaryIncludeWorldInfo" checked />
+        <span>世界书（常驻条目）</span>
+      </label>
+
+      <!-- 最近对话 -->
+      <label class="diary-setting-item">
+        <input type="checkbox" id="diaryIncludeRecentChat" checked />
+        <span>最近对话（最多</span>
+        <input type="number" id="diaryRecentChatCount" min="1" max="20" value="5" class="diary-setting-input-inline"
+          style="width: 50px; margin: 0 5px;" />
+        <span>条）</span>
+      </label>
+
+      <!-- 历史日记 -->
+      <label class="diary-setting-item">
+        <input type="checkbox" id="diaryIncludeHistoryDiaries" />
+        <span>历史日记（最多</span>
+        <input type="number" id="diaryHistoryDiaryCount" min="1" max="10" value="3" class="diary-setting-input-inline"
+          style="width: 50px; margin: 0 5px;" />
+        <span>条）</span>
+      </label>
+
+      <hr style="margin: 10px 0; border-top: 1px solid var(--SmartThemeBorderColor); opacity: 0.3;">
+
+      <!-- 标题：评论设置 -->
+      <div class="diary-setting-group-title">💬 评论设置：</div>
+
+      <label class="diary-setting-item diary-setting-checkbox">
+        <input type="checkbox" id="diaryDisableCharacterCommentCheckbox" />
+        <span>关闭角色评论</span>
+      </label>
+
+      <label class="diary-setting-item diary-setting-checkbox">
+        <input type="checkbox" id="diaryAllowPasserbyCheckbox" />
+        <span>允许路人评论（AI可随机名字评论）</span>
+      </label>
+
+      <label class="diary-setting-item">
+        <span class="diary-setting-label">路人评论数量：</span>
+        <input type="number" id="diaryPasserbyCommentMin" min="1" max="50" value="3" class="diary-setting-input-inline"
+          style="width: 50px; margin: 0 5px;" />
+        <span>~</span>
+        <input type="number" id="diaryPasserbyCommentMax" min="1" max="50" value="5" class="diary-setting-input-inline"
+          style="width: 50px; margin: 0 5px;" />
+        <span>条</span>
+      </label>
+
+      <label class="diary-setting-item">
+        <span class="diary-setting-label">路人性格类型：</span>
+        <select id="diaryPasserbyPersonalitySelect" class="diary-setting-select">
+          <option value="default">默认观众</option>
+          <option value="funny">搞笑观众</option>
+          <option value="fanclub">饭圈观众</option>
+          <option value="fanficauthor">二创太太</option>
+          <option value="analysis">分析观众</option>
+          <option value="critic">烂梗吐槽役</option>
+          <option value="lore">设定考据党</option>
+          <option value="pessimist">悲观预言家</option>
+          <option value="shipper">CP粉</option>
+          <option value="alien">外星观察员</option>
+          <option value="gamer">第四天灾玩家</option>
+          <option value="crossovermaniac">串台乱入者</option>
+          <option value="chaos">混乱拱火乐子人</option>
+          <option value="pragmatic">功利不择手段者</option>
+          <option value="vmefifty">好兄弟v我50</option>
+        </select>
+      </label>
+
+      <hr style="margin: 10px 0; border-top: 1px solid var(--SmartThemeBorderColor); opacity: 0.3;">
+
+      <!-- 标题：API 设置 -->
+      <div class="diary-setting-group-title">🔌 API 设置：</div>
+
+      <!-- API 来源选择 -->
+      <label class="diary-setting-item">
+        <span class="diary-setting-label">API 来源：</span>
+        <select id="diaryApiSource" class="diary-setting-select">
+          <option value="default">使用酒馆默认 API</option>
+          <option value="custom">使用自定义 API</option>
+        </select>
+      </label>
+
+      <!-- 流式开关 -->
+      <label class="diary-setting-item diary-setting-checkbox">
+        <input type="checkbox" id="diaryApiStream" />
+        <span>流式生成（实时显示）</span>
+      </label>
+
+      <!-- 自定义 API 配置区域（默认隐藏） -->
+      <div id="diaryCustomApiSettings" class="diary-custom-api-settings" style="display: none;">
+
+        <!-- 配置管理 -->
+        <label class="diary-setting-item">
+          <span class="diary-setting-label">API 配置：</span>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <select id="diaryApiConfigSelect" class="diary-setting-select" style="flex: 1;">
+              <option value="">新建配置...</option>
+            </select>
+            <button id="diaryApiConfigSave" class="menu_button" title="保存当前配置">
+              <i class="fa-solid fa-save"></i>
+            </button>
+            <button id="diaryApiConfigDelete" class="menu_button" title="删除配置">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </label>
+
+        <!-- 配置名称 -->
+        <label class="diary-setting-item">
+          <span class="diary-setting-label">配置名称：</span>
+          <input type="text" id="diaryApiConfigName" placeholder="例如：我的 API 配置" class="text_pole" />
+        </label>
+
+        <!-- API 端点 -->
+        <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start;">
+          <span class="diary-setting-label">API 端点 (Base URL)：</span>
+          <input type="text" id="diaryApiBaseUrl" placeholder="https://api.openai.com" class="text_pole"
+            style="width: 100%;" />
+          <div style="font-size: 0.85em; color: var(--white50a); margin-top: 4px;">
+            示例：https://api.openai.com 或 https://your-proxy.com
+          </div>
+        </label>
+
+        <!-- API 密钥 -->
+        <label class="diary-setting-item">
+          <span class="diary-setting-label">API 密钥：</span>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="password" id="diaryApiKey" placeholder="sk-..." class="text_pole" style="flex: 1;" />
+            <button class="menu_button" id="diaryApiKeyToggle" title="显示/隐藏密钥">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </label>
+
+        <!-- 模型选择 -->
+        <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start;">
+          <span class="diary-setting-label">模型：</span>
+          <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+            <select id="diaryApiModelSelect" class="diary-setting-select" style="flex: 1; min-width: 0;">
+              <option value="">请选择模型...</option>
+              <option value="gpt-4o-mini">gpt-4o-mini</option>
+              <option value="gpt-4o">gpt-4o</option>
+              <option value="gpt-4-turbo">gpt-4-turbo</option>
+              <option value="claude-3-5-sonnet-20241022">claude-3-5-sonnet-20241022</option>
+              <option value="claude-3-5-haiku-20241022">claude-3-5-haiku-20241022</option>
+              <option value="__manual__">手动输入...</option>
+            </select>
+            <button id="diaryApiRefreshModels" class="menu_button" title="从 API 刷新可用模型" style="flex-shrink: 0;">
+              <i class="fa-solid fa-sync"></i>
+            </button>
+          </div>
+        </label>
+
+        <!-- 手动输入模型（选择"手动输入..."时显示） -->
+        <label class="diary-setting-item" id="diaryApiModelManualWrapper" style="display: none;">
+          <span class="diary-setting-label">手动输入模型名：</span>
+          <input type="text" id="diaryApiModelManual" placeholder="例如：gpt-4o-mini" class="text_pole" />
+        </label>
+
+        <!-- 提示：其他参数使用官方设置 -->
+        <div
+          style="padding: 10px; background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%); border-radius: 8px; font-size: 0.9em; margin-top: 10px;">
+          <div style="margin-bottom: 5px;">
+            <i class="fa-solid fa-info-circle"></i>
+            <strong>Temperature、Max Tokens 等参数使用酒馆主设置</strong>
+          </div>
+          <div style="opacity: 0.8;">
+            在酒馆主界面的"聊天完成来源"中调整这些参数
+          </div>
+        </div>
+
+        <!-- 测试连接 -->
+        <button id="diaryApiTest" class="menu_button" style="width: 100%; margin-top: 10px;">
+          <i class="fa-solid fa-flask"></i> 测试连接
+        </button>
+        <div style="font-size: 0.85em; color: var(--SmartThemeEmColor); margin-top: 6px; text-align: center;">
+          ⚠️ 测试消息会使用一条回复消息次数
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 展开式搜索栏（默认隐藏） -->
+  <div class="diary-search-bar" id="diarySearchBar">
+    <input type="text" id="diarySearchInput" placeholder="搜索日记..." />
+    <span class="fa-solid fa-search"></span>
+  </div>
+
+  <!-- 展开式周筛选面板（默认隐藏） -->
+  <div class="diary-week-panel" id="diaryWeekPanel">
+    <button class="diary-period-nav-btn diary-week-prev-btn" title="上周">
+      <span class="fa-solid fa-chevron-left"></span>
+    </button>
+    <span class="diary-period-label" id="diaryWeekLabel">本周</span>
+    <button class="diary-period-nav-btn diary-week-next-btn" title="下周">
+      <span class="fa-solid fa-chevron-right"></span>
+    </button>
+  </div>
+
+  <!-- 展开式月筛选面板（默认隐藏） -->
+  <div class="diary-month-panel" id="diaryMonthPanel">
+    <button class="diary-period-nav-btn diary-month-prev-btn" title="上月">
+      <span class="fa-solid fa-chevron-left"></span>
+    </button>
+    <span class="diary-period-label" id="diaryMonthLabel">本月</span>
+    <button class="diary-period-nav-btn diary-month-next-btn" title="下月">
+      <span class="fa-solid fa-chevron-right"></span>
+    </button>
+  </div>
+
+  <!-- 展开式日期选择器（默认隐藏） -->
+  <div class="diary-date-picker-panel" id="diaryDatePickerPanel">
+    <input type="date" id="diaryDatePicker" class="diary-date-input" />
+    <button class="diary-date-clear-btn" title="清除日期">
+      <span class="fa-solid fa-times"></span>
+    </button>
+  </div>
+
+  <!-- 展开式视觉设置面板（默认隐藏） -->
+  <div class="diary-visual-settings-panel" id="diaryVisualPanel">
+    <!-- 视觉设置内容将由 diary-visual-settings.js 动态生成 -->
+  </div>
+
+  <!-- 轮播图容器 -->
+  <div class="diary-slider-wrapper">
+    <div class="diary-slider" id="diarySlider">
+      <!-- 日记卡片将动态生成 -->
+    </div>
+  </div>
+
+  <!-- 翻页按钮 -->
+  <div class="diary-nav-buttons">
+    <button class="diary-nav-btn diary-prev" title="上一篇">
+      <span class="fa-solid fa-chevron-left"></span>
+    </button>
+    <button class="diary-nav-btn diary-next" title="下一篇">
+      <span class="fa-solid fa-chevron-right"></span>
+    </button>
+  </div>
+
+  <!-- 操作按钮 -->
+  <div class="diary-actions">
+    <!-- 新建按钮（左侧） -->
+    <button class="diary-action-btn diary-new" title="新建日记">
+      <span class="fa-solid fa-plus"></span>
+    </button>
+
+    <!-- AI回复预览按钮（左侧第二个）-->
+    <button class="diary-action-btn diary-ai-preview" id="diaryAiPreviewBtn" title="AI回复预览">
+      <span class="fa-solid fa-robot"></span>
+      <span class="diary-preview-badge" id="diaryPreviewBadge">1</span>
+    </button>
+
+    <!-- 右侧按钮组 -->
+    <div class="diary-actions-right">
+      <button class="diary-action-btn diary-select" title="选择日记发送">
+        <span class="fa-solid fa-list-check"></span>
+      </button>
+      <button class="diary-action-btn diary-send" title="发送消息">
+        <span class="fa-solid fa-paper-plane"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- AI回复预览面板（点击机器人按钮显示） -->
+  <div class="diary-ai-preview-panel" id="diaryAiPreviewPanel" style="display: none;">
+    <div class="diary-ai-preview-header">
+      <span class="diary-ai-preview-title">
+        <i class="fa-solid fa-robot"></i> AI 回复预览
+      </span>
+      <button class="diary-ai-preview-close" id="diaryAiPreviewClose" title="关闭">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="diary-ai-preview-content">
+      <div class="diary-ai-preview-hint">
+        等待 AI 回复中...
+      </div>
+      <textarea class="diary-ai-preview-text" id="diaryAiPreviewText" readonly>这里会显示 AI 的原始回复内容。
+
+你可以点击"编辑"按钮修改格式错误的地方，然后点击"解析并应用"让它生效。
+
+示例格式：
+[评论]
+鬼面：今天天气不错呢~
+@路人A：确实很舒服！
+[/评论]</textarea>
+      <div class="diary-ai-preview-actions">
+        <button class="diary-ai-preview-action-btn" id="diaryAiPreviewEdit" title="编辑">
+          <i class="fa-solid fa-pen"></i> 编辑
+        </button>
+        <button class="diary-ai-preview-action-btn diary-ai-preview-primary" id="diaryAiPreviewParse" title="解析并应用">
+          <i class="fa-solid fa-check"></i> 解析并应用
+        </button>
+        <button class="diary-ai-preview-action-btn" id="diaryAiPreviewClear" title="清空">
+          <i class="fa-solid fa-trash"></i> 清空
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 日记卡片模板（用于JS动态生成） -->
+<template id="diaryCardTemplate">
+  <div class="diary-card">
+    <div class="diary-content">
+      <!-- 顶部按钮组（隐私 + 编辑） -->
+      <div class="diary-card-top-buttons">
+        <button class="diary-privacy-toggle" title="公开">
+          <span class="fa-solid fa-eye"></span>
+        </button>
+        <button class="diary-edit-toggle" title="编辑">
+          <span class="fa-solid fa-pencil"></span>
+        </button>
+      </div>
+
+      <!-- 头部 -->
+      <div class="diary-header">
+        <div class="diary-day"></div>
+        <div class="diary-date"></div>
+        <div class="diary-author-badge"></div>
+      </div>
+
+      <!-- 标题 -->
+      <div class="diary-title"></div>
+
+      <!-- 内容块列表 -->
+      <div class="diary-entries">
+        <!-- 动态生成 -->
+      </div>
+
+      <!-- 评论区 -->
+      <div class="diary-comments">
+        <!-- 动态生成评论 -->
+
+        <!-- 用户日记：显示"请求评论"按钮 -->
+        <button class="diary-request-comment-btn" style="display: none;">
+          <span class="fa-solid fa-comment"></span>
+          请 <span class="char-name"></span> 评论
+        </button>
+
+        <!-- AI日记：显示"回复日记"按钮 -->
+        <button class="diary-reply-diary-btn" style="display: none;">
+          <span class="fa-solid fa-reply"></span>
+          回复这篇日记
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- 内容块模板 -->
+<template id="contentBlockTemplate">
+  <div class="diary-entry">
+    <div class="entry-header">
+      <span class="entry-tag"></span>
+      <span class="entry-time"></span>
+    </div>
+    <div class="entry-content"></div>
+  </div>
+</template>
+
+<!-- 评论模板 -->
+<template id="commentTemplate">
+  <div class="comment-item">
+    <div class="comment-header">
+      <span class="comment-author"></span>
+      <span class="comment-time"></span>
+    </div>
+    <div class="comment-content"></div>
+    <div class="comment-actions">
+      <button class="comment-reply-btn">
+        <span class="fa-solid fa-reply"></span> 回复
+      </button>
+      <button class="comment-delete-btn">
+        <span class="fa-solid fa-trash"></span> 删除
+      </button>
+    </div>
+    <div class="comment-replies">
+      <!-- 回复的回复（递归） -->
+    </div>
+  </div>
+</template>

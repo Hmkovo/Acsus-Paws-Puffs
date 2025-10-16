@@ -1,0 +1,252 @@
+/**
+ * 日记编辑器样式
+ */
+
+/* 编辑器面板遮罩 */
+.diary-editor-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.diary-editor-panel.active {
+  opacity: 1;
+}
+
+.diary-editor-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--black50a);
+  backdrop-filter: blur(var(--SmartThemeBlurStrength));
+}
+
+/* 编辑器内容 */
+.diary-editor-content {
+  position: relative;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  background: var(--SmartThemeBlurTintColor);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 15px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 编辑器头部 */
+.diary-editor-header {
+  padding: 15px 20px;
+  background: var(--black10a);
+  border-bottom: 1px solid var(--SmartThemeBorderColor);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.diary-editor-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--SmartThemeBodyColor);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.diary-editor-close {
+  background: transparent;
+  border: none;
+  color: var(--SmartThemeBodyColor);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.diary-editor-close:hover {
+  background: var(--black10a);
+  color: var(--redWarningColor);
+}
+
+/* 编辑器主体 */
+.diary-editor-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.diary-editor-body label {
+  display: block;
+  margin-bottom: 15px;
+  color: var(--SmartThemeBodyColor);
+  font-weight: 500;
+}
+
+.diary-editor-body input[type="text"],
+.diary-editor-body input[type="date"],
+.diary-editor-body input[type="time"],
+.diary-editor-body input[type="color"] {
+  width: 100%;
+  padding: 8px 12px;
+  margin-top: 5px;
+  background: var(--black10a);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 8px;
+  color: var(--SmartThemeBodyColor);
+  font-size: 14px;
+}
+
+.diary-editor-body h4 {
+  margin: 20px 0 10px 0;
+  color: var(--SmartThemeQuoteColor);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.diary-editor-body hr {
+  margin: 15px 0;
+  border: none;
+  border-top: 1px solid var(--SmartThemeBorderColor);
+  opacity: 0.3;
+}
+
+/* 内容块容器 */
+.diary-content-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.diary-block {
+  padding: 12px;
+  background: var(--black10a);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 10px;
+}
+
+.diary-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.diary-block-type-label {
+  font-size: 14px;
+  color: var(--SmartThemeBodyColor);
+  font-weight: 500;
+}
+
+.diary-block-delete {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid var(--SmartThemeBorderColor);
+  color: var(--redWarningColor);
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.diary-block-delete:hover {
+  background: var(--redWarningColor);
+  color: white;
+}
+
+.diary-block textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 8px;
+  background: var(--black10a);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 6px;
+  color: var(--SmartThemeBodyColor);
+  font-size: 13px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.diary-add-text-block,
+.diary-add-image-block {
+  padding: 6px 12px;
+  background: var(--black10a);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--SmartThemeBodyColor);
+  transition: all 0.2s;
+}
+
+.diary-add-text-block:hover,
+.diary-add-image-block:hover {
+  background: var(--black20a);
+  transform: translateY(-1px);
+}
+
+.diary-empty-hint {
+  text-align: center;
+  color: var(--white50a);
+  font-style: italic;
+  padding: 20px;
+}
+
+/* 编辑器底部 */
+.diary-editor-footer {
+  padding: 15px 20px;
+  background: var(--black10a);
+  border-top: 1px solid var(--SmartThemeBorderColor);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.diary-editor-save,
+.diary-editor-cancel {
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.diary-editor-save {
+  background: var(--ac-style-color);
+  border: none;
+  color: white;
+}
+
+.diary-editor-save:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.diary-editor-cancel {
+  background: transparent;
+  border: 1px solid var(--SmartThemeBorderColor);
+  color: var(--SmartThemeBodyColor);
+}
+
+.diary-editor-cancel:hover {
+  background: var(--black10a);
+}

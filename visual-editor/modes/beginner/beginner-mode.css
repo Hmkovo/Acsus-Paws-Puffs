@@ -1,0 +1,212 @@
+/**
+ * @file 新手模式样式
+ * @description 新手模式特有的样式
+ * 
+ * 不包含：
+ * - 小控件样式（在 controls/property-controls.css）
+ * - 通用面板样式（在 embedded-panel.css）
+ * 
+ * 包含：
+ * - 元素列表样式（新手模式特有的布局）
+ * - 场景编辑器样式
+ * - 属性分组样式（可折叠）
+ * - 智能提示样式（提示框、快捷按钮）
+ * 
+ * 参考：【文件结构方案】第1348-1362行
+ */
+
+/* ========================================
+   主布局
+   ======================================== */
+
+/* TODO: [P0] 新手模式主布局（左右分栏） */
+.beginner-mode-layout {
+  /* TODO: flexbox布局，水平排列 */
+  /* TODO: 左侧：元素列表（固定宽度） */
+  /* TODO: 右侧：场景编辑器（flex-grow: 1） */
+}
+
+/* ========================================
+   左侧：元素列表
+   ======================================== */
+
+/* TODO: [P0] 元素列表侧边栏 */
+.element-list-sidebar {
+  /* TODO: 固定宽度（300px） */
+  /* TODO: 边框、背景 */
+  /* TODO: overflow: auto（可滚动） */
+}
+
+/* TODO: [P0] 元素分类 */
+.element-category {
+  /* TODO: 分类容器 */
+}
+
+.element-category .category-header {
+  /* TODO: 分类标题样式 */
+  /* TODO: padding、背景、点击效果 */
+  /* TODO: 折叠/展开图标 */
+}
+
+.element-category .category-body {
+  /* TODO: 分类内容区 */
+  /* TODO: 可折叠（max-height过渡） */
+}
+
+/* TODO: [P0] 元素项 */
+.element-item {
+  /* TODO: 元素项样式 */
+  /* TODO: padding、hover效果 */
+  /* TODO: 选中状态（高亮） */
+}
+
+.element-item.active {
+  /* TODO: 选中状态样式 */
+}
+
+.element-item i {
+  /* TODO: 元素图标 */
+}
+
+/* ========================================
+   右侧：场景编辑器
+   ======================================== */
+
+/* TODO: [P0] 场景编辑器区域 */
+.scene-editor-area {
+  /* TODO: flex-grow: 1 */
+  /* TODO: padding */
+  /* TODO: overflow: auto */
+}
+
+/* TODO: [P0] 场景编辑器容器 */
+.scene-editor {
+  /* TODO: 场景编辑器样式 */
+}
+
+.scene-editor h3 {
+  /* TODO: 场景标题样式 */
+}
+
+.scene-editor p {
+  /* TODO: 场景描述样式 */
+}
+
+/* ========================================
+   属性分组（可折叠）
+   ======================================== */
+
+/* TODO: [P0] 属性分组容器 */
+.property-group {
+  /* TODO: 分组样式 */
+  /* TODO: 边框、背景、margin */
+}
+
+.property-group.expanded .group-body {
+  /* TODO: 展开状态（显示内容） */
+}
+
+.property-group.collapsed .group-body {
+  /* TODO: 折叠状态（隐藏内容） */
+}
+
+/* TODO: [P0] 分组标题 */
+.property-group .group-header {
+  /* TODO: flexbox布局 */
+  /* TODO: padding、背景、点击效果 */
+}
+
+.property-group .group-header i {
+  /* TODO: 分组图标 */
+}
+
+.property-group .group-header .toggle-icon {
+  /* TODO: 折叠/展开图标（旋转动画） */
+}
+
+/* TODO: [P0] 分组内容 */
+.property-group .group-body {
+  /* TODO: 内容区样式 */
+  /* TODO: padding */
+  /* TODO: max-height过渡（折叠动画） */
+}
+
+/* ========================================
+   属性项
+   ======================================== */
+
+/* TODO: [P0] 属性项容器 */
+.property-item {
+  /* TODO: margin-bottom */
+  /* TODO: padding */
+}
+
+/* TODO: [P0] 属性标签 */
+.property-label {
+  /* TODO: 标签样式 */
+  /* TODO: font-weight、margin-bottom */
+}
+
+.property-label .property-help {
+  /* TODO: 帮助图标（问号） */
+  /* TODO: tooltip提示 */
+}
+
+/* ========================================
+   智能提示
+   ======================================== */
+
+/* TODO: [P0] 智能提示容器 */
+.smart-tip {
+  /* TODO: 提示框样式 */
+  /* TODO: padding、border-radius、背景 */
+  /* TODO: margin-top（显示在控件下方） */
+}
+
+.smart-tip.info {
+  /* TODO: 信息提示（蓝色） */
+}
+
+.smart-tip.warning {
+  /* TODO: 警告提示（黄色） */
+}
+
+.smart-tip i {
+  /* TODO: 提示图标 */
+}
+
+.smart-tip span {
+  /* TODO: 提示文本 */
+}
+
+/* TODO: [P0] 快捷按钮 */
+.smart-tip .tip-quick-btn {
+  /* TODO: 快捷按钮样式 */
+  /* TODO: 小按钮、圆角、背景 */
+  /* TODO: hover效果 */
+}
+
+/* ========================================
+   空状态
+   ======================================== */
+
+/* TODO: [P0] 空状态提示（右侧未选择元素时） */
+.scene-editor-area .empty-state {
+  /* TODO: 居中显示 */
+  /* TODO: 图标 + 文字样式 */
+}
+
+/* ========================================
+   响应式设计
+   ======================================== */
+
+/* TODO: [P1] 窗口宽度 < 1200px */
+@media (max-width: 1200px) {
+  /* TODO: 左侧元素列表缩小 */
+}
+
+/* TODO: [P1] 窗口宽度 < 768px */
+@media (max-width: 768px) {
+  /* TODO: 移动端布局（堆叠） */
+  /* TODO: 元素列表变为下拉选择 */
+}

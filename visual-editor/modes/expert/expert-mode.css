@@ -1,0 +1,145 @@
+/**
+ * @file 专家模式样式
+ * @description 专家模式特有的样式
+ * 
+ * 不包含：
+ * - 小控件样式（在 controls/property-controls.css）
+ * - 通用面板样式（在 embedded-panel.css）
+ * 
+ * 包含：
+ * - 10个CSS面板的手风琴样式
+ * - 面板展开/折叠动画
+ * - 属性列表布局（可能和新手模式不同）
+ * 
+ * 参考：【文件结构方案】第1476-1484行
+ */
+
+/* ========================================
+   主布局
+   ======================================== */
+
+/* TODO: [P1] 专家模式主布局（和新手模式类似） */
+.expert-mode-layout {
+  /* TODO: flexbox布局，水平排列 */
+  /* TODO: 左侧：元素列表（和新手模式共用样式） */
+  /* TODO: 右侧：CSS面板区域（flex-grow: 1） */
+}
+
+/* ========================================
+   右侧：CSS面板区域
+   ======================================== */
+
+/* TODO: [P1] CSS面板区域 */
+.css-panels-area {
+  /* TODO: flex-grow: 1 */
+  /* TODO: padding */
+  /* TODO: overflow: auto */
+}
+
+.expert-panels-container {
+  /* TODO: 面板容器 */
+}
+
+/* ========================================
+   CSS面板（手风琴）
+   ======================================== */
+
+/* TODO: [P1] 单个CSS面板 */
+.css-panel {
+  /* TODO: 面板样式 */
+  /* TODO: 边框、margin */
+}
+
+.css-panel.active {
+  /* TODO: 激活状态（展开） */
+}
+
+/* TODO: [P1] 面板标题 */
+.css-panel .panel-header {
+  /* TODO: flexbox布局 */
+  /* TODO: padding、背景、点击效果 */
+  /* TODO: 折叠/展开图标 */
+}
+
+.css-panel .panel-header i {
+  /* TODO: 折叠/展开图标（旋转动画） */
+}
+
+.css-panel .panel-header span {
+  /* TODO: 面板名称 */
+}
+
+.css-panel .panel-header small {
+  /* TODO: 属性数量显示（灰色、小字） */
+}
+
+/* TODO: [P1] 面板内容 */
+.css-panel .panel-body {
+  /* TODO: 内容区样式 */
+  /* TODO: padding */
+  /* TODO: max-height过渡（折叠动画） */
+  /* TODO: overflow: hidden（折叠时） */
+}
+
+.css-panel.active .panel-body {
+  /* TODO: 展开状态（max-height: 9999px） */
+}
+
+/* ========================================
+   属性列表（专家模式特有布局）
+   ======================================== */
+
+/* TODO: [P1] 属性列表容器 */
+.css-panel .properties-list {
+  /* TODO: 网格布局（2列）或flexbox */
+}
+
+/* TODO: [P1] 属性项（专家模式可能更紧凑） */
+.css-panel .property-item {
+  /* TODO: 紧凑布局 */
+  /* TODO: margin、padding */
+}
+
+/* ========================================
+   工具栏（专家模式特有）
+   ======================================== */
+
+/* TODO: [P2] 展开/折叠所有按钮 */
+.expert-panels-toolbar {
+  /* TODO: 工具栏样式 */
+}
+
+.expert-panels-toolbar .expand-all-btn,
+.expert-panels-toolbar .collapse-all-btn {
+  /* TODO: 按钮样式 */
+}
+
+/* TODO: [P2] 属性搜索框 */
+.expert-panels-toolbar .property-search {
+  /* TODO: 搜索框样式 */
+}
+
+/* ========================================
+   空状态
+   ======================================== */
+
+/* TODO: [P1] 空状态提示（右侧未选择元素时） */
+.css-panels-area .empty-state {
+  /* TODO: 居中显示 */
+  /* TODO: 图标 + 文字样式 */
+}
+
+/* ========================================
+   响应式设计
+   ======================================== */
+
+/* TODO: [P1] 窗口宽度 < 1200px */
+@media (max-width: 1200px) {
+  /* TODO: 调整布局 */
+}
+
+/* TODO: [P1] 窗口宽度 < 768px */
+@media (max-width: 768px) {
+  /* TODO: 移动端布局（堆叠） */
+  /* TODO: 属性列表单列显示 */
+}

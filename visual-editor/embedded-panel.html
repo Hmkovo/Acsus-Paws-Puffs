@@ -1,0 +1,88 @@
+<!-- 
+  内嵌面板HTML骨架
+  位置：自定义CSS输入框下方（动态插入）
+  
+  设计理念：
+  - 工具栏：3个标签页（元素编辑、快速模板、图标组）
+  - 内容区域：3个标签页面板
+  - 模式切换：在元素编辑标签页内，是一个左右滑动开关
+  
+  参考：
+  - 旧代码 embedded-panel-ui.js 第502-605行
+-->
+
+<div class="paws-puffs-ve-inline-container">
+  <!-- 顶部工具栏：3个标签页 + 功能按钮 -->
+  <div class="paws-puffs-ve-toolbar">
+    <div class="paws-puffs-ve-toolbar-left">
+      <button class="paws-puffs-ve-tab-btn active" data-tab="elements">
+        <i class="fa fa-mouse-pointer"></i> 元素编辑
+      </button>
+      <button class="paws-puffs-ve-tab-btn" data-tab="templates">
+        <i class="fa fa-magic"></i> 快速模板
+      </button>
+      <button class="paws-puffs-ve-tab-btn" data-tab="icons">
+        <i class="fa fa-icons"></i> 图标组
+      </button>
+    </div>
+
+    <div class="paws-puffs-ve-toolbar-right">
+      <button class="paws-puffs-ve-action-btn" id="paws-puffs-ve-sync-btn" title="从输入框加载当前主题的设计"
+        style="background-color: var(--SmartThemeQuoteColor); color: white;">
+        <i class="fa fa-sync"></i>
+      </button>
+      <button class="paws-puffs-ve-action-btn" id="paws-puffs-ve-reset-btn" title="清空操作面板（不影响输入框）"
+        style="background-color: var(--SmartThemeQuoteColor); color: white;">
+        <i class="fa fa-rotate-left"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- 内容区域：3个标签页面板 -->
+  <div class="paws-puffs-ve-content">
+    <!-- 标签页1：元素编辑 -->
+    <div class="paws-puffs-ve-tab-panel active" data-panel="elements">
+      <!-- 模式切换开关（新手/专家） -->
+      <div class="paws-puffs-ve-mode-toggle-container"
+        style="padding: 10px; border-bottom: 1px solid var(--SmartThemeBorderColor); display: flex; align-items: center; gap: 10px;">
+        <span style="opacity: 0.8;">当前模式：</span>
+        <label class="paws-puffs-ve-mode-switch">
+          <input type="checkbox" id="paws-puffs-ve-mode-toggle" class="paws-puffs-ve-mode-input">
+          <span class="paws-puffs-ve-mode-slider">
+            <span class="paws-puffs-ve-mode-handle"></span>
+          </span>
+        </label>
+        <span id="paws-puffs-ve-mode-label" style="font-weight: bold; color: var(--SmartThemeQuoteColor);">新手模式</span>
+        <small class="hint" style="margin-left: auto;">切换到专家模式可查看所有CSS属性</small>
+      </div>
+
+      <!-- 新手模式容器（默认显示） -->
+      <div class="beginner-mode-container">
+        <!-- 由 beginner-mode.js 动态渲染 -->
+      </div>
+
+      <!-- 专家模式容器（默认隐藏） -->
+      <div class="expert-mode-container" style="display: none;">
+        <!-- 由 expert-mode.js 动态渲染 -->
+      </div>
+    </div>
+
+    <!-- 标签页2：快速模板（预留） -->
+    <div class="paws-puffs-ve-tab-panel" data-panel="templates">
+      <div style="padding: 20px; text-align: center; opacity: 0.7;">
+        <i class="fa fa-magic" style="font-size: 2em; margin-bottom: 10px;"></i>
+        <p>快速模板功能待开发</p>
+        <small class="hint">敬请期待</small>
+      </div>
+    </div>
+
+    <!-- 标签页3：图标组（预留） -->
+    <div class="paws-puffs-ve-tab-panel" data-panel="icons">
+      <div style="padding: 20px; text-align: center; opacity: 0.7;">
+        <i class="fa fa-icons" style="font-size: 2em; margin-bottom: 10px;"></i>
+        <p>图标组功能待开发</p>
+        <small class="hint">敬请期待</small>
+      </div>
+    </div>
+  </div>
+</div>

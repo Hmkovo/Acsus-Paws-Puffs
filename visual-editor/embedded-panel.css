@@ -1,0 +1,112 @@
+/**
+ * @file 内嵌面板样式
+ * @description 内嵌面板的布局和通用样式
+ * 
+ * 不包含：
+ * - 小控件样式（在 controls/property-controls.css）
+ * - 新手模式特有样式（在 modes/beginner/beginner-mode.css）
+ * - 专家模式特有样式（在 modes/expert/expert-mode.css）
+ * 
+ * 参考：【文件结构方案】第677-694行
+ */
+
+/* ========================================
+   主容器布局
+   ======================================== */
+
+/* TODO: [P0] 内嵌面板主容器 */
+.paws-puffs-ve-inline-container {
+  /* TODO: flexbox布局，垂直排列 */
+  /* TODO: 设置最小高度、最大高度 */
+  /* TODO: 边框、背景、阴影 */
+  /* TODO: 过渡动画 */
+}
+
+/* ========================================
+   顶部工具栏
+   ======================================== */
+
+/* TODO: [P0] 工具栏容器 */
+.paws-puffs-ve-toolbar {
+  /* TODO: flexbox布局，左右分布 */
+  /* TODO: padding、背景、边框 */
+  /* TODO: 固定高度 */
+}
+
+.paws-puffs-ve-toolbar .toolbar-left,
+.paws-puffs-ve-toolbar .toolbar-right {
+  /* TODO: flexbox布局，水平排列 */
+  /* TODO: 间距控制 */
+}
+
+/* TODO: [P0] 模式切换按钮 */
+.mode-switcher-btn {
+  /* TODO: 按钮样式（padding、背景、边框、圆角） */
+  /* TODO: hover效果 */
+  /* TODO: active状态（高亮） */
+  /* TODO: 过渡动画 */
+}
+
+.mode-switcher-btn.active {
+  /* TODO: 激活状态（特殊背景、边框） */
+}
+
+/* TODO: [P0] 操作按钮（同步、重置、帮助） */
+.action-btn {
+  /* TODO: 按钮样式 */
+  /* TODO: hover效果 */
+  /* TODO: 图标居中 */
+}
+
+/* ========================================
+   内容区域
+   ======================================== */
+
+/* TODO: [P0] 内容容器 */
+.paws-puffs-ve-content {
+  /* TODO: flex-grow: 1（占据剩余空间） */
+  /* TODO: overflow: auto（可滚动） */
+  /* TODO: padding */
+}
+
+/* TODO: [P0] 模式容器（新手/专家） */
+.beginner-mode-container,
+.expert-mode-container {
+  /* TODO: 高度100% */
+  /* TODO: 淡入淡出动画 */
+}
+
+/* ========================================
+   响应式设计
+   ======================================== */
+
+/* TODO: [P1] 窗口宽度 < 1200px */
+@media (max-width: 1200px) {
+  /* TODO: 调整布局（缩小间距、调整字体） */
+}
+
+/* TODO: [P1] 窗口宽度 < 768px */
+@media (max-width: 768px) {
+  /* TODO: 移动端布局（堆叠、隐藏部分元素） */
+}
+
+/* ========================================
+   通用样式
+   ======================================== */
+
+/* TODO: [P0] 空状态提示 */
+.empty-state {
+  /* TODO: 居中显示 */
+  /* TODO: 图标 + 文字样式 */
+  /* TODO: 淡灰色 */
+}
+
+/* TODO: [P0] 加载状态 */
+.loading-state {
+  /* TODO: 加载动画 */
+}
+
+/* TODO: [P1] 错误状态 */
+.error-state {
+  /* TODO: 错误提示样式 */
+}
