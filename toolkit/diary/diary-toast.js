@@ -43,113 +43,179 @@ export function showDiaryToast(message, type = 'success', duration = 3000) {
   const toast = document.createElement('div');
   toast.className = `diary-toast diary-toast-${type}`;
 
-  // 图标映射
+  // 图标映射（iOS SF Symbols 风格）
   const icons = {
     success: 'fa-check-circle',
     warning: 'fa-exclamation-triangle',
-    error: 'fa-times-circle',
+    error: 'fa-xmark-circle',
     info: 'fa-info-circle'
   };
 
-  // 颜色映射
+  // iOS 系统颜色映射
   const colors = {
-    success: '#4caf50',
-    warning: '#ff9800',
-    error: '#ff3b30',
-    info: '#667eea'
+    success: '#34C759',  // iOS Green
+    warning: '#FF9500',  // iOS Orange
+    error: '#FF3B30',    // iOS Red
+    info: '#007AFF'      // iOS Blue
   };
 
-  // 构建HTML（优先显示角色头像）
+  // 背景色映射（更淡的版本）
+  const bgColors = {
+    success: 'rgba(52, 199, 89, 0.1)',
+    warning: 'rgba(255, 149, 0, 0.1)',
+    error: 'rgba(255, 59, 48, 0.1)',
+    info: 'rgba(0, 122, 255, 0.1)'
+  };
+
+  // 构建HTML（优先显示角色头像，无关闭按钮）
   const iconHTML = avatarUrl
     ? `<div class="diary-toast-avatar"><img src="${avatarUrl}" alt="avatar" /></div>`
     : `<div class="diary-toast-icon"><i class="fa-solid ${icons[type]}"></i></div>`;
 
   toast.innerHTML = `
         ${iconHTML}
-        <div class="diary-toast-message">${message}</div>
-        <button class="diary-toast-close">
-            <i class="fa-solid fa-times"></i>
-        </button>
+        <div class="diary-toast-content">
+            <div class="diary-toast-message">${message}</div>
+            <div class="diary-toast-time">Now</div>
+        </div>
     `;
 
-  // 样式
+  // 移动端检测
+  const isMobile = window.innerWidth <= 768;
+
+  // 样式（更iOS）
   Object.assign(toast.style, {
     position: 'fixed',
-    top: '-100px',
-    left: '50%',
-    transform: 'translateX(-50%)',
+    top: '-120px',
+    left: isMobile ? '20px' : '50%',
+    right: isMobile ? '20px' : 'auto',
+    transform: isMobile ? 'none' : 'translateX(-50%)',
     zIndex: '10000',
 
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
+    gap: '10px',
 
-    padding: '12px 20px',
-    minWidth: '300px',
-    maxWidth: '500px',
+    padding: '12px 16px 12px 12px',
+    minWidth: isMobile ? 'auto' : '320px',
+    maxWidth: isMobile ? 'none' : '420px',
+    width: isMobile ? 'calc(100vw - 40px)' : 'auto',
 
-    background: 'rgba(255, 255, 255, 0.95)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
+    background: 'rgba(255, 255, 255, 0.98)',
+    backdropFilter: 'blur(30px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(30px) saturate(180%)',
 
-    borderRadius: '12px',
-    boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
+    borderRadius: '16px',
+    boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06)',
 
-    transition: 'top 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+    transition: 'all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+    cursor: 'pointer',
 
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    fontSize: '14px',
-    fontWeight: '500',
-    color: '#2d3748'
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    fontSize: '15px',
+    fontWeight: '400',
+    color: '#1a1a1a'
   });
 
-  // 图标或头像样式
-  const iconEl = toast.querySelector('.diary-toast-icon i');
-  if (iconEl) {
-    iconEl.style.color = colors[type];
-    iconEl.style.fontSize = '18px';
+  // 内容区样式
+  const contentArea = toast.querySelector('.diary-toast-content');
+  Object.assign(contentArea.style, {
+    flex: '1',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '8px'
+  });
+
+  // 消息样式
+  const messageEl = toast.querySelector('.diary-toast-message');
+  Object.assign(messageEl.style, {
+    flex: '1',
+    lineHeight: '1.4',
+    letterSpacing: '-0.2px'
+  });
+
+  // 时间样式
+  const timeEl = toast.querySelector('.diary-toast-time');
+  Object.assign(timeEl.style, {
+    fontSize: '13px',
+    color: '#8e8e93',
+    fontWeight: '400',
+    flexShrink: '0'
+  });
+
+  // 图标样式
+  const iconContainer = toast.querySelector('.diary-toast-icon');
+  if (iconContainer) {
+    Object.assign(iconContainer.style, {
+      width: '40px',
+      height: '40px',
+      borderRadius: '50%',
+      background: bgColors[type],
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: '0'
+    });
+
+    const iconEl = iconContainer.querySelector('i');
+    if (iconEl) {
+      iconEl.style.color = colors[type];
+      iconEl.style.fontSize = '22px';
+    }
   }
 
-  const avatarEl = toast.querySelector('.diary-toast-avatar img');
-  if (avatarEl) {
-    Object.assign(avatarEl.style, {
-      width: '32px',
-      height: '32px',
+  // 头像样式
+  const avatarContainer = toast.querySelector('.diary-toast-avatar');
+  if (avatarContainer) {
+    Object.assign(avatarContainer.style, {
+      width: '40px',
+      height: '40px',
       borderRadius: '50%',
-      objectFit: 'cover',
-      border: `2px solid ${colors[type]}`
+      overflow: 'hidden',
+      flexShrink: '0'
+    });
+
+    const avatarEl = avatarContainer.querySelector('img');
+    if (avatarEl) {
+      Object.assign(avatarEl.style, {
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover'
+      });
+    }
+  }
+
+  // 悬停效果（PC端）
+  if (!isMobile) {
+    toast.addEventListener('mouseenter', () => {
+      toast.style.transform = 'translateX(-50%) scale(1.02)';
+      toast.style.boxShadow = '0 12px 36px rgba(0, 0, 0, 0.12), 0 3px 10px rgba(0, 0, 0, 0.08)';
+    });
+
+    toast.addEventListener('mouseleave', () => {
+      toast.style.transform = 'translateX(-50%) scale(1)';
+      toast.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06)';
     });
   }
-
-  // 关闭按钮样式
-  const closeBtn = toast.querySelector('.diary-toast-close');
-  Object.assign(closeBtn.style, {
-    background: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-    padding: '4px',
-    color: '#a0aec0',
-    fontSize: '14px',
-    marginLeft: 'auto',
-    transition: 'color 0.2s'
-  });
-
-  // 关闭按钮事件
-  closeBtn.addEventListener('click', () => dismissToast(toast));
-  closeBtn.addEventListener('mouseenter', () => {
-    closeBtn.style.color = '#4a5568';
-  });
-  closeBtn.addEventListener('mouseleave', () => {
-    closeBtn.style.color = '#a0aec0';
-  });
 
   // 添加到页面
   document.body.appendChild(toast);
 
-  // 滑下动画
+  // 滑入动画 + 微弹效果
   requestAnimationFrame(() => {
     setTimeout(() => {
       toast.style.top = '20px';
+
+      // 添加微弹效果（仅PC端）
+      if (!isMobile) {
+        setTimeout(() => {
+          toast.style.transform = 'translateX(-50%) scale(1.02)';
+          setTimeout(() => {
+            toast.style.transform = 'translateX(-50%) scale(1)';
+          }, 150);
+        }, 300);
+      }
     }, 10);
   });
 
@@ -158,12 +224,10 @@ export function showDiaryToast(message, type = 'success', duration = 3000) {
     dismissToast(toast);
   }, duration);
 
-  // 点击通知体关闭
-  toast.addEventListener('click', (e) => {
-    if (e.target !== closeBtn && !closeBtn.contains(e.target)) {
-      clearTimeout(autoHideTimer);
-      dismissToast(toast);
-    }
+  // 点击关闭
+  toast.addEventListener('click', () => {
+    clearTimeout(autoHideTimer);
+    dismissToast(toast);
   });
 
   logger.debug('[DiaryToast] 显示通知:', message);
@@ -172,13 +236,23 @@ export function showDiaryToast(message, type = 'success', duration = 3000) {
 /**
  * 关闭通知
  * 
+ * @description
+ * 播放滑出动画后移除通知元素
+ * 
  * @param {HTMLElement} toast - 通知元素
  */
 function dismissToast(toast) {
-  toast.style.top = '-100px';
+  const isMobile = window.innerWidth <= 768;
+
+  if (!isMobile) {
+    toast.style.transform = 'translateX(-50%) scale(0.95)';
+  }
+  toast.style.opacity = '0';
+  toast.style.top = '-120px';
+
   setTimeout(() => {
     toast.remove();
-  }, 400);
+  }, 500);
 }
 
 /**
@@ -215,6 +289,286 @@ export function showErrorToast(message) {
  */
 export function showInfoToast(message) {
   showDiaryToast(message, 'info');
+}
+
+/**
+ * 显示日记回复通知（iOS锁屏风格）
+ * 
+ * @description
+ * 显示更丰富的通知，包含头像、名字、内容预览
+ * 
+ * @param {Object} options - 通知选项
+ * @param {string} options.characterName - 角色名称
+ * @param {string} [options.title] - 标题（默认"回复了你的日记"）
+ * @param {string} [options.content] - 回复内容（自动截取前两句）
+ * @param {string} [options.status] - 状态：'loading' | 'success'
+ * @param {function} [options.onClick] - 点击回调
+ * @param {number} [options.duration] - 显示时长（默认4000ms）
+ * 
+ * @example
+ * showDiaryReplyNotification({
+ *   characterName: 'Seraphina',
+ *   content: '听起来今天过得很充实呢！我也喜欢在阳光明媚的日子里散步。',
+ *   onClick: () => openDiaryPanel()
+ * });
+ */
+export function showDiaryReplyNotification(options = {}) {
+  const {
+    characterName = '未知',
+    title = '回复了你的日记',
+    content = '',
+    status = 'success',
+    onClick = null,
+    duration = 4000
+  } = options;
+
+  // 获取角色头像
+  const ctx = getContext();
+  const character = ctx.characters?.[ctx.characterId];
+  const avatarUrl = character ? getThumbnailUrl('avatar', character.avatar) : null;
+
+  // 处理内容预览（最多两句）
+  let preview = '';
+  if (content) {
+    const sentences = content.match(/[^。！？.!?]+[。！？.!?]+/g) || [content];
+    preview = sentences.slice(0, 2).join('');
+    if (sentences.length > 2) {
+      preview += '...';
+    }
+  }
+
+  // 创建通知元素
+  const notification = document.createElement('div');
+  notification.className = 'diary-reply-notification';
+
+  // 加载状态
+  if (status === 'loading') {
+    notification.innerHTML = `
+      <div class="diary-notification-avatar">
+        ${avatarUrl ? `<img src="${avatarUrl}" alt="${characterName}" />` : '<i class="fa-solid fa-book"></i>'}
+      </div>
+      <div class="diary-notification-content">
+        <div class="diary-notification-header">
+          <span class="diary-notification-name">日记系统</span>
+          <span class="diary-notification-time">Now</span>
+        </div>
+        <div class="diary-notification-title">日记推送中...</div>
+        <div class="diary-notification-preview">
+          <i class="fa-solid fa-spinner fa-spin"></i> 正在等待回复
+        </div>
+      </div>
+    `;
+  } else {
+    // 成功状态
+    notification.innerHTML = `
+      <div class="diary-notification-avatar">
+        ${avatarUrl ? `<img src="${avatarUrl}" alt="${characterName}" />` : '<i class="fa-solid fa-user-circle"></i>'}
+      </div>
+      <div class="diary-notification-content">
+        <div class="diary-notification-header">
+          <span class="diary-notification-name">${characterName}</span>
+          <span class="diary-notification-time">Now</span>
+        </div>
+        <div class="diary-notification-title">${title}</div>
+        ${preview ? `<div class="diary-notification-preview">${preview}</div>` : ''}
+      </div>
+    `;
+  }
+
+  // 移动端检测
+  const isMobile = window.innerWidth <= 768;
+
+  // 样式（内联以确保生效）
+  Object.assign(notification.style, {
+    position: 'fixed',
+    top: '-150px',
+    left: isMobile ? '20px' : '50%',
+    right: isMobile ? '20px' : 'auto',
+    transform: isMobile ? 'none' : 'translateX(-50%)',
+    zIndex: '10001',
+
+    display: 'flex',
+    gap: '10px',
+    padding: '12px 16px 12px 12px',
+    width: isMobile ? 'calc(100vw - 40px)' : '380px',
+    maxWidth: isMobile ? 'none' : '90vw',
+
+    background: 'rgba(255, 255, 255, 0.98)',
+    backdropFilter: 'blur(30px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(30px) saturate(180%)',
+
+    borderRadius: '16px',
+    boxShadow: '0 10px 40px rgba(0, 0, 0, 0.12), 0 2px 10px rgba(0, 0, 0, 0.08)',
+
+    transition: 'all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+    cursor: onClick ? 'pointer' : 'default',
+
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+  });
+
+  // 头像样式
+  const avatarContainer = notification.querySelector('.diary-notification-avatar');
+  Object.assign(avatarContainer.style, {
+    flexShrink: '0',
+    width: '52px',
+    height: '52px',
+    borderRadius: '50%',
+    overflow: 'hidden',
+    background: '#f0f0f0',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  });
+
+  const avatarImg = avatarContainer.querySelector('img');
+  if (avatarImg) {
+    Object.assign(avatarImg.style, {
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover'
+    });
+  }
+
+  const avatarIcon = avatarContainer.querySelector('i');
+  if (avatarIcon) {
+    Object.assign(avatarIcon.style, {
+      fontSize: '24px',
+      color: '#999'
+    });
+  }
+
+  // 内容区样式
+  const contentArea = notification.querySelector('.diary-notification-content');
+  Object.assign(contentArea.style, {
+    flex: '1',
+    minWidth: '0'
+  });
+
+  // 头部样式
+  const header = notification.querySelector('.diary-notification-header');
+  Object.assign(header.style, {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '2px'
+  });
+
+  const nameEl = notification.querySelector('.diary-notification-name');
+  Object.assign(nameEl.style, {
+    fontSize: '15px',
+    fontWeight: '600',
+    color: '#1a1a1a',
+    letterSpacing: '-0.2px'
+  });
+
+  const timeEl = notification.querySelector('.diary-notification-time');
+  Object.assign(timeEl.style, {
+    fontSize: '13px',
+    color: '#8e8e93',
+    fontWeight: '400'
+  });
+
+  // 标题样式
+  const titleEl = notification.querySelector('.diary-notification-title');
+  Object.assign(titleEl.style, {
+    fontSize: '14px',
+    color: '#3a3a3c',
+    marginBottom: preview ? '4px' : '0',
+    fontWeight: '400'
+  });
+
+  // 预览样式
+  const previewEl = notification.querySelector('.diary-notification-preview');
+  if (previewEl) {
+    Object.assign(previewEl.style, {
+      fontSize: '13px',
+      color: '#6e6e73',
+      lineHeight: '1.4',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      display: '-webkit-box',
+      WebkitLineClamp: '2',
+      WebkitBoxOrient: 'vertical'
+    });
+  }
+
+  // 添加到页面
+  document.body.appendChild(notification);
+
+  // 滑入动画
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      notification.style.top = '20px';
+
+      // 添加微弹效果（仅PC端）
+      if (!isMobile) {
+        setTimeout(() => {
+          notification.style.transform = 'translateX(-50%) scale(1.02)';
+          setTimeout(() => {
+            notification.style.transform = 'translateX(-50%) scale(1)';
+          }, 150);
+        }, 300);
+      }
+    }, 10);
+  });
+
+  // 点击事件
+  if (onClick) {
+    notification.addEventListener('click', () => {
+      onClick();
+      dismissNotification(notification);
+    });
+
+    // 悬停效果（仅PC端）
+    if (!isMobile) {
+      notification.addEventListener('mouseenter', () => {
+        notification.style.transform = 'translateX(-50%) scale(1.02)';
+        notification.style.boxShadow = '0 12px 48px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1)';
+      });
+
+      notification.addEventListener('mouseleave', () => {
+        notification.style.transform = 'translateX(-50%) scale(1)';
+        notification.style.boxShadow = '0 10px 40px rgba(0, 0, 0, 0.12), 0 2px 10px rgba(0, 0, 0, 0.08)';
+      });
+    }
+  }
+
+  // 自动消失
+  const autoHideTimer = setTimeout(() => {
+    dismissNotification(notification);
+  }, duration);
+
+  // 返回控制对象（用于手动更新或关闭）
+  return {
+    update: (newOptions) => {
+      clearTimeout(autoHideTimer);
+      notification.remove();
+      return showDiaryReplyNotification({ ...options, ...newOptions });
+    },
+    dismiss: () => {
+      clearTimeout(autoHideTimer);
+      dismissNotification(notification);
+    }
+  };
+}
+
+/**
+ * 关闭日记回复通知
+ * 
+ * @param {HTMLElement} notification - 通知元素
+ */
+function dismissNotification(notification) {
+  const isMobile = window.innerWidth <= 768;
+
+  if (!isMobile) {
+    notification.style.transform = 'translateX(-50%) scale(0.95)';
+  }
+  notification.style.opacity = '0';
+  notification.style.top = '-150px';
+
+  setTimeout(() => {
+    notification.remove();
+  }, 500);
 }
 
 

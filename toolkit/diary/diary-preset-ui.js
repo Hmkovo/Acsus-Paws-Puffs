@@ -478,6 +478,10 @@ export class DiaryPresetUI {
 
   /**
    * 获取固定条目前的最大 order
+   * 
+   * @returns {number} 最大order值（默认0）
+   * @description
+   * 查找所有order<500的预设中的最大值，用于计算新预设的排序位置
    */
   getMaxOrderBefore() {
     const presets = this.dataManager.presets.filter(p => p.order < 500);
@@ -486,6 +490,10 @@ export class DiaryPresetUI {
 
   /**
    * 获取固定条目后的最大 order
+   * 
+   * @returns {number} 最大order值（默认500）
+   * @description
+   * 查找所有order>500的预设中的最大值，用于计算新预设的排序位置
    */
   getMaxOrderAfter() {
     const presets = this.dataManager.presets.filter(p => p.order > 500);
@@ -633,10 +641,10 @@ export class DiaryPresetUI {
   }
 
   /**
-   * 获取角色标签
+   * 获取角色类型的中文标签
    * 
-   * @param {string} role - 角色类型
-   * @returns {string}
+   * @param {string} role - 角色类型（system/user/assistant）
+   * @returns {string} 中文标签（系统/用户/助手）
    */
   getRoleLabel(role) {
     const labels = {
@@ -650,8 +658,10 @@ export class DiaryPresetUI {
   /**
    * HTML转义
    * 
-   * @param {string} text - 文本
-   * @returns {string}
+   * @param {string} text - 需要转义的文本
+   * @returns {string} 转义后的安全HTML
+   * @description
+   * 防止XSS攻击，将特殊字符转义（如 < > & " '）
    */
   escapeHtml(text) {
     const div = document.createElement('div');

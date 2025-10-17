@@ -447,7 +447,7 @@ export class DiaryDataManager {
   // ========================================
 
   /**
-   * 获取日记设置
+   * 获取日记设置（完整版）
    * 
    * @returns {Object} 设置对象
    * 
@@ -457,11 +457,29 @@ export class DiaryDataManager {
    * @property {boolean} includeCharScenario - 包含角色场景
    * @property {boolean} includeWorldInfo - 包含世界书
    * @property {boolean} includeRecentChat - 包含最近对话
-   * @property {number} recentChatCount - 最近对话数量
+   * @property {number} recentChatCount - 最近对话数量（1-20）
    * @property {boolean} includeHistoryDiaries - 包含历史日记
-   * @property {number} historyDiaryCount - 历史日记数量
+   * @property {number} historyDiaryCount - 历史日记数量（1-10）
    * @property {boolean} allowCharacterComment - 允许角色评论（默认true）
    * @property {boolean} allowPasserbyComments - 允许路人评论
+   * @property {string} passerbyPersonality - 路人性格类型（15种可选）
+   * @property {number} passerbyCommentMin - 路人评论最小数量
+   * @property {number} passerbyCommentMax - 路人评论最大数量
+   * @property {boolean} skipDeleteConfirm - 跳过删除确认
+   * @property {Object} visualSettings - 视觉设置对象（卡片透明度、主题色、文本色、背景等）
+   * @property {string} visualSettings.cardOpacity - 卡片透明度（0-1）
+   * @property {string} visualSettings.themeColor - 主题色
+   * @property {string} visualSettings.textColor - 文本颜色
+   * @property {string} visualSettings.panelBgColor - 面板背景色
+   * @property {number} visualSettings.panelBgOpacity - 面板背景透明度（0-1）
+   * @property {Object} visualSettings.authorColors - 评论者颜色配置
+   * @property {Object} visualSettings.background - 背景图配置
+   * @property {Object} visualSettings.commentBox - 评论框样式配置
+   * @property {Object} apiConfig - API配置对象（来源、流式、自定义配置列表）
+   * @property {string} apiConfig.source - API来源（'default' | 'custom'）
+   * @property {boolean} apiConfig.stream - 是否流式生成
+   * @property {string|null} apiConfig.currentConfigId - 当前使用的配置ID
+   * @property {Array<Object>} apiConfig.customConfigs - 自定义配置列表
    */
   getSettings() {
     const settings = extension_settings[EXT_ID]?.[MODULE_NAME]?.settings || {};
@@ -494,6 +512,9 @@ export class DiaryDataManager {
       passerbyCommentMin: settings.passerbyCommentMin || 3,               // 路人评论最小数量
       passerbyCommentMax: settings.passerbyCommentMax || 5,               // 路人评论最大数量
 
+      // 交互设置
+      skipDeleteConfirm: settings.skipDeleteConfirm || false,             // 跳过删除确认（默认false）
+
       // 视觉设置
       visualSettings: settings.visualSettings || {
         cardOpacity: 1.0,                         // 卡片透明度（0-1）
@@ -501,6 +522,8 @@ export class DiaryDataManager {
         textColor: '',                            // 日记文本颜色（空=使用默认）
         panelBgColor: '',                         // 面板背景色（空=使用默认）
         panelBgOpacity: 1.0,                      // 面板背景透明度（0-1）
+        entryBlockBgColor: '',                    // 内容块背景色（空=使用默认）
+        entryBlockOpacity: 1.0,                   // 内容块透明度（0-1）
         authorColors: {
           user: '',                               // 用户颜色（空=使用默认）
           ai: '',                                 // AI颜色（空=使用默认）
@@ -550,6 +573,7 @@ export class DiaryDataManager {
    * @param {string} [newSettings.passerbyPersonality] - 路人性格类型
    * @param {number} [newSettings.passerbyCommentMin] - 路人评论最小数量
    * @param {number} [newSettings.passerbyCommentMax] - 路人评论最大数量
+   * @param {boolean} [newSettings.skipDeleteConfirm] - 跳过删除确认
    */
   updateSettings(newSettings) {
     // 确保设置对象存在

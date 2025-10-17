@@ -160,6 +160,14 @@ export class DiaryVisualSettings {
       this.applyCardBackground(settings.background);
     }
 
+    // 应用内容块样式
+    if (settings.entryBlockBgColor) {
+      this.applyEntryBlockStyles({
+        backgroundColor: settings.entryBlockBgColor,
+        opacity: settings.entryBlockOpacity
+      });
+    }
+
     // 应用评论框样式
     this.applyCommentBoxStyles(settings.commentBox);
 
@@ -286,6 +294,33 @@ export class DiaryVisualSettings {
                         </div>
                         <div class="diary-visual-hint">
                             调整顶部栏、所有展开面板、按钮、卡片的背景色
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 内容块背景色 -->
+                <div class="diary-visual-group">
+                    <div class="diary-visual-group-header">
+                        <span class="fa-solid fa-square"></span>
+                        内容块背景色
+                    </div>
+                    <div class="diary-visual-group-content">
+                        <div class="diary-visual-color-item">
+                            <label>背景色</label>
+                            <input type="color" id="diaryEntryBlockBgColor" 
+                                   value="${settings.entryBlockBgColor || '#2A2A2A'}">
+                            <button class="diary-visual-reset-btn" data-setting="entryBlockBgColor">重置</button>
+                        </div>
+                        <div class="diary-visual-slider-wrapper">
+                            <label>透明度</label>
+                            <input type="range" id="diaryEntryBlockOpacity" 
+                                   min="0" max="100" step="1" 
+                                   value="${settings.entryBlockOpacity * 100}"
+                                   class="diary-visual-slider">
+                            <span class="diary-visual-slider-value">${Math.round(settings.entryBlockOpacity * 100)}%</span>
+                        </div>
+                        <div class="diary-visual-hint">
+                            调整日记内容块的背景色，独立于面板背景
                         </div>
                     </div>
                 </div>
@@ -480,6 +515,21 @@ export class DiaryVisualSettings {
       });
     }
 
+    // 内容块背景色
+    const entryBlockBgColor = visualPanel.querySelector('#diaryEntryBlockBgColor');
+    if (entryBlockBgColor) {
+      entryBlockBgColor.addEventListener('input', (e) => this.updateEntryBlockBgColor(e.target.value));
+    }
+
+    // 内容块透明度
+    const entryBlockOpacity = visualPanel.querySelector('#diaryEntryBlockOpacity');
+    if (entryBlockOpacity) {
+      entryBlockOpacity.addEventListener('input', (e) => {
+        const value = e.target.value / 100;
+        this.updateEntryBlockOpacity(value);
+      });
+    }
+
     // 评论者颜色
     const userColor = visualPanel.querySelector('#diaryColorUser');
     const aiColor = visualPanel.querySelector('#diaryColorAI');
@@ -617,26 +667,83 @@ export class DiaryVisualSettings {
   // ========================================
 
   /**
+   * 通用的设置更新方法（消除代码重复）
+   * 
+   * @param {Object} options - 更新选项
+   * @param {string} options.key - 设置键名（支持嵌套，如 'background.enabled'）
+   * @param {*} options.value - 设置值
+   * @param {Function} [options.applyMethod] - 应用设置的方法
+   * @param {Array} [options.applyArgs] - 应用方法的参数
+   * @param {string} [options.sliderId] - 滑块ID（用于更新显示值）
+   * @param {string} [options.logMessage] - 日志消息
+   * @param {Function} [options.afterUpdate] - 更新后的回调
+   * 
+   * @description
+   * 统一处理所有视觉设置的更新流程：
+   * 1. 获取visualSettings
+   * 2. 设置值（支持嵌套路径）
+   * 3. 保存到dataManager
+   * 4. 调用apply方法（如果提供）
+   * 5. 更新滑块显示（如果提供）
+   * 6. 记录日志
+   */
+  updateSetting(options) {
+    const { key, value, applyMethod, applyArgs = [], sliderId, logMessage, afterUpdate } = options;
+
+    const visualSettings = this.ensureVisualSettings();
+
+    // 支持嵌套键（如 'background.enabled'）
+    const keys = key.split('.');
+    let target = visualSettings;
+    for (let i = 0; i < keys.length - 1; i++) {
+      if (!target[keys[i]]) {
+        target[keys[i]] = {};
+      }
+      target = target[keys[i]];
+    }
+    target[keys[keys.length - 1]] = value;
+
+    // 保存设置
+    this.dataManager.updateSettings({ visualSettings: visualSettings });
+
+    // 应用设置
+    if (applyMethod) {
+      applyMethod.apply(this, applyArgs);
+    }
+
+    // 更新滑块显示值
+    if (sliderId) {
+      const valueSpan = this.panelElement.querySelector(`#${sliderId} + .diary-visual-slider-value`);
+      if (valueSpan) {
+        valueSpan.textContent = `${Math.round(value * 100)}%`;
+      }
+    }
+
+    // 执行回调
+    if (afterUpdate) {
+      afterUpdate.call(this);
+    }
+
+    // 记录日志
+    if (logMessage) {
+      logger.debug(logMessage, value);
+    }
+  }
+
+  /**
    * 更新卡片透明度
    * 
    * @param {number} opacity - 透明度（0-1）
    */
   updateCardOpacity(opacity) {
-    const visualSettings = this.ensureVisualSettings();
-    visualSettings.cardOpacity = opacity;
-
-    // 使用 updateSettings 保存（会自动调用 saveSettingsDebounced）
-    this.dataManager.updateSettings({ visualSettings: visualSettings });
-
-    this.applyCardOpacity(opacity);
-
-    // 更新滑块显示
-    const valueSpan = this.panelElement.querySelector('#diaryCardOpacity + .diary-visual-slider-value');
-    if (valueSpan) {
-      valueSpan.textContent = `${Math.round(opacity * 100)}%`;
-    }
-
-    logger.debug('[DiaryVisualSettings.updateCardOpacity] 卡片透明度已更新:', opacity);
+    this.updateSetting({
+      key: 'cardOpacity',
+      value: opacity,
+      applyMethod: this.applyCardOpacity,
+      applyArgs: [opacity],
+      sliderId: 'diaryCardOpacity',
+      logMessage: '[DiaryVisualSettings.updateCardOpacity] 卡片透明度已更新:'
+    });
   }
 
   /**
@@ -645,15 +752,13 @@ export class DiaryVisualSettings {
    * @param {string} color - 颜色值
    */
   updateThemeColor(color) {
-    const visualSettings = this.ensureVisualSettings();
-    visualSettings.themeColor = color;
-
-    // 使用 updateSettings 保存
-    this.dataManager.updateSettings({ visualSettings: visualSettings });
-
-    this.applyThemeColor(color);
-
-    logger.debug('[DiaryVisualSettings.updateThemeColor] 主题色已更新:', color);
+    this.updateSetting({
+      key: 'themeColor',
+      value: color,
+      applyMethod: this.applyThemeColor,
+      applyArgs: [color],
+      logMessage: '[DiaryVisualSettings.updateThemeColor] 主题色已更新:'
+    });
   }
 
   /**
@@ -662,15 +767,13 @@ export class DiaryVisualSettings {
    * @param {string} color - 颜色值
    */
   updateTextColor(color) {
-    const visualSettings = this.ensureVisualSettings();
-    visualSettings.textColor = color;
-
-    // 使用 updateSettings 保存
-    this.dataManager.updateSettings({ visualSettings: visualSettings });
-
-    this.applyTextColor(color);
-
-    logger.debug('[DiaryVisualSettings.updateTextColor] 文本颜色已更新:', color);
+    this.updateSetting({
+      key: 'textColor',
+      value: color,
+      applyMethod: this.applyTextColor,
+      applyArgs: [color],
+      logMessage: '[DiaryVisualSettings.updateTextColor] 文本颜色已更新:'
+    });
   }
 
   /**
@@ -679,15 +782,13 @@ export class DiaryVisualSettings {
    * @param {string} color - 颜色值
    */
   updatePanelBgColor(color) {
-    const visualSettings = this.ensureVisualSettings();
-    visualSettings.panelBgColor = color;
-
-    // 使用 updateSettings 保存
-    this.dataManager.updateSettings({ visualSettings: visualSettings });
-
-    this.applyPanelBgColor(color);
-
-    logger.debug('[DiaryVisualSettings.updatePanelBgColor] 面板背景色已更新:', color);
+    this.updateSetting({
+      key: 'panelBgColor',
+      value: color,
+      applyMethod: this.applyPanelBgColor,
+      applyArgs: [color],
+      logMessage: '[DiaryVisualSettings.updatePanelBgColor] 面板背景色已更新:'
+    });
   }
 
   /**
@@ -696,25 +797,19 @@ export class DiaryVisualSettings {
    * @param {number} opacity - 透明度（0-1）
    */
   updatePanelBgOpacity(opacity) {
-    const visualSettings = this.ensureVisualSettings();
-    visualSettings.panelBgOpacity = opacity;
-
-    // 使用 updateSettings 保存
-    this.dataManager.updateSettings({ visualSettings: visualSettings });
-
-    // 重新应用背景色（使用新透明度）
-    const settings = this.dataManager.getSettings();
-    if (settings.visualSettings.panelBgColor) {
-      this.applyPanelBgColor(settings.visualSettings.panelBgColor, opacity);
-    }
-
-    // 更新滑块显示
-    const valueSpan = this.panelElement.querySelector('#diaryPanelBgOpacity + .diary-visual-slider-value');
-    if (valueSpan) {
-      valueSpan.textContent = `${Math.round(opacity * 100)}%`;
-    }
-
-    logger.debug('[DiaryVisualSettings.updatePanelBgOpacity] 面板背景透明度已更新:', opacity);
+    this.updateSetting({
+      key: 'panelBgOpacity',
+      value: opacity,
+      applyMethod: () => {
+        // 重新应用背景色（使用新透明度）
+        const settings = this.dataManager.getSettings();
+        if (settings.visualSettings.panelBgColor) {
+          this.applyPanelBgColor(settings.visualSettings.panelBgColor, opacity);
+        }
+      },
+      sliderId: 'diaryPanelBgOpacity',
+      logMessage: '[DiaryVisualSettings.updatePanelBgOpacity] 面板背景透明度已更新:'
+    });
   }
 
   /**
@@ -724,16 +819,56 @@ export class DiaryVisualSettings {
    * @param {string} color - 颜色值
    */
   updateAuthorColor(type, color) {
-    const visualSettings = this.ensureVisualSettings();
-    visualSettings.authorColors[type] = color;
+    this.updateSetting({
+      key: `authorColors.${type}`,
+      value: color,
+      applyMethod: () => {
+        const settings = this.dataManager.getSettings();
+        this.applyAuthorColors(settings.visualSettings.authorColors);
+      },
+      logMessage: `[DiaryVisualSettings.updateAuthorColor] ${type}颜色已更新:`
+    });
+  }
 
-    // 使用 updateSettings 保存
-    this.dataManager.updateSettings({ visualSettings: visualSettings });
+  /**
+   * 更新内容块背景色
+   * 
+   * @param {string} color - 颜色值
+   */
+  updateEntryBlockBgColor(color) {
+    this.updateSetting({
+      key: 'entryBlockBgColor',
+      value: color,
+      applyMethod: () => {
+        const settings = this.dataManager.getSettings();
+        this.applyEntryBlockStyles({
+          backgroundColor: color,
+          opacity: settings.visualSettings.entryBlockOpacity
+        });
+      },
+      logMessage: '[DiaryVisualSettings.updateEntryBlockBgColor] 内容块背景色已更新:'
+    });
+  }
 
-    const settings = this.dataManager.getSettings();
-    this.applyAuthorColors(settings.visualSettings.authorColors);
-
-    logger.debug(`[DiaryVisualSettings.updateAuthorColor] ${type}颜色已更新:`, color);
+  /**
+   * 更新内容块透明度
+   * 
+   * @param {number} opacity - 透明度（0-1）
+   */
+  updateEntryBlockOpacity(opacity) {
+    this.updateSetting({
+      key: 'entryBlockOpacity',
+      value: opacity,
+      applyMethod: () => {
+        const settings = this.dataManager.getSettings();
+        this.applyEntryBlockStyles({
+          backgroundColor: settings.visualSettings.entryBlockBgColor,
+          opacity: opacity
+        });
+      },
+      sliderId: 'diaryEntryBlockOpacity',
+      logMessage: '[DiaryVisualSettings.updateEntryBlockOpacity] 内容块透明度已更新:'
+    });
   }
 
   /**
@@ -742,21 +877,21 @@ export class DiaryVisualSettings {
    * @param {boolean} enabled - 是否启用
    */
   toggleBackground(enabled) {
-    const visualSettings = this.ensureVisualSettings();
-    visualSettings.background.enabled = enabled;
-
-    // 使用 updateSettings 保存
-    this.dataManager.updateSettings({ visualSettings: visualSettings });
-
-    if (enabled) {
-      this.applyCardBackground(visualSettings.background);
-      showInfoToast('背景图已启用');
-    } else {
-      this.removeCardBackground();
-      showInfoToast('背景图已禁用');
-    }
-
-    logger.info('[DiaryVisualSettings.toggleBackground] 背景启用状态:', enabled);
+    this.updateSetting({
+      key: 'background.enabled',
+      value: enabled,
+      afterUpdate: () => {
+        const visualSettings = this.ensureVisualSettings();
+        if (enabled) {
+          this.applyCardBackground(visualSettings.background);
+          showInfoToast('背景图已启用');
+        } else {
+          this.removeCardBackground();
+          showInfoToast('背景图已禁用');
+        }
+      },
+      logMessage: '[DiaryVisualSettings.toggleBackground] 背景启用状态:'
+    });
   }
 
   /**
@@ -765,17 +900,17 @@ export class DiaryVisualSettings {
    * @param {string} url - 图片URL
    */
   updateBackgroundUrl(url) {
-    const visualSettings = this.ensureVisualSettings();
-    visualSettings.background.currentImageUrl = url;
-
-    // 使用 updateSettings 保存
-    this.dataManager.updateSettings({ visualSettings: visualSettings });
-
-    if (visualSettings.background.enabled && url) {
-      this.applyCardBackground(visualSettings.background);
-    }
-
-    logger.debug('[DiaryVisualSettings.updateBackgroundUrl] 背景URL已更新:', url);
+    this.updateSetting({
+      key: 'background.currentImageUrl',
+      value: url,
+      afterUpdate: () => {
+        const visualSettings = this.ensureVisualSettings();
+        if (visualSettings.background.enabled && url) {
+          this.applyCardBackground(visualSettings.background);
+        }
+      },
+      logMessage: '[DiaryVisualSettings.updateBackgroundUrl] 背景URL已更新:'
+    });
   }
 
   /**
@@ -885,17 +1020,17 @@ export class DiaryVisualSettings {
    * @param {boolean} enabled - 是否启用
    */
   toggleMask(enabled) {
-    const visualSettings = this.ensureVisualSettings();
-    visualSettings.background.maskEnabled = enabled;
-
-    // 使用 updateSettings 保存
-    this.dataManager.updateSettings({ visualSettings: visualSettings });
-
-    if (visualSettings.background.enabled) {
-      this.applyCardBackground(visualSettings.background);
-    }
-
-    logger.debug('[DiaryVisualSettings.toggleMask] 遮罩启用状态:', enabled);
+    this.updateSetting({
+      key: 'background.maskEnabled',
+      value: enabled,
+      afterUpdate: () => {
+        const visualSettings = this.ensureVisualSettings();
+        if (visualSettings.background.enabled) {
+          this.applyCardBackground(visualSettings.background);
+        }
+      },
+      logMessage: '[DiaryVisualSettings.toggleMask] 遮罩启用状态:'
+    });
   }
 
   /**
@@ -904,17 +1039,17 @@ export class DiaryVisualSettings {
    * @param {string} color - 颜色值
    */
   updateMaskColor(color) {
-    const visualSettings = this.ensureVisualSettings();
-    visualSettings.background.maskColor = color;
-
-    // 使用 updateSettings 保存
-    this.dataManager.updateSettings({ visualSettings: visualSettings });
-
-    if (visualSettings.background.enabled && visualSettings.background.maskEnabled) {
-      this.applyCardBackground(visualSettings.background);
-    }
-
-    logger.debug('[DiaryVisualSettings.updateMaskColor] 遮罩颜色已更新:', color);
+    this.updateSetting({
+      key: 'background.maskColor',
+      value: color,
+      afterUpdate: () => {
+        const visualSettings = this.ensureVisualSettings();
+        if (visualSettings.background.enabled && visualSettings.background.maskEnabled) {
+          this.applyCardBackground(visualSettings.background);
+        }
+      },
+      logMessage: '[DiaryVisualSettings.updateMaskColor] 遮罩颜色已更新:'
+    });
   }
 
   /**
@@ -923,23 +1058,18 @@ export class DiaryVisualSettings {
    * @param {number} opacity - 透明度（0-1）
    */
   updateMaskOpacity(opacity) {
-    const visualSettings = this.ensureVisualSettings();
-    visualSettings.background.maskOpacity = opacity;
-
-    // 使用 updateSettings 保存
-    this.dataManager.updateSettings({ visualSettings: visualSettings });
-
-    if (visualSettings.background.enabled && visualSettings.background.maskEnabled) {
-      this.applyCardBackground(visualSettings.background);
-    }
-
-    // 更新滑块显示
-    const valueSpan = this.panelElement.querySelector('#diaryMaskOpacity + .diary-visual-slider-value');
-    if (valueSpan) {
-      valueSpan.textContent = `${Math.round(opacity * 100)}%`;
-    }
-
-    logger.debug('[DiaryVisualSettings.updateMaskOpacity] 遮罩透明度已更新:', opacity);
+    this.updateSetting({
+      key: 'background.maskOpacity',
+      value: opacity,
+      afterUpdate: () => {
+        const visualSettings = this.ensureVisualSettings();
+        if (visualSettings.background.enabled && visualSettings.background.maskEnabled) {
+          this.applyCardBackground(visualSettings.background);
+        }
+      },
+      sliderId: 'diaryMaskOpacity',
+      logMessage: '[DiaryVisualSettings.updateMaskOpacity] 遮罩透明度已更新:'
+    });
   }
 
   /**
@@ -948,15 +1078,15 @@ export class DiaryVisualSettings {
    * @param {string} color - 颜色值
    */
   updateCommentBoxBg(color) {
-    const visualSettings = this.ensureVisualSettings();
-    visualSettings.commentBox.backgroundColor = color;
-
-    // 使用 updateSettings 保存
-    this.dataManager.updateSettings({ visualSettings: visualSettings });
-
-    this.applyCommentBoxStyles(visualSettings.commentBox);
-
-    logger.debug('[DiaryVisualSettings.updateCommentBoxBg] 评论框背景色已更新:', color);
+    this.updateSetting({
+      key: 'commentBox.backgroundColor',
+      value: color,
+      applyMethod: () => {
+        const visualSettings = this.ensureVisualSettings();
+        this.applyCommentBoxStyles(visualSettings.commentBox);
+      },
+      logMessage: '[DiaryVisualSettings.updateCommentBoxBg] 评论框背景色已更新:'
+    });
   }
 
   /**
@@ -965,21 +1095,16 @@ export class DiaryVisualSettings {
    * @param {number} opacity - 透明度（0-1）
    */
   updateCommentBoxOpacity(opacity) {
-    const visualSettings = this.ensureVisualSettings();
-    visualSettings.commentBox.opacity = opacity;
-
-    // 使用 updateSettings 保存
-    this.dataManager.updateSettings({ visualSettings: visualSettings });
-
-    this.applyCommentBoxStyles(visualSettings.commentBox);
-
-    // 更新滑块显示
-    const valueSpan = this.panelElement.querySelector('#diaryCommentOpacity + .diary-visual-slider-value');
-    if (valueSpan) {
-      valueSpan.textContent = `${Math.round(opacity * 100)}%`;
-    }
-
-    logger.debug('[DiaryVisualSettings.updateCommentBoxOpacity] 评论框透明度已更新:', opacity);
+    this.updateSetting({
+      key: 'commentBox.opacity',
+      value: opacity,
+      applyMethod: () => {
+        const visualSettings = this.ensureVisualSettings();
+        this.applyCommentBoxStyles(visualSettings.commentBox);
+      },
+      sliderId: 'diaryCommentOpacity',
+      logMessage: '[DiaryVisualSettings.updateCommentBoxOpacity] 评论框透明度已更新:'
+    });
   }
 
   /**
@@ -988,15 +1113,15 @@ export class DiaryVisualSettings {
    * @param {string} color - 颜色值
    */
   updateCommentBoxBorder(color) {
-    const visualSettings = this.ensureVisualSettings();
-    visualSettings.commentBox.borderColor = color;
-
-    // 使用 updateSettings 保存
-    this.dataManager.updateSettings({ visualSettings: visualSettings });
-
-    this.applyCommentBoxStyles(visualSettings.commentBox);
-
-    logger.debug('[DiaryVisualSettings.updateCommentBoxBorder] 评论框边框已更新:', color);
+    this.updateSetting({
+      key: 'commentBox.borderColor',
+      value: color,
+      applyMethod: () => {
+        const visualSettings = this.ensureVisualSettings();
+        this.applyCommentBoxStyles(visualSettings.commentBox);
+      },
+      logMessage: '[DiaryVisualSettings.updateCommentBoxBorder] 评论框边框已更新:'
+    });
   }
 
   /**
@@ -1005,15 +1130,15 @@ export class DiaryVisualSettings {
    * @param {string} color - 颜色值
    */
   updateCommentReplyBorder(color) {
-    const visualSettings = this.ensureVisualSettings();
-    visualSettings.commentBox.replyBorderColor = color;
-
-    // 使用 updateSettings 保存
-    this.dataManager.updateSettings({ visualSettings: visualSettings });
-
-    this.applyCommentBoxStyles(visualSettings.commentBox);
-
-    logger.debug('[DiaryVisualSettings.updateCommentReplyBorder] 回复边框已更新:', color);
+    this.updateSetting({
+      key: 'commentBox.replyBorderColor',
+      value: color,
+      applyMethod: () => {
+        const visualSettings = this.ensureVisualSettings();
+        this.applyCommentBoxStyles(visualSettings.commentBox);
+      },
+      logMessage: '[DiaryVisualSettings.updateCommentReplyBorder] 回复边框已更新:'
+    });
   }
 
   // ========================================
@@ -1225,20 +1350,19 @@ export class DiaryVisualSettings {
     }
 
     let css = `
-            .diary-card .diary-content {
-                background-image: url('${bgSettings.currentImageUrl}') !important;
-                background-size: cover !important;
-                background-position: center !important;
-                background-repeat: no-repeat !important;
+            /* 应用背景图，覆盖默认背景色 */
+            .diary-panel .diary-card .diary-content,
+            .diary-panel .diary-card:nth-child(2) .diary-content {
+                background: url('${bgSettings.currentImageUrl}') center/cover no-repeat !important;
+            }
         `;
 
-    // 如果启用遮罩
+    // 如果启用遮罩，添加半透明遮罩层
     if (bgSettings.maskEnabled) {
       const maskRgba = this.hexToRgba(bgSettings.maskColor, bgSettings.maskOpacity);
       css += `
-                position: relative !important;
-            }
-            .diary-card .diary-content::before {
+            .diary-panel .diary-card .diary-content::after,
+            .diary-panel .diary-card:nth-child(2) .diary-content::after {
                 content: '' !important;
                 position: absolute !important;
                 top: 0 !important;
@@ -1247,11 +1371,9 @@ export class DiaryVisualSettings {
                 bottom: 0 !important;
                 background: ${maskRgba} !important;
                 pointer-events: none !important;
-                z-index: 0 !important;
+                z-index: 1 !important;
             }
             `;
-    } else {
-      css += `}\n`;
     }
 
     style.textContent = css;
@@ -1270,6 +1392,37 @@ export class DiaryVisualSettings {
     }
 
     logger.debug('[DiaryVisualSettings.removeCardBackground] 卡片背景已移除');
+  }
+
+  /**
+   * 应用内容块样式
+   * 
+   * @param {Object} styles - 样式配置对象
+   * @param {string} styles.backgroundColor - 背景颜色
+   * @param {number} styles.opacity - 透明度（0-1）
+   */
+  applyEntryBlockStyles(styles) {
+    const styleId = 'diary-visual-entry-block-style';
+    let style = document.getElementById(styleId);
+
+    if (!style) {
+      style = document.createElement('style');
+      style.id = styleId;
+      document.head.appendChild(style);
+    }
+
+    let css = '';
+
+    if (styles.backgroundColor) {
+      const bgRgba = this.hexToRgba(styles.backgroundColor, styles.opacity);
+      css += `.diary-panel .diary-entry { background: ${bgRgba} !important; }\n`;
+    } else if (styles.opacity !== 1.0) {
+      css += `.diary-panel .diary-entry { opacity: ${styles.opacity} !important; }\n`;
+    }
+
+    style.textContent = css;
+
+    logger.debug('[DiaryVisualSettings.applyEntryBlockStyles] 内容块样式已应用');
   }
 
   /**

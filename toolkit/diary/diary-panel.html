@@ -142,6 +142,17 @@
 
       <hr style="margin: 10px 0; border-top: 1px solid var(--SmartThemeBorderColor); opacity: 0.3;">
 
+      <!-- 标题：交互设置 -->
+      <div class="diary-setting-group-title">🎯 交互设置：</div>
+
+      <!-- 删除评论时是否询问 -->
+      <label class="diary-setting-item diary-setting-checkbox">
+        <input type="checkbox" id="diarySkipDeleteConfirm" />
+        <span>删除评论时不再询问（直接删除）</span>
+      </label>
+
+      <hr style="margin: 10px 0; border-top: 1px solid var(--SmartThemeBorderColor); opacity: 0.3;">
+
       <!-- 标题：API 设置 -->
       <div class="diary-setting-group-title">🔌 API 设置：</div>
 
@@ -358,8 +369,8 @@
 
 示例格式：
 [评论]
-鬼面：今天天气不错呢~
-@路人A：确实很舒服！
+角色名评论了20251017_123456_789：今天天气不错呢~
+路人A评论了20251017_123456_790：确实很舒服！
 [/评论]</textarea>
       <div class="diary-ai-preview-actions">
         <button class="diary-ai-preview-action-btn" id="diaryAiPreviewEdit" title="编辑">
@@ -394,7 +405,6 @@
       <div class="diary-header">
         <div class="diary-day"></div>
         <div class="diary-date"></div>
-        <div class="diary-author-badge"></div>
       </div>
 
       <!-- 标题 -->

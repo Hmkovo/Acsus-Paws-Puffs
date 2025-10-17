@@ -601,18 +601,6 @@
   padding: 20px;
 }
 
-/* 毛玻璃光晕效果 */
-.diary-content::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  right: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, var(--white20a) 0%, transparent 70%);
-  pointer-events: none;
-}
-
 /* 卡片顶部按钮组 */
 .diary-card-top-buttons {
   position: absolute;
@@ -912,6 +900,8 @@
   font-size: calc(var(--mainFontSize) * 0.9);
   color: var(--SmartThemeBodyColor);
   line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 .diary-card:nth-child(2) .entry-content {
@@ -980,6 +970,8 @@
   border-radius: 10px;
   /* 圆角减小 */
   border: 1px solid var(--SmartThemeBorderColor);
+  position: relative;
+  /* 为绝对定位的按钮提供定位上下文 */
 }
 
 .comment-header {
@@ -1026,22 +1018,70 @@
 
 .comment-actions {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   justify-content: flex-end;
   /* 按钮靠右对齐 */
+
+  /* 默认隐藏 */
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s;
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  z-index: 10;
+}
+
+/* PC端悬停显示 - 只显示当前评论的按钮，不影响嵌套子评论 */
+@media (min-width: 769px) {
+  .comment-item:hover>.comment-actions {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* 手机端/通用：点击显示 - 使用直接子选择器，避免影响嵌套评论 */
+.comment-item.show-actions>.comment-actions {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 手机端自动隐藏倒计时指示器 */
+@media (max-width: 768px) {
+  .comment-item.show-actions>.comment-actions::before {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--SmartThemeQuoteColor);
+    animation: countdown 3s linear forwards;
+  }
+}
+
+@keyframes countdown {
+  from {
+    width: 100%;
+  }
+
+  to {
+    width: 0%;
+  }
 }
 
 .comment-reply-btn,
 .comment-delete-btn {
-  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 50%, transparent 50%);
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 80%, transparent 20%);
+  backdrop-filter: blur(8px);
   border: 1px solid var(--SmartThemeBorderColor);
-  border-radius: 8px;
-  padding: 4px 10px;
-  font-size: calc(var(--mainFontSize) * 0.75);
+  border-radius: 6px;
+  padding: 3px 6px;
+  font-size: calc(var(--mainFontSize) * 0.8);
   color: var(--SmartThemeBodyColor);
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 2px 6px color-mix(in srgb, var(--SmartThemeQuoteColor) 20%, transparent 80%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .comment-reply-btn:hover {
@@ -1095,6 +1135,64 @@
   margin-left: 12px;
   /* 改用虚线区分深层嵌套 */
   border-left: 1px dashed color-mix(in srgb, var(--SmartThemeQuoteColor) 40%, transparent 60%);
+}
+
+/* ========== 手机端评论优化 ========== */
+@media (max-width: 768px) {
+
+  /* 减小评论的整体padding */
+  .comment-item {
+    padding: 6px 8px;
+    /* 从 8px 10px 减少到 6px 8px */
+    margin-bottom: 6px;
+    /* 从 8px 减少到 6px */
+  }
+
+  /* 更小的缩进 */
+  .comment-replies .comment-item[data-level="1"] {
+    margin-left: 6px;
+    /* 第一层 6px */
+  }
+
+  .comment-replies .comment-item[data-level="2"] {
+    margin-left: 4px;
+    /* 第二层 4px */
+    border-left: 2px solid var(--SmartThemeQuoteColor);
+  }
+
+  .comment-replies .comment-item[data-level="3"] {
+    margin-left: 2px;
+    /* 第三层 2px */
+    border-left: 2px dashed var(--SmartThemeQuoteColor);
+    opacity: 0.95;
+  }
+
+  /* 超过3层的评论折叠 */
+  .comment-item[data-level="3"] .comment-replies {
+    display: none;
+  }
+
+  /* 折叠/展开提示 */
+  .comment-item[data-level="3"].has-replies::after {
+    content: "展开 " attr(data-reply-count) " 条回复";
+    display: block;
+    margin-top: 6px;
+    padding: 3px 6px;
+    background: color-mix(in srgb, var(--SmartThemeQuoteColor) 15%, transparent 85%);
+    border-radius: 6px;
+    font-size: calc(var(--mainFontSize) * 0.8);
+    color: var(--SmartThemeQuoteColor);
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .comment-item[data-level="3"].has-replies.expanded::after {
+    content: "收起回复";
+  }
+
+  .comment-item[data-level="3"].has-replies.expanded .comment-replies {
+    display: block;
+  }
 }
 
 /* 请求评论按钮 */
@@ -1842,7 +1940,7 @@
   bottom: 80px;
   left: 80px;
   width: 600px;
-  max-height: 60vh;
+  max-height: 75vh;
   background: var(--SmartThemeBlurTintColor);
   backdrop-filter: blur(20px);
   border: 1px solid var(--SmartThemeBorderColor);
@@ -1997,7 +2095,7 @@
     left: 20px;
     right: 20px;
     width: auto;
-    max-height: 300px;
+    max-height: 500px;
   }
 
   .diary-ai-preview-action-btn span {

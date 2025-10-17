@@ -555,6 +555,10 @@ function bindToolboxCards() {
  * 监听"功能模块"手风琴中的标签页显示设置复选框
  * 勾选 = 显示该标签页，取消勾选 = 隐藏该标签页
  * 设置自动保存到 extension_settings
+ * 
+ * 特殊处理：
+ * - 初始化时检查默认激活的标签页是否被隐藏，如果是则自动切换到第一个可见标签页
+ * - 隐藏当前激活的标签页时，自动切换到下一个可见的标签页
  */
 function bindTabVisibility() {
   const checkboxes = document.querySelectorAll('.tab-visibility-item input[type="checkbox"]');
@@ -587,9 +591,26 @@ function bindTabVisibility() {
         hideTab(tabId);
         addToHiddenTabs(tabId);
         logger.debug(`[bindTabVisibility] 隐藏标签页: ${tabId}`);
+
+        // 如果隐藏的是当前激活的标签页，切换到下一个可见的标签页
+        const activeTab = document.querySelector('.paws-tab.active');
+        if (activeTab && activeTab.getAttribute('data-tab') === tabId) {
+          logger.debug(`[bindTabVisibility] 当前激活的标签页被隐藏，切换到下一个可见标签页`);
+          switchToFirstVisibleTab();
+        }
       }
     });
   });
+
+  // 3. 初始化后检查：如果当前激活的标签页被隐藏了，切换到第一个可见的标签页
+  const activeTab = document.querySelector('.paws-tab.active');
+  if (activeTab) {
+    const activeTabId = activeTab.getAttribute('data-tab');
+    if (hiddenTabs.includes(activeTabId)) {
+      logger.debug(`[bindTabVisibility] 初始激活的标签页 "${activeTabId}" 已被隐藏，切换到第一个可见标签页`);
+      switchToFirstVisibleTab();
+    }
+  }
 
   logger.debug(`[bindTabVisibility] 已绑定 ${checkboxes.length} 个标签页可见性复选框`);
 }
@@ -643,6 +664,31 @@ function removeFromHiddenTabs(tabId) {
     extension_settings[EXT_ID].hiddenTabs.splice(index, 1);
     saveSettingsDebounced();
   }
+}
+
+/**
+ * 切换到第一个可见的标签页
+ * 
+ * @description
+ * 用于在当前激活的标签页被隐藏后，自动切换到下一个可见的标签页
+ * 按照标签页在 DOM 中的顺序查找第一个可见（display 不是 'none'）的标签页
+ * 如果找到则模拟点击该标签页
+ */
+function switchToFirstVisibleTab() {
+  const allTabs = document.querySelectorAll('.paws-tab');
+  
+  for (const tab of allTabs) {
+    const tabElement = /** @type {HTMLElement} */ (tab);
+    // 检查标签页是否可见（display 不是 'none'）
+    if (tabElement.style.display !== 'none') {
+      // 模拟点击该标签页
+      tabElement.click();
+      logger.debug(`[switchToFirstVisibleTab] 已切换到标签页: ${tabElement.getAttribute('data-tab')}`);
+      return;
+    }
+  }
+  
+  logger.warn('[switchToFirstVisibleTab] 没有找到可见的标签页');
 }
 
 /**
