@@ -72,72 +72,75 @@ export class DiaryAPIBuilder {
    * @param {Object} diary - 当前日记对象
    * @param {string} charName - 角色名称
    * @param {Object} ctx - 上下文对象
-   * @returns {Promise<{systemPrompt: string, tempIdMap: Object, tempCommentIdMap: Object}>}
+   * @param {Object} presetManager - 预设管理器（用于获取启用状态）
+   * @returns {Promise<{contextContents: Object, tempIdMap: Object, tempCommentIdMap: Object}>}
    */
-  async buildCompleteSystemPrompt(diary, charName, ctx) {
-    let systemPrompt = '';
+  async buildCompleteSystemPrompt(diary, charName, ctx, presetManager) {
+    const contextContents = {};
     const settings = this.dataManager.getSettings();
     const character = ctx.characters[ctx.characterId];
+
+    // 获取所有预设（包括上下文条目）
+    const allPresets = presetManager ? presetManager.getPresets() : [];
+    
+    // 辅助函数：检查上下文条目是否启用
+    const isContextEnabled = (subType) => {
+      const preset = allPresets.find(p => p.type === 'context' && p.subType === subType);
+      return preset ? preset.enabled : settings[`include${subType.charAt(0).toUpperCase() + subType.slice(1)}`];
+    };
 
     // 1. 用户设定
     if (settings.includePersonaDescription) {
       const personaDesc = power_user.persona_description;
       if (personaDesc && personaDesc.trim()) {
-        systemPrompt += `# 用户设定\n${personaDesc}\n\n`;
+        // 暂时保留，未来可能也变成上下文条目
         logger.debug('[DiaryAPIBuilder] 已包含用户设定');
       }
     }
 
-    // 2. 角色卡
-    if (character) {
-      let hasCharInfo = false;
-      let charInfo = '';
-
-      if (settings.includeCharDescription && character.description) {
-        charInfo += `${character.description}\n\n`;
-        hasCharInfo = true;
-      }
-
-      if (settings.includeCharPersonality && character.personality) {
-        charInfo += `性格：${character.personality}\n\n`;
-        hasCharInfo = true;
-      }
-
-      if (settings.includeCharScenario && character.scenario) {
-        charInfo += `场景：${character.scenario}\n\n`;
-        hasCharInfo = true;
-      }
-
-      if (hasCharInfo) {
-        systemPrompt += `# 角色信息\n`;
-        systemPrompt += `你是 ${character.name}。\n\n`;
-        systemPrompt += charInfo;
-      }
+    // 2. 角色描述
+    if (character && isContextEnabled('charDescription') && character.description) {
+      contextContents.charDescription = `# 角色信息\n你是 ${character.name}。\n\n${character.description}`;
+      logger.debug('[DiaryAPIBuilder] 已包含角色描述');
     }
 
-    // 3. 世界书
-    if (settings.includeWorldInfo) {
+    // 3. 角色性格
+    if (character && isContextEnabled('charPersonality') && character.personality) {
+      contextContents.charPersonality = `# 角色性格\n${character.personality}`;
+      logger.debug('[DiaryAPIBuilder] 已包含角色性格');
+    }
+
+    // 4. 角色场景
+    if (character && isContextEnabled('charScenario') && character.scenario) {
+      contextContents.charScenario = `# 角色场景\n${character.scenario}`;
+      logger.debug('[DiaryAPIBuilder] 已包含角色场景');
+    }
+
+    // 5. 世界书
+    if (isContextEnabled('worldInfo')) {
       const worldInfo = await this.getSimpleWorldInfo(ctx.characterId);
       if (worldInfo) {
-        systemPrompt += worldInfo;
+        contextContents.worldInfo = worldInfo;
+        logger.debug('[DiaryAPIBuilder] 已包含世界书');
       }
     }
 
-    // 4. 最近聊天历史
-    if (settings.includeRecentChat) {
+    // 6. 最近对话
+    if (isContextEnabled('recentChat')) {
       const count = settings.recentChatCount || 5;
       const recentChat = this.getRecentChatHistory(ctx, count);
       if (recentChat) {
-        systemPrompt += `# 最近对话\n${recentChat}\n\n`;
+        contextContents.recentChat = `# 最近对话\n${recentChat}`;
+        logger.debug('[DiaryAPIBuilder] 已包含最近对话');
       }
     }
 
-    // 5. 收集要发送的日记
+    // 7. 历史日记
     const diariesToSend = [];
     const tempIdMap = {};
     const tempCommentIdMap = {};
 
-    if (settings.includeHistoryDiaries) {
+    if (isContextEnabled('historyDiaries')) {
       const count = settings.historyDiaryCount || 3;
       const historyDiaries = this.getHistoryDiariesObjects(diary.id, count);
       diariesToSend.push(...historyDiaries);
@@ -150,9 +153,9 @@ export class DiaryAPIBuilder {
       tempIdMap[index + 1] = d.id;
     });
 
-    // 6. 构造日记内容
-    if (diariesToSend.length > 1) {
-      systemPrompt += `# 用户的最近日记（共${diariesToSend.length}篇）\n\n`;
+    // 构造历史日记内容
+    if (diariesToSend.length > 0) {
+      let diariesContent = `# 最近日记（共${diariesToSend.length}篇）\n\n`;
 
       diariesToSend.forEach((d, index) => {
         const tempId = index + 1;
@@ -166,56 +169,28 @@ export class DiaryAPIBuilder {
           .filter(c => c.trim())
           .join('\n');
 
-        systemPrompt += `#${tempId} ${d.title} (${d.date})\n`;
-        systemPrompt += `${content || '（空白日记）'}\n`;
+        diariesContent += `#${tempId} ${d.title} (${d.date})\n`;
+        diariesContent += `${content || '（空白日记）'}\n`;
 
         if (d.comments && d.comments.length > 0) {
-          systemPrompt += `\n已有评论：\n`;
-          systemPrompt += this.formatCommentsWithReplies(d.comments, 1, tempCommentIdMap);
+          diariesContent += `\n已有评论：\n`;
+          diariesContent += this.formatCommentsWithReplies(d.comments, 1, tempCommentIdMap);
         }
 
-        systemPrompt += `\n`;
+        diariesContent += `\n`;
       });
-    } else {
-      const content = diary.contentBlocks
-        .map(b => {
-          if (b.type === 'image' && b.imageUrl) {
-            return `[图片链接：${b.imageUrl}]\n[图片描述：${b.imageDesc || '无描述'}]`;
-          }
-          return b.content;
-        })
-        .filter(c => c.trim())
-        .join('\n');
 
-      systemPrompt += `# 用户的日记\n`;
-      systemPrompt += `【标题】${diary.title}\n`;
-      systemPrompt += `【日期】${diary.date}\n`;
-      systemPrompt += `【内容】\n${content || '（空白日记）'}\n`;
-
-      if (diary.comments && diary.comments.length > 0) {
-        systemPrompt += `\n已有评论：\n`;
-        systemPrompt += this.formatCommentsWithReplies(diary.comments, 1, tempCommentIdMap);
+      // 将历史日记内容放入上下文
+      if (isContextEnabled('historyDiaries')) {
+        contextContents.historyDiaries = diariesContent;
       }
-
-      systemPrompt += '\n';
     }
 
-    // 7. 评论任务
-    const hasCommentTask = settings.allowCharacterComment || settings.allowPasserbyComments;
-    if (hasCommentTask) {
-      systemPrompt += this.buildCommentTask(diariesToSend, charName, settings);
-      logger.debug('[DiaryAPIBuilder] 已添加评论任务提示词');
-    } else {
-      logger.debug('[DiaryAPIBuilder] 已关闭角色评论和路人评论，跳过评论任务');
-    }
-
-    logger.debug('[DiaryAPIBuilder] ========== 完整系统提示词 ==========');
-    logger.debug(systemPrompt);
-    logger.debug('[DiaryAPIBuilder] ========== 提示词结束 ==========');
+    logger.debug('[DiaryAPIBuilder] 上下文内容已构建完成');
     logger.debug('[DiaryAPIBuilder] 临时日记编号映射:', tempIdMap);
     logger.debug('[DiaryAPIBuilder] 临时评论编号映射:', tempCommentIdMap);
 
-    return { systemPrompt, tempIdMap, tempCommentIdMap };
+    return { contextContents, tempIdMap, tempCommentIdMap };
   }
 
   /**

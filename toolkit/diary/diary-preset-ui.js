@@ -21,8 +21,7 @@ import { showInfoToast, showSuccessToast, showErrorToast } from './diary-toast.j
 // ========================================
 // [CONST] 常量
 // ========================================
-const FIXED_PRESET_ID = 'FIXED_CONTEXT';
-const FIXED_DIARY_PRESET_ID = 'FIXED_DIARY';
+// (不再需要固定条目常量)
 
 // ========================================
 // [CORE] 预设UI管理类
@@ -78,6 +77,10 @@ export class DiaryPresetUI {
           <span class="fa-solid fa-plus"></span>
         </button>
       </div>
+      <div class="diary-preset-search">
+        <input type="text" id="diaryPresetSearch" class="text_pole" placeholder="搜索预设..." />
+        <span class="fa-solid fa-magnifying-glass diary-preset-search-icon"></span>
+      </div>
       <div class="diary-preset-list" id="diaryPresetList">
         <!-- 预设列表动态生成 -->
       </div>
@@ -120,6 +123,14 @@ export class DiaryPresetUI {
     document.getElementById('diaryPresetExport')?.addEventListener('click', () => {
       this.exportPresets();
     });
+
+    // 搜索
+    const searchInput = document.getElementById('diaryPresetSearch');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        this.filterPresets(e.target.value);
+      });
+    }
   }
 
   /**
@@ -167,7 +178,7 @@ export class DiaryPresetUI {
     const listElement = document.getElementById('diaryPresetList');
     if (!listElement) return;
 
-    const presets = this.dataManager.getPresets(true);  // 包含固定条目
+    const presets = this.dataManager.getPresets();  // 获取所有预设
 
     if (presets.length === 0) {
       listElement.innerHTML = '<div class="diary-preset-empty">暂无预设，点击"添加预设"开始创建</div>';
@@ -176,10 +187,32 @@ export class DiaryPresetUI {
 
     listElement.innerHTML = '';
 
-    presets.forEach(preset => {
+    // 分组渲染：日记指令和其他预设
+    const diaryInstructions = presets.filter(p => p.type === 'instruction');
+    const otherPresets = presets.filter(p => p.type !== 'instruction');
+
+    // 创建分组（总是显示，即使为空）
+    const group = this.createDiaryInstructionGroup(diaryInstructions);
+
+    // 获取分组的保存位置
+    const savedPosition = parseInt(localStorage.getItem('diary-instruction-group-position') || '-1');
+
+    // 渲染所有预设和分组（按照位置）
+    let insertedGroup = false;
+    otherPresets.forEach((preset, index) => {
+      // 如果到达分组应该插入的位置，先插入分组
+      if (index === savedPosition && !insertedGroup) {
+        listElement.appendChild(group);
+        insertedGroup = true;
+      }
       const item = this.createPresetItem(preset);
       listElement.appendChild(item);
     });
+
+    // 如果分组还没插入（位置在末尾或无效位置），在末尾插入
+    if (!insertedGroup) {
+      listElement.appendChild(group);
+    }
 
     // 初始化拖拽排序
     this.initSortable();
@@ -198,11 +231,6 @@ export class DiaryPresetUI {
     item.className = 'diary-preset-item';
     item.dataset.presetId = preset.id;
 
-    // 固定条目特殊样式
-    if (preset.locked) {
-      item.classList.add('diary-preset-fixed');
-    }
-
     // 禁用状态
     if (!preset.enabled) {
       item.classList.add('diary-preset-disabled');
@@ -211,95 +239,46 @@ export class DiaryPresetUI {
     // 角色类型标签
     const roleClass = `diary-preset-role-${preset.role}`;
 
-    // 区分两种锁定状态：
-    // - FIXED_PRESET_ID（构建提示词）：完全不可操作
-    // - FIXED_DIARY_PRESET_ID（日记提示词）：可以编辑和禁用，但不能删除
-    const isConstructPreset = preset.id === FIXED_PRESET_ID;
-    const isDiaryPreset = preset.id === FIXED_DIARY_PRESET_ID;
+    // 上下文条目：显示"动态生成"提示
+    const isContextPreset = preset.type === 'context';
 
-    // 构建提示词：简化显示（没有任何按钮）
-    if (isConstructPreset) {
-      item.innerHTML = `
-        <div class="diary-preset-content" style="flex: 1;">
-          <div class="diary-preset-name">${this.escapeHtml(preset.name)}</div>
-        </div>
-      `;
-    }
-    // 日记提示词：可以编辑和禁用，但不能删除（没有拖拽手柄）
-    else if (isDiaryPreset) {
-      item.innerHTML = `
-        <div class="diary-preset-role ${roleClass}">${this.getRoleLabel(preset.role)}</div>
-        <div class="diary-preset-content">
-          <div class="diary-preset-name">${this.escapeHtml(preset.name)}</div>
-        </div>
-        <div class="diary-preset-actions">
-          <button class="diary-preset-btn-icon diary-preset-toggle" data-id="${preset.id}" title="${preset.enabled ? '禁用' : '启用'}">
-            <span class="fa-solid ${preset.enabled ? 'fa-toggle-on' : 'fa-toggle-off'}"></span>
-          </button>
-          <button class="diary-preset-btn-icon diary-preset-edit" data-id="${preset.id}" title="编辑">
-            <span class="fa-solid fa-pencil fa-xs"></span>
-          </button>
-        </div>
-      `;
-    }
-    // 普通预设：完整功能（拖拽、编辑、删除）
-    else {
-      item.innerHTML = `
-        <div class="diary-preset-drag-handle" title="拖动排序">
-          ☰
-        </div>
-        <div class="diary-preset-role ${roleClass}">${this.getRoleLabel(preset.role)}</div>
-        <div class="diary-preset-content">
-          <div class="diary-preset-name">${this.escapeHtml(preset.name)}</div>
-        </div>
-        <div class="diary-preset-actions">
-          <button class="diary-preset-btn-icon diary-preset-toggle" data-id="${preset.id}" title="${preset.enabled ? '禁用' : '启用'}">
-            <span class="fa-solid ${preset.enabled ? 'fa-toggle-on' : 'fa-toggle-off'}"></span>
-          </button>
-          <button class="diary-preset-btn-icon diary-preset-edit" data-id="${preset.id}" title="编辑">
-            <span class="fa-solid fa-pencil fa-xs"></span>
-          </button>
-          <button class="diary-preset-btn-icon diary-preset-delete" data-id="${preset.id}" title="删除预设">
-            <span class="fa-solid fa-trash-can"></span>
-          </button>
-        </div>
-      `;
-    }
+    // 统一渲染：拖拽手柄 + 角色标签 + 内容 + 操作按钮
+    item.innerHTML = `
+      <div class="diary-preset-drag-handle" title="拖动排序">
+        ☰
+      </div>
+      <div class="diary-preset-role ${roleClass}">${this.getRoleLabel(preset.role)}</div>
+      <div class="diary-preset-content">
+        <div class="diary-preset-name">${this.escapeHtml(preset.name)}</div>
+      </div>
+      <div class="diary-preset-actions">
+        <button class="diary-preset-btn-icon diary-preset-toggle" data-id="${preset.id}" title="${preset.enabled ? '禁用' : '启用'}">
+          <span class="fa-solid ${preset.enabled ? 'fa-toggle-on' : 'fa-toggle-off'}"></span>
+        </button>
+        <button class="diary-preset-btn-icon diary-preset-edit" data-id="${preset.id}" title="编辑">
+          <span class="fa-solid fa-pencil fa-xs"></span>
+        </button>
+        <button class="diary-preset-btn-icon diary-preset-delete" data-id="${preset.id}" title="删除预设">
+          <span class="fa-solid fa-trash-can"></span>
+        </button>
+      </div>
+    `;
 
-    // 绑定事件
-    // 构建提示词：完全不可操作
-    if (isConstructPreset) {
-      // 没有任何事件
-    }
-    // 日记提示词：可以编辑和禁用
-    else if (isDiaryPreset) {
-      item.querySelector('.diary-preset-toggle')?.addEventListener('click', (e) => {
-        const btn = e.currentTarget;
-        this.togglePreset(btn.dataset.id);
-      });
+    // 绑定事件（所有条目统一处理）
+    item.querySelector('.diary-preset-toggle')?.addEventListener('click', (e) => {
+      const btn = e.currentTarget;
+      this.togglePreset(btn.dataset.id);
+    });
 
-      item.querySelector('.diary-preset-edit')?.addEventListener('click', (e) => {
-        const btn = e.currentTarget;
-        this.showEditPresetDialog(btn.dataset.id);
-      });
-    }
-    // 普通预设：完整事件
-    else {
-      item.querySelector('.diary-preset-toggle')?.addEventListener('click', (e) => {
-        const btn = e.currentTarget;
-        this.togglePreset(btn.dataset.id);
-      });
+    item.querySelector('.diary-preset-edit')?.addEventListener('click', (e) => {
+      const btn = e.currentTarget;
+      this.showEditPresetDialog(btn.dataset.id);
+    });
 
-      item.querySelector('.diary-preset-edit')?.addEventListener('click', (e) => {
-        const btn = e.currentTarget;
-        this.showEditPresetDialog(btn.dataset.id);
-      });
-
-      item.querySelector('.diary-preset-delete')?.addEventListener('click', (e) => {
-        const btn = e.currentTarget;
-        this.deletePreset(btn.dataset.id);
-      });
-    }
+    item.querySelector('.diary-preset-delete')?.addEventListener('click', (e) => {
+      const btn = e.currentTarget;
+      this.deletePreset(btn.dataset.id);
+    });
 
     return item;
   }
@@ -316,20 +295,29 @@ export class DiaryPresetUI {
       this.sortable.destroy();
     }
 
-    // 使用原生拖拽API
-    const items = listElement.querySelectorAll('.diary-preset-item:not(.diary-preset-fixed)');
+    // 使用原生拖拽API（所有条目都可拖拽，包括分组内的和分组本身）
+    const items = listElement.querySelectorAll('.diary-preset-item');
+    const groups = listElement.querySelectorAll('.diary-preset-group');
 
     items.forEach(item => {
       item.draggable = true;
+
+      // 检查条目是否在分组内
+      const isInGroup = item.closest('.diary-preset-group-content');
 
       item.addEventListener('dragstart', (e) => {
         item.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/html', item.innerHTML);
+        // 标记是否在分组内
+        if (isInGroup) {
+          item.dataset.fromGroup = 'true';
+        }
       });
 
       item.addEventListener('dragend', (e) => {
         item.classList.remove('dragging');
+        delete item.dataset.fromGroup;
         this.updateOrder();
       });
 
@@ -338,20 +326,81 @@ export class DiaryPresetUI {
         e.dataTransfer.dropEffect = 'move';
 
         const dragging = listElement.querySelector('.dragging');
-        if (dragging && dragging !== item && !item.classList.contains('diary-preset-fixed')) {
-          const rect = item.getBoundingClientRect();
-          const midY = rect.top + rect.height / 2;
+        if (dragging && dragging !== item) {
+          // 检查拖拽的条目和目标条目是否都在同一个容器内
+          const draggingInGroup = dragging.dataset.fromGroup === 'true';
+          const targetInGroup = item.closest('.diary-preset-group-content');
 
-          if (e.clientY < midY) {
-            item.parentNode.insertBefore(dragging, item);
-          } else {
-            item.parentNode.insertBefore(dragging, item.nextSibling);
+          // 只允许同一容器内的拖拽
+          if ((draggingInGroup && targetInGroup) || (!draggingInGroup && !targetInGroup)) {
+            const rect = item.getBoundingClientRect();
+            const midY = rect.top + rect.height / 2;
+
+            if (e.clientY < midY) {
+              item.parentNode.insertBefore(dragging, item);
+            } else {
+              item.parentNode.insertBefore(dragging, item.nextSibling);
+            }
           }
         }
       });
     });
 
-    logger.debug('[DiaryPresetUI] 拖拽排序已初始化');
+    // 让分组也可以拖拽
+    groups.forEach(group => {
+      const header = group.querySelector('.diary-preset-group-header');
+      if (!header) return;
+
+      // 给分组设置可拖拽属性
+      group.draggable = true;
+      group.dataset.groupId = 'diary-instructions'; // 标记为分组
+
+      // 拖拽开始
+      group.addEventListener('dragstart', (e) => {
+        group.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', group.innerHTML);
+      });
+
+      // 拖拽结束
+      group.addEventListener('dragend', (e) => {
+        group.classList.remove('dragging');
+        this.updateOrder();
+      });
+
+      // 在分组上方拖拽时
+      group.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+
+        const dragging = listElement.querySelector('.dragging');
+        if (dragging && dragging !== group) {
+          const rect = group.getBoundingClientRect();
+          const midY = rect.top + rect.height / 2;
+
+          if (e.clientY < midY) {
+            listElement.insertBefore(dragging, group);
+          } else {
+            listElement.insertBefore(dragging, group.nextSibling);
+          }
+        }
+      });
+
+      // 阻止拖拽手柄之外的区域触发拖拽（避免和折叠冲突）
+      header.addEventListener('mousedown', (e) => {
+        const isDragHandle = e.target.closest('.diary-preset-drag-handle');
+        if (!isDragHandle) {
+          // 如果不是拖拽手柄，禁用拖拽
+          group.draggable = false;
+          // 恢复拖拽能力（延迟，避免影响当前操作）
+          setTimeout(() => {
+            group.draggable = true;
+          }, 10);
+        }
+      });
+    });
+
+    logger.debug('[DiaryPresetUI] 拖拽排序已初始化（包含分组）');
   }
 
   /**
@@ -361,25 +410,20 @@ export class DiaryPresetUI {
     const listElement = document.getElementById('diaryPresetList');
     if (!listElement) return;
 
+    // 获取所有预设项目（包括分组内的）
     const items = Array.from(listElement.querySelectorAll('.diary-preset-item'));
-    const fixedIndex = items.findIndex(item => item.classList.contains('diary-preset-fixed'));
+    const orderedIds = items.map(item => item.dataset.presetId);
 
-    // 分别获取固定条目前后的预设ID
-    const beforeFixed = [];
-    const afterFixed = [];
+    this.dataManager.updateOrder(orderedIds);
 
-    items.forEach((item, index) => {
-      if (item.classList.contains('diary-preset-fixed')) return;
-
-      const presetId = item.dataset.presetId;
-      if (index < fixedIndex) {
-        beforeFixed.push(presetId);
-      } else {
-        afterFixed.push(presetId);
-      }
-    });
-
-    this.dataManager.updateOrderWithFixed(beforeFixed, afterFixed);
+    // 保存分组的位置
+    const group = listElement.querySelector('.diary-preset-group');
+    if (group) {
+      const allChildren = Array.from(listElement.children);
+      const groupIndex = allChildren.indexOf(group);
+      localStorage.setItem('diary-instruction-group-position', groupIndex.toString());
+      logger.debug('[DiaryPresetUI] 分组位置已保存:', groupIndex);
+    }
 
     logger.debug('[DiaryPresetUI] 预设顺序已更新');
   }
@@ -423,13 +467,6 @@ export class DiaryPresetUI {
       overlay.innerHTML = `
         <div class="diary-preset-dialog-container">
           ${this.createPresetDialogHTML()}
-          <div class="diary-preset-dialog-field">
-            <label>位置</label>
-            <select id="diaryPresetDialogPosition" class="text_pole">
-              <option value="before">固定构建提示词之前</option>
-              <option value="after">固定构建提示词之后</option>
-            </select>
-          </div>
           <div class="diary-preset-dialog-buttons">
             <button class="diary-preset-dialog-btn diary-preset-dialog-cancel">取消</button>
             <button class="diary-preset-dialog-btn diary-preset-dialog-ok">添加</button>
@@ -439,33 +476,40 @@ export class DiaryPresetUI {
 
       document.body.appendChild(overlay);
 
+      // 添加 active 类触发显示动画
+      setTimeout(() => {
+        overlay.classList.add('active');
+      }, 10);
+
       // 绑定事件
       const cancelBtn = overlay.querySelector('.diary-preset-dialog-cancel');
       const okBtn = overlay.querySelector('.diary-preset-dialog-ok');
 
       const close = () => {
-        overlay.remove();
-        resolve(false);
+        overlay.classList.remove('active');
+        setTimeout(() => {
+          overlay.remove();
+          resolve(false);
+        }, 300);
       };
 
       const save = () => {
         const name = overlay.querySelector('#diaryPresetDialogName')?.value || '未命名预设';
         const role = overlay.querySelector('#diaryPresetDialogRole')?.value || 'system';
         const content = overlay.querySelector('#diaryPresetDialogContent')?.value || '';
-        const position = overlay.querySelector('#diaryPresetDialogPosition')?.value || 'before';
 
-        // 计算 order
-        const order = position === 'before' ? this.getMaxOrderBefore() + 100 : this.getMaxOrderAfter() + 100;
+        logger.debug('[DiaryPresetUI.showAddPresetDialog] 添加预设:', { name, role });
 
-        logger.debug('[DiaryPresetUI.showAddPresetDialog] 添加预设:', { name, role, position, order });
-
-        this.dataManager.addPreset({ name, role, content, order });
+        this.dataManager.addPreset({ name, role, content });
         this.render();
 
         showSuccessToast('预设已添加');
 
-        overlay.remove();
-        resolve(true);
+        overlay.classList.remove('active');
+        setTimeout(() => {
+          overlay.remove();
+          resolve(true);
+        }, 300);
       };
 
       cancelBtn.addEventListener('click', close);
@@ -474,30 +518,6 @@ export class DiaryPresetUI {
         if (e.target === overlay) close();
       });
     });
-  }
-
-  /**
-   * 获取固定条目前的最大 order
-   * 
-   * @returns {number} 最大order值（默认0）
-   * @description
-   * 查找所有order<500的预设中的最大值，用于计算新预设的排序位置
-   */
-  getMaxOrderBefore() {
-    const presets = this.dataManager.presets.filter(p => p.order < 500);
-    return presets.length > 0 ? Math.max(...presets.map(p => p.order)) : 0;
-  }
-
-  /**
-   * 获取固定条目后的最大 order
-   * 
-   * @returns {number} 最大order值（默认500）
-   * @description
-   * 查找所有order>500的预设中的最大值，用于计算新预设的排序位置
-   */
-  getMaxOrderAfter() {
-    const presets = this.dataManager.presets.filter(p => p.order > 500);
-    return presets.length > 0 ? Math.max(...presets.map(p => p.order)) : 500;
   }
 
   /**
@@ -538,8 +558,11 @@ export class DiaryPresetUI {
       const okBtn = overlay.querySelector('.diary-preset-dialog-ok');
 
       const close = () => {
-        overlay.remove();
-        resolve(false);
+        overlay.classList.remove('active');
+        setTimeout(() => {
+          overlay.remove();
+          resolve(false);
+        }, 300);
       };
 
       const save = () => {
@@ -555,8 +578,11 @@ export class DiaryPresetUI {
 
         showSuccessToast('预设已保存');
 
-        overlay.remove();
-        resolve(true);
+        overlay.classList.remove('active');
+        setTimeout(() => {
+          overlay.remove();
+          resolve(true);
+        }, 300);
       };
 
       cancelBtn.addEventListener('click', close);
@@ -578,12 +604,13 @@ export class DiaryPresetUI {
     const name = preset?.name || '';
     const role = preset?.role || 'system';
     const content = preset?.content || '';
+    const isContext = preset?.type === 'context';
 
     return `
       <div class="diary-preset-dialog">
         <div class="diary-preset-dialog-field">
           <label>预设名称</label>
-          <input type="text" id="diaryPresetDialogName" class="text_pole" value="${this.escapeHtml(name)}" placeholder="例如: 破限提示词">
+          <input type="text" id="diaryPresetDialogName" class="text_pole" value="${this.escapeHtml(name)}" placeholder="例如: 破限提示词" ${isContext ? 'disabled' : ''}>
         </div>
         <div class="diary-preset-dialog-field">
           <label>角色类型</label>
@@ -595,7 +622,7 @@ export class DiaryPresetUI {
         </div>
         <div class="diary-preset-dialog-field">
           <label>预设内容</label>
-          <textarea id="diaryPresetDialogContent" class="text_pole" rows="10" placeholder="输入你的提示词内容...">${this.escapeHtml(content)}</textarea>
+          <textarea id="diaryPresetDialogContent" class="text_pole" rows="10" placeholder="${isContext ? '内容动态生成（无法编辑）' : '输入你的提示词内容...'}" ${isContext ? 'disabled' : ''}>${isContext ? '(动态生成)' : this.escapeHtml(content)}</textarea>
         </div>
       </div>
     `;
@@ -667,6 +694,200 @@ export class DiaryPresetUI {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  /**
+   * 创建日记指令分组
+   * 
+   * @param {Array<Object>} instructions - 日记指令预设数组
+   * @returns {HTMLElement} 分组元素
+   */
+  createDiaryInstructionGroup(instructions) {
+    const group = document.createElement('div');
+    group.className = 'diary-preset-group';
+    group.dataset.groupType = 'diary-instructions';
+
+    // 检查分组是否折叠（从localStorage读取）
+    const isCollapsed = localStorage.getItem('diary-instruction-group-collapsed') === 'true';
+
+    // 统计启用的数量
+    const enabledCount = instructions.filter(i => i.enabled).length;
+
+    group.innerHTML = `
+      <div class="diary-preset-group-header ${isCollapsed ? 'collapsed' : ''}">
+        <div class="diary-preset-drag-handle" title="拖动排序">
+          ☰
+        </div>
+        <div class="diary-preset-role diary-preset-role-system">指令</div>
+        <div class="diary-preset-content">
+          <div class="diary-preset-name">📝 日记提示词 (${enabledCount}/${instructions.length})</div>
+        </div>
+        <div class="diary-preset-actions">
+          <button class="diary-preset-btn-icon diary-preset-group-add" title="添加日记模板">
+            <span class="fa-solid fa-plus"></span>
+          </button>
+        </div>
+      </div>
+      <div class="diary-preset-group-content ${isCollapsed ? 'collapsed' : ''}">
+        ${instructions.length === 0 ? '<div class="diary-preset-group-empty">暂无日记模板，点击"+"添加</div>' : ''}
+      </div>
+    `;
+
+    // 渲染指令条目
+    const content = group.querySelector('.diary-preset-group-content');
+    instructions.forEach(instruction => {
+      const item = this.createPresetItem(instruction);
+      content.appendChild(item);
+    });
+
+    // 绑定事件
+    const header = group.querySelector('.diary-preset-group-header');
+    header.addEventListener('click', (e) => {
+      // 点击+按钮不触发折叠
+      if (!e.target.closest('.diary-preset-group-add')) {
+        this.toggleGroup(group);
+      }
+    });
+
+    const addBtn = group.querySelector('.diary-preset-group-add');
+    addBtn.addEventListener('click', (e) => {
+      e.stopPropagation(); // 阻止事件冒泡到header
+      this.showAddDiaryInstructionDialog();
+    });
+
+    return group;
+  }
+
+  /**
+   * 切换分组折叠状态
+   * 
+   * @param {HTMLElement} group - 分组元素
+   */
+  toggleGroup(group) {
+    const header = group.querySelector('.diary-preset-group-header');
+    const content = group.querySelector('.diary-preset-group-content');
+
+    const isCollapsed = header.classList.contains('collapsed');
+
+    if (isCollapsed) {
+      // 展开
+      header.classList.remove('collapsed');
+      content.classList.remove('collapsed');
+      localStorage.setItem('diary-instruction-group-collapsed', 'false');
+    } else {
+      // 折叠
+      header.classList.add('collapsed');
+      content.classList.add('collapsed');
+      localStorage.setItem('diary-instruction-group-collapsed', 'true');
+    }
+  }
+
+  /**
+   * 显示添加日记指令对话框
+   */
+  async showAddDiaryInstructionDialog() {
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.className = 'diary-preset-dialog-overlay';
+      overlay.innerHTML = `
+        <div class="diary-preset-dialog-container">
+          <div class="diary-preset-dialog">
+            <div class="diary-preset-dialog-field">
+              <label>模板名称</label>
+              <input type="text" id="diaryPresetDialogName" class="text_pole" placeholder="例如: 日常日记模板">
+            </div>
+            <div class="diary-preset-dialog-field">
+              <label>角色类型</label>
+              <select id="diaryPresetDialogRole" class="text_pole">
+                <option value="system" selected>系统 (system)</option>
+                <option value="user">用户 (user)</option>
+                <option value="assistant">助手 (assistant)</option>
+              </select>
+            </div>
+            <div class="diary-preset-dialog-field">
+              <label>模板内容</label>
+              <textarea id="diaryPresetDialogContent" class="text_pole" rows="10" placeholder="输入日记写作指南...">${this.escapeHtml(this.dataManager.getDiaryInstructionContent())}</textarea>
+            </div>
+          </div>
+          <div class="diary-preset-dialog-buttons">
+            <button class="diary-preset-dialog-btn diary-preset-dialog-cancel">取消</button>
+            <button class="diary-preset-dialog-btn diary-preset-dialog-ok">添加</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(overlay);
+
+      // 添加 active 类触发显示动画
+      setTimeout(() => {
+        overlay.classList.add('active');
+      }, 10);
+
+      const close = () => {
+        overlay.classList.remove('active');
+        setTimeout(() => {
+          overlay.remove();
+          resolve(false);
+        }, 300); // 等待动画完成
+      };
+
+      const save = () => {
+        const name = overlay.querySelector('#diaryPresetDialogName')?.value || '新日记模板';
+        const role = overlay.querySelector('#diaryPresetDialogRole')?.value || 'system';
+        const content = overlay.querySelector('#diaryPresetDialogContent')?.value || '';
+
+        this.dataManager.addPreset({
+          name,
+          role,
+          content,
+          type: 'instruction'
+        });
+        this.render();
+
+        showSuccessToast('日记模板已添加');
+
+        overlay.remove();
+        resolve(true);
+      };
+
+      overlay.querySelector('.diary-preset-dialog-cancel').addEventListener('click', close);
+      overlay.querySelector('.diary-preset-dialog-ok').addEventListener('click', save);
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) close();
+      });
+    });
+  }
+
+  /**
+   * 过滤预设（搜索功能）
+   * 
+   * @param {string} searchTerm - 搜索关键词
+   */
+  filterPresets(searchTerm) {
+    const items = document.querySelectorAll('.diary-preset-item');
+    const term = searchTerm.toLowerCase().trim();
+
+    if (!term) {
+      // 无搜索词，显示所有
+      items.forEach(item => item.style.display = '');
+      return;
+    }
+
+    items.forEach(item => {
+      const name = item.querySelector('.diary-preset-name')?.textContent.toLowerCase() || '';
+      const match = name.includes(term);
+      item.style.display = match ? '' : 'none';
+    });
+
+    // 更新分组显示
+    const groups = document.querySelectorAll('.diary-preset-group');
+    groups.forEach(group => {
+      const visibleItems = group.querySelectorAll('.diary-preset-item:not([style*="display: none"])');
+      const hasVisibleItems = visibleItems.length > 0;
+
+      // 如果组内有匹配项或搜索框为空，显示分组
+      group.style.display = hasVisibleItems || !term ? '' : 'none';
+    });
   }
 }
 

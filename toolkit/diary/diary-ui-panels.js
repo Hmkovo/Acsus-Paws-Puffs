@@ -345,31 +345,41 @@ export class DiaryUIPanels {
 
     if (charDescCheckbox) {
       charDescCheckbox.addEventListener('change', () => {
-        this.dataManager.updateSettings({ includeCharDescription: /** @type {HTMLInputElement} */(charDescCheckbox).checked });
+        const checked = /** @type {HTMLInputElement} */(charDescCheckbox).checked;
+        this.dataManager.updateSettings({ includeCharDescription: checked });
+        this.syncContextPresetState('charDescription', checked);
       });
     }
 
     if (charPersonalityCheckbox) {
       charPersonalityCheckbox.addEventListener('change', () => {
-        this.dataManager.updateSettings({ includeCharPersonality: /** @type {HTMLInputElement} */(charPersonalityCheckbox).checked });
+        const checked = /** @type {HTMLInputElement} */(charPersonalityCheckbox).checked;
+        this.dataManager.updateSettings({ includeCharPersonality: checked });
+        this.syncContextPresetState('charPersonality', checked);
       });
     }
 
     if (charScenarioCheckbox) {
       charScenarioCheckbox.addEventListener('change', () => {
-        this.dataManager.updateSettings({ includeCharScenario: /** @type {HTMLInputElement} */(charScenarioCheckbox).checked });
+        const checked = /** @type {HTMLInputElement} */(charScenarioCheckbox).checked;
+        this.dataManager.updateSettings({ includeCharScenario: checked });
+        this.syncContextPresetState('charScenario', checked);
       });
     }
 
     if (worldInfoCheckbox) {
       worldInfoCheckbox.addEventListener('change', () => {
-        this.dataManager.updateSettings({ includeWorldInfo: /** @type {HTMLInputElement} */(worldInfoCheckbox).checked });
+        const checked = /** @type {HTMLInputElement} */(worldInfoCheckbox).checked;
+        this.dataManager.updateSettings({ includeWorldInfo: checked });
+        this.syncContextPresetState('worldInfo', checked);
       });
     }
 
     if (recentChatCheckbox) {
       recentChatCheckbox.addEventListener('change', () => {
-        this.dataManager.updateSettings({ includeRecentChat: /** @type {HTMLInputElement} */(recentChatCheckbox).checked });
+        const checked = /** @type {HTMLInputElement} */(recentChatCheckbox).checked;
+        this.dataManager.updateSettings({ includeRecentChat: checked });
+        this.syncContextPresetState('recentChat', checked);
       });
     }
 
@@ -384,7 +394,9 @@ export class DiaryUIPanels {
 
     if (historyDiariesCheckbox) {
       historyDiariesCheckbox.addEventListener('change', () => {
-        this.dataManager.updateSettings({ includeHistoryDiaries: /** @type {HTMLInputElement} */(historyDiariesCheckbox).checked });
+        const checked = /** @type {HTMLInputElement} */(historyDiariesCheckbox).checked;
+        this.dataManager.updateSettings({ includeHistoryDiaries: checked });
+        this.syncContextPresetState('historyDiaries', checked);
       });
     }
 
@@ -448,6 +460,27 @@ export class DiaryUIPanels {
     }
 
     logger.debug('[DiaryUIPanels.bindSettingsPanelEvents] 设置面板事件已绑定');
+  }
+
+  /**
+   * 同步上下文预设状态
+   * 
+   * @param {string} subType - 上下文类型（charDescription/charPersonality等）
+   * @param {boolean} enabled - 启用状态
+   * @description
+   * 当设置面板的复选框改变时，同步更新对应的上下文预设的 enabled 状态
+   */
+  syncContextPresetState(subType, enabled) {
+    if (!this.presetUI || !this.presetUI.dataManager) return;
+
+    const presets = this.presetUI.dataManager.presets;
+    const preset = presets.find(p => p.type === 'context' && p.subType === subType);
+
+    if (preset && preset.enabled !== enabled) {
+      preset.enabled = enabled;
+      this.presetUI.dataManager.savePresets();
+      logger.debug('[DiaryUIPanels.syncContextPresetState] 已同步预设状态:', subType, enabled);
+    }
   }
 }
 

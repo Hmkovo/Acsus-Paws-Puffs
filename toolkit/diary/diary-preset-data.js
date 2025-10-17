@@ -24,10 +24,20 @@ import logger from '../../logger.js';
 // ========================================
 const EXT_ID = 'Acsus-Paws-Puffs';
 const MODULE_NAME = 'diary';
-const FIXED_PRESET_ID = 'FIXED_CONTEXT';
-const FIXED_PRESET_ORDER = 500;
-const FIXED_DIARY_PRESET_ID = 'FIXED_DIARY';
-const FIXED_DIARY_PRESET_ORDER = 501;
+
+// 上下文条目ID（对应设置项）
+const CONTEXT_PRESETS = [
+  { id: 'context_char_desc', subType: 'charDescription', name: '[系统] 角色描述', order: 100 },
+  { id: 'context_char_personality', subType: 'charPersonality', name: '[系统] 角色性格', order: 200 },
+  { id: 'context_char_scenario', subType: 'charScenario', name: '[系统] 角色场景', order: 300 },
+  { id: 'context_world_info', subType: 'worldInfo', name: '[系统] 世界书', order: 400 },
+  { id: 'context_recent_chat', subType: 'recentChat', name: '[系统] 最近对话', order: 500 },
+  { id: 'context_history_diaries', subType: 'historyDiaries', name: '[系统] 历史日记', order: 600 },
+];
+
+// 日记写作指南ID
+const DIARY_INSTRUCTION_ID = 'diary_instruction';
+const DIARY_INSTRUCTION_ORDER = 700;
 
 // ========================================
 // [CORE] 预设数据管理类
@@ -48,43 +58,85 @@ export class DiaryPresetDataManager {
    * 初始化
    * 
    * @description
-   * 加载预设，并自动创建默认的日记提示词预设（如果不存在）
+   * 加载预设，自动创建默认的上下文条目和日记写作指南（如果不存在）
    */
   init() {
     this.loadPresets();
-    this.ensureDefaultDiaryPreset();
+    this.ensureDefaultContextPresets();
+    this.ensureDefaultDiaryInstruction();
     logger.info('[DiaryPresetDataManager] 初始化完成，已加载', this.presets.length, '个预设');
   }
 
   /**
-   * 确保默认日记提示词预设存在
+   * 确保默认上下文条目存在
    * 
    * @description
-   * 如果用户的预设列表中不存在日记提示词预设，自动创建一个
-   * 这个预设可以编辑、可以禁用，但不能删除
+   * 自动创建6个上下文条目（角色描述、性格、场景、世界书、最近对话、历史日记）
+   * 这些条目内容为空（运行时动态生成），只能修改角色类型
    */
-  ensureDefaultDiaryPreset() {
-    // 检查是否已存在日记提示词预设
-    const exists = this.presets.some(p => p.id === FIXED_DIARY_PRESET_ID);
+  ensureDefaultContextPresets() {
+    let created = 0;
+
+    CONTEXT_PRESETS.forEach(({ id, subType, name, order }) => {
+      // 检查是否已存在
+      const exists = this.presets.some(p => p.id === id);
+
+      if (!exists) {
+        this.presets.push({
+          id,
+          name,
+          type: 'context',
+          subType,
+          role: 'system',
+          content: '',  // 空字符串，运行时动态生成
+          order,
+          enabled: true,  // 默认启用
+          locked: false,
+          editable: 'role-only'  // 只能修改角色类型
+        });
+        created++;
+      }
+    });
+
+    if (created > 0) {
+      this.savePresets();
+      logger.info('[DiaryPresetDataManager] 已自动创建', created, '个上下文条目');
+    } else {
+      logger.debug('[DiaryPresetDataManager] 上下文条目已存在，跳过创建');
+    }
+  }
+
+  /**
+   * 确保默认日记写作指南存在
+   * 
+   * @description
+   * 如果用户的预设列表中不存在日记写作指南，自动创建一个
+   * 这个预设完全可编辑、可禁用、可删除、可拖拽
+   */
+  ensureDefaultDiaryInstruction() {
+    // 检查是否已存在日记写作指南
+    const exists = this.presets.some(p => p.id === DIARY_INSTRUCTION_ID);
 
     if (!exists) {
-      // 创建默认日记提示词预设
-      const diaryPreset = {
-        id: FIXED_DIARY_PRESET_ID,
-        name: '[固定] 日记提示词',
+      // 创建默认日记写作指南
+      const instruction = {
+        id: DIARY_INSTRUCTION_ID,
+        name: '日记写作指南',
+        type: 'instruction',
         role: 'system',
-        content: this.getDiaryPresetContent(),
-        order: FIXED_DIARY_PRESET_ORDER,
+        content: this.getDiaryInstructionContent(),
+        order: DIARY_INSTRUCTION_ORDER,
         enabled: true,
-        locked: true  // 不能删除，但可以编辑和禁用
+        locked: false,
+        editable: 'full'  // 完全可编辑
       };
 
-      this.presets.push(diaryPreset);
+      this.presets.push(instruction);
       this.savePresets();
 
-      logger.info('[DiaryPresetDataManager] 已自动创建默认日记提示词预设');
+      logger.info('[DiaryPresetDataManager] 已自动创建日记写作指南');
     } else {
-      logger.debug('[DiaryPresetDataManager] 日记提示词预设已存在，跳过创建');
+      logger.debug('[DiaryPresetDataManager] 日记写作指南已存在，跳过创建');
     }
   }
 
@@ -116,39 +168,22 @@ export class DiaryPresetDataManager {
   /**
    * 获取所有预设（按 order 排序）
    * 
-   * @param {boolean} [includeFixed=false] - 是否包含固定的构建提示词（动态生成）
    * @returns {Array<Object>} 预设列表
    */
-  getPresets(includeFixed = false) {
-    let presets = [...this.presets];
-
-    // 如果需要包含固定的构建提示词（动态生成，不保存到预设列表）
-    if (includeFixed) {
-      presets.push({
-        id: FIXED_PRESET_ID,
-        name: '[固定] 构建提示词',
-        role: 'system',
-        content: '',  // 内容会在 backgroundGenerate 中动态生成
-        order: FIXED_PRESET_ORDER,
-        enabled: true,
-        locked: true
-      });
-    }
-
+  getPresets() {
     // 按 order 排序
+    const presets = [...this.presets];
     presets.sort((a, b) => a.order - b.order);
-
     return presets;
   }
 
   /**
    * 获取启用的预设（用于生成）
    * 
-   * @param {boolean} [includeFixed=true] - 是否包含固定的构建提示词
    * @returns {Array<Object>} 启用的预设列表
    */
-  getEnabledPresets(includeFixed = true) {
-    return this.getPresets(includeFixed).filter(p => p.enabled);
+  getEnabledPresets() {
+    return this.getPresets().filter(p => p.enabled);
   }
 
   /**
@@ -169,9 +204,10 @@ export class DiaryPresetDataManager {
    * @param {string} preset.role - 角色类型（system/user/assistant）
    * @param {string} preset.content - 预设内容
    * @param {number} [preset.order] - 排序（不提供则自动计算）
+   * @param {string} [preset.type] - 预设类型（custom/instruction/context）
    * @returns {Object} 新建的预设对象
    */
-  addPreset({ name, role, content, order }) {
+  addPreset({ name, role, content, order, type = 'custom' }) {
     // 生成唯一ID
     const id = `preset_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
@@ -188,7 +224,8 @@ export class DiaryPresetDataManager {
       role: role || 'system',
       content: content || '',
       order: order,
-      enabled: true
+      enabled: true,
+      type: type || 'custom'
     };
 
     this.presets.push(newPreset);
@@ -261,38 +298,7 @@ export class DiaryPresetDataManager {
   }
 
   /**
-   * 更新预设顺序（考虑固定条目）
-   * 
-   * @param {Array<string>} beforeFixed - 固定条目前的预设ID数组
-   * @param {Array<string>} afterFixed - 固定条目后的预设ID数组
-   */
-  updateOrderWithFixed(beforeFixed, afterFixed) {
-    // 固定条目的 order = 500
-    const FIXED_ORDER = 500;
-
-    // 为固定条目前的预设分配 order（0-400，间隔100）
-    beforeFixed.forEach((id, index) => {
-      const preset = this.presets.find(p => p.id === id);
-      if (preset) {
-        preset.order = index * 100;
-      }
-    });
-
-    // 为固定条目后的预设分配 order（600+，间隔100）
-    afterFixed.forEach((id, index) => {
-      const preset = this.presets.find(p => p.id === id);
-      if (preset) {
-        preset.order = FIXED_ORDER + 100 + (index * 100);
-      }
-    });
-
-    this.savePresets();
-
-    logger.debug('[DiaryPresetDataManager] 已更新预设顺序');
-  }
-
-  /**
-   * 更新预设顺序（旧方法，保留兼容性）
+   * 更新预设顺序
    * 
    * @param {Array<string>} orderedIds - 排序后的预设ID数组
    */
@@ -417,16 +423,26 @@ export class DiaryPresetDataManager {
   /**
    * 构建 messages 数组（用于发送）
    * 
-   * @param {string} fixedContent - 固定构建提示词的内容
+   * @param {Object} contextContents - 上下文内容映射对象
+   * @param {string} [contextContents.charDescription] - 角色描述内容
+   * @param {string} [contextContents.charPersonality] - 角色性格内容
+   * @param {string} [contextContents.charScenario] - 角色场景内容
+   * @param {string} [contextContents.worldInfo] - 世界书内容
+   * @param {string} [contextContents.recentChat] - 最近对话内容
+   * @param {string} [contextContents.historyDiaries] - 历史日记内容
    * @returns {Array<Object>} messages 数组
    */
-  buildMessagesArray(fixedContent) {
-    const allPresets = this.getEnabledPresets(true);
+  buildMessagesArray(contextContents = {}) {
+    const allPresets = this.getEnabledPresets();
 
     // 构建 messages 数组
     const messages = allPresets.map(preset => {
-      // 如果是固定条目，使用传入的内容
-      const content = preset.id === FIXED_PRESET_ID ? fixedContent : preset.content;
+      let content = preset.content;
+
+      // 如果是上下文条目，使用动态生成的内容
+      if (preset.type === 'context' && contextContents[preset.subType]) {
+        content = contextContents[preset.subType];
+      }
 
       return {
         role: preset.role,
@@ -440,11 +456,11 @@ export class DiaryPresetDataManager {
   }
 
   /**
-   * 获取日记提示词的默认内容
+   * 获取日记写作指南的默认内容
    * 
-   * @returns {string} 日记提示词
+   * @returns {string} 日记写作指南内容
    */
-  getDiaryPresetContent() {
+  getDiaryInstructionContent() {
     return `<日记写作任务>
   任务定位:
     你可以像用户一样写日记，记录今天发生的事情、你的感受和想法

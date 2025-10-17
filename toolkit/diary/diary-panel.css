@@ -1560,7 +1560,7 @@
   opacity: 0;
   overflow: hidden;
   pointer-events: none;
-  /* 禁止交互 */
+  /* 关闭时不可交互 */
   transition: all 0.3s ease;
   box-shadow: 0 8px 32px color-mix(in srgb, var(--SmartThemeQuoteColor) 20%, transparent 80%);
 }
@@ -1582,6 +1582,7 @@
   margin-bottom: 15px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--SmartThemeBorderColor);
+  /* 交互状态由父容器 .diary-preset-panel 控制 */
 }
 
 .diary-preset-header h3 {
@@ -1787,6 +1788,101 @@
 
 .diary-preset-btn-icon .fa-toggle-off {
   color: var(--SmartThemeEmColor);
+}
+
+/* 搜索框样式 */
+.diary-preset-search {
+  position: relative;
+  margin: 10px 0 15px 0;
+}
+
+.diary-preset-search input {
+  width: 100%;
+  padding-right: 35px;
+  background-color: var(--SmartThemeBlurTintColor);
+  border: 1px solid var(--SmartThemeBorderColor);
+}
+
+.diary-preset-search-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--SmartThemeEmColor);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* 日记提示词分组样式 */
+.diary-preset-group {
+  margin-bottom: 8px;
+}
+
+/* 分组头部样式（继承预设条目样式） */
+.diary-preset-group-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background-color: var(--SmartThemeBlurTintColor);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 5px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+}
+
+.diary-preset-group-header:hover {
+  background-color: var(--SmartThemeQuoteColor);
+}
+
+/* 拖拽手柄（使用和预设条目相同的样式） */
+.diary-preset-group-header .diary-preset-drag-handle {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--SmartThemeEmColor);
+  cursor: move;
+  font-size: calc(var(--mainFontSize) * 0.95);
+  flex-shrink: 0;
+}
+
+.diary-preset-group-content {
+  padding: 5px;
+  max-height: 400px;
+  overflow-y: auto;
+  transition: max-height 0.3s;
+}
+
+.diary-preset-group-content.collapsed {
+  max-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.diary-preset-group-empty {
+  text-align: center;
+  padding: 20px;
+  color: var(--SmartThemeEmColor);
+  opacity: 0.7;
+}
+
+/* 分组内的预设项目样式 */
+.diary-preset-group .diary-preset-item {
+  margin: 5px 0;
+  /* 不设置背景色，继承默认预设条目样式 */
+}
+
+/* 分组拖拽时的样式 */
+.diary-preset-group.dragging {
+  opacity: 0.5;
+}
+
+.diary-preset-group.dragging .diary-preset-group-content {
+  display: none;
+  /* 拖拽时隐藏内容，只显示头部 */
 }
 
 /* 预设对话框（自定义弹窗） */

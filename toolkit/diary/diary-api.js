@@ -240,21 +240,47 @@ export class DiaryAPI {
     }
 
     try {
-      // 步骤1：构造完整的系统提示词（使用builder子模块）
-      const { systemPrompt, tempIdMap, tempCommentIdMap } = await this.builder.buildCompleteSystemPrompt(diary, charName, ctx);
+      // 步骤1：构造上下文内容（使用builder子模块）
+      const { contextContents, tempIdMap, tempCommentIdMap } = await this.builder.buildCompleteSystemPrompt(diary, charName, ctx, this.presetManager);
 
       // 保存临时编号映射到parser
       this.parser.setTempIdMaps(tempIdMap, tempCommentIdMap);
 
-      // 步骤2：使用预设管理器构建 messages 数组
+      // 步骤2：构建评论任务（如果需要）
+      const settings = this.dataManager.getSettings();
+      let commentTask = '';
+      const hasCommentTask = settings.allowCharacterComment || settings.allowPasserbyComments;
+      if (hasCommentTask) {
+        const diariesToSend = [];
+        if (settings.includeHistoryDiaries) {
+          const count = settings.historyDiaryCount || 3;
+          const historyDiaries = this.builder.getHistoryDiariesObjects(diary.id, count);
+          diariesToSend.push(...historyDiaries);
+        }
+        diariesToSend.push(diary);
+        commentTask = this.builder.buildCommentTask(diariesToSend, charName, settings);
+      }
+
+      // 步骤3：使用预设管理器构建 messages 数组
       let messages;
 
       if (this.presetManager) {
-        messages = this.presetManager.buildMessagesArray(systemPrompt);
+        messages = this.presetManager.buildMessagesArray(contextContents);
         logger.debug('[DiaryAPI.backgroundGenerate] 使用预设构建messages，共', messages.length, '条');
       } else {
         logger.warn('[DiaryAPI.backgroundGenerate] 预设管理器未初始化，使用简单方式');
-        messages = [{ role: 'system', content: systemPrompt }];
+        // 将所有上下文内容合并成一个系统消息
+        let combinedContent = Object.values(contextContents).join('\n\n');
+        messages = [{ role: 'system', content: combinedContent }];
+      }
+
+      // 步骤4：如果有评论任务，添加到最后
+      if (commentTask) {
+        messages.push({
+          role: 'user',
+          content: commentTask
+        });
+        logger.debug('[DiaryAPI.backgroundGenerate] 已添加评论任务');
       }
 
       if (signal.aborted) {
@@ -262,8 +288,7 @@ export class DiaryAPI {
         return null;
       }
 
-      // 步骤3：获取 API 配置
-      const settings = this.dataManager.getSettings();
+      // 步骤5：获取 API 配置
       const apiSettings = settings.apiConfig || { source: 'default', stream: false };
 
       logger.debug('[DiaryAPI.backgroundGenerate] ========== 发送给AI的messages ==========');
@@ -271,7 +296,7 @@ export class DiaryAPI {
       logger.debug('[DiaryAPI.backgroundGenerate] ========== messages结束 ==========');
       logger.debug('[DiaryAPI.backgroundGenerate] API配置源:', apiSettings.source, '流式:', apiSettings.stream);
 
-      // 步骤4：构造 API 配置对象
+      // 步骤6：构造 API 配置对象
       let apiConfig = {
         source: apiSettings.source,
         stream: apiSettings.stream
