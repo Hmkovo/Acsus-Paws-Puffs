@@ -43,6 +43,7 @@ export class DiaryPresetUI {
     this.panelElement = null;
     this.isOpen = false;
     this.sortable = null;
+    this.panelsModule = null;  // 面板管理器引用（用于双向同步）
   }
 
   /**
@@ -241,6 +242,8 @@ export class DiaryPresetUI {
 
     // 上下文条目：显示"动态生成"提示
     const isContextPreset = preset.type === 'context';
+    // 上下文条目不能删除（系统必需），其他预设可以删除
+    const canDelete = !isContextPreset;
 
     // 统一渲染：拖拽手柄 + 角色标签 + 内容 + 操作按钮
     item.innerHTML = `
@@ -258,9 +261,9 @@ export class DiaryPresetUI {
         <button class="diary-preset-btn-icon diary-preset-edit" data-id="${preset.id}" title="编辑">
           <span class="fa-solid fa-pencil fa-xs"></span>
         </button>
-        <button class="diary-preset-btn-icon diary-preset-delete" data-id="${preset.id}" title="删除预设">
+        ${canDelete ? `<button class="diary-preset-btn-icon diary-preset-delete" data-id="${preset.id}" title="删除预设">
           <span class="fa-solid fa-trash-can"></span>
-        </button>
+        </button>` : ''}
       </div>
     `;
 
@@ -275,10 +278,13 @@ export class DiaryPresetUI {
       this.showEditPresetDialog(btn.dataset.id);
     });
 
-    item.querySelector('.diary-preset-delete')?.addEventListener('click', (e) => {
-      const btn = e.currentTarget;
-      this.deletePreset(btn.dataset.id);
-    });
+    // 只有可删除的预设才绑定删除按钮事件
+    if (canDelete) {
+      item.querySelector('.diary-preset-delete')?.addEventListener('click', (e) => {
+        const btn = e.currentTarget;
+        this.deletePreset(btn.dataset.id);
+      });
+    }
 
     return item;
   }
@@ -432,11 +438,20 @@ export class DiaryPresetUI {
    * 切换预设启用状态
    * 
    * @param {string} id - 预设ID
+   * @description
+   * 切换预设的启用状态，如果是上下文条目预设，会反向同步到设置面板的复选框
    */
   togglePreset(id) {
     const success = this.dataManager.togglePreset(id);
     if (success) {
       this.render();
+
+      // 如果是上下文条目，反向同步到设置面板
+      const preset = this.dataManager.getPreset(id);
+      if (preset && preset.type === 'context') {
+        this.syncToSettingsPanel(preset.subType, preset.enabled);
+      }
+
       logger.debug('[DiaryPresetUI.togglePreset] 已切换预设状态:', id);
     }
   }
@@ -888,6 +903,37 @@ export class DiaryPresetUI {
       // 如果组内有匹配项或搜索框为空，显示分组
       group.style.display = hasVisibleItems || !term ? '' : 'none';
     });
+  }
+
+  /**
+   * 设置面板管理器引用（依赖注入）
+   * 
+   * @param {import('./diary-ui-panels.js').DiaryUIPanels} panelsModule - 面板管理器
+   * @description
+   * 用于双向同步：当预设面板的开关变化时，反向同步到设置面板的复选框
+   */
+  setPanelsManager(panelsModule) {
+    this.panelsModule = panelsModule;
+    logger.debug('[DiaryPresetUI] 已注入面板管理器引用');
+  }
+
+  /**
+   * 反向同步到设置面板
+   * 
+   * @param {string} subType - 上下文类型（charDescription/charPersonality等）
+   * @param {boolean} enabled - 启用状态
+   * @description
+   * 当预设面板的上下文条目开关变化时，同步更新设置面板的对应复选框
+   */
+  syncToSettingsPanel(subType, enabled) {
+    if (!this.panelsModule) {
+      logger.warn('[DiaryPresetUI.syncToSettingsPanel] 面板管理器未注入，无法同步');
+      return;
+    }
+
+    // 调用面板管理器的更新方法
+    this.panelsModule.updateCheckbox(subType, enabled);
+    logger.debug('[DiaryPresetUI.syncToSettingsPanel] 已同步到设置面板:', subType, enabled);
   }
 }
 

@@ -27,6 +27,7 @@ const MODULE_NAME = 'diary';
 
 // 上下文条目ID（对应设置项）
 const CONTEXT_PRESETS = [
+  { id: 'context_persona_desc', subType: 'personaDescription', name: '[系统] 用户设定', order: 10 },
   { id: 'context_char_desc', subType: 'charDescription', name: '[系统] 角色描述', order: 100 },
   { id: 'context_char_personality', subType: 'charPersonality', name: '[系统] 角色性格', order: 200 },
   { id: 'context_char_scenario', subType: 'charScenario', name: '[系统] 角色场景', order: 300 },
@@ -71,7 +72,7 @@ export class DiaryPresetDataManager {
    * 确保默认上下文条目存在
    * 
    * @description
-   * 自动创建6个上下文条目（角色描述、性格、场景、世界书、最近对话、历史日记）
+   * 自动创建7个上下文条目（用户设定、角色描述、性格、场景、世界书、最近对话、历史日记）
    * 这些条目内容为空（运行时动态生成），只能修改角色类型
    */
   ensureDefaultContextPresets() {

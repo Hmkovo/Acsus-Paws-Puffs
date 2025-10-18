@@ -165,6 +165,9 @@ export class DiaryUI {
       api: this.api
     });
 
+    // 注入面板管理器引用到预设UI（用于双向同步）
+    this.presetUI.setPanelsManager(this.panelsModule);
+
     logger.debug('[DiaryUI.initSubModules] 子模块已初始化');
   }
 
@@ -673,24 +676,6 @@ export class DiaryUI {
         commentsContainer.innerHTML = commentsHTML;
         commentsEl.appendChild(commentsContainer);
       }
-
-      const requestCommentBtn = commentsEl.querySelector('.diary-request-comment-btn');
-      const replyDiaryBtn = commentsEl.querySelector('.diary-reply-diary-btn');
-
-      if (diary.author === 'user') {
-        if (requestCommentBtn) {
-          requestCommentBtn.style.display = '';
-          const charNameSpan = requestCommentBtn.querySelector('.char-name');
-          if (charNameSpan) {
-            const ctx = getContext();
-            charNameSpan.textContent = ctx.name2 || 'AI';
-          }
-        }
-        if (replyDiaryBtn) replyDiaryBtn.style.display = 'none';
-      } else if (diary.author === 'ai') {
-        if (requestCommentBtn) requestCommentBtn.style.display = 'none';
-        if (replyDiaryBtn) replyDiaryBtn.style.display = '';
-      }
     }
 
     // 隐私按钮（直接调用子模块）
@@ -989,31 +974,12 @@ export class DiaryUI {
         return;
       }
 
-      // 回复AI日记按钮
-      const replyDiaryBtn = target.closest('.diary-reply-diary-btn');
-      if (replyDiaryBtn) {
+      // 添加评论按钮（固定在卡片右下角）
+      const addCommentBtn = target.closest('.diary-add-comment-btn');
+      if (addCommentBtn) {
         e.stopPropagation();
-        const card = target.closest('.diary-card');
-        if (!card) return;
-        const diaryId = /** @type {HTMLElement} */ (card).dataset.diaryId;
-        if (!diaryId) return;
-
-        logger.debug('[DiaryUI] 回复日记按钮被点击 - diaryId:', diaryId);
-        await this.replyToAIDiary(diaryId);
-        return;
-      }
-
-      // 请求评论按钮
-      const requestCommentBtn = target.closest('.diary-request-comment-btn');
-      if (requestCommentBtn) {
-        e.stopPropagation();
-        const card = target.closest('.diary-card');
-        if (!card) return;
-        const diaryId = /** @type {HTMLElement} */ (card).dataset.diaryId;
-        if (!diaryId) return;
-
-        logger.debug('[DiaryUI] 请求评论按钮被点击 - diaryId:', diaryId);
-        await this.completeCurrentDiary();
+        logger.debug('[DiaryUI] 添加评论按钮被点击');
+        await this.addCommentToCurrentDiary();
         return;
       }
     });
@@ -1058,39 +1024,57 @@ export class DiaryUI {
   }
 
   /**
-   * 回复AI的日记
+   * 添加评论到当前日记
+   * 
+   * @description
+   * 弹出输入框让用户输入评论，保存到当前显示的日记
+   * 
+   * @async
    */
-  async replyToAIDiary(diaryId) {
+  async addCommentToCurrentDiary() {
+    const currentCard = this.getCurrentCard();
+    if (!currentCard) {
+      showErrorToast('没有当前日记');
+      logger.warn('[DiaryUI.addCommentToCurrentDiary] 没有当前日记');
+      return;
+    }
+
+    const diaryId = currentCard.dataset.diaryId;
+    if (!diaryId) {
+      logger.warn('[DiaryUI.addCommentToCurrentDiary] 卡片缺少diaryId');
+      return;
+    }
+
     const { callGenericPopup, POPUP_TYPE } = await import('../../../../../popup.js');
 
-    const replyContent = await callGenericPopup(
-      '写下你对这篇日记的回复...',
+    const commentContent = await callGenericPopup(
+      '写下你的评论...',
       POPUP_TYPE.INPUT,
       '',
-      { okButton: '发送', cancelButton: '取消', wide: false, rows: 5 }
+      { okButton: '发送', cancelButton: '取消', wide: false, rows: 3 }
     );
 
-    const replyText = String(replyContent || '');
-    if (!replyText.trim()) {
-      logger.debug('[DiaryUI.replyToAIDiary] 用户取消或内容为空');
+    const commentText = String(commentContent || '');
+    if (!commentText.trim()) {
+      logger.debug('[DiaryUI.addCommentToCurrentDiary] 用户取消或内容为空');
       return;
     }
 
     const ctx = getContext();
-    const reply = {
+    const comment = {
       id: this.dataManager.generateTimestampId(),
       author: 'user',
       authorName: ctx.name1 || 'User',
-      content: replyText.trim(),
+      content: commentText.trim(),
       timestamp: Date.now(),
       replies: []
     };
 
-    this.dataManager.addComment(diaryId, reply);
+    this.dataManager.addComment(diaryId, comment);
     this.refreshAndStayAtDiary(diaryId);
 
-    showSuccessToast('回复已添加');
-    logger.info('[DiaryUI.replyToAIDiary] 回复已添加到AI日记:', diaryId);
+    showSuccessToast('评论已添加');
+    logger.info('[DiaryUI.addCommentToCurrentDiary] 评论已添加到日记:', diaryId);
   }
 
   /**

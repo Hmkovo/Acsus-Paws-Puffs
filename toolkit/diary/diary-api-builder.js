@@ -91,10 +91,10 @@ export class DiaryAPIBuilder {
     };
 
     // 1. 用户设定
-    if (settings.includePersonaDescription) {
+    if (isContextEnabled('personaDescription')) {
       const personaDesc = power_user.persona_description;
       if (personaDesc && personaDesc.trim()) {
-        // 暂时保留，未来可能也变成上下文条目
+        contextContents.personaDescription = `# 用户设定\n${personaDesc}`;
         logger.debug('[DiaryAPIBuilder] 已包含用户设定');
       }
     }

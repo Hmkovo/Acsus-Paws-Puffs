@@ -1195,29 +1195,34 @@
   }
 }
 
-/* 请求评论按钮 */
-.diary-request-comment-btn {
-  width: 100%;
-  padding: 10px;
-  margin-top: 10px;
-  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 15%, transparent 85%);
-  backdrop-filter: blur(10px);
-  border: 1px dashed var(--SmartThemeQuoteColor);
-  border-radius: 12px;
-  color: var(--SmartThemeQuoteColor);
-  font-size: var(--mainFontSize);
-  font-weight: 500;
+/* 添加评论按钮容器（放在内容块和评论区之间） */
+.diary-add-comment-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin: 15px 0;
+  padding: 0 15px;
+}
+
+/* 添加评论按钮（和回复评论按钮一样的小样式） */
+.diary-add-comment-btn {
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 80%, transparent 20%);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 6px;
+  padding: 6px 12px;
+  color: var(--SmartThemeEmColor);
+  font-size: calc(var(--mainFontSize) * 0.9);
   cursor: pointer;
   transition: all 0.3s;
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 6px;
 }
 
-.diary-request-comment-btn:hover {
-  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 25%, transparent 75%);
-  transform: translateY(-2px);
+.diary-add-comment-btn:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 20%, transparent 80%);
+  color: var(--SmartThemeQuoteColor);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--SmartThemeQuoteColor) 25%, transparent 75%);
 }
 
 /* ========================================

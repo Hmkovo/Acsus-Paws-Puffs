@@ -676,7 +676,7 @@ function removeFromHiddenTabs(tabId) {
  */
 function switchToFirstVisibleTab() {
   const allTabs = document.querySelectorAll('.paws-tab');
-  
+
   for (const tab of allTabs) {
     const tabElement = /** @type {HTMLElement} */ (tab);
     // 检查标签页是否可见（display 不是 'none'）
@@ -687,7 +687,7 @@ function switchToFirstVisibleTab() {
       return;
     }
   }
-  
+
   logger.warn('[switchToFirstVisibleTab] 没有找到可见的标签页');
 }
 
@@ -695,7 +695,7 @@ function switchToFirstVisibleTab() {
  * 绑定日记功能设置
  * 
  * @description
- * 按照官方推荐模式，绑定日记总开关的 change 事件
+ * 点击日记卡片时弹出官方弹窗，在弹窗内启用/禁用日记功能
  * 使用 extension_settings 和 saveSettingsDebounced() 存储设置
  */
 function bindDiarySettings() {
@@ -708,31 +708,120 @@ function bindDiarySettings() {
     }
   };
 
-  // 绑定日记总开关（官方推荐模式）
-  const diaryCheckbox = document.getElementById('diary-enabled');
-  if (!diaryCheckbox) {
-    logger.warn('[Settings] 未找到日记总开关 checkbox');
-    return;
-  }
-
-  // 初始化 checkbox 状态
-  const initialState = extension_settings[EXT_ID]?.diary?.enabled || false;
-  diaryCheckbox.checked = initialState;
+  // 初始化卡片状态
   updateCardStatus();
 
-  // 绑定 change 事件
-  diaryCheckbox.addEventListener('change', function () {
-    const wasEnabled = extension_settings[EXT_ID].diary.enabled;
-    const newState = this.checked;
+  // 绑定卡片点击事件，弹出官方弹窗
+  const diaryCard = document.querySelector('.toolbox-card[data-tool="diary"]');
+  if (diaryCard) {
+    diaryCard.addEventListener('click', async () => {
+      await showDiarySettingsPopup(updateCardStatus);
+    });
+  }
 
-    // 更新 extension_settings
-    extension_settings[EXT_ID].diary.enabled = newState;
+  logger.debug('[Settings] 日记卡片点击事件已绑定');
+}
 
-    // 调用官方保存函数
-    saveSettingsDebounced();
+/**
+ * 显示日记设置弹窗
+ * 
+ * @async
+ * @param {Function} updateCardStatus - 更新卡片状态的回调函数
+ * @description
+ * 使用官方 callGenericPopup 显示日记功能的启用/禁用开关和使用说明
+ * 开关状态立即保存，不依赖弹窗的确认/取消按钮
+ */
+async function showDiarySettingsPopup(updateCardStatus) {
+  // 构建弹窗HTML内容
+  const html = `
+    <div class="diary-intro-popup" style="padding: 10px; max-height: 500px; overflow-y: auto; text-align: left;">
+      <!-- 开关 -->
+      <div style="margin-bottom: 15px; padding: 10px; background: var(--black30a); border-radius: 8px;">
+        <label class="checkbox_label" style="display: flex; align-items: center; cursor: pointer;">
+          <input type="checkbox" id="diary-popup-enabled" ${diarySystem.enabled ? 'checked' : ''} />
+          <strong style="margin-left: 10px; font-size: 1.1em;">启用日记功能</strong>
+        </label>
+      </div>
 
-    // 只有状态真正改变时才触发功能启用/禁用
-    if (newState !== wasEnabled) {
+      <!-- 功能介绍 -->
+      <div style="margin-bottom: 12px;">
+        <h4 style="margin: 0 0 8px 0; color: var(--SmartThemeQuoteColor);">
+          <i class="fa-solid fa-lightbulb" style="margin-right: 8px;"></i>功能介绍
+        </h4>
+        <p style="margin: 0; line-height: 1.6; opacity: 0.9;">
+          日记系统提供翻页书式的记录体验，支持用户和AI共同书写日记、互相评论。记录内容、记忆、互动，构建专属的故事档案。
+        </p>
+      </div>
+
+      <!-- 核心功能 -->
+      <div style="margin-bottom: 12px;">
+        <h4 style="margin: 0 0 8px 0; color: var(--SmartThemeQuoteColor);">
+          <i class="fa-solid fa-star" style="margin-right: 8px;"></i>核心功能
+        </h4>
+        <ul style="margin: 5px 0; padding-left: 20px; line-height: 1.8; opacity: 0.9;">
+          <li><strong>记录日记：</strong>支持文字和图片内容块，自由组合</li>
+          <li><strong>AI评论：</strong>AI可以阅读你的日记并留下评论</li>
+          <li><strong>互动回复：</strong>支持嵌套回复，类似社交媒体的评论系统</li>
+          <li><strong>翻页视觉：</strong>轮播图式翻页，沉浸式阅读体验</li>
+          <li><strong>筛选搜索：</strong>按作者、日期、关键词筛选日记</li>
+        </ul>
+      </div>
+
+      <!-- 快速上手 -->
+      <div style="margin-bottom: 12px;">
+        <h4 style="margin: 0 0 8px 0; color: var(--SmartThemeQuoteColor);">
+          <i class="fa-solid fa-rocket" style="margin-right: 8px;"></i>快速上手
+        </h4>
+        <ol style="margin: 5px 0; padding-left: 20px; line-height: 1.8; opacity: 0.9;">
+          <li><strong>打开面板：</strong>点击右侧扩展栏的"<i class="fa-solid fa-book"></i> 日记"按钮</li>
+          <li><strong>创建日记：</strong>点击"新日记"按钮，填写标题和内容</li>
+          <li><strong>添加内容块：</strong>支持多段文字和图片，每个块可以设置时间和标签</li>
+          <li><strong>请求评论：</strong>点击"完成日记"按钮，AI会阅读并评论</li>
+          <li><strong>翻页阅读：</strong>使用左右箭头按钮切换日记，查看历史记录</li>
+        </ol>
+      </div>
+
+      <!-- 高级功能 -->
+      <div style="margin-bottom: 12px;">
+        <h4 style="margin: 0 0 8px 0; color: var(--SmartThemeQuoteColor);">
+          <i class="fa-solid fa-cog" style="margin-right: 8px;"></i>高级功能
+        </h4>
+        <ul style="margin: 5px 0; padding-left: 20px; line-height: 1.8; opacity: 0.9;">
+          <li><strong>上下文预设：</strong>自定义AI生成评论时的提示词</li>
+          <li><strong>视觉定制：</strong>调整卡片透明度、主题色、背景图</li>
+          <li><strong>自定义API：</strong>支持使用独立的API配置生成评论</li>
+          <li><strong>就地编辑：</strong>在轮播图中直接编辑日记，无需弹窗</li>
+          <li><strong>隐私模式：</strong>标记私密日记（眼睛图标），不发送给AI</li>
+        </ul>
+      </div>
+
+      <!-- 提示 -->
+      <div style="padding: 10px; background: var(--SmartThemeBlurTintColor); border-left: 3px solid var(--SmartThemeQuoteColor); border-radius: 4px;">
+        <i class="fa-solid fa-info-circle" style="color: var(--SmartThemeQuoteColor); margin-right: 8px;"></i>
+        <span style="opacity: 0.9;">更多设置（筛选、预设、视觉、API）请在日记面板内的工具栏配置。</span>
+      </div>
+    </div>
+  `;
+
+  // 弹出官方弹窗（使用 TEXT 类型，只有关闭按钮）
+  callGenericPopup(html, POPUP_TYPE.TEXT, '日记');
+
+  // 等待DOM更新后绑定事件
+  await new Promise(resolve => setTimeout(resolve, 100));
+
+  // 绑定弹窗内的复选框事件
+  const checkbox = document.getElementById('diary-popup-enabled');
+  if (checkbox) {
+    checkbox.addEventListener('change', function () {
+      const newState = this.checked;
+
+      // 更新 extension_settings
+      extension_settings[EXT_ID].diary.enabled = newState;
+
+      // 立即保存
+      saveSettingsDebounced();
+
+      // 启用或禁用功能
       if (newState) {
         diarySystem.enable();
         toastr.success('日记功能已启用');
@@ -742,19 +831,11 @@ function bindDiarySettings() {
         toastr.info('日记功能已禁用');
         logger.info('[Settings] 日记功能已禁用');
       }
-      updateCardStatus();
-    }
-  });
 
-  // 可选：卡片点击显示提示信息（而不是打开弹窗）
-  const diaryCard = document.querySelector('.toolbox-card[data-tool="diary"]');
-  if (diaryCard) {
-    diaryCard.addEventListener('click', () => {
-      toastr.info('请使用上方的开关启用/禁用日记功能。更多设置请在日记面板内配置。', '日记系统', { timeOut: 3000 });
+      // 更新卡片状态
+      updateCardStatus();
     });
   }
-
-  logger.debug('[Settings] 日记总开关已绑定');
 }
 
 

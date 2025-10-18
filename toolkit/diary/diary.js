@@ -210,6 +210,7 @@ export class DiarySystem {
    * 
    * @description
    * 在 extensionsMenuButton 的菜单中添加【日记】选项
+   * 根据 enabled 状态控制菜单项的显示/隐藏
    */
   registerMenuEntry() {
     eventSource.on(event_types.APP_READY, () => {
@@ -229,6 +230,9 @@ export class DiarySystem {
                     <span>日记</span>
                 `;
 
+        // 根据当前启用状态设置初始可见性
+        menuItem.style.display = this.enabled ? '' : 'none';
+
         // 点击打开日记面板
         menuItem.addEventListener('click', () => {
           if (this.enabled) {
@@ -242,7 +246,7 @@ export class DiarySystem {
         });
 
         extensionsMenu.appendChild(menuItem);
-        logger.info('[DiarySystem] 扩展菜单入口已注册');
+        logger.info('[DiarySystem] 扩展菜单入口已注册，初始可见性:', this.enabled);
       } catch (error) {
         logger.error('[DiarySystem] 注册菜单入口失败:', error);
       }
@@ -271,16 +275,26 @@ export class DiarySystem {
 
   /**
    * 启用日记系统
+   * 
+   * @description
+   * 启用日记功能，同时显示扩展菜单中的日记图标
    */
   enable() {
     this.enabled = true;
     extension_settings[EXT_ID][MODULE_NAME].enabled = true;
     this.saveSettings();
+
+    // 显示扩展菜单中的日记图标
+    this.showMenuEntry();
+
     logger.info('[DiarySystem] 日记系统已启用');
   }
 
   /**
    * 禁用日记系统
+   * 
+   * @description
+   * 禁用日记功能，同时隐藏扩展菜单中的日记图标
    */
   disable() {
     this.enabled = false;
@@ -292,7 +306,52 @@ export class DiarySystem {
       this.ui.closePanel();
     }
 
+    // 隐藏扩展菜单中的日记图标
+    this.hideMenuEntry();
+
     logger.info('[DiarySystem] 日记系统已禁用');
+  }
+
+  /**
+   * 显示扩展菜单中的日记图标
+   * 
+   * @description
+   * 设置菜单项为可见状态（display: ''）
+   * 如果菜单项尚未创建，则不执行任何操作（等待 APP_READY 事件触发）
+   */
+  showMenuEntry() {
+    try {
+      const menuItem = document.getElementById('diary-menu-entry');
+      if (menuItem) {
+        menuItem.style.display = '';
+        logger.debug('[DiarySystem] 扩展菜单图标已显示');
+      } else {
+        logger.debug('[DiarySystem] 菜单项尚未创建，跳过显示操作');
+      }
+    } catch (error) {
+      logger.error('[DiarySystem] 显示菜单图标失败:', error);
+    }
+  }
+
+  /**
+   * 隐藏扩展菜单中的日记图标
+   * 
+   * @description
+   * 设置菜单项为隐藏状态（display: 'none'）
+   * 如果菜单项尚未创建，则不执行任何操作
+   */
+  hideMenuEntry() {
+    try {
+      const menuItem = document.getElementById('diary-menu-entry');
+      if (menuItem) {
+        menuItem.style.display = 'none';
+        logger.debug('[DiarySystem] 扩展菜单图标已隐藏');
+      } else {
+        logger.debug('[DiarySystem] 菜单项尚未创建，跳过隐藏操作');
+      }
+    } catch (error) {
+      logger.error('[DiarySystem] 隐藏菜单图标失败:', error);
+    }
   }
 
   /**

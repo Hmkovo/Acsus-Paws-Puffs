@@ -339,7 +339,9 @@ export class DiaryUIPanels {
     // 绑定事件
     if (personaDescCheckbox) {
       personaDescCheckbox.addEventListener('change', () => {
-        this.dataManager.updateSettings({ includePersonaDescription: /** @type {HTMLInputElement} */(personaDescCheckbox).checked });
+        const checked = /** @type {HTMLInputElement} */(personaDescCheckbox).checked;
+        this.dataManager.updateSettings({ includePersonaDescription: checked });
+        this.syncContextPresetState('personaDescription', checked);
       });
     }
 
@@ -463,7 +465,7 @@ export class DiaryUIPanels {
   }
 
   /**
-   * 同步上下文预设状态
+   * 同步上下文预设状态（设置面板 → 预设面板）
    * 
    * @param {string} subType - 上下文类型（charDescription/charPersonality等）
    * @param {boolean} enabled - 启用状态
@@ -480,6 +482,45 @@ export class DiaryUIPanels {
       preset.enabled = enabled;
       this.presetUI.dataManager.savePresets();
       logger.debug('[DiaryUIPanels.syncContextPresetState] 已同步预设状态:', subType, enabled);
+    }
+  }
+
+  /**
+   * 更新设置面板复选框（预设面板 → 设置面板）
+   * 
+   * @param {string} subType - 上下文类型（charDescription/charPersonality等）
+   * @param {boolean} enabled - 启用状态
+   * @description
+   * 当预设面板的开关变化时，反向同步到设置面板的对应复选框
+   */
+  updateCheckbox(subType, enabled) {
+    // subType 到复选框 ID 的映射
+    const checkboxIdMap = {
+      'personaDescription': 'diaryPersonaDescCheckbox',
+      'charDescription': 'diaryCharDescCheckbox',
+      'charPersonality': 'diaryCharPersonalityCheckbox',
+      'charScenario': 'diaryCharScenarioCheckbox',
+      'worldInfo': 'diaryWorldInfoCheckbox',
+      'recentChat': 'diaryRecentChatCheckbox',
+      'historyDiaries': 'diaryHistoryDiariesCheckbox'
+    };
+
+    const checkboxId = checkboxIdMap[subType];
+    if (!checkboxId) {
+      logger.warn('[DiaryUIPanels.updateCheckbox] 未知的上下文类型:', subType);
+      return;
+    }
+
+    // 更新复选框状态
+    const checkbox = /** @type {HTMLInputElement} */(document.getElementById(checkboxId));
+    if (checkbox) {
+      checkbox.checked = enabled;
+      // 同时更新数据（避免不一致）
+      const settingKey = `include${subType.charAt(0).toUpperCase() + subType.slice(1)}`;
+      this.dataManager.updateSettings({ [settingKey]: enabled });
+      logger.debug('[DiaryUIPanels.updateCheckbox] 已更新复选框:', subType, enabled);
+    } else {
+      logger.warn('[DiaryUIPanels.updateCheckbox] 未找到复选框:', checkboxId);
     }
   }
 }
