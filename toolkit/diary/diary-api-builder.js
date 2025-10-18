@@ -66,6 +66,132 @@ export class DiaryAPIBuilder {
   }
 
   /**
+   * 为批量评论构建通用上下文（不包含日记内容）
+   * 
+   * @description
+   * 专门为批量评论设计的上下文构建方法。
+   * 只构建通用上下文（用户设定、角色信息、世界书、最近对话），
+   * 不包含日记内容（日记内容由调用方手动添加）。
+   * 
+   * @async
+   * @param {string} charName - 角色名称
+   * @param {Object} ctx - SillyTavern上下文对象
+   * @param {Object} presetManager - 预设管理器实例
+   * @returns {Promise<Object>} 上下文内容对象
+   */
+  async buildContextForSelectedDiaries(charName, ctx, presetManager) {
+    const contextContents = {};
+    const settings = this.dataManager.getSettings();
+    const character = ctx.characters[ctx.characterId];
+
+    // 获取所有预设（包括上下文条目）
+    const allPresets = presetManager ? presetManager.getPresets() : [];
+
+    // 辅助函数：检查上下文条目是否启用
+    const isContextEnabled = (subType) => {
+      const preset = allPresets.find(p => p.type === 'context' && p.subType === subType);
+      return preset ? preset.enabled : settings[`include${subType.charAt(0).toUpperCase() + subType.slice(1)}`];
+    };
+
+    // 1. 用户设定
+    if (isContextEnabled('personaDescription')) {
+      const personaDesc = power_user.persona_description;
+      if (personaDesc && personaDesc.trim()) {
+        contextContents.personaDescription = `# 用户设定\n${personaDesc}`;
+        logger.debug('[DiaryAPIBuilder] 已包含用户设定');
+      }
+    }
+
+    // 2. 角色描述
+    if (character && isContextEnabled('charDescription') && character.description) {
+      contextContents.charDescription = `# 角色信息\n你是 ${character.name}。\n\n${character.description}`;
+      logger.debug('[DiaryAPIBuilder] 已包含角色描述');
+    }
+
+    // 3. 角色性格
+    if (character && isContextEnabled('charPersonality') && character.personality) {
+      contextContents.charPersonality = `# 角色性格\n${character.personality}`;
+      logger.debug('[DiaryAPIBuilder] 已包含角色性格');
+    }
+
+    // 4. 角色场景
+    if (character && isContextEnabled('charScenario') && character.scenario) {
+      contextContents.charScenario = `# 角色场景\n${character.scenario}`;
+      logger.debug('[DiaryAPIBuilder] 已包含角色场景');
+    }
+
+    // 5. 世界书
+    if (isContextEnabled('worldInfo')) {
+      const worldInfo = await this.getSimpleWorldInfo(ctx.characterId);
+      if (worldInfo) {
+        contextContents.worldInfo = worldInfo;
+        logger.debug('[DiaryAPIBuilder] 已包含世界书');
+      }
+    }
+
+    // 6. 最近对话
+    if (isContextEnabled('recentChat')) {
+      const count = settings.recentChatCount || 5;
+      const recentChat = this.getRecentChatHistory(ctx, count);
+      if (recentChat) {
+        contextContents.recentChat = `# 最近对话\n${recentChat}`;
+        logger.debug('[DiaryAPIBuilder] 已包含最近对话');
+      }
+    }
+
+    logger.debug('[DiaryAPIBuilder.buildContextForSelectedDiaries] 通用上下文已构建完成');
+    return contextContents;
+  }
+
+  /**
+   * 为选中的日记构建日记内容和临时编号映射
+   * 
+   * @description
+   * 将选中的日记格式化为日记内容字符串，并创建临时编号映射。
+   * 用于批量评论功能。
+   * 
+   * @param {Array<Object>} selectedDiaries - 选中的日记对象数组
+   * @returns {{diariesContent: string, tempIdMap: Object, tempCommentIdMap: Object}}
+   */
+  buildDiariesContentWithMapping(selectedDiaries) {
+    const tempIdMap = {};
+    const tempCommentIdMap = {};
+
+    let diariesContent = `# 最近日记（共${selectedDiaries.length}篇）\n\n`;
+
+    selectedDiaries.forEach((d, index) => {
+      const tempId = index + 1;
+      tempIdMap[tempId] = d.id;
+
+      const content = d.contentBlocks
+        .map(b => {
+          if (b.type === 'image' && b.imageUrl) {
+            return `[图片链接：${b.imageUrl}]\n[图片描述：${b.imageDesc || '无描述'}]`;
+          }
+          return b.content;
+        })
+        .filter(c => c.trim())
+        .join('\n');
+
+      diariesContent += `#${tempId} ${d.title} (${d.date})\n`;
+      diariesContent += `${content || '（空白日记）'}\n`;
+
+      if (d.comments && d.comments.length > 0) {
+        diariesContent += `\n已有评论：\n`;
+        diariesContent += this.formatCommentsWithReplies(d.comments, 1, tempCommentIdMap);
+      }
+
+      diariesContent += `\n`;
+    });
+
+    logger.debug('[DiaryAPIBuilder.buildDiariesContentWithMapping] 已构建', selectedDiaries.length, '篇日记内容');
+    logger.debug('[DiaryAPIBuilder.buildDiariesContentWithMapping] 临时日记编号映射:', tempIdMap);
+    logger.debug('[DiaryAPIBuilder.buildDiariesContentWithMapping] 临时评论编号映射:', tempCommentIdMap);
+
+    return { diariesContent, tempIdMap, tempCommentIdMap };
+  }
+
+  /**
    * 构造完整的系统提示词（支持临时编号和批量评论）
    * 
    * @async

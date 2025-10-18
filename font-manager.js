@@ -137,16 +137,17 @@ export class FontManager {
    * 通过动态创建 <style> 标签将字体应用到页面所有元素：
    * 1. 先清除旧的字体样式（删除已存在的 style 标签）
    * 2. 创建新的 style 标签，ID 为 'paws-puffs-font-style'
-   * 3. 生成 CSS 代码：@import 字体链接 + font-family 应用规则
+   * 3. 生成 CSS 代码：@import 字体链接 + 通配符选择器 + !important
    * 4. 排除 Font Awesome 图标（避免图标变成方块）
+   * 
+   * 使用 `*:not(...)` 通配符选择器 + `!important` 确保能覆盖任何主题的字体设置
    * 
    * 只有在 fontEnabled 为 true 时才会应用
    * 
    * @param {Object} font - 字体数据对象
    * @param {string} font.name - 字体名称
-   * @param {string} font.url - 字体链接（Google Fonts 等）
+   * @param {string} font.url - 字体链接（Google Fonts、zeoseven 等）
    * @param {string} font.fontFamily - CSS font-family 值
-   * @param {string} [font.css] - 完整的 CSS 代码（可选）
    */
   applyFont(font) {
     // 只有开启时才应用
@@ -178,13 +179,6 @@ export class FontManager {
       *:not([class*="fa-"]):not(.fa):not(.fas):not(.far):not(.fab):not(.fal):not(.fad) {
         font-family: '${font.fontFamily}', sans-serif !important;
       }`;
-    }
-
-    // 3. 如果有完整CSS，也加上
-    if (font.css && !font.css.includes('font-family')) {
-      css = font.css + '\n' + css;
-    } else if (font.css) {
-      css = font.css;
     }
 
     style.textContent = css;

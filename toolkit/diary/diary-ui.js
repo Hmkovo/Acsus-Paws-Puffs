@@ -1307,6 +1307,9 @@ export class DiaryUI {
             </p>
           </div>
           <div class="diary-preset-dialog-buttons">
+            <button class="diary-preset-dialog-btn diary-preset-dialog-select-all" style="margin-right: auto;">
+              全选
+            </button>
             <button class="diary-preset-dialog-btn diary-preset-dialog-cancel">取消</button>
             <button class="diary-preset-dialog-btn diary-preset-dialog-ok">应用选择</button>
           </div>
@@ -1323,6 +1326,7 @@ export class DiaryUI {
       // 绑定事件
       const cancelBtn = overlay.querySelector('.diary-preset-dialog-cancel');
       const okBtn = overlay.querySelector('.diary-preset-dialog-ok');
+      const selectAllBtn = overlay.querySelector('.diary-preset-dialog-select-all');
 
       const close = () => {
         overlay.classList.remove('active');
@@ -1365,8 +1369,27 @@ export class DiaryUI {
         }, 300);
       };
 
+      // 全选/取消全选功能
+      const toggleSelectAll = () => {
+        const checkboxes = overlay.querySelectorAll('[data-diary-id]:not([disabled])');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+
+        if (allChecked) {
+          // 当前全选 → 取消全选
+          checkboxes.forEach(cb => cb.checked = false);
+          selectAllBtn.textContent = '全选';
+          logger.debug('[DiaryUI.showSelectSendPanel] 取消全选');
+        } else {
+          // 未全选 → 全选
+          checkboxes.forEach(cb => cb.checked = true);
+          selectAllBtn.textContent = '取消全选';
+          logger.debug('[DiaryUI.showSelectSendPanel] 全选日记');
+        }
+      };
+
       cancelBtn.addEventListener('click', close);
       okBtn.addEventListener('click', save);
+      selectAllBtn.addEventListener('click', toggleSelectAll);
       overlay.addEventListener('click', (e) => {
         if (e.target === overlay) close();
       });

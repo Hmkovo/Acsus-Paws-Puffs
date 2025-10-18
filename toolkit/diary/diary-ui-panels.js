@@ -494,15 +494,15 @@ export class DiaryUIPanels {
    * 当预设面板的开关变化时，反向同步到设置面板的对应复选框
    */
   updateCheckbox(subType, enabled) {
-    // subType 到复选框 ID 的映射
+    // subType 到复选框 ID 的映射（修正为 HTML 中的实际 ID）
     const checkboxIdMap = {
-      'personaDescription': 'diaryPersonaDescCheckbox',
-      'charDescription': 'diaryCharDescCheckbox',
-      'charPersonality': 'diaryCharPersonalityCheckbox',
-      'charScenario': 'diaryCharScenarioCheckbox',
-      'worldInfo': 'diaryWorldInfoCheckbox',
-      'recentChat': 'diaryRecentChatCheckbox',
-      'historyDiaries': 'diaryHistoryDiariesCheckbox'
+      'personaDescription': 'diaryIncludePersonaDescription',
+      'charDescription': 'diaryIncludeCharDescription',
+      'charPersonality': 'diaryIncludeCharPersonality',
+      'charScenario': 'diaryIncludeCharScenario',
+      'worldInfo': 'diaryIncludeWorldInfo',
+      'recentChat': 'diaryIncludeRecentChat',
+      'historyDiaries': 'diaryIncludeHistoryDiaries'
     };
 
     const checkboxId = checkboxIdMap[subType];

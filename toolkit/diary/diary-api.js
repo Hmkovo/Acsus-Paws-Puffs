@@ -706,18 +706,26 @@ export class DiaryAPI {
 
       logger.debug('[DiaryAPI.backgroundGenerateForSelected] 将发送', selectedDiaries.length, '篇日记');
 
-      // 构建上下文（使用第一篇日记作为基准）
-      const baseDiary = selectedDiaries[0];
-      const { contextContents, tempIdMap, tempCommentIdMap } = await this.builder.buildCompleteSystemPrompt(
-        baseDiary,
+      // 【重构】使用专门的批量评论上下文构建方法
+      // 1. 构建通用上下文（不包含日记）
+      const contextContents = await this.builder.buildContextForSelectedDiaries(
         charName,
         ctx,
-        this.presetManager,
-        []  // 传入空数组，阻止自动添加历史日记（我们手动通过 buildCommentTask 添加）
+        this.presetManager
       );
+
+      // 2. 构建日记内容和临时编号映射
+      const { diariesContent, tempIdMap, tempCommentIdMap } = this.builder.buildDiariesContentWithMapping(
+        selectedDiaries
+      );
+
+      // 3. 将日记内容添加到上下文
+      contextContents.historyDiaries = diariesContent;
 
       // 保存临时编号映射到parser
       this.parser.setTempIdMaps(tempIdMap, tempCommentIdMap);
+      logger.debug('[DiaryAPI.backgroundGenerateForSelected] 临时日记编号映射:', tempIdMap);
+      logger.debug('[DiaryAPI.backgroundGenerateForSelected] 临时评论编号映射:', tempCommentIdMap);
 
       // 手动构建评论任务（使用选中的日记）
       const commentTask = this.builder.buildCommentTask(selectedDiaries, charName, settings);
