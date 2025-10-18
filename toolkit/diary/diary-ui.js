@@ -1262,9 +1262,15 @@ export class DiaryUI {
 
   /**
    * 显示选择发送面板
+   * 
+   * @description
+   * 显示当前筛选条件下的日记列表，让用户选择要生成评论的日记。
+   * 选择后直接触发批量生成，只为这些日记生成评论（一次API调用）。
+   * 面板只显示当前筛选条件下的日记。
    */
   async showSelectSendPanel() {
-    const allDiaries = this.dataManager.diaries;
+    // 使用筛选后的日记（而不是所有日记）
+    const allDiaries = this.filterModule.getFilteredDiaries(this.filter);
 
     if (allDiaries.length === 0) {
       if (typeof toastr !== 'undefined') {
@@ -1273,80 +1279,114 @@ export class DiaryUI {
       return;
     }
 
-    const diariesHTML = allDiaries.map(d => {
-      const isPrivacy = d.privacy;
-      const authorBadge = d.author === 'ai' ? '<span style="color: #667eea;">(AI)</span>' : '';
-      const privacyMark = isPrivacy ? '<span style="color: #ff9800;">🔒</span>' : '';
+    return new Promise((resolve) => {
+      const diariesHTML = allDiaries.map(d => {
+        const isPrivacy = d.privacy;
+        const authorBadge = d.author === 'ai' ? '<span style="color: #667eea;">(AI)</span>' : '';
+        const privacyMark = isPrivacy ? '<span style="color: #ff9800;">🔒</span>' : '';
 
-      return `
-        <label class="checkbox_label" style="margin: 8px 0; display: flex; ${isPrivacy ? 'opacity: 0.5;' : ''}">
-          <input type="checkbox" 
-                 data-diary-id="${d.id}" 
-                 ${isPrivacy ? 'disabled title="隐私日记不可发送"' : ''}>
-          <span>
-            ${d.date} ${d.title} ${authorBadge} ${privacyMark}
-          </span>
-        </label>
-      `;
-    }).join('');
+        return `
+          <label class="checkbox_label" style="margin: 8px 0; display: flex; ${isPrivacy ? 'opacity: 0.5;' : ''}">
+            <input type="checkbox" 
+                   data-diary-id="${d.id}" 
+                   ${isPrivacy ? 'disabled title="隐私日记不可发送"' : ''}>
+            <span>
+              ${d.date} ${d.title} ${authorBadge} ${privacyMark}
+            </span>
+          </label>
+        `;
+      }).join('');
 
-    const popupContent = `
-      <div style="text-align: left; max-height: 60vh; overflow-y: auto;">
-        <h3 style="margin-top: 0; color: var(--SmartThemeQuoteColor);">
-          <i class="fa-solid fa-list-check"></i> 选择要发送给AI的日记
-        </h3>
-        
-        <p style="color: var(--white50a); font-size: 0.9em; margin: 10px 0;">
-          勾选的日记将在下次聊天时发送给AI，隐私日记（🔒）无法勾选。
-        </p>
-        
-        <hr style="margin: 15px 0; border: none; border-top: 1px solid var(--SmartThemeBorderColor); opacity: 0.3;">
-        
-        <div style="margin: 15px 0;">
-          ${diariesHTML}
+      // 创建自定义弹窗（类似 diary-preset-ui.js 的做法）
+      const overlay = document.createElement('div');
+      overlay.className = 'diary-preset-dialog-overlay';  // 复用预设弹窗样式
+      overlay.innerHTML = `
+        <div class="diary-preset-dialog-container" style="max-width: 600px;">
+          <div style="text-align: left; max-height: 60vh; overflow-y: auto; padding: 20px;">
+            <h3 style="margin-top: 0; color: var(--SmartThemeQuoteColor);">
+              <i class="fa-solid fa-list-check"></i> 选择要发送给AI的日记
+            </h3>
+            
+            <p style="color: var(--white50a); font-size: 0.9em; margin: 10px 0;">
+              勾选的日记将在下次生成评论时作为历史日记上下文，隐私日记（🔒）无法勾选。
+            </p>
+            
+            <hr style="margin: 15px 0; border: none; border-top: 1px solid var(--SmartThemeBorderColor); opacity: 0.3;">
+            
+            <div style="margin: 15px 0;">
+              ${diariesHTML}
+            </div>
+            
+            <p style="color: var(--white50a); font-size: 0.9em; margin-top: 15px;">
+              <i class="fa-solid fa-info-circle"></i> 
+              提示：选择后将优先使用这些日记，替代"历史日记数量"设置
+            </p>
+          </div>
+          <div class="diary-preset-dialog-buttons">
+            <button class="diary-preset-dialog-btn diary-preset-dialog-cancel">取消</button>
+            <button class="diary-preset-dialog-btn diary-preset-dialog-ok">应用选择</button>
+          </div>
         </div>
-        
-        <p style="color: var(--white50a); font-size: 0.9em; margin-top: 15px;">
-          <i class="fa-solid fa-info-circle"></i> 
-          提示：选择后将临时覆盖"最多发送日记数"设置
-        </p>
-      </div>
-    `;
+      `;
 
-    const result = await callGenericPopup(popupContent, POPUP_TYPE.TEXT, '', {
-      okButton: '应用选择',
-      cancelButton: '取消',
-      wide: true
-    });
+      document.body.appendChild(overlay);
 
-    if (result) {
-      const checkboxes = document.querySelectorAll('[data-diary-id]');
-      const selectedIds = [];
-      checkboxes.forEach(cb => {
-        if (cb.checked && !cb.disabled) {
-          selectedIds.push(cb.dataset.diaryId);
+      // 添加 active 类触发显示动画
+      setTimeout(() => {
+        overlay.classList.add('active');
+      }, 10);
+
+      // 绑定事件
+      const cancelBtn = overlay.querySelector('.diary-preset-dialog-cancel');
+      const okBtn = overlay.querySelector('.diary-preset-dialog-ok');
+
+      const close = () => {
+        overlay.classList.remove('active');
+        setTimeout(() => {
+          overlay.remove();
+          resolve(false);
+        }, 300);
+      };
+
+      const save = () => {
+        // 在弹窗关闭前读取复选框状态
+        const checkboxes = overlay.querySelectorAll('[data-diary-id]');
+        const selectedIds = [];
+        checkboxes.forEach(cb => {
+          if (cb.checked && !cb.disabled) {
+            selectedIds.push(cb.dataset.diaryId);
+          }
+        });
+
+        logger.info('[DiaryUI.showSelectSendPanel] 用户选择了', selectedIds.length, '篇日记');
+
+        if (selectedIds.length === 0) {
+          if (typeof toastr !== 'undefined') {
+            toastr.warning('请至少选择一篇日记');
+          }
+          return;
         }
+
+        // 直接触发生成评论（不保存状态，不显示通知）
+        if (this.api) {
+          this.api.requestCommentForSelectedDiaries(selectedIds);
+          logger.info('[DiaryUI.showSelectSendPanel] 已触发批量生成');
+        }
+
+        // 关闭弹窗
+        overlay.classList.remove('active');
+        setTimeout(() => {
+          overlay.remove();
+          resolve(true);
+        }, 300);
+      };
+
+      cancelBtn.addEventListener('click', close);
+      okBtn.addEventListener('click', save);
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) close();
       });
-
-      logger.info('[DiaryUI.showSelectSendPanel] 用户选择了', selectedIds.length, '篇日记');
-
-      if (selectedIds.length === 0) {
-        if (typeof toastr !== 'undefined') {
-          toastr.warning('请至少选择一篇日记');
-        }
-        return;
-      }
-
-      if (this.api) {
-        try {
-          await this.api.sendSelectedDiaries(selectedIds);
-          showSuccessToast('日记已发送给AI！');
-        } catch (error) {
-          logger.error('[DiaryUI.showSelectSendPanel] 发送失败:', error);
-          showErrorToast('发送失败：' + error.message);
-        }
-      }
-    }
+    });
   }
 
   // ========================================

@@ -72,6 +72,7 @@ export class DiaryAPI {
     this.currentAbortController = null;
     this.isGenerating = false;
     this.presetManager = null;
+    this.selectedDiaryIds = null;  // 用户选中的日记ID（用于批量发送）
 
     // 初始化子模块
     this.builder = new DiaryAPIBuilder(dataManager);
@@ -141,14 +142,25 @@ export class DiaryAPI {
     this.currentAbortController = new AbortController();
     this.isGenerating = true;
 
-    // 显示加载状态的通知
+    // 随机选择加载中文案（3种）
+    const loadingMessages = [
+      `${charName}正在看你的日记...`,
+      '日记已送达，等待回复中...',
+      `${charName}打开了你的日记本...`
+    ];
+    const randomLoadingMsg = loadingMessages[Math.floor(Math.random() * loadingMessages.length)];
+
+    // 显示加载状态的通知（可点击关闭）
     const notificationHandle = showDiaryReplyNotification({
       characterName: charName,
+      title: randomLoadingMsg,
       status: 'loading',
-      duration: 0  // 不自动消失
+      duration: 0,  // 不自动消失，等待AI完成
+      onClick: () => { }  // 点击后仅关闭通知，不触发其他操作
     });
 
     logger.info('[DiaryAPI.requestCommentAsync] 后台生成已启动, diaryId:', diaryId);
+    logger.debug('[DiaryAPI.requestCommentAsync] 使用加载文案:', randomLoadingMsg);
 
     // 通知UI更新按钮状态
     if (this.ui) {
@@ -172,16 +184,51 @@ export class DiaryAPI {
         // 提取并保存评论
         const result = this.parser.extractAndSave(response, diaryId);
 
-        // 获取评论内容预览
+        // 直接从保存后的日记对象中获取最新评论（更可靠）
+        const diary = this.dataManager.getDiary(diaryId);
         let commentPreview = '';
-        if (result && result.comments && result.comments.length > 0) {
-          // 获取第一条评论的内容作为预览
-          commentPreview = result.comments[0].content || '';
+        if (diary && diary.comments && diary.comments.length > 0) {
+          // 获取最后一条评论（最新的）
+          const latestComment = diary.comments[diary.comments.length - 1];
+          commentPreview = latestComment.content || '';
+
+          // 如果是嵌套回复，递归获取最深层的评论
+          const getLastReply = (comment) => {
+            if (comment.replies && comment.replies.length > 0) {
+              return getLastReply(comment.replies[comment.replies.length - 1]);
+            }
+            return comment;
+          };
+
+          const deepestComment = getLastReply(latestComment);
+          commentPreview = deepestComment.content || '';
         }
+
+        // 添加调试日志
+        logger.info('[DiaryAPI.requestCommentAsync] 提取结果:', {
+          diaryCount: result.diaries?.length || 0,
+          commentCount: result.comments?.length || 0,
+          savedComments: diary?.comments?.length || 0,
+          previewLength: commentPreview.length
+        });
+        logger.debug('[DiaryAPI.requestCommentAsync] 评论预览内容:', commentPreview.substring(0, 100));
+
+        // 随机选择成功文案（4种）
+        const successTitles = [
+          `${charName}回复了！`,                 // 方案A：惊喜感
+          '你有一条新评论',                      // 方案B：社交化
+          `${charName}评论了你的日记`,           // 方案C：简洁直接
+          '日记本'                                // 方案D：模拟锁屏通知
+        ];
+        const randomIndex = Math.floor(Math.random() * successTitles.length);
+        const randomTitle = successTitles[randomIndex];
+
+        logger.debug('[DiaryAPI.requestCommentAsync] 使用成功文案:', randomTitle, '(方案', String.fromCharCode(65 + randomIndex) + ')');
 
         // 更新通知为成功状态
         notificationHandle.update({
           status: 'success',
+          title: randomTitle,
           content: commentPreview,
           duration: 4000,
           onClick: () => {
@@ -205,10 +252,10 @@ export class DiaryAPI {
 
         if (error.name === 'AbortError') {
           logger.info('[DiaryAPI.requestCommentAsync] 用户中止生成');
-          showInfoToast('已中止生成');
+          showInfoToast('已取消，可以重新发送');
         } else {
           logger.error('[DiaryAPI.requestCommentAsync] 生成失败:', error);
-          showErrorToast('评论失败：' + error.message);
+          showErrorToast('出了点小问题，试试重新发送或检查网络连接');
         }
       })
       .finally(() => {
@@ -241,7 +288,13 @@ export class DiaryAPI {
 
     try {
       // 步骤1：构造上下文内容（使用builder子模块）
-      const { contextContents, tempIdMap, tempCommentIdMap } = await this.builder.buildCompleteSystemPrompt(diary, charName, ctx, this.presetManager);
+      const { contextContents, tempIdMap, tempCommentIdMap } = await this.builder.buildCompleteSystemPrompt(
+        diary,
+        charName,
+        ctx,
+        this.presetManager,
+        this.selectedDiaryIds  // 传入用户选中的日记ID
+      );
 
       // 保存临时编号映射到parser
       this.parser.setTempIdMaps(tempIdMap, tempCommentIdMap);
@@ -512,25 +565,223 @@ export class DiaryAPI {
   }
 
   /**
-   * 发送选中的日记给AI（使用独立生成）
+   * 为选中的多篇日记生成评论（批量生成）
+   * 
+   * @description
+   * 用户在"选择日记发送"面板中选择了多篇日记后，
+   * 直接调用此方法为这些日记生成评论（一次API调用）
+   * 
+   * @param {Array<string>} diaryIds - 日记ID数组
    */
-  async sendSelectedDiaries(diaryIds) {
+  async requestCommentForSelectedDiaries(diaryIds) {
+    if (!diaryIds || diaryIds.length === 0) {
+      showErrorToast('请至少选择一篇日记');
+      return;
+    }
+
     const ctx = getContext();
     const charName = ctx.name2 || 'AI';
 
-    logger.debug('[DiaryAPI.sendSelectedDiaries] 开始发送', diaryIds.length, '篇日记');
+    logger.info('[DiaryAPI.requestCommentForSelectedDiaries] 开始为', diaryIds.length, '篇日记生成评论');
 
-    const selectedDiaries = diaryIds
-      .map(id => this.dataManager.getDiary(id))
-      .filter(d => d);
-
-    if (selectedDiaries.length === 0) {
-      throw new Error('选中的日记不存在');
+    // 检查是否正在生成
+    if (this.isGenerating) {
+      showInfoToast('AI正在生成中，请稍候');
+      return;
     }
 
-    // TODO: 实现临时编号系统和批量评论生成
-    showInfoToast(`选中 ${selectedDiaries.length} 篇日记（功能开发中）`);
-    logger.info('[DiaryAPI.sendSelectedDiaries] 发送功能待实现');
+    this.isGenerating = true;
+    this.currentAbortController = new AbortController();
+    const signal = this.currentAbortController.signal;
+
+    // 更新按钮状态
+    if (this.ui) {
+      this.ui.updateSendButtonState(true);
+    }
+
+    // 显示通知
+    const notificationHandle = showDiaryReplyNotification({
+      characterName: charName,
+      status: 'loading'
+    });
+
+    // 后台生成
+    this.backgroundGenerateForSelected(diaryIds, charName, signal)
+      .then(response => {
+        // 关闭通知
+        notificationHandle.dismiss();
+
+        if (!response) {
+          logger.warn('[DiaryAPI.requestCommentForSelectedDiaries] 生成被中止或无结果');
+          return;
+        }
+
+        // 提取并保存评论（不指定targetDiaryId，让parser自动处理）
+        this.parser.extractAndSave(response);
+
+        // 刷新UI
+        if (this.ui && this.ui.isPanelOpen()) {
+          this.ui.refreshDiaries(true);
+        }
+
+        // 显示成功提示
+        showSuccessToast(`已为 ${diaryIds.length} 篇日记`);
+        logger.info('[DiaryAPI.requestCommentForSelectedDiaries] 批量生成完成');
+      })
+      .catch(error => {
+        notificationHandle.dismiss();
+
+        if (error.name === 'AbortError') {
+          logger.info('[DiaryAPI.requestCommentForSelectedDiaries] 用户中止生成');
+          showInfoToast('已中止生成');
+        } else {
+          logger.error('[DiaryAPI.requestCommentForSelectedDiaries] 生成失败:', error);
+          showErrorToast('评论失败：' + error.message);
+        }
+      })
+      .finally(() => {
+        this.currentAbortController = null;
+        this.isGenerating = false;
+
+        if (this.ui) {
+          this.ui.updateSendButtonState(false);
+        }
+      });
+  }
+
+  /**
+   * 为选中的多篇日记后台生成评论
+   * 
+   * @param {Array<string>} diaryIds - 日记ID数组
+   * @param {string} charName - 角色名称
+   * @param {AbortSignal} signal - 中止信号
+   * @returns {Promise<string>} AI回复
+   */
+  async backgroundGenerateForSelected(diaryIds, charName, signal) {
+    const ctx = getContext();
+    const settings = this.dataManager.getSettings();
+
+    if (signal.aborted) {
+      logger.info('[DiaryAPI.backgroundGenerateForSelected] 生成已在开始前中止');
+      return null;
+    }
+
+    try {
+      // 获取选中的日记对象
+      const selectedDiaries = diaryIds
+        .map(id => this.dataManager.getDiary(id))
+        .filter(d => d && !d.privacy);  // 排除不存在的和隐私日记
+
+      if (selectedDiaries.length === 0) {
+        throw new Error('没有可发送的日记');
+      }
+
+      logger.debug('[DiaryAPI.backgroundGenerateForSelected] 将发送', selectedDiaries.length, '篇日记');
+
+      // 构建上下文（使用第一篇日记作为基准）
+      const baseDiary = selectedDiaries[0];
+      const { contextContents, tempIdMap, tempCommentIdMap } = await this.builder.buildCompleteSystemPrompt(
+        baseDiary,
+        charName,
+        ctx,
+        this.presetManager,
+        []  // 传入空数组，阻止自动添加历史日记（我们手动通过 buildCommentTask 添加）
+      );
+
+      // 保存临时编号映射到parser
+      this.parser.setTempIdMaps(tempIdMap, tempCommentIdMap);
+
+      // 手动构建评论任务（使用选中的日记）
+      const commentTask = this.builder.buildCommentTask(selectedDiaries, charName, settings);
+
+      // 使用预设管理器构建messages数组
+      let messages;
+      if (this.presetManager) {
+        messages = this.presetManager.buildMessagesArray(contextContents);
+        logger.debug('[DiaryAPI.backgroundGenerateForSelected] 使用预设构建messages，共', messages.length, '条');
+      } else {
+        logger.warn('[DiaryAPI.backgroundGenerateForSelected] 预设管理器未初始化，使用简单方式');
+        let combinedContent = Object.values(contextContents).join('\n\n');
+        messages = [{ role: 'system', content: combinedContent }];
+      }
+
+      // 添加评论任务
+      if (commentTask) {
+        messages.push({ role: 'user', content: commentTask });
+        logger.debug('[DiaryAPI.backgroundGenerateForSelected] 已添加评论任务');
+      }
+
+      // 打印完整的messages（调试用）
+      logger.debug('[DiaryAPI.backgroundGenerateForSelected] ========== 发送给AI的messages ==========');
+      logger.debug(JSON.stringify(messages, null, 2));
+      logger.debug('[DiaryAPI.backgroundGenerateForSelected] ========== messages结束 ==========');
+
+      // 获取API配置
+      const apiConfig = settings.apiConfig || {};
+      logger.debug('[DiaryAPI.backgroundGenerateForSelected] API配置源:', apiConfig.source || 'default', '流式:', apiConfig.stream || false);
+
+      // 调用API
+      let response;
+      if (apiConfig.source === 'custom' && apiConfig.stream) {
+        // 流式生成
+        response = await this.callAPIWithStreaming(messages, apiConfig, signal);
+      } else if (apiConfig.source === 'custom') {
+        // 非流式自定义API
+        response = await this.callAPIWithStreaming(messages, apiConfig, signal);
+      } else {
+        // 使用默认API（复用酒馆设置）
+        response = await generateRaw({
+          prompt: messages,
+          responseLength: 200,
+          api: null
+        });
+      }
+
+      if (signal.aborted) {
+        logger.info('[DiaryAPI.backgroundGenerateForSelected] 生成已被中止');
+        return null;
+      }
+
+      logger.debug('[DiaryAPI.backgroundGenerateForSelected] AI回复:', response);
+
+      // 更新预览
+      if (this.ui) {
+        this.ui.updateAiPreview(response);
+      }
+
+      return response;
+    } catch (error) {
+      if (signal.aborted || error.name === 'AbortError') {
+        logger.info('[DiaryAPI.backgroundGenerateForSelected] 生成已被中止');
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 设置用户选中的日记ID
+   * 
+   * @description
+   * 保存用户在"选择日记发送"面板中选中的日记ID，
+   * 下次生成评论时将优先使用这些日记作为历史上下文
+   * 
+   * @param {Array<string>} diaryIds - 日记ID数组
+   */
+  setSelectedDiaryIds(diaryIds) {
+    this.selectedDiaryIds = diaryIds;
+    logger.info('[DiaryAPI.setSelectedDiaryIds] 已设置选中的日记:', diaryIds.length, '篇');
+  }
+
+  /**
+   * 清除选中的日记ID
+   * 
+   * @description
+   * 清除用户选中的日记状态，恢复使用默认的历史日记获取逻辑
+   */
+  clearSelectedDiaryIds() {
+    this.selectedDiaryIds = null;
+    logger.debug('[DiaryAPI.clearSelectedDiaryIds] 已清除选中状态');
   }
 }
 

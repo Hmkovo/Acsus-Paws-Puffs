@@ -73,16 +73,17 @@ export class DiaryAPIBuilder {
    * @param {string} charName - 角色名称
    * @param {Object} ctx - 上下文对象
    * @param {Object} presetManager - 预设管理器（用于获取启用状态）
+   * @param {Array<string>} [selectedDiaryIds=null] - 用户选中的日记ID（优先使用）
    * @returns {Promise<{contextContents: Object, tempIdMap: Object, tempCommentIdMap: Object}>}
    */
-  async buildCompleteSystemPrompt(diary, charName, ctx, presetManager) {
+  async buildCompleteSystemPrompt(diary, charName, ctx, presetManager, selectedDiaryIds = null) {
     const contextContents = {};
     const settings = this.dataManager.getSettings();
     const character = ctx.characters[ctx.characterId];
 
     // 获取所有预设（包括上下文条目）
     const allPresets = presetManager ? presetManager.getPresets() : [];
-    
+
     // 辅助函数：检查上下文条目是否启用
     const isContextEnabled = (subType) => {
       const preset = allPresets.find(p => p.type === 'context' && p.subType === subType);
@@ -142,7 +143,8 @@ export class DiaryAPIBuilder {
 
     if (isContextEnabled('historyDiaries')) {
       const count = settings.historyDiaryCount || 3;
-      const historyDiaries = this.getHistoryDiariesObjects(diary.id, count);
+      // 传入用户选中的日记ID（优先使用）
+      const historyDiaries = this.getHistoryDiariesObjects(diary.id, count, selectedDiaryIds);
       diariesToSend.push(...historyDiaries);
     }
 
@@ -546,15 +548,42 @@ export class DiaryAPIBuilder {
 
   /**
    * 获取历史日记对象（用于批量评论）
+   *
+   * @param {string} currentDiaryId - 当前日记ID
+   * @param {number} [count=3] - 日记数量
+   * @param {Array<string>|null} [selectedIds=null] - 用户选中的日记ID
+   *   - null: 使用默认逻辑（获取最近N篇）
+   *   - []: 明确指定不使用历史日记
+   *   - [id1, id2]: 使用指定的日记作为历史日记
+   * @returns {Array<Object>} 历史日记对象数组
    */
-  getHistoryDiariesObjects(currentDiaryId, count = 3) {
+  getHistoryDiariesObjects(currentDiaryId, count = 3, selectedIds = null) {
+    // 如果用户明确指定了日记列表（包括空数组=不要历史日记）
+    if (selectedIds !== null) {
+      if (selectedIds.length === 0) {
+        logger.debug('[DiaryAPIBuilder.getHistoryDiariesObjects] 用户明确指定不使用历史日记');
+        return [];
+      }
+
+      logger.debug('[DiaryAPIBuilder.getHistoryDiariesObjects] 使用用户选中的日记:', selectedIds.length, '篇');
+
+      const selectedDiaries = selectedIds
+        .map(id => this.dataManager.getDiary(id))
+        .filter(d => d && d.id !== currentDiaryId && !d.privacy);  // 排除当前日记和隐私日记
+
+      return selectedDiaries;
+    }
+
+    // 否则使用默认逻辑：获取最近的N篇
     const allDiaries = this.dataManager.getDiaries();
 
     if (allDiaries.length === 0) return [];
 
+    // allDiaries 已经按时间倒序排列（最新→最旧）
+    // 排除当前日记和隐私日记后，取前N个即为最近的N篇
     const historyDiaries = allDiaries
       .filter(d => d.id !== currentDiaryId && !d.privacy)
-      .slice(-count);
+      .slice(0, count);  // 取前N个（最新的N篇）
 
     return historyDiaries;
   }

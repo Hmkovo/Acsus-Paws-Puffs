@@ -304,6 +304,7 @@ export function showInfoToast(message) {
  * @param {string} [options.status] - 状态：'loading' | 'success'
  * @param {function} [options.onClick] - 点击回调
  * @param {number} [options.duration] - 显示时长（默认4000ms）
+ * @param {HTMLElement} [options.existingNotification] - 现有通知元素（用于无缝更新）
  * 
  * @example
  * showDiaryReplyNotification({
@@ -319,7 +320,8 @@ export function showDiaryReplyNotification(options = {}) {
     content = '',
     status = 'success',
     onClick = null,
-    duration = 4000
+    duration = 4000,
+    existingNotification = null
   } = options;
 
   // 获取角色头像
@@ -341,6 +343,9 @@ export function showDiaryReplyNotification(options = {}) {
   const notification = document.createElement('div');
   notification.className = 'diary-reply-notification';
 
+  // 使用自定义标题或默认标题
+  const displayTitle = title || (status === 'loading' ? '日记推送中...' : '回复了你的日记');
+
   // 加载状态
   if (status === 'loading') {
     notification.innerHTML = `
@@ -349,12 +354,12 @@ export function showDiaryReplyNotification(options = {}) {
       </div>
       <div class="diary-notification-content">
         <div class="diary-notification-header">
-          <span class="diary-notification-name">日记系统</span>
+          <span class="diary-notification-name">${characterName}</span>
           <span class="diary-notification-time">Now</span>
         </div>
-        <div class="diary-notification-title">日记推送中...</div>
+        <div class="diary-notification-title">${displayTitle}</div>
         <div class="diary-notification-preview">
-          <i class="fa-solid fa-spinner fa-spin"></i> 正在等待回复
+          <i class="fa-solid fa-spinner fa-spin"></i> 正在生成...
         </div>
       </div>
     `;
@@ -369,7 +374,7 @@ export function showDiaryReplyNotification(options = {}) {
           <span class="diary-notification-name">${characterName}</span>
           <span class="diary-notification-time">Now</span>
         </div>
-        <div class="diary-notification-title">${title}</div>
+        <div class="diary-notification-title">${displayTitle}</div>
         ${preview ? `<div class="diary-notification-preview">${preview}</div>` : ''}
       </div>
     `;
@@ -533,22 +538,96 @@ export function showDiaryReplyNotification(options = {}) {
     }
   }
 
-  // 自动消失
-  const autoHideTimer = setTimeout(() => {
-    dismissNotification(notification);
-  }, duration);
+  // 自动消失（仅当duration > 0时）
+  let autoHideTimer;
+  if (duration > 0) {
+    autoHideTimer = setTimeout(() => {
+      dismissNotification(notification);
+    }, duration);
+  }
 
   // 返回控制对象（用于手动更新或关闭）
   return {
+    // 无缝更新通知内容（方案A）
     update: (newOptions) => {
-      clearTimeout(autoHideTimer);
-      notification.remove();
-      return showDiaryReplyNotification({ ...options, ...newOptions });
+      if (autoHideTimer) {
+        clearTimeout(autoHideTimer);
+      }
+
+      // 检查通知是否还在DOM中（用户可能已点击关闭）
+      if (!notification.parentElement) {
+        // 通知已被移除，创建新通知
+        logger.debug('[DiaryToast] 原通知已关闭，创建新通知');
+        const newNotification = showDiaryReplyNotification({
+          ...options,
+          ...newOptions
+        });
+        return newNotification;
+      }
+
+      // 合并选项
+      const updatedOptions = { ...options, ...newOptions, existingNotification: notification };
+
+      // 获取新内容的预览
+      const newContent = newOptions.content || '';
+      let newPreview = '';
+      if (newContent) {
+        const sentences = newContent.match(/[^。！？.!?]+[。！？.!?]+/g) || [newContent];
+        newPreview = sentences.slice(0, 2).join('');
+        if (sentences.length > 2) {
+          newPreview += '...';
+        }
+      }
+
+      // 直接更新DOM元素，而不是重新创建（无缝过渡）
+      const titleEl = notification.querySelector('.diary-notification-title');
+      const previewEl = notification.querySelector('.diary-notification-preview');
+      const nameEl = notification.querySelector('.diary-notification-name');
+
+      if (titleEl && newOptions.title) {
+        titleEl.textContent = newOptions.title;
+      }
+
+      if (previewEl && newPreview) {
+        // 移除加载图标，显示预览内容
+        previewEl.innerHTML = newPreview;
+      }
+
+      if (nameEl && newOptions.characterName) {
+        nameEl.textContent = newOptions.characterName;
+      }
+
+      // 更新点击事件
+      if (newOptions.onClick) {
+        notification.onclick = () => {
+          newOptions.onClick();
+          dismissNotification(notification);
+        };
+      }
+
+      // 重新设置自动消失定时器（保存引用，修复无法清除的bug）
+      const newDuration = newOptions.duration !== undefined ? newOptions.duration : 4000;
+      if (newDuration > 0) {
+        autoHideTimer = setTimeout(() => {
+          dismissNotification(notification);
+        }, newDuration);
+      } else {
+        autoHideTimer = null;  // duration=0 表示不自动消失
+      }
+
+      logger.debug('[DiaryToast] 通知已无缝更新:', newOptions.title);
+
+      // 返回自己，支持链式调用
+      return this;
     },
     dismiss: () => {
-      clearTimeout(autoHideTimer);
+      if (autoHideTimer) {
+        clearTimeout(autoHideTimer);
+      }
       dismissNotification(notification);
-    }
+    },
+    // 暴露通知元素，供外部调试使用
+    element: notification
   };
 }
 
