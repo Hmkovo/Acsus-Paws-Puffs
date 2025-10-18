@@ -482,13 +482,30 @@ export class DiaryAPI {
 
   /**
    * 从聊天消息提取日记和评论
+   * 
+   * @param {number} messageId - 消息ID（chat数组索引）
+   * @description
+   * 监听 MESSAGE_RECEIVED 事件后触发。
+   * 使用 String() 强制转换确保 content 为字符串，
+   * 防止不同 SillyTavern 版本或 API 返回非字符串类型导致崩溃。
    */
   extractFromMessage(messageId) {
     const ctx = getContext();
     const message = ctx.chat[messageId];
     if (!message) return;
 
-    const content = message.mes || '';
+    // 强制转换为字符串，防止非字符串类型导致崩溃
+    // 兼容 v1.12.x 版本可能返回对象/数组的情况
+    let content = '';
+    if (message.mes != null) {
+      content = String(message.mes);
+    }
+
+    // 空内容不处理
+    if (!content.trim()) {
+      return;
+    }
+
     this.parser.extractAndSave(content);
 
     logger.debug('[DiaryAPI.extractFromMessage] 已提取消息:', messageId);
