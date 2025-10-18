@@ -382,15 +382,26 @@ export class DiaryAPI {
       // 步骤5：调用API
       let response;
 
+      logger.info('[DiaryAPI.backgroundGenerate] ========== API调用配置 ==========');
+      logger.info('[DiaryAPI.backgroundGenerate] API配置源:', apiConfig.source);
+      logger.info('[DiaryAPI.backgroundGenerate] 酒馆当前API源:', oai_settings.chat_completion_source);
+      logger.info('[DiaryAPI.backgroundGenerate] 酒馆max_tokens配置:', oai_settings.openai_max_tokens);
+
       if (apiConfig.source === 'custom') {
+        logger.info('[DiaryAPI.backgroundGenerate] 走自定义API分支 (callAPIWithStreaming)');
         response = await this.callAPIWithStreaming(messages, apiConfig, signal);
       } else {
+        logger.info('[DiaryAPI.backgroundGenerate] 走默认API分支 (generateRaw)');
+        logger.info('[DiaryAPI.backgroundGenerate] 不传responseLength，让generateRaw自动使用用户配置');
+        // 使用默认 API 时，不传 responseLength，让 generateRaw 自动使用用户在酒馆设置的 max_tokens
         response = await generateRaw({
           prompt: messages,
-          responseLength: 200,
           api: null
         });
+        logger.info('[DiaryAPI.backgroundGenerate] generateRaw调用完成');
       }
+
+      logger.info('[DiaryAPI.backgroundGenerate] ========== API调用完成 ==========');
 
       logger.debug('[DiaryAPI.backgroundGenerate] AI回复:', response?.substring(0, 100) || '');
 
@@ -410,19 +421,32 @@ export class DiaryAPI {
    * 调用API（支持流式和自定义配置）
    */
   async callAPIWithStreaming(messages, apiConfig, signal) {
+    // 获取用户当前使用的 API 源（而不是硬编码 OPENAI）
+    const currentSource = oai_settings.chat_completion_source || chat_completion_sources.OPENAI;
+
     let model = apiConfig.model;
     if (!model) {
       model = oai_settings.openai_model || 'gpt-4o-mini';
       logger.warn('[DiaryAPI.callAPIWithStreaming] 未设置模型，使用官方默认:', model);
     }
 
+    // 读取 max_tokens 配置
+    const maxTokensRaw = oai_settings.openai_max_tokens;
+    const maxTokensNumber = Number(maxTokensRaw);
+    const maxTokensFinal = maxTokensNumber || 2000;
+
+    logger.info('[DiaryAPI.callAPIWithStreaming] max_tokens读取详情:');
+    logger.info('  - 原始值 (oai_settings.openai_max_tokens):', maxTokensRaw, '类型:', typeof maxTokensRaw);
+    logger.info('  - Number转换后:', maxTokensNumber);
+    logger.info('  - 最终使用值:', maxTokensFinal, maxTokensFinal === 2000 ? '(使用默认值)' : '(使用用户配置)');
+
     const body = {
       type: 'quiet',
       messages: messages,
       model: model,
       stream: apiConfig.stream || false,
-      chat_completion_source: chat_completion_sources.OPENAI,
-      max_tokens: Number(oai_settings.openai_max_tokens) || 200,
+      chat_completion_source: currentSource,  // 使用用户实际配置的 API 源
+      max_tokens: maxTokensFinal,
       temperature: Number(oai_settings.temp_openai) || 1.0,
       frequency_penalty: Number(oai_settings.freq_pen_openai) || 0,
       presence_penalty: Number(oai_settings.pres_pen_openai) || 0,
@@ -434,13 +458,14 @@ export class DiaryAPI {
       if (apiConfig.apiKey) body.proxy_password = apiConfig.apiKey;
     }
 
-    logger.debug('[DiaryAPI.callAPIWithStreaming] 请求配置:', {
-      source: apiConfig.source,
-      stream: body.stream,
-      model: body.model,
-      baseUrl: body.reverse_proxy || '使用酒馆默认',
-      temperature: body.temperature,
-      maxTokens: body.max_tokens
+    logger.info('[DiaryAPI.callAPIWithStreaming] 最终请求配置:', {
+      扩展API配置源: apiConfig.source,
+      酒馆API源: currentSource,
+      流式传输: body.stream,
+      模型: body.model,
+      反向代理: body.reverse_proxy || '使用酒馆默认',
+      温度: body.temperature,
+      最终max_tokens: body.max_tokens
     });
 
     const response = await fetch('/api/backends/chat-completions/generate', {
@@ -476,6 +501,9 @@ export class DiaryAPI {
     let fullText = '';
     const state = { reasoning: '', image: '' };
 
+    // 获取用户当前使用的 API 源（与 callAPIWithStreaming 保持一致）
+    const currentSource = oai_settings.chat_completion_source || chat_completion_sources.OPENAI;
+
     try {
       while (true) {
         if (signal.aborted) {
@@ -499,7 +527,7 @@ export class DiaryAPI {
         }
 
         const chunk = getStreamingReply(parsed, state, {
-          chatCompletionSource: chat_completion_sources.OPENAI
+          chatCompletionSource: currentSource  // 使用用户实际配置的 API 源
         });
 
         if (typeof chunk === 'string' && chunk) {
