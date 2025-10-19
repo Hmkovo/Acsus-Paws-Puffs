@@ -16,6 +16,7 @@
 // [IMPORT] 依赖
 // ========================================
 import { callGenericPopup, POPUP_TYPE } from '../../../../../popup.js';
+import { oai_settings } from '../../../../../openai.js';
 import logger from '../../logger.js';
 import { showInfoToast, showSuccessToast, showErrorToast } from './diary-toast.js';
 
@@ -242,6 +243,53 @@ export class DiaryAPIConfig {
   }
 
   /**
+   * 根据酒馆当前API源推断默认格式
+   * 
+   * @returns {string} 推断的格式值
+   * @description
+   * 将酒馆的 chat_completion_source 反向映射到扩展的格式选项
+   */
+  getDefaultFormatFromTavern() {
+    const tavernSource = oai_settings.chat_completion_source;
+
+    // 反向映射：从酒馆API源映射到扩展格式选项
+    // 📝 酒馆完整API源列表参考 SillyTavern/public/scripts/openai.js 的 chat_completion_sources
+    const reverseMap = {
+      // OpenAI 官方和兼容格式（大部分新API都是OpenAI兼容）
+      'openai': 'openai',
+      'custom': 'openai',
+      'groq': 'openai',           // Groq (OpenAI兼容)
+      'deepseek': 'openai',       // DeepSeek (OpenAI兼容)
+      'xai': 'openai',            // xAI/Grok (OpenAI兼容)
+      'pollinations': 'openai',   // Pollinations (OpenAI兼容)
+      'moonshot': 'openai',       // Moonshot (OpenAI兼容)
+      'fireworks': 'openai',      // Fireworks AI (OpenAI兼容)
+      'electronhub': 'openai',    // ElectronHub (OpenAI兼容)
+      'nanogpt': 'openai',        // NanoGPT (OpenAI兼容)
+      'aimlapi': 'openai',        // AIML API (OpenAI兼容)
+      'cohere': 'openai',         // Cohere (OpenAI兼容)
+      'perplexity': 'openai',     // Perplexity (OpenAI兼容)
+
+      // Claude (Anthropic 专有格式)
+      'claude': 'claude',
+
+      // Google AI (专有格式)
+      'makersuite': 'google',     // Google AI Studio (Makersuite)
+      'vertexai': 'google',       // Google Cloud Vertex AI
+
+      // 其他专有格式
+      'openrouter': 'openrouter', // OpenRouter
+      'ai21': 'ai21',             // AI21 Jurassic
+      'mistralai': 'mistral'      // Mistral AI
+    };
+
+    const detectedFormat = reverseMap[tavernSource] || 'openai';
+    logger.debug('[DiaryAPIConfig.getDefaultFormatFromTavern] 从酒馆API源推断默认格式:', tavernSource, '→', detectedFormat);
+
+    return detectedFormat;
+  }
+
+  /**
    * 加载 API 配置到表单
    * 
    * @param {string} configId - 配置ID（空字符串=新建）
@@ -257,6 +305,7 @@ export class DiaryAPIConfig {
     const nameInput = /** @type {HTMLInputElement|null} */ (this.panelElement.querySelector('#diaryApiConfigName'));
     const baseUrlInput = /** @type {HTMLInputElement|null} */ (this.panelElement.querySelector('#diaryApiBaseUrl'));
     const apiKeyInput = /** @type {HTMLInputElement|null} */ (this.panelElement.querySelector('#diaryApiKey'));
+    const formatSelect = /** @type {HTMLSelectElement|null} */ (this.panelElement.querySelector('#diaryApiFormat'));
     const modelSelect = /** @type {HTMLSelectElement|null} */ (this.panelElement.querySelector('#diaryApiModelSelect'));
     const modelManualInput = /** @type {HTMLInputElement|null} */ (this.panelElement.querySelector('#diaryApiModelManual'));
     const modelManualWrapper = /** @type {HTMLElement|null} */ (this.panelElement.querySelector('#diaryApiModelManualWrapper'));
@@ -266,6 +315,7 @@ export class DiaryAPIConfig {
       if (nameInput) nameInput.value = config.name || '';
       if (baseUrlInput) baseUrlInput.value = config.baseUrl || '';
       if (apiKeyInput) apiKeyInput.value = config.apiKey || '';
+      if (formatSelect) formatSelect.value = config.format || 'openai';  // 默认 OpenAI 格式
 
       // 加载模型（检查是否在下拉框中）
       if (modelSelect) {
@@ -297,6 +347,7 @@ export class DiaryAPIConfig {
       if (nameInput) nameInput.value = '';
       if (baseUrlInput) baseUrlInput.value = '';
       if (apiKeyInput) apiKeyInput.value = '';
+      if (formatSelect) formatSelect.value = this.getDefaultFormatFromTavern();  // 智能推断默认格式
       if (modelSelect) modelSelect.value = '';
       if (modelManualInput) modelManualInput.value = '';
       if (modelManualWrapper) modelManualWrapper.style.display = 'none';
@@ -325,12 +376,14 @@ export class DiaryAPIConfig {
     const nameInput = /** @type {HTMLInputElement|null} */ (this.panelElement.querySelector('#diaryApiConfigName'));
     const baseUrlInput = /** @type {HTMLInputElement|null} */ (this.panelElement.querySelector('#diaryApiBaseUrl'));
     const apiKeyInput = /** @type {HTMLInputElement|null} */ (this.panelElement.querySelector('#diaryApiKey'));
+    const formatSelect = /** @type {HTMLSelectElement|null} */ (this.panelElement.querySelector('#diaryApiFormat'));
     const modelSelect = /** @type {HTMLSelectElement|null} */ (this.panelElement.querySelector('#diaryApiModelSelect'));
     const modelManualInput = /** @type {HTMLInputElement|null} */ (this.panelElement.querySelector('#diaryApiModelManual'));
 
     const name = nameInput?.value.trim();
     const baseUrl = baseUrlInput?.value.trim();
     const apiKey = apiKeyInput?.value.trim();
+    const format = formatSelect?.value.trim() || 'openai';  // 默认 OpenAI 格式
 
     // 获取模型名（优先使用手动输入）
     let model = '';
@@ -368,6 +421,7 @@ export class DiaryAPIConfig {
       name: name,
       baseUrl: baseUrl,
       apiKey: apiKey,
+      format: format,  // 保存用户选择的API格式
       model: model
     };
 
@@ -482,7 +536,15 @@ export class DiaryAPIConfig {
 
     try {
       // 调用 /v1/models API
-      const modelsUrl = `${baseUrl}/v1/models`;
+      // 如果 baseUrl 已经以 /v1 结尾，去掉它以避免重复
+      let cleanBaseUrl = baseUrl;
+      if (cleanBaseUrl.endsWith('/v1')) {
+        cleanBaseUrl = cleanBaseUrl.slice(0, -3);  // 去掉末尾的 /v1
+        logger.debug('[DiaryAPIConfig] 检测到 baseUrl 末尾有 /v1，已去除:', cleanBaseUrl);
+      }
+      const modelsUrl = `${cleanBaseUrl}/v1/models`;
+      logger.debug('[DiaryAPIConfig] 最终模型列表 URL:', modelsUrl);
+
       const response = await fetch(modelsUrl, {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
@@ -563,6 +625,7 @@ export class DiaryAPIConfig {
     // 读取当前表单数据
     const baseUrlInput = /** @type {HTMLInputElement|null} */ (this.panelElement.querySelector('#diaryApiBaseUrl'));
     const apiKeyInput = /** @type {HTMLInputElement|null} */ (this.panelElement.querySelector('#diaryApiKey'));
+    const formatSelect = /** @type {HTMLSelectElement|null} */ (this.panelElement.querySelector('#diaryApiFormat'));
     const modelSelect = /** @type {HTMLSelectElement|null} */ (this.panelElement.querySelector('#diaryApiModelSelect'));
     const modelManualInput = /** @type {HTMLInputElement|null} */ (this.panelElement.querySelector('#diaryApiModelManual'));
 
@@ -579,6 +642,7 @@ export class DiaryAPIConfig {
       stream: false,
       baseUrl: baseUrlInput?.value.trim() || '',
       apiKey: apiKeyInput?.value.trim() || '',
+      format: formatSelect?.value.trim() || 'openai',  // 读取用户选择的API格式
       model: model || 'gpt-4o-mini'
     };
 

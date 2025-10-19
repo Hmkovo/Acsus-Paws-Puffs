@@ -330,7 +330,7 @@ export class DiaryAPI {
       // 步骤4：如果有评论任务，添加到最后
       if (commentTask) {
         messages.push({
-          role: 'user',
+          role: 'system',  // ← 修复：改为 system，让评论任务和日记保持在一起
           content: commentTask
         });
         logger.debug('[DiaryAPI.backgroundGenerate] 已添加评论任务');
@@ -369,13 +369,15 @@ export class DiaryAPI {
           ...apiConfig,
           baseUrl: currentConfig.baseUrl,
           apiKey: currentConfig.apiKey,
-          model: currentConfig.model
+          model: currentConfig.model,
+          format: currentConfig.format  // ← 修复：也复制 format 字段
         };
 
         logger.debug('[DiaryAPI.backgroundGenerate] 使用自定义API配置:', {
           name: currentConfig.name,
           baseUrl: currentConfig.baseUrl,
-          model: currentConfig.model
+          model: currentConfig.model,
+          format: currentConfig.format || 'openai (默认)'
         });
       }
 
@@ -392,11 +394,32 @@ export class DiaryAPI {
         response = await this.callAPIWithStreaming(messages, apiConfig, signal);
       } else {
         logger.info('[DiaryAPI.backgroundGenerate] 走默认API分支 (generateRaw)');
-        logger.info('[DiaryAPI.backgroundGenerate] 不传responseLength，让generateRaw自动使用用户配置');
-        // 使用默认 API 时，不传 responseLength，让 generateRaw 自动使用用户在酒馆设置的 max_tokens
+
+        // 诊断日志：记录当前API配置
+        logger.debug('[DiaryAPI] === API配置诊断开始 ===');
+        try {
+          // ✅ 修复：正确读取 main_api 的值（从 DOM 元素获取）
+          const mainApiElement = /** @type {HTMLSelectElement} */ (document.getElementById('main_api'));
+          const mainApiValue = mainApiElement ? mainApiElement.value : 'DOM元素不存在';
+          logger.debug('[DiaryAPI] main_api (从DOM读取):', mainApiValue);
+          logger.debug('[DiaryAPI] oai_settings.chat_completion_source:', oai_settings?.chat_completion_source || 'undefined');
+          // @ts-ignore - getChatCompletionModel 是 SillyTavern 全局函数
+          logger.debug('[DiaryAPI] 当前模型:', typeof getChatCompletionModel === 'function' ? getChatCompletionModel() : 'getChatCompletionModel不可用');
+          logger.debug('[DiaryAPI] max_tokens:', oai_settings?.openai_max_tokens || 'undefined');
+          logger.debug('[DiaryAPI] reverse_proxy:', oai_settings?.reverse_proxy || 'undefined');
+          logger.debug('[DiaryAPI] custom_url:', oai_settings?.custom_url || 'undefined');
+        } catch (err) {
+          logger.warn('[DiaryAPI] 诊断日志记录失败:', err);
+        }
+        logger.debug('[DiaryAPI] === API配置诊断结束 ===');
+
+        logger.info('[DiaryAPI.backgroundGenerate] 不传api和responseLength，让generateRaw自动使用用户当前配置');
+        // ✅ 修复：不传 api 参数，让 generateRaw 自动读取用户在酒馆设置的主API
+        // 这样无论用户选的是 OpenAI、Claude、Google AI、Text Completion 还是其他，都能自动适配
         response = await generateRaw({
-          prompt: messages,
-          api: null
+          prompt: messages
+          // 不传 api，generateRaw 内部会自动使用 main_api（用户当前选择的主API）
+          // 不传 responseLength，generateRaw 会使用用户设置的 max_tokens
         });
         logger.info('[DiaryAPI.backgroundGenerate] generateRaw调用完成');
       }
@@ -421,14 +444,51 @@ export class DiaryAPI {
    * 调用API（支持流式和自定义配置）
    */
   async callAPIWithStreaming(messages, apiConfig, signal) {
-    // 获取用户当前使用的 API 源（而不是硬编码 OPENAI）
-    const currentSource = oai_settings.chat_completion_source || chat_completion_sources.OPENAI;
+    // 🔍 调试日志：记录传入的完整 apiConfig
+    logger.debug('[DiaryAPI.callAPIWithStreaming] === 自定义API调试开始 ===');
+    logger.debug('[DiaryAPI.callAPIWithStreaming] 传入的 apiConfig:', JSON.stringify(apiConfig, null, 2));
+    logger.debug('[DiaryAPI.callAPIWithStreaming] apiConfig.source:', apiConfig.source);
+    logger.debug('[DiaryAPI.callAPIWithStreaming] apiConfig.baseUrl:', `"${apiConfig.baseUrl}"`, '(类型:', typeof apiConfig.baseUrl, ', 长度:', apiConfig.baseUrl?.length || 0, ')');
+    logger.debug('[DiaryAPI.callAPIWithStreaming] apiConfig.model:', apiConfig.model);
+    logger.debug('[DiaryAPI.callAPIWithStreaming] apiConfig.apiKey:', apiConfig.apiKey ? '已设置(已隐藏)' : '未设置');
+
+    // 获取用户当前使用的 API 源
+    // ✅ 方案1：自定义API使用用户在扩展中选择的格式
+    let currentSource;
+    if (apiConfig.source === 'custom') {
+      // 根据用户选择的格式映射到对应的 chat_completion_sources
+      const formatMap = {
+        'openai': chat_completion_sources.CUSTOM,      // OpenAI 兼容格式（大部分代理）
+        'claude': chat_completion_sources.CLAUDE,      // Claude (Anthropic)
+        'google': chat_completion_sources.MAKERSUITE,  // Google AI (Gemini/PaLM)
+        'openrouter': chat_completion_sources.OPENROUTER,
+        'scale': chat_completion_sources.CUSTOM,       // Scale也是OpenAI兼容
+        'ai21': chat_completion_sources.AI21,
+        'mistral': chat_completion_sources.MISTRALAI,
+        'custom': 'auto'  // 自动检测（保留原有逻辑）
+      };
+
+      const userFormat = apiConfig.format || 'openai';  // 默认OpenAI格式
+
+      if (userFormat === 'custom') {
+        // 自动检测：使用酒馆当前设置
+        currentSource = oai_settings.chat_completion_source || chat_completion_sources.OPENAI;
+        logger.debug('[DiaryAPI.callAPIWithStreaming] 自定义API - 自动检测模式，使用酒馆API源:', currentSource);
+      } else {
+        currentSource = formatMap[userFormat] || chat_completion_sources.CUSTOM;
+        logger.debug('[DiaryAPI.callAPIWithStreaming] 自定义API - 用户选择格式:', userFormat, '→ 映射到:', currentSource);
+      }
+    } else {
+      currentSource = oai_settings.chat_completion_source || chat_completion_sources.OPENAI;
+      logger.debug('[DiaryAPI.callAPIWithStreaming] 使用酒馆API源:', currentSource);
+    }
 
     let model = apiConfig.model;
     if (!model) {
       model = oai_settings.openai_model || 'gpt-4o-mini';
       logger.warn('[DiaryAPI.callAPIWithStreaming] 未设置模型，使用官方默认:', model);
     }
+    logger.debug('[DiaryAPI.callAPIWithStreaming] 最终使用的 model:', model);
 
     // 读取 max_tokens 配置
     const maxTokensRaw = oai_settings.openai_max_tokens;
@@ -450,13 +510,51 @@ export class DiaryAPI {
       temperature: Number(oai_settings.temp_openai) || 1.0,
       frequency_penalty: Number(oai_settings.freq_pen_openai) || 0,
       presence_penalty: Number(oai_settings.pres_pen_openai) || 0,
-      top_p: Number(oai_settings.top_p_openai) || 1.0
+      top_p: Number(oai_settings.top_p_openai) || 1.0,
+      // ✅ 修复：添加各个API源必需的参数（参考 ChatCompletionService）
+      use_makersuite_sysprompt: true,  // Google AI (makersuite) 必需
+      claude_use_sysprompt: true       // Claude 必需
     };
 
     if (apiConfig.source === 'custom') {
-      if (apiConfig.baseUrl) body.reverse_proxy = apiConfig.baseUrl;
-      if (apiConfig.apiKey) body.proxy_password = apiConfig.apiKey;
+      logger.debug('[DiaryAPI.callAPIWithStreaming] 🔍 进入自定义API分支');
+      logger.debug('[DiaryAPI.callAPIWithStreaming] 检查前 - apiConfig.baseUrl:', `"${apiConfig.baseUrl}"`, ', trim后:', `"${apiConfig.baseUrl?.trim()}"`);
+      logger.debug('[DiaryAPI.callAPIWithStreaming] 检查前 - apiConfig.model:', `"${apiConfig.model}"`, ', trim后:', `"${apiConfig.model?.trim()}"`);
+
+      // ✅ 修复：检查必填字段，避免传递空值导致 Invalid URL
+      if (!apiConfig.baseUrl || !apiConfig.baseUrl.trim()) {
+        const error = new Error('自定义API配置错误：缺少 API 端点 (Base URL)');
+        logger.error('[DiaryAPI.callAPIWithStreaming]', error.message);
+        logger.error('[DiaryAPI.callAPIWithStreaming] baseUrl 值:', apiConfig.baseUrl, ', 类型:', typeof apiConfig.baseUrl);
+        throw error;
+      }
+      if (!apiConfig.model || !apiConfig.model.trim()) {
+        const error = new Error('自定义API配置错误：缺少模型名称');
+        logger.error('[DiaryAPI.callAPIWithStreaming]', error.message);
+        logger.error('[DiaryAPI.callAPIWithStreaming] model 值:', apiConfig.model, ', 类型:', typeof apiConfig.model);
+        throw error;
+      }
+
+      logger.debug('[DiaryAPI.callAPIWithStreaming] ✅ 验证通过，开始设置 API 端点');
+
+      // 🔧 修复：chat_completion_source 为 "custom" 时，后端读取 custom_url 而不是 reverse_proxy
+      // 所以需要同时设置两个字段
+      body.reverse_proxy = apiConfig.baseUrl.trim();
+      body.custom_url = apiConfig.baseUrl.trim();  // ← 关键：custom 源需要 custom_url
+      logger.debug('[DiaryAPI.callAPIWithStreaming] body.reverse_proxy 已设置为:', `"${body.reverse_proxy}"`);
+      logger.debug('[DiaryAPI.callAPIWithStreaming] body.custom_url 已设置为:', `"${body.custom_url}"`);
+
+      if (apiConfig.apiKey) {
+        body.proxy_password = apiConfig.apiKey.trim();
+        logger.debug('[DiaryAPI.callAPIWithStreaming] body.proxy_password 已设置');
+      }
+    } else {
+      logger.debug('[DiaryAPI.callAPIWithStreaming] 跳过自定义API分支 (source !== "custom")');
     }
+
+    // 🔍 最终检查：记录 body 中的 reverse_proxy
+    logger.debug('[DiaryAPI.callAPIWithStreaming] 最终 body.reverse_proxy:', body.reverse_proxy);
+    logger.debug('[DiaryAPI.callAPIWithStreaming] 完整 body 对象:', JSON.stringify(body, null, 2));
 
     logger.info('[DiaryAPI.callAPIWithStreaming] 最终请求配置:', {
       扩展API配置源: apiConfig.source,
@@ -482,7 +580,7 @@ export class DiaryAPI {
     }
 
     if (apiConfig.stream) {
-      return await this.handleStreamResponse(response, signal);
+      return await this.handleStreamResponse(response, signal, currentSource);
     } else {
       const data = await response.json();
       const message = extractMessageFromData(data);
@@ -492,8 +590,12 @@ export class DiaryAPI {
 
   /**
    * 处理流式响应（实时更新预览面板）
+   * 
+   * @param {Response} response - fetch响应对象
+   * @param {AbortSignal} signal - 中止信号
+   * @param {string} currentSource - 当前使用的API源（从callAPIWithStreaming传入）
    */
-  async handleStreamResponse(response, signal) {
+  async handleStreamResponse(response, signal, currentSource) {
     const eventStream = getEventSourceStream();
     response.body.pipeThrough(eventStream);
     const reader = eventStream.readable.getReader();
@@ -501,8 +603,7 @@ export class DiaryAPI {
     let fullText = '';
     const state = { reasoning: '', image: '' };
 
-    // 获取用户当前使用的 API 源（与 callAPIWithStreaming 保持一致）
-    const currentSource = oai_settings.chat_completion_source || chat_completion_sources.OPENAI;
+    logger.debug('[DiaryAPI.handleStreamResponse] 使用API源解析流式响应:', currentSource);
 
     try {
       while (true) {
@@ -743,7 +844,7 @@ export class DiaryAPI {
 
       // 添加评论任务
       if (commentTask) {
-        messages.push({ role: 'user', content: commentTask });
+        messages.push({ role: 'system', content: commentTask });  // ← 修复：改为 system，保持正确顺序
         logger.debug('[DiaryAPI.backgroundGenerateForSelected] 已添加评论任务');
       }
 
@@ -753,23 +854,72 @@ export class DiaryAPI {
       logger.debug('[DiaryAPI.backgroundGenerateForSelected] ========== messages结束 ==========');
 
       // 获取API配置
-      const apiConfig = settings.apiConfig || {};
-      logger.debug('[DiaryAPI.backgroundGenerateForSelected] API配置源:', apiConfig.source || 'default', '流式:', apiConfig.stream || false);
+      const apiSettings = settings.apiConfig || { source: 'default', stream: false };
+      logger.debug('[DiaryAPI.backgroundGenerateForSelected] API配置源:', apiSettings.source || 'default', '流式:', apiSettings.stream || false);
+
+      // 构造 API 配置对象（和 backgroundGenerate 保持一致）
+      let apiConfig = {
+        source: apiSettings.source,
+        stream: apiSettings.stream
+      };
+
+      if (apiSettings.source === 'custom') {
+        const currentConfigId = apiSettings.currentConfigId;
+        const customConfigs = apiSettings.customConfigs || [];
+        const currentConfig = customConfigs.find(c => c.id === currentConfigId);
+
+        if (!currentConfig) {
+          logger.error('[DiaryAPI.backgroundGenerateForSelected] 未找到当前API配置');
+          throw new Error('未找到API配置，请先在设置中保存一个配置');
+        }
+
+        apiConfig = {
+          ...apiConfig,
+          baseUrl: currentConfig.baseUrl,
+          apiKey: currentConfig.apiKey,
+          model: currentConfig.model,
+          format: currentConfig.format  // ← 修复：也复制 format 字段
+        };
+
+        logger.debug('[DiaryAPI.backgroundGenerateForSelected] 使用自定义API配置:', {
+          name: currentConfig.name,
+          baseUrl: currentConfig.baseUrl,
+          model: currentConfig.model,
+          format: currentConfig.format || 'openai (默认)'
+        });
+      }
 
       // 调用API
       let response;
-      if (apiConfig.source === 'custom' && apiConfig.stream) {
-        // 流式生成
-        response = await this.callAPIWithStreaming(messages, apiConfig, signal);
-      } else if (apiConfig.source === 'custom') {
-        // 非流式自定义API
+      if (apiConfig.source === 'custom') {
+        // 自定义API（流式或非流式都用 callAPIWithStreaming）
         response = await this.callAPIWithStreaming(messages, apiConfig, signal);
       } else {
         // 使用默认API（复用酒馆设置）
+
+        // 诊断日志：记录当前API配置
+        logger.debug('[DiaryAPI.backgroundGenerateForSelected] === API配置诊断开始 ===');
+        try {
+          // ✅ 修复：正确读取 main_api 的值（从 DOM 元素获取）
+          const mainApiElement = /** @type {HTMLSelectElement} */ (document.getElementById('main_api'));
+          const mainApiValue = mainApiElement ? mainApiElement.value : 'DOM元素不存在';
+          logger.debug('[DiaryAPI.backgroundGenerateForSelected] main_api (从DOM读取):', mainApiValue);
+          logger.debug('[DiaryAPI.backgroundGenerateForSelected] oai_settings.chat_completion_source:', oai_settings?.chat_completion_source || 'undefined');
+          // @ts-ignore - getChatCompletionModel 是 SillyTavern 全局函数
+          logger.debug('[DiaryAPI.backgroundGenerateForSelected] 当前模型:', typeof getChatCompletionModel === 'function' ? getChatCompletionModel() : 'getChatCompletionModel不可用');
+          logger.debug('[DiaryAPI.backgroundGenerateForSelected] max_tokens:', oai_settings?.openai_max_tokens || 'undefined');
+          logger.debug('[DiaryAPI.backgroundGenerateForSelected] reverse_proxy:', oai_settings?.reverse_proxy || 'undefined');
+          logger.debug('[DiaryAPI.backgroundGenerateForSelected] custom_url:', oai_settings?.custom_url || 'undefined');
+        } catch (err) {
+          logger.warn('[DiaryAPI.backgroundGenerateForSelected] 诊断日志记录失败:', err);
+        }
+        logger.debug('[DiaryAPI.backgroundGenerateForSelected] === API配置诊断结束 ===');
+
+        // ✅ 修复：不传api和responseLength，让generateRaw自动使用用户当前配置
         response = await generateRaw({
-          prompt: messages,
-          responseLength: 200,
-          api: null
+          prompt: messages
+          // 不传 api，自动使用用户设置的主API
+          // 不传 responseLength，自动使用用户设置的 max_tokens
         });
       }
 

@@ -217,6 +217,24 @@
           </div>
         </label>
 
+        <!-- API 格式 -->
+        <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start;">
+          <span class="diary-setting-label">API 格式：</span>
+          <select id="diaryApiFormat" class="diary-setting-select" style="width: 100%;">
+            <option value="openai">OpenAI 兼容格式（大部分代理）</option>
+            <option value="claude">Claude (Anthropic)</option>
+            <option value="google">Google AI (Gemini/PaLM)</option>
+            <option value="openrouter">OpenRouter</option>
+            <option value="scale">Scale</option>
+            <option value="ai21">AI21 (Jurassic)</option>
+            <option value="mistral">Mistral AI</option>
+            <option value="custom">自动检测 (实验性)</option>
+          </select>
+          <div style="font-size: 0.85em; color: var(--white50a); margin-top: 4px;">
+            选择你的 API 使用的协议格式。不确定的话选"OpenAI 兼容格式"
+          </div>
+        </label>
+
         <!-- 模型选择 -->
         <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start;">
           <span class="diary-setting-label">模型：</span>
