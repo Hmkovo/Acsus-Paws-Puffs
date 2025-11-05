@@ -9,6 +9,8 @@
   left: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
+  /* 动态视口高度，适配移动端浏览器UI */
   z-index: 10000;
   display: flex;
   align-items: center;

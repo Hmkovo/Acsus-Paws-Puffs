@@ -84,6 +84,8 @@
   left: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
+  /* 动态视口高度，适配移动端浏览器UI */
   background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
@@ -112,7 +114,11 @@
   .phone-overlay .phone-container {
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
+    /* 动态视口高度 */
     max-height: 100vh;
+    max-height: 100dvh;
+    /* 动态视口高度 */
     border-radius: 0;
     box-shadow: none;
   }
@@ -5338,6 +5344,8 @@
   left: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
+  /* 动态视口高度 */
   background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
@@ -5722,6 +5730,8 @@
   left: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
+  /* 动态视口高度 */
   background: rgba(0, 0, 0, 0);
   display: flex;
   align-items: center;
@@ -8047,6 +8057,8 @@
   width: 100vw;
   /* ← 改为100vw */
   height: 100vh;
+  height: 100dvh;
+  /* 动态视口高度 */
   /* ← 改为100vh */
   background: rgba(0, 0, 0, 0);
   /* ← 初始透明 */
@@ -9632,4 +9644,33 @@
 
 /* ========================================
    [END] 收藏选择器样式
+   ======================================== */
+
+/* ========================================
+   [START] iOS 专用适配（安全区域支持）
+   ======================================== */
+
+/* iOS 专用：使用 -webkit-touch-callout 特性检测 */
+@supports (-webkit-touch-callout: none) {
+
+  /* 手机容器：底部添加安全区域内边距，防止被 iOS home 指示器遮挡 */
+  .phone-container {
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  }
+
+  /* 手机底部导航栏：额外底部内边距 */
+  .phone-nav {
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  }
+
+  /* 所有弹窗容器：底部安全区域支持 */
+  .phone-popup-overlay .phone-popup-container,
+  .contact-bg-picker-overlay .contact-bg-picker,
+  .debug-overlay .debug-modal {
+    padding-bottom: max(env(safe-area-inset-bottom), 15px);
+  }
+}
+
+/* ========================================
+   [END] iOS 专用适配
    ======================================== */

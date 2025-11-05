@@ -18,6 +18,8 @@
   left: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
+  /* 动态视口高度，适配移动端浏览器UI */
   z-index: 9999;
 
   /* 半透明背景（跟随官方主题） */
@@ -1898,6 +1900,8 @@
   left: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
+  /* 动态视口高度 */
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(var(--SmartThemeBlurStrength));
   display: flex;
@@ -2207,3 +2211,30 @@
     padding: 8px 12px;
   }
 }
+
+/* ========================================
+   [iOS] iOS 专用适配（安全区域支持）
+   ======================================== */
+
+/* iOS 专用：使用 -webkit-touch-callout 特性检测 */
+@supports (-webkit-touch-callout: none) {
+
+  /* 日记面板：底部添加安全区域内边距，防止被 iOS home 指示器遮挡 */
+  .diary-panel .diary-container {
+    padding-bottom: max(env(safe-area-inset-bottom), 15px);
+  }
+
+  /* 日记编辑器：底部安全区域支持 */
+  .diary-editor-panel .diary-editor {
+    padding-bottom: max(env(safe-area-inset-bottom), 15px);
+  }
+
+  /* 预设对话框：底部安全区域支持 */
+  .diary-preset-dialog-overlay .diary-preset-dialog-container {
+    padding-bottom: max(env(safe-area-inset-bottom), 20px);
+  }
+}
+
+/* ========================================
+   [END] iOS 专用适配
+   ======================================== */
