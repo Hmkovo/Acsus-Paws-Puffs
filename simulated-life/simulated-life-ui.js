@@ -87,7 +87,8 @@ export class SimulatedLifeUI {
                 <div class="paws-puffs-settings-accordion-body">
                   <h4 style="margin-top: 0; color: var(--SmartThemeQuoteColor);">模拟人生 - 溯的提示词</h4>
                   <p style="font-size: 0.9em; opacity: 0.8; margin-bottom: 12px;">
-                    原作者：溯（Sus）
+                    原作者：溯（Sus）<br>
+                    最早发布时间：2025-5-13
                   </p>
                   
                   <p style="margin-bottom: 12px;">

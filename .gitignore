@@ -1,5 +1,10 @@
 # 开发文档（不上传到GitHub）
 【*】*.md
+*DEMO*.md
+CLASSNAME-MAP.md
+
+# 演示文件
+*-demo.html
 
 # 日志文件
 *.log

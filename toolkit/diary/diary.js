@@ -86,31 +86,6 @@ export class DiarySystem {
   }
 
   /**
-   * 加载CSS样式文件
-   * 
-   * @description
-   * 动态加载日记面板和视觉设置的CSS文件
-   */
-  loadCSS() {
-    const cssFiles = [
-      '/scripts/extensions/third-party/Acsus-Paws-Puffs/toolkit/diary/diary-panel.css',
-      '/scripts/extensions/third-party/Acsus-Paws-Puffs/toolkit/diary/diary-visual-settings.css'
-    ];
-
-    cssFiles.forEach(href => {
-      // 检查是否已加载
-      if (!document.querySelector(`link[href="${href}"]`)) {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.type = 'text/css';
-        link.href = href;
-        document.head.appendChild(link);
-        logger.debug('[DiarySystem.loadCSS] 已加载CSS:', href);
-      }
-    });
-  }
-
-  /**
    * 初始化日记系统
    * 
    * @async
@@ -125,11 +100,15 @@ export class DiarySystem {
     logger.info('[DiarySystem] 开始初始化...');
 
     try {
-      // 加载CSS样式
-      this.loadCSS();
-
       // 加载设置
       this.loadSettings();
+
+      // 如果功能未启用，跳过完整初始化，节省资源
+      if (!this.enabled) {
+        logger.info('[DiarySystem] 功能未启用，跳过完整初始化');
+        this.initialized = true;
+        return;
+      }
 
       // 初始化子模块
       this.dataManager = new DiaryDataManager();
@@ -276,16 +255,52 @@ export class DiarySystem {
   /**
    * 启用日记系统
    * 
+   * @async
    * @description
-   * 启用日记功能，同时显示扩展菜单中的日记图标
+   * 启用日记功能，如果之前未完整初始化（因为功能关闭），则触发完整初始化
    */
-  enable() {
+  async enable() {
     this.enabled = true;
     extension_settings[EXT_ID][MODULE_NAME].enabled = true;
     this.saveSettings();
 
-    // 显示扩展菜单中的日记图标
-    this.showMenuEntry();
+    // 如果之前因为功能关闭而跳过了完整初始化，现在补上
+    if (!this.dataManager) {
+      logger.info('[DiarySystem] 检测到未完整初始化，开始加载子模块');
+
+      try {
+        // 初始化子模块
+        this.dataManager = new DiaryDataManager();
+        this.ui = new DiaryUI(this.dataManager);
+        this.editor = new DiaryEditor(this.dataManager);
+        this.api = new DiaryAPI(this.dataManager);
+
+        // 注入引用（相互依赖）
+        this.ui.setAPI(this.api);
+        this.ui.setEditor(this.editor);
+        this.editor.setUI(this.ui);
+        this.api.setUI(this.ui);
+
+        await this.dataManager.init();
+        await this.ui.init();
+        await this.editor.init();
+        await this.api.init();
+
+        // 注册扩展菜单
+        this.registerMenuEntry();
+
+        // 绑定全局事件
+        this.bindEvents();
+
+        logger.info('[DiarySystem] 完整初始化完成');
+      } catch (error) {
+        logger.error('[DiarySystem] 启用时初始化失败:', error);
+        throw error;
+      }
+    } else {
+      // 已经完整初始化过，只需显示菜单图标
+      this.showMenuEntry();
+    }
 
     logger.info('[DiarySystem] 日记系统已启用');
   }

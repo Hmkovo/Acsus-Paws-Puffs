@@ -47,65 +47,10 @@ export class PresetManagerUI {
           </label>
         </div>
 
-        <!-- 预设收纳开关 -->
-        <div class="preset-enable-section-compact">
-          <label class="checkbox_label">
-            <input type="checkbox" id="preset-nesting-enabled" ${this.presetManager.nestingEnabled ? 'checked' : ''}>
-            <span>启用预设收纳</span>
-            <span class="hint-inline">开启后可以使用预设收纳功能，关闭后收纳按钮将被禁用</span>
-          </label>
-        </div>
-
         <!-- 手风琴卡片容器 -->
         <div class="preset-accordion-container">
-          <!-- 卡片1：预设收纳管理 -->
-          <div class="preset-accordion-card active" data-card="nesting">
-            <div class="preset-accordion-header" data-card="nesting">
-              <div class="preset-accordion-tab">
-                <i class="fa-solid fa-folder-tree"></i>
-                <strong>预设收纳管理</strong>
-              </div>
-            </div>
-            <div class="preset-accordion-body">
-              <h4 style="margin-top: 0; color: var(--SmartThemeQuoteColor);">功能按钮位置</h4>
-              <p>打开<strong>预设页面</strong>，在页面<strong>底部</strong>的按钮栏里可以看到：</p>
-              <ul class="preset-feature-list">
-                <li><i class="fa-solid fa-folder" style="color: var(--SmartThemeQuoteColor);"></i> <strong>收纳模式</strong>：点击进入/退出收纳模式</li>
-                <li><i class="fa-solid fa-broom" style="color: var(--SmartThemeUnderlineColor);"></i> <strong>清空收纳</strong>：一键清空所有收纳关系，重新整理</li>
-              </ul>
-
-              <h4 style="color: var(--SmartThemeQuoteColor);">图标说明</h4>
-              <ul class="preset-feature-list">
-                <li><i class="fa-solid fa-folder" style="color: var(--SmartThemeQuoteColor);"></i> <strong>文件夹图标</strong>：表示这是个"容器"，点击可展开/折叠里面收纳的条目</li>
-                <li><i class="fa-solid fa-arrow-up-from-bracket" style="color: var(--SmartThemeUnderlineColor);"></i> <strong>箭头图标</strong>：表示这条被收纳了，点击可移出收纳</li>
-                <li><i class="fa-solid fa-asterisk"></i> <strong>星号图标</strong>：表示这是普通的预设提示词</li>
-              </ul>
-
-              <h4 style="color: var(--SmartThemeQuoteColor);">使用教程</h4>
-              <div style="background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%); padding: 12px; border-radius: 5px; margin-bottom: 10px;">
-                <strong style="color: var(--SmartThemeQuoteColor);">第一步：进入收纳模式</strong>
-                <p style="margin: 5px 0 0 0;">点击底部的<i class="fa-solid fa-folder"></i>文件夹按钮，按钮会变成<i class="fa-solid fa-check" style="color: var(--SmartThemeQuoteColor);"></i>绿色打勾，表示已进入收纳模式。</p>
-              </div>
-              <div style="background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%); padding: 12px; border-radius: 5px; margin-bottom: 10px;">
-                <strong style="color: var(--SmartThemeQuoteColor);">第二步：收纳条目</strong>
-                <p style="margin: 5px 0 0 0;">先点击<strong>要被收纳的条目</strong>，再点击<strong>容器条目</strong>（作为文件夹），收纳成功！容器条目会变成<i class="fa-solid fa-folder"></i>文件夹图标。</p>
-              </div>
-              <div style="background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%); padding: 12px; border-radius: 5px; margin-bottom: 10px;">
-                <strong style="color: var(--SmartThemeQuoteColor);">第三步：管理收纳</strong>
-                <p style="margin: 5px 0 0 0;">点击<i class="fa-solid fa-folder"></i>文件夹图标可展开/折叠。点击被收纳条目的<i class="fa-solid fa-arrow-up-from-bracket"></i>箭头图标可移出收纳。</p>
-              </div>
-
-              <h4 style="color: var(--SmartThemeUnderlineColor);">注意事项</h4>
-              <ul class="preset-feature-list">
-                <li><strong>只能收纳"预设提示词"类型</strong>（带星号<i class="fa-solid fa-asterisk"></i>的），不能收纳其他类型</li>
-                <li><strong>只支持一层收纳</strong>：A可以收纳B，但B不能再收纳C（避免太复杂）</li>
-                <li><strong>收纳后依然可以拖拽排序</strong>：退出收纳模式后就能正常拖拽了</li>
-              </ul>
-            </div>
-          </div>
-
-          <!-- 卡片2：世界书工具 -->
-          <div class="preset-accordion-card" data-card="worldbook">
+          <!-- 卡片：世界书工具 -->
+          <div class="preset-accordion-card active" data-card="worldbook">
             <div class="preset-accordion-header" data-card="worldbook">
               <div class="preset-accordion-tab">
                 <i class="fa-solid fa-book"></i>
@@ -217,23 +162,6 @@ export class PresetManagerUI {
           this.showMessage('世界书工具已启用', 'success');
         } else {
           this.showMessage('世界书工具已禁用', 'info');
-        }
-      });
-    }
-
-    // 预设收纳开关
-    const nestingCheckbox = this.container.querySelector('#preset-nesting-enabled');
-    if (nestingCheckbox) {
-      nestingCheckbox.addEventListener('change', async (e) => {
-        const enabled = e.target.checked;
-        logger.info('[PresetManagerUI] 用户切换预设收纳:', enabled ? '启用' : '禁用');
-
-        await this.presetManager.setNestingEnabled(enabled);
-
-        if (enabled) {
-          this.showMessage('预设收纳已启用', 'success');
-        } else {
-          this.showMessage('预设收纳已禁用', 'info');
         }
       });
     }

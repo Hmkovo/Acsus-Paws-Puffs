@@ -18,6 +18,12 @@
    ======================================== */
 @import url('toolkit/diary/diary-panel.css');
 @import url('toolkit/diary/diary-editor.css');
+@import url('toolkit/diary/diary-visual-settings.css');
+
+/* ========================================
+   导入手机系统CSS
+   ======================================== */
+@import url('toolkit/phone/assets/phone.css');
 
 /* ========================================
    预设管理器优化（全局）
@@ -37,28 +43,6 @@
 #completion_prompt_manager_list .prompt_manager_prompt_name>.fa-fw:first-child,
 #prompt_manager_list .prompt_manager_prompt_name>.fa-fw:first-child {
   margin-left: 5px;
-}
-
-/* ========================================
-   预设收纳功能 - 折叠状态（修复闪烁问题）
-   ======================================== */
-
-/* 被折叠的子条目：完全隐藏 */
-#completion_prompt_manager_list .paws-nested-child.paws-collapsed,
-#prompt_manager_list .paws-nested-child.paws-collapsed {
-  display: none !important;
-}
-
-/* 被收纳的子条目：基础样式（可选，用于未来扩展） */
-#completion_prompt_manager_list .paws-nested-child,
-#prompt_manager_list .paws-nested-child {
-  /* 可以添加其他视觉效果，如缩进、边框等 */
-}
-
-/* 容器条目：基础样式（可选，用于未来扩展） */
-#completion_prompt_manager_list .paws-container,
-#prompt_manager_list .paws-container {
-  /* 可以添加其他视觉效果，如高亮边框等 */
 }
 
 /* ========================================

@@ -41,6 +41,7 @@ import { PresetManagerModule } from "./preset-manager.js";
 import { VisualEditor } from "./visual-editor/visual-editor.js";
 import { SimulatedLifeModule } from "./simulated-life/simulated-life.js";
 import { initDiarySystem } from "./toolkit/diary/diary.js";
+import { initPhone, openPhoneUI, closePhoneUI, enablePhone, disablePhone } from "./toolkit/phone/index.js";
 
 
 // ========================================
@@ -97,6 +98,7 @@ let presetManager = null;  // 预设管理器实例
 let visualEditor = null;  // 可视化编辑器实例
 let simulatedLife = null;  // 模拟人生模块实例
 let diarySystem = null;  // 日记系统实例
+let phoneSystem = null;  // 手机系统实例（标记已初始化）
 
 
 // ========================================
@@ -170,7 +172,16 @@ async function initPawsPuffs() {
       // 不阻断，继续初始化其他模块
     }
 
-    // 5.6 初始化设置面板UI
+    // 5.6 初始化手机系统
+    try {
+      phoneSystem = await initPhone();
+      logger.debug('[Main] 手机系统初始化成功');
+    } catch (error) {
+      logger.error('[Main] 手机系统初始化失败:', error.message || error);
+      // 不阻断，继续初始化其他模块
+    }
+
+    // 5.7 初始化设置面板UI
     await initSettingsPanel();
 
     logger.info('[Main] Acsus-Paws-Puffs 初始化完成！');
@@ -351,6 +362,9 @@ function bindSettingsEvents() {
   // 绑定日记功能开关
   bindDiarySettings();
 
+  // 绑定手机功能
+  bindPhoneSettings();
+
   // 绑定工具包卡片点击事件
   bindToolboxCards();
 
@@ -503,7 +517,7 @@ function bindTermsPopup() {
  * 占位卡片（.toolbox-card-placeholder）已通过 CSS 禁用点击
  */
 function bindToolboxCards() {
-  const toolboxCards = document.querySelectorAll('.toolbox-card:not(.toolbox-card-placeholder):not([data-tool="diary"])');
+  const toolboxCards = document.querySelectorAll('.toolbox-card:not(.toolbox-card-placeholder):not([data-tool="diary"]):not([data-tool="mobile"])');
 
   toolboxCards.forEach(card => {
     card.addEventListener('click', async () => {
@@ -723,6 +737,37 @@ function bindDiarySettings() {
 }
 
 /**
+ * 绑定手机功能设置
+ * 
+ * @description
+ * 点击手机卡片时弹出官方弹窗，在弹窗内启用/禁用手机功能
+ * 使用 extension_settings 和 saveSettingsDebounced() 存储设置
+ */
+function bindPhoneSettings() {
+  // 更新卡片状态的辅助函数
+  const updateCardStatus = () => {
+    const statusEl = document.getElementById('phone-status');
+    if (statusEl && phoneSystem) {
+      statusEl.textContent = phoneSystem.enabled ? '已启用' : '已禁用';
+      statusEl.style.color = phoneSystem.enabled ? 'var(--greenSuccessColor)' : 'var(--redWarningColor)';
+    }
+  };
+
+  // 初始化卡片状态
+  updateCardStatus();
+
+  // 绑定卡片点击事件，弹出官方弹窗
+  const phoneCard = document.querySelector('.toolbox-card[data-tool="mobile"]');
+  if (phoneCard) {
+    phoneCard.addEventListener('click', async () => {
+      await showPhoneSettingsPopup(updateCardStatus);
+    });
+  }
+
+  logger.debug('[Settings] 手机卡片点击事件已绑定');
+}
+
+/**
  * 显示日记设置弹窗
  * 
  * @async
@@ -810,9 +855,9 @@ async function showDiarySettingsPopup(updateCardStatus) {
   await new Promise(resolve => setTimeout(resolve, 100));
 
   // 绑定弹窗内的复选框事件
-  const checkbox = document.getElementById('diary-popup-enabled');
+  const checkbox = /** @type {HTMLInputElement} */ (document.getElementById('diary-popup-enabled'));
   if (checkbox) {
-    checkbox.addEventListener('change', function () {
+    checkbox.addEventListener('change', async function () {
       const newState = this.checked;
 
       // 更新 extension_settings
@@ -823,13 +868,84 @@ async function showDiarySettingsPopup(updateCardStatus) {
 
       // 启用或禁用功能
       if (newState) {
-        diarySystem.enable();
+        await diarySystem.enable();
         toastr.success('日记功能已启用');
         logger.info('[Settings] 日记功能已启用');
       } else {
         diarySystem.disable();
         toastr.info('日记功能已禁用');
         logger.info('[Settings] 日记功能已禁用');
+      }
+
+      // 更新卡片状态
+      updateCardStatus();
+    });
+  }
+}
+
+/**
+ * 显示手机设置弹窗
+ * 
+ * @async
+ * @param {Function} updateCardStatus - 更新卡片状态的回调函数
+ * @description
+ * 使用官方 callGenericPopup 显示手机功能的启用/禁用开关和使用说明
+ * 开关状态立即保存，不依赖弹窗的确认/取消按钮
+ */
+async function showPhoneSettingsPopup(updateCardStatus) {
+  // 构建弹窗HTML内容
+  const html = `
+    <div class="phone-intro-popup" style="padding: 10px; max-height: 500px; overflow-y: auto; text-align: left;">
+      <!-- 开关 -->
+      <div style="margin-bottom: 15px; padding: 10px; background: var(--black30a); border-radius: 8px;">
+        <label class="checkbox_label" style="display: flex; align-items: center; cursor: pointer;">
+          <input type="checkbox" id="phone-popup-enabled" ${phoneSystem.enabled ? 'checked' : ''} />
+          <strong style="margin-left: 10px; font-size: 1.1em;">启用手机功能</strong>
+        </label>
+      </div>
+
+      <!-- 警告提示 -->
+      <div style="padding: 15px; background: rgba(244, 67, 54, 0.1); border-left: 4px solid #f44336; border-radius: 4px;">
+        <div style="display: flex; align-items: flex-start; gap: 10px;">
+          <i class="fa-solid fa-exclamation-triangle" style="color: #f44336; font-size: 1.3em; margin-top: 2px;"></i>
+          <div>
+            <strong style="color: #f44336; font-size: 1.1em;">⚠️ 功能测试中</strong>
+            <p style="margin: 8px 0 0 0; line-height: 1.6;">
+              未上线，作者在测试，只能纯聊天，不要随便使用导致问题！
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // 弹出官方弹窗（使用 TEXT 类型，只有关闭按钮）
+  callGenericPopup(html, POPUP_TYPE.TEXT, '手机');
+
+  // 等待DOM更新后绑定事件
+  await new Promise(resolve => setTimeout(resolve, 100));
+
+  // 绑定弹窗内的复选框事件
+  const checkbox = /** @type {HTMLInputElement} */ (document.getElementById('phone-popup-enabled'));
+  if (checkbox) {
+    checkbox.addEventListener('change', async function () {
+      const newState = this.checked;
+
+      // 更新 extension_settings
+      extension_settings[EXT_ID].phone.enabled = newState;
+
+      // 立即保存
+      saveSettingsDebounced();
+
+      // 启用或禁用功能
+      if (newState) {
+        await enablePhone();
+        toastr.success('手机功能已启用');
+        logger.info('[Settings] 手机功能已启用');
+      } else {
+        disablePhone();
+        toastr.info('手机功能已禁用');
+        logger.info('[Settings] 手机功能已禁用');
       }
 
       // 更新卡片状态

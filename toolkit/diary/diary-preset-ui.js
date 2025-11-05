@@ -42,7 +42,6 @@ export class DiaryPresetUI {
     this.dataManager = dataManager;
     this.panelElement = null;
     this.isOpen = false;
-    this.sortable = null;
     this.panelsModule = null;  // 面板管理器引用（用于双向同步）
   }
 
@@ -291,122 +290,56 @@ export class DiaryPresetUI {
 
   /**
    * 初始化拖拽排序
+   * 
+   * @description
+   * 使用 jQuery UI Sortable 实现拖拽排序，自动支持电脑和手机端。
+   * SillyTavern 已内置 jQuery UI + Touch Punch，无需引入额外依赖。
    */
   initSortable() {
-    const listElement = document.getElementById('diaryPresetList');
-    if (!listElement) return;
+    const $list = $('#diaryPresetList');
+    if (!$list.length) return;
 
     // 销毁旧的 sortable 实例
-    if (this.sortable) {
-      this.sortable.destroy();
+    if ($list.hasClass('ui-sortable')) {
+      $list.sortable('destroy');
     }
 
-    // 使用原生拖拽API（所有条目都可拖拽，包括分组内的和分组本身）
-    const items = listElement.querySelectorAll('.diary-preset-item');
-    const groups = listElement.querySelectorAll('.diary-preset-group');
+    // 初始化主列表的拖拽排序（包括分组和非分组条目）
+    $list.sortable({
+      items: '> .diary-preset-item, > .diary-preset-group',  // 可拖拽的元素
+      handle: '.diary-preset-drag-handle',  // 只能通过拖拽手柄拖动
+      axis: 'y',  // 只能垂直拖动
+      tolerance: 'pointer',  // 指针触碰即可插入
+      cursor: 'move',  // 拖拽时鼠标样式
+      delay: 100,  // 延迟 100ms 防止误触（手机端重要）
 
-    items.forEach(item => {
-      item.draggable = true;
-
-      // 检查条目是否在分组内
-      const isInGroup = item.closest('.diary-preset-group-content');
-
-      item.addEventListener('dragstart', (e) => {
-        item.classList.add('dragging');
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/html', item.innerHTML);
-        // 标记是否在分组内
-        if (isInGroup) {
-          item.dataset.fromGroup = 'true';
-        }
-      });
-
-      item.addEventListener('dragend', (e) => {
-        item.classList.remove('dragging');
-        delete item.dataset.fromGroup;
+      // 拖拽完成时触发
+      update: () => {
         this.updateOrder();
-      });
-
-      item.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-
-        const dragging = listElement.querySelector('.dragging');
-        if (dragging && dragging !== item) {
-          // 检查拖拽的条目和目标条目是否都在同一个容器内
-          const draggingInGroup = dragging.dataset.fromGroup === 'true';
-          const targetInGroup = item.closest('.diary-preset-group-content');
-
-          // 只允许同一容器内的拖拽
-          if ((draggingInGroup && targetInGroup) || (!draggingInGroup && !targetInGroup)) {
-            const rect = item.getBoundingClientRect();
-            const midY = rect.top + rect.height / 2;
-
-            if (e.clientY < midY) {
-              item.parentNode.insertBefore(dragging, item);
-            } else {
-              item.parentNode.insertBefore(dragging, item.nextSibling);
-            }
-          }
-        }
-      });
+        logger.debug('[DiaryPresetUI] 主列表拖拽排序完成');
+      }
     });
 
-    // 让分组也可以拖拽
-    groups.forEach(group => {
-      const header = group.querySelector('.diary-preset-group-header');
-      if (!header) return;
+    // 初始化分组内的拖拽排序
+    const $groupContent = $list.find('.diary-preset-group-content');
+    if ($groupContent.length) {
+      $groupContent.sortable({
+        items: '> .diary-preset-item',  // 只有分组内的条目可拖拽
+        handle: '.diary-preset-drag-handle',  // 只能通过拖拽手柄拖动
+        axis: 'y',  // 只能垂直拖动
+        tolerance: 'pointer',  // 指针触碰即可插入
+        cursor: 'move',  // 拖拽时鼠标样式
+        delay: 100,  // 延迟 100ms 防止误触（手机端重要）
 
-      // 给分组设置可拖拽属性
-      group.draggable = true;
-      group.dataset.groupId = 'diary-instructions'; // 标记为分组
-
-      // 拖拽开始
-      group.addEventListener('dragstart', (e) => {
-        group.classList.add('dragging');
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/html', group.innerHTML);
-      });
-
-      // 拖拽结束
-      group.addEventListener('dragend', (e) => {
-        group.classList.remove('dragging');
-        this.updateOrder();
-      });
-
-      // 在分组上方拖拽时
-      group.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-
-        const dragging = listElement.querySelector('.dragging');
-        if (dragging && dragging !== group) {
-          const rect = group.getBoundingClientRect();
-          const midY = rect.top + rect.height / 2;
-
-          if (e.clientY < midY) {
-            listElement.insertBefore(dragging, group);
-          } else {
-            listElement.insertBefore(dragging, group.nextSibling);
-          }
+        // 拖拽完成时触发
+        update: () => {
+          this.updateOrder();
+          logger.debug('[DiaryPresetUI] 分组内拖拽排序完成');
         }
       });
+    }
 
-      // 阻止拖拽手柄之外的区域触发拖拽（避免和折叠冲突）
-      header.addEventListener('mousedown', (e) => {
-        const isDragHandle = e.target.closest('.diary-preset-drag-handle');
-        if (!isDragHandle) {
-          // 如果不是拖拽手柄，禁用拖拽
-          group.draggable = false;
-          // 恢复拖拽能力（延迟，避免影响当前操作）
-          setTimeout(() => {
-            group.draggable = true;
-          }, 10);
-        }
-      });
-    });
-
-    logger.debug('[DiaryPresetUI] 拖拽排序已初始化（包含分组）');
+    logger.debug('[DiaryPresetUI] 拖拽排序已初始化（支持电脑+手机）');
   }
 
   /**
