@@ -16,7 +16,7 @@ import { getPendingMessages, clearPendingMessages, getAllPendingOperations } fro
 import { loadContacts } from '../contacts/contact-list-data.js';
 import { saveChatMessage, loadChatHistory } from '../messages/message-chat-data.js';
 import { extension_settings, getContext } from '../../../../../../../scripts/extensions.js';
-import { getRequestHeaders } from '../../../../../../../script.js';
+import { getRequestHeaders, extractMessageFromData } from '../../../../../../../script.js';
 import { chat_completion_sources, oai_settings, getStreamingReply } from '../../../../../../../scripts/openai.js';
 import { getEventSourceStream } from '../../../../../../../scripts/sse-stream.js';
 import {
@@ -637,14 +637,9 @@ export class PhoneAPI {
       return await this.handleStreamResponse(response, signal, currentSource);
     } else {
       const data = await response.json();
-      // 从响应中提取消息
-      let message = '';
-      if (data.choices && data.choices[0] && data.choices[0].message) {
-        message = data.choices[0].message.content || '';
-      } else if (typeof data === 'string') {
-        message = data;
-      }
-      return message;
+      // ✅ 修复：使用 extractMessageFromData 自动适配各种 API 格式（OpenAI/Claude/Google AI等）
+      const message = extractMessageFromData(data);
+      return message || '';
     }
   }
 

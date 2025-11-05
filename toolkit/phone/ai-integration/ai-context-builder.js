@@ -811,7 +811,7 @@ function getPresetData() {
         { id: 'phone-records', type: 'fixed', label: '[手机相关记录]', role: 'system', content: '空间动态、转账记录等', enabled: true, editable: true, deletable: false, order: 2 },
         { id: 'chat-history', type: 'fixed', label: '[QQ聊天记录]', role: 'system', content: '__AUTO_CHAT_HISTORY__', enabled: true, editable: false, deletable: false, order: 3 },
         { id: 'format-req', type: 'fixed', label: '[格式要求]', role: 'system', content: '请使用以下格式回复：\n[角色-XXX]\n[消息]\n消息内容（空行分隔不同气泡，连续文本在同一个气泡）\n[/消息]\n[/角色-XXX]', enabled: true, editable: true, deletable: false, order: 4 },
-        { id: 'footer-jb', type: 'fixed', label: '[尾部 破限]', role: 'system', content: '请立即开始角色扮演，不要说"我明白了"等废话。', enabled: true, editable: true, deletable: false, order: 5 }
+        { id: 'footer-jb', type: 'fixed', label: '[尾部 破限]', role: 'user', content: '请立即开始角色扮演，不要说"我明白了"等废话。', enabled: true, editable: true, deletable: false, order: 5 }
       ]
     };
     saveSettingsDebounced();
@@ -828,10 +828,17 @@ function getPresetData() {
         needsSave = true;
         logger.debug('[ContextBuilder] 为条目补充role字段:', item.id, item.label);
       }
+
+      // ✅ 修复 Google AI 兼容性：footer-jb 必须是 user 角色
+      if (item.id === 'footer-jb' && item.role === 'system') {
+        item.role = 'user';
+        needsSave = true;
+        logger.info('[ContextBuilder] 迁移旧数据：将 footer-jb 改为 user 角色（修复 Google AI 兼容性）');
+      }
     });
 
     if (needsSave) {
-      logger.info('[ContextBuilder] 旧数据已升级，补充了缺失的role字段');
+      logger.info('[ContextBuilder] 旧数据已升级');
       saveSettingsDebounced();
     }
   }
