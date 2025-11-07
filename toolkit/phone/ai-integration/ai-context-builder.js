@@ -158,10 +158,37 @@ function formatTimestamp(timestamp) {
 }
 
 /**
- * 构建messages数组（新版，使用预设系统）
+ * 提取被触发的联系人ID列表（从待发送消息中提取）
+ * 
+ * @private
+ * @param {Object} allPendingMessages - 所有待发送消息（按联系人ID分组）
+ * @returns {string[]} 被触发的联系人ID数组（有消息的联系人）
+ * 
+ * @description
+ * 从 allPendingMessages 中提取所有有消息的 contactId
+ * 用于多角色触发场景（给多个角色发消息）
+ */
+function extractTriggeredContactIds(allPendingMessages) {
+  if (!allPendingMessages || typeof allPendingMessages !== 'object') {
+    logger.warn('[ContextBuilder.extractTriggeredContactIds] allPendingMessages 为空或格式错误');
+    return [];
+  }
+
+  // 提取所有有消息的 contactId
+  const triggeredIds = Object.keys(allPendingMessages).filter(id => {
+    const messages = allPendingMessages[id];
+    return Array.isArray(messages) && messages.length > 0;
+  });
+
+  logger.debug('[ContextBuilder.extractTriggeredContactIds] 提取到', triggeredIds.length, '个被触发的联系人:', triggeredIds);
+  return triggeredIds;
+}
+
+/**
+ * 构建messages数组（新版，使用预设系统，支持多角色触发）
  * 
  * @async
- * @param {string} contactId - 联系人ID
+ * @param {string} contactId - 主联系人ID（当前打开的聊天页面，如果不存在会从触发列表中找第一个）
  * @param {Object} allPendingMessages - 所有待发送消息（按联系人ID分组）格式：{ contactId: [messages] }
  * @returns {Promise<Object>} { messages: messages数组, messageNumberMap: 编号映射表 }
  * 
@@ -169,6 +196,11 @@ function formatTimestamp(timestamp) {
  * 根据预设列表构建messages数组，每个预设项对应一条消息。
  * 支持三种角色类型（system/user/assistant）。
  * 自动替换特殊占位符（如__AUTO_CHARACTERS__、__AUTO_CHAT_HISTORY__、user待操作）。
+ * 
+ * ✅ 多角色触发机制（2025-11-07新增）：
+ * - 从 allPendingMessages 提取所有被触发的联系人ID
+ * - 为每个被触发的角色构建角色卡和聊天记录
+ * - 最新消息集中在 [{{user}}本轮操作] 中（保证AI注意力）
  * 
  * ⚠️ 变量替换由 SillyTavern 的 MacrosParser 自动处理（不需要手动替换）：
  * - {{最新消息}}、{{历史消息}}、{{当前时间}} 等手机宏
@@ -182,7 +214,11 @@ function formatTimestamp(timestamp) {
  * - 编号每次重新构建，不累积
  */
 export async function buildMessagesArray(contactId, allPendingMessages) {
-  logger.info('[ContextBuilder.buildMessagesArray] 开始构建messages数组:', contactId);
+  logger.info('[ContextBuilder.buildMessagesArray] 开始构建messages数组 - 主联系人:', contactId);
+
+  // ✅ 提取被触发的联系人ID（有消息的才算触发）
+  const triggeredContactIds = extractTriggeredContactIds(allPendingMessages);
+  logger.info('[ContextBuilder.buildMessagesArray] 共触发', triggeredContactIds.length, '个联系人:', triggeredContactIds);
 
   // ✅ 创建消息编号映射表（编号 → 消息ID）
   const messageNumberMap = new Map();
@@ -190,17 +226,6 @@ export async function buildMessagesArray(contactId, allPendingMessages) {
 
   // 获取预设数据
   const presets = getPresetData();
-
-  // 获取联系人信息
-  const contacts = await loadContacts();
-  const contact = contacts.find(c => c.id === contactId);
-
-  if (!contact) {
-    throw new Error(`联系人不存在: ${contactId}`);
-  }
-
-  // 获取酒馆角色数据
-  const character = getCharacterData(contact);
 
   // 构建messages数组
   const messages = [];
@@ -213,13 +238,13 @@ export async function buildMessagesArray(contactId, allPendingMessages) {
 
     // ✅ 通过 item.id 判断，而不是检测占位符
     if (item.id === 'char-info') {
-      // 构建角色总条目（传递映射表）
-      const charResult = await buildCharacterInfo(contact, character, messageNumberMap, currentNumber);
+      // ✅ 构建多个角色的角色总条目（传递触发的联系人ID列表）
+      const charResult = await buildAllCharacterInfo(triggeredContactIds, messageNumberMap, currentNumber);
       content = charResult.content;
       currentNumber = charResult.nextNumber;
     } else if (item.id === 'chat-history') {
-      // 构建聊天记录（传递映射表和当前编号）
-      const chatResult = await buildChatHistoryInfo(contactId, contact, messageNumberMap, currentNumber);
+      // ✅ 构建多个角色的聊天记录（传递触发的联系人ID列表）
+      const chatResult = await buildAllChatHistoryInfo(triggeredContactIds, messageNumberMap, currentNumber);
       content = chatResult.content;
       currentNumber = chatResult.nextNumber;
     } else if (item.id === 'user-pending-ops') {
@@ -247,13 +272,162 @@ export async function buildMessagesArray(contactId, allPendingMessages) {
     }
   }
 
-  logger.debug('[ContextBuilder.buildMessagesArray] 构建完成，共', messages.length, '条消息');
-  logger.debug('[ContextBuilder.buildMessagesArray] 消息编号映射表大小:', messageNumberMap.size);
+  logger.info('[ContextBuilder.buildMessagesArray] 构建完成，共', messages.length, '条消息');
+  logger.info('[ContextBuilder.buildMessagesArray] 消息编号映射表大小:', messageNumberMap.size);
   logger.debug('[ContextBuilder.buildMessagesArray] messages内容:', JSON.stringify(messages, null, 2));
 
   return {
     messages,
     messageNumberMap
+  };
+}
+
+/**
+ * 构建所有被触发角色的角色档案（多角色版本）
+ * 
+ * @async
+ * @private
+ * @param {string[]} triggeredContactIds - 被触发的联系人ID列表
+ * @param {Map<number, string>} messageNumberMap - 消息编号映射表
+ * @param {number} startNumber - 起始编号
+ * @returns {Promise<Object>} { content: 所有角色的角色档案内容, nextNumber: 下一个可用编号 }
+ * 
+ * @description
+ * 为每个被触发的角色构建角色卡（人设、线下剧情等）
+ * 格式：
+ * [角色卡-Wade Wilson]
+ *   [人设]...
+ *   [线下剧情]...
+ * [/角色卡-Wade Wilson]
+ * 
+ * [角色卡-Jerry Hickfang]
+ *   [人设]...
+ *   [线下剧情]...
+ * [/角色卡-Jerry Hickfang]
+ */
+async function buildAllCharacterInfo(triggeredContactIds, messageNumberMap, startNumber) {
+  logger.info('[ContextBuilder.buildAllCharacterInfo] 开始构建多角色档案，共', triggeredContactIds.length, '个角色');
+
+  if (!triggeredContactIds || triggeredContactIds.length === 0) {
+    logger.warn('[ContextBuilder.buildAllCharacterInfo] 没有被触发的角色，返回空内容');
+    return { content: '', nextNumber: startNumber };
+  }
+
+  // 加载所有联系人数据
+  const contacts = await loadContacts();
+
+  let allContent = '';
+  let currentNumber = startNumber;
+
+  // 遍历每个被触发的联系人
+  for (const contactId of triggeredContactIds) {
+    logger.debug('[ContextBuilder.buildAllCharacterInfo] 处理角色:', contactId);
+
+    // 查找联系人
+    const contact = contacts.find(c => c.id === contactId);
+    if (!contact) {
+      logger.warn('[ContextBuilder.buildAllCharacterInfo] 联系人不存在，跳过:', contactId);
+      continue;
+    }
+
+    // 获取酒馆角色数据
+    const character = getCharacterData(contact);
+
+    // 构建单个角色的角色卡
+    const charResult = await buildCharacterInfo(contact, character, messageNumberMap, currentNumber);
+
+    // 添加到总内容（换行分隔）
+    if (charResult.content && charResult.content.trim()) {
+      allContent += charResult.content + '\n\n';
+      currentNumber = charResult.nextNumber;
+      logger.debug('[ContextBuilder.buildAllCharacterInfo] 角色档案已添加:', contact.name, '当前编号:', currentNumber);
+    }
+  }
+
+  // 去掉末尾多余的换行
+  allContent = allContent.trim();
+
+  logger.info('[ContextBuilder.buildAllCharacterInfo] 多角色档案构建完成，共处理', triggeredContactIds.length, '个角色');
+  logger.debug('[ContextBuilder.buildAllCharacterInfo] 内容长度:', allContent.length, '字符');
+
+  return {
+    content: allContent,
+    nextNumber: currentNumber
+  };
+}
+
+/**
+ * 构建所有被触发角色的QQ聊天记录（多角色版本）
+ * 
+ * @async
+ * @private
+ * @param {string[]} triggeredContactIds - 被触发的联系人ID列表
+ * @param {Map<number, string>} messageNumberMap - 消息编号映射表
+ * @param {number} startNumber - 起始编号
+ * @returns {Promise<Object>} { content: 所有角色的聊天记录内容, nextNumber: 下一个可用编号 }
+ * 
+ * @description
+ * 为每个被触发的角色构建最新的聊天记录
+ * 格式：
+ * [角色-Wade Wilson]
+ * [消息]
+ *   [#1] [21:00] Wade: 你好
+ *   [#2] [21:01] 白沉: 嗨
+ * [/消息]
+ * [/角色-Wade Wilson]
+ * 
+ * [角色-Jerry Hickfang]
+ * [消息]
+ *   [#3] [20:50] Jerry: 在干嘛
+ *   [#4] [20:51] 白沉: 工作
+ * [/消息]
+ * [/角色-Jerry Hickfang]
+ */
+async function buildAllChatHistoryInfo(triggeredContactIds, messageNumberMap, startNumber) {
+  logger.info('[ContextBuilder.buildAllChatHistoryInfo] 开始构建多角色聊天记录，共', triggeredContactIds.length, '个角色');
+
+  if (!triggeredContactIds || triggeredContactIds.length === 0) {
+    logger.warn('[ContextBuilder.buildAllChatHistoryInfo] 没有被触发的角色，返回空内容');
+    return { content: '', nextNumber: startNumber };
+  }
+
+  // 加载所有联系人数据
+  const contacts = await loadContacts();
+
+  let allContent = '';
+  let currentNumber = startNumber;
+
+  // 遍历每个被触发的联系人
+  for (const contactId of triggeredContactIds) {
+    logger.debug('[ContextBuilder.buildAllChatHistoryInfo] 处理角色:', contactId);
+
+    // 查找联系人
+    const contact = contacts.find(c => c.id === contactId);
+    if (!contact) {
+      logger.warn('[ContextBuilder.buildAllChatHistoryInfo] 联系人不存在，跳过:', contactId);
+      continue;
+    }
+
+    // 构建单个角色的聊天记录
+    const chatResult = await buildChatHistoryInfo(contactId, contact, messageNumberMap, currentNumber);
+
+    // 添加到总内容（换行分隔）
+    if (chatResult.content && chatResult.content.trim()) {
+      allContent += chatResult.content + '\n\n';
+      currentNumber = chatResult.nextNumber;
+      logger.debug('[ContextBuilder.buildAllChatHistoryInfo] 聊天记录已添加:', contact.name, '当前编号:', currentNumber);
+    }
+  }
+
+  // 去掉末尾多余的换行
+  allContent = allContent.trim();
+
+  logger.info('[ContextBuilder.buildAllChatHistoryInfo] 多角色聊天记录构建完成，共处理', triggeredContactIds.length, '个角色');
+  logger.debug('[ContextBuilder.buildAllChatHistoryInfo] 内容长度:', allContent.length, '字符');
+
+  return {
+    content: allContent,
+    nextNumber: currentNumber
   };
 }
 
