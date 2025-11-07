@@ -1151,6 +1151,21 @@ async function refreshPageContent(pageName, params = {}) {
       logger.debug('[PhoneUI] 聊天页使用独立DOM，无需刷新');
       break;
 
+    case 'plan-list':
+      // 刷新约定计划列表页内容
+      if (params.contactId) {
+        const planListPage = /** @type {HTMLElement} */ (document.querySelector('#page-plan-list'));
+        if (planListPage) {
+          const { renderPlanList } = await import('./plans/plan-list-ui.js');
+          const newContent = await renderPlanList(params);
+          planListPage.innerHTML = '';
+          planListPage.appendChild(newContent);
+          planListPage.dataset.contactId = params.contactId;  // 更新contactId
+          logger.debug('[PhoneUI] 约定计划列表页内容已刷新:', params.contactId);
+        }
+      }
+      break;
+
     default:
       logger.debug('[PhoneUI] 页面不需要刷新:', pageName);
   }

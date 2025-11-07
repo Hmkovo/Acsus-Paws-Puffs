@@ -698,11 +698,22 @@ function getDefaultPresets() {
         type: 'custom',
         label: 'QQ聊天任务',
         role: 'system',
-        content: '[QQ聊天任务]\n还原:碎片化/随意的交流氛围/即时与非即时性\n分段模拟打字间隔，对话呈现未完成的、可继续延伸的状态\n由文字内容、表情符号、图片语音、标点语气、在线状态、回复速度多种元素构成，并叠加角色的独特个性创造线上互动情节\n\n话题不是必须创造的。\n\n特点:\n  - 频繁的互动反馈\n  - 非正式用语\n  - 表情包\n  - 标点符号的情感化\n  - 颜文字/emoji\n  - 语气词/叠词\n  - 话题跳跃性\n  - 聊天的随意性\n  - 网络用语和缩写\n  - 情景的即时分享\n  - 网状而非线性话题\n...\n[/QQ聊天任务]',
+        content: '[QQ聊天任务]\n还原:碎片化/随意的交流氛围/即时与非即时性\n分段模拟打字间隔，对话呈现未完成的、可继续延伸的状态\n由文字内容、表情符号、图片语音、标点语气、在线状态、回复速度多种元素构成，并叠加角色的独特个性创造线上互动情节\n\n特点:\n  - 频繁的互动反馈\n  - 非正式用语\n  - 表情包\n  - 标点符号的情感化\n  - 颜文字/emoji\n  - 语气词/叠词\n  - 话题跳跃性\n  - 聊天的随意性\n  - 网络用语和缩写\n  - 情景的即时分享\n  - 网状而非线性话题\n...\n[/QQ聊天任务]',
         enabled: true,
         editable: true,
         deletable: true,
         order: 1
+      },
+      {
+        id: 'custom-1762530200661',
+        type: 'custom',
+        label: '聊天主动性',
+        role: 'system',
+        content: '[聊天主动性]\n真实的QQ聊天不只是被动回复，也包括主动发起\n\n\n**核心原则：角色设定优先**\n- 主动性取决于角色本身性格和关系亲疏\n- 不符合角色性格的主动是错误的\n\n不必每次都主动创造话题或追问，简单回复后等对方说话是正常的边界感\n\n但角色也有自己的生活和想法,角色可以：\n  - 可以主动分享日常、问候、发起话题\n  - 不只是被动回复，也有主动表达的欲望\n  - 主动分享日常\n  - 主动问候\n  - 主动发起话题\n  - 突然想起来找用户\n  - 分享有趣的东西（图片/表情包/见闻）\n  - 无聊时戳一下/发个表情\n\n何时主动：\n  - 隔了一段时间没聊\n  - 想起了什么事\n  - 心情好/不好想找人聊\n  - 看到有趣的东西想分享\n  - 根据角色性格\n...\n不是每次都要等用户发消息才回复\n真实的关系是双向的，角色也有自己的生活和想法\n[/聊天主动性]',
+        enabled: true,
+        editable: true,
+        deletable: true,
+        order: 2
       },
       {
         id: 'user-persona',
@@ -713,7 +724,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: false,  // 不可编辑（自动获取）
         deletable: false,
-        order: 2
+        order: 3
       },
       {
         id: 'char-info',
@@ -725,7 +736,7 @@ function getDefaultPresets() {
         editable: false,  // 不可编辑，点击显示Toast
         deletable: false,
         hasSubSettings: true,  // 有子设置（在角色聊天设置中配置）
-        order: 3
+        order: 4
       },
       {
         id: 'custom-1761820947062',
@@ -736,7 +747,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 4
+        order: 5
       },
       {
         id: 'phone-records',
@@ -747,7 +758,7 @@ function getDefaultPresets() {
         enabled: false,  // ✅ 默认禁用
         editable: true,
         deletable: false,
-        order: 5
+        order: 6
       },
       {
         id: 'emoji-library',
@@ -758,17 +769,6 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: false,
-        order: 6
-      },
-      {
-        id: 'custom-1762346128860',
-        type: 'custom',
-        label: '约定计划',
-        role: 'system',
-        content: '[约定计划]\n当角色和用户聊到"线下一起做某事"，角色想和用户约定时，可以发起计划\n\n格式：[约定计划]计划内容概括\n\n使用场景：\n  - 约饭/约会\n  - 出游/活动\n  - 看电影/演唱会等娱乐\n  - 一起完成某个任务/某件事\n\n发起后：\n  - 用户会看到计划邀请，可以接受或拒绝\n  - 接受后会执行计划，系统会告知结果\n  - 角色根据结果继续聊天\n\n注意：\n  - 只在真正想约的时候发起，不要随口说说就发\n  - 计划标题简洁明确\n  - 一次聊天不要发起太多计划\n\n当{{user}}发起约定计划（格式：[约定计划]xxx）时：\n\n角色可以接受或拒绝该计划\n格式：\n- 接受：[回复]#编号[约定计划]{{char}}接受了约定计划\n- 拒绝：[回复]#编号[约定计划]{{char}}拒绝了约定计划\n\n### 注意事项\n- 接受/拒绝后可以继续发送正常的聊天消息解释原因\n- 接受后系统会自动掷骰子生成剧情结果\n- 不需要自己编造剧情过程，系统会处理\n\n[/约定计划]',
-        enabled: true,
-        editable: true,
-        deletable: true,
         order: 7
       },
       {
@@ -805,6 +805,28 @@ function getDefaultPresets() {
         order: 10
       },
       {
+        id: 'custom-1762528914691',
+        type: 'custom',
+        label: '戳一戳消息',
+        role: 'system',
+        content: '[戳一戳消息]\n角色可以发送戳一戳（QQ特有的交互方式，会震动手机）\n\n格式：[戳一戳]\n\n使用场景：\n  - 打招呼/引起注意\n  - 提醒对方回复\n  - 撒娇/玩闹\n  - 无聊/想聊天\n  - 代替\"在吗？\"\n...\n\n注意：\n  - 戳一戳是独立的一个气泡，不能和文字同气泡\n\n[/戳一戳消息]',
+        enabled: true,
+        editable: true,
+        deletable: true,
+        order: 11
+      },
+      {
+        id: 'custom-1762346128860',
+        type: 'custom',
+        label: '约定计划',
+        role: 'system',
+        content: '[约定计划]\n当角色和用户聊到"线下一起做某事"，角色想和用户约定时，可以发起计划\n\n格式：[约定计划]计划内容概括\n\n使用场景：\n  - 约饭/约会\n  - 出游/活动\n  - 看电影/演唱会等娱乐\n  - 一起完成某个任务/某件事\n\n发起后：\n  - 用户会看到计划邀请，可以接受或拒绝\n  - 接受后会执行计划，系统会告知结果\n  - 角色根据结果继续聊天\n\n注意：\n  - 只在真正想约的时候发起，不要随口说说就发\n  - 计划标题简洁明确\n  - 一次聊天不要发起太多计划\n  - \n当{{user}}发起约定计划（格式：[约定计划]xxx）时：\n\n角色可以接受或拒绝该计划\n必须使用以下格式：\n- 接受：[引用]#该计划所在的楼层编号[回复][约定计划]{{char}}接受了约定计划\n- 拒绝：[引用]#该计划所在的楼层编号[回复][约定计划]{{char}}拒绝了约定计划\n\n### 注意事项\n- 接受/拒绝后可以继续发送正常的聊天消息解释原因\n- 接受后系统会自动掷骰子生成剧情结果\n- 不需要自己编造剧情过程，系统会处理\n\n[/约定计划]',
+        enabled: true,
+        editable: true,
+        deletable: true,
+        order: 12
+      },
+      {
         id: 'custom-1761743479648',
         type: 'custom',
         label: '转账',
@@ -813,7 +835,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 11
+        order: 13
       },
       {
         id: 'custom-1761563217155',
@@ -824,7 +846,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 12
+        order: 14
       },
       {
         id: 'custom-1761560957639',
@@ -835,7 +857,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 13
+        order: 15
       },
       {
         id: 'chat-history',
@@ -846,7 +868,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: false,  // 只读，自动获取
         deletable: false,
-        order: 14
+        order: 16
       },
       {
         id: 'user-pending-ops',
@@ -857,7 +879,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: false,  // 不可编辑，内容由系统生成
         deletable: false,
-        order: 15
+        order: 17
       },
       {
         id: 'custom-1761564289893',
@@ -868,7 +890,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 16
+        order: 18
       },
       {
         id: 'custom-1761735545010',
@@ -879,7 +901,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 17
+        order: 19
       },
       {
         id: 'format-req',
@@ -890,18 +912,18 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: false,
-        order: 18
+        order: 20
       },
       {
         id: 'footer-jb',
         type: 'fixed',
         label: '尾部',
-        role: 'user',  // ✅ 改为 user 角色
+        role: 'user',
         content: '请保持QQ线上交流风格，并使用正确格式进行回复。',
         enabled: true,
         editable: true,
         deletable: false,
-        order: 19
+        order: 21
       }
     ]
   };

@@ -11,7 +11,7 @@
  */
 
 import logger from '../../../logger.js';
-import { getPlans, getPendingPlans, getCompletedPlans, deletePlan } from './plan-data.js';
+import { getPlans, getPendingPlans, getCompletedPlans, deletePlan, hasAnyNotes } from './plan-data.js';
 import { loadContacts } from '../contacts/contact-list-data.js';
 import { getContactDisplayName } from '../utils/contact-display-helper.js';
 import { showSuccessToast, showWarningToast } from '../ui-components/toast-notification.js';
@@ -183,11 +183,21 @@ function createPlanItem(plan, contactId, type) {
     item.dataset.planId = plan.id;
 
     const timeStr = formatTimeForMessageList(plan.timestamp);
-    const statusIcon = plan.status === 'completed' ? '✓' : plan.status === 'accepted' ? '⏳' : '📋';
+    
+    // 使用FontAwesome图标代替emoji
+    const statusIconClass = plan.status === 'completed' ? 'fa-circle-check' : 
+                           plan.status === 'accepted' ? 'fa-clock' : 'fa-file-lines';
+    const statusIconColor = plan.status === 'completed' ? '#4caf50' : 
+                           plan.status === 'accepted' ? '#ff9800' : '#999999';
+
+    // 检查是否有记录的要点
+    const hasNotes = hasAnyNotes(plan);
 
     if (type === 'pending') {
         item.innerHTML = `
-            <div class="plan-list-item-icon">${statusIcon}</div>
+            <div class="plan-list-item-icon">
+                <i class="fa-solid ${statusIconClass}" style="color: ${statusIconColor}"></i>
+            </div>
             <div class="plan-list-item-content">
                 <div class="plan-list-item-title">${plan.title}</div>
                 <div class="plan-list-item-meta">
@@ -199,13 +209,18 @@ function createPlanItem(plan, contactId, type) {
         `;
     } else {
         item.innerHTML = `
-            <div class="plan-list-item-icon">${statusIcon}</div>
+            <div class="plan-list-item-icon">
+                <i class="fa-solid ${statusIconClass}" style="color: ${statusIconColor}"></i>
+            </div>
             <div class="plan-list-item-content">
-                <div class="plan-list-item-title">${plan.title}</div>
+                <div class="plan-list-item-title">
+                    ${plan.title}
+                    ${hasNotes ? '<i class="fa-solid fa-bookmark plan-has-notes-icon" title="已记录要点"></i>' : ''}
+                </div>
                 <div class="plan-list-item-meta">
                     <span>${timeStr}</span>
                     <span>·</span>
-                    <span>🎲 ${plan.diceResult} - ${plan.outcome}</span>
+                    <span><i class="fa-solid fa-dice" style="font-size: 0.875em; margin-right: 0.25em;"></i>${plan.diceResult} - ${plan.outcome}</span>
                 </div>
                 <div class="plan-list-item-story">${plan.story}</div>
             </div>

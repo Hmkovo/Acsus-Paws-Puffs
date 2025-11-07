@@ -7,6 +7,7 @@
  * 类名体系：每个页面使用独立前缀，避免CSS冲突
  */
 
+
 /* ================================
    CSS变量
    ================================ */
@@ -59,6 +60,15 @@
 
   /* 红点提示 */
   --phone-badge: #ff4d4f;
+}
+
+/* ================================
+   导入图标
+   ================================ */
+
+@font-face {
+  font-family: "Font Awesome 6 Free";
+  src: url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/webfonts/fa-regular-400.woff2") format("woff2");
 }
 
 /* ================================
@@ -1504,8 +1514,8 @@
 .chat-debug-btn,
 .chat-emoji-btn,
 .chat-plus-btn,
+.chat-plan-list-btn,
 .chat-placeholder-btn-1,
-.chat-placeholder-btn-2,
 .chat-placeholder-btn-3 {
   flex: 1;
   height: 2em;
@@ -1524,22 +1534,20 @@
 .chat-debug-btn:hover,
 .chat-emoji-btn:hover,
 .chat-plus-btn:hover,
+.chat-plan-list-btn:hover,
 .chat-placeholder-btn-1:hover,
-.chat-placeholder-btn-2:hover,
 .chat-placeholder-btn-3:hover {
   color: var(--phone-primary);
 }
 
 /* 占位符按钮（降低透明度） */
 .chat-placeholder-btn-1,
-.chat-placeholder-btn-2,
 .chat-placeholder-btn-3 {
   opacity: 0.3;
   cursor: default;
 }
 
 .chat-placeholder-btn-1:hover,
-.chat-placeholder-btn-2:hover,
 .chat-placeholder-btn-3:hover {
   color: var(--phone-text-secondary);
 }
@@ -1864,6 +1872,12 @@
 .chat-plus-item i {
   font-size: 2em;
   color: var(--phone-text-secondary);
+  transition: color 0.2s;
+}
+
+.chat-plus-item:hover i,
+.chat-plus-item:active i {
+  color: var(--phone-primary);
 }
 
 .chat-plus-item span {
@@ -3951,77 +3965,115 @@
 }
 
 /* === 约定计划消息样式 === */
+/* 卡片式设计，类似转账气泡 */
 .chat-msg-bubble-plan {
-  min-width: 15em;
-  padding: 0.75em;
-  border-radius: 0.5em;
-  box-shadow: 0 0.125em 0.5em rgba(0, 0, 0, 0.1);
+  width: 14em;
+  max-width: none;
+  padding: 0;
+  border-radius: 0.625em;
+  overflow: hidden;
+  box-shadow: 0 0.0625em 0.25em rgba(0, 0, 0, 0.08);
   position: relative;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  white-space: normal;
+  line-height: normal;
 }
 
+/* 角色发的计划 - 清爽白色卡片 */
+.chat-msg-received .chat-msg-bubble-plan {
+  background: #fff;
+}
+
+/* 用户发的计划 - 轻柔绿色卡片 */
+.chat-msg-sent .chat-msg-bubble-plan {
+  background: #f0f9f4;
+}
+
+/* 顶部装饰条 */
 .chat-msg-plan-header {
+  padding: 0.625em 0.75em;
   display: flex;
   align-items: center;
   gap: 0.5em;
-  margin-bottom: 0.5em;
-  font-size: 0.75em;
-  color: var(--phone-text-secondary);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* 角色发的计划 - 蓝色调 */
+.chat-msg-received .chat-msg-plan-header {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+}
+
+/* 用户发的计划 - 绿色调 */
+.chat-msg-sent .chat-msg-plan-header {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
 }
 
 .chat-msg-plan-header i {
-  font-size: 1.1em;
-  color: var(--phone-primary);
+  font-size: 1em;
+  color: rgba(0, 0, 0, 0.6);
+  flex-shrink: 0;
 }
 
 .chat-msg-plan-label {
+  font-size: 0.6875em;
+  color: rgba(0, 0, 0, 0.6);
+  font-weight: 500;
   flex: 1;
 }
 
 .chat-msg-plan-status {
-  padding: 0.2em 0.5em;
-  border-radius: 0.3em;
-  font-size: 0.9em;
+  font-size: 0.625em;
   font-weight: 500;
+  padding: 0.25em 0.5em;
+  border-radius: 0.25em;
 }
 
 .chat-msg-plan-status.pending {
-  background: rgba(255, 152, 0, 0.1);
-  color: #ff9800;
+  background: rgba(255, 152, 0, 0.15);
+  color: #f57c00;
 }
 
 .chat-msg-plan-status.completed {
-  background: rgba(76, 175, 80, 0.1);
-  color: #4caf50;
+  background: rgba(76, 175, 80, 0.15);
+  color: #388e3c;
 }
 
+/* 计划标题区域 */
 .chat-msg-plan-title {
+  padding: 0.625em 0.75em;
+  padding-bottom: 2.25em;
   font-size: 0.875em;
   line-height: 1.4;
   color: var(--phone-text-primary);
-  padding-right: 2.5em;
+  word-break: break-word;
 }
 
+/* 编辑按钮 - 灰色低调设计 */
 .chat-msg-plan-action-btn {
   position: absolute;
   right: 0.5em;
   bottom: 0.5em;
-  width: 2em;
-  height: 2em;
+  width: 1.75em;
+  height: 1.75em;
   border: none;
-  background: var(--phone-primary);
-  color: #fff;
-  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.5);
+  border-radius: 0.375em;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
-  box-shadow: 0 0.125em 0.375em rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
 }
 
 .chat-msg-plan-action-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 0.25em 0.5em rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.chat-msg-plan-action-btn:active {
+  background: rgba(0, 0, 0, 0.15);
+  transform: scale(0.95);
 }
 
 .chat-msg-plan-action-btn i {
@@ -4047,121 +4099,258 @@
 }
 
 /* 约定计划剧情消息（居中卡片）*/
+/* ========================================
+   约定计划剧情卡片样式
+   包含三种类型：计划过程、内心印象、过程记录
+   ======================================== */
+
+/* 卡片外层容器（消息类型） */
 .chat-msg-plan-story {
   display: flex;
   justify-content: center;
-  margin: 1em 0;
+  /* 卡片在聊天区域居中 */
+  margin: 0.2em 0;
+  /* 上下间距 */
   padding: 0 1em;
+  /* 左右内边距 */
 }
 
+/* 卡片主体 */
 .plan-story-card {
   width: 90%;
+  /* 占父容器90%宽度 */
   max-width: 25em;
-  background: var(--phone-bg-white);
-  border-radius: 0.75em;
-  box-shadow: 0 0.125em 0.75em rgba(0, 0, 0, 0.1);
+  /* 最大宽度限制 */
+  background: rgba(255, 255, 255, 0.85);
+  /* 卡片背景色（白色半透明，Instagram风格） */
+  border-radius: 0.625em;
+  /* 圆角大小 - 适中圆角 */
+  box-shadow: 0 0.0625em 0.25em rgba(0, 0, 0, 0.06);
+  /* 阴影：超轻微阴影 */
   overflow: hidden;
-  transition: all 0.3s;
+  /* 隐藏溢出（保证圆角生效） */
+  transition: all 0.2s ease;
+  /* 过渡动画时长 */
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  /* 极淡边框，现代风格 */
 }
+
+/* ========================================
+   卡片头部区域（可点击展开/折叠）
+   ======================================== */
 
 .plan-story-header {
   display: flex;
+  /* 弹性布局 */
   align-items: center;
-  gap: 0.75em;
-  padding: 0.875em 1em;
-  background: linear-gradient(135deg, rgba(var(--phone-primary-rgb, 52, 152, 219), 0.1) 0%, rgba(var(--phone-primary-rgb, 52, 152, 219), 0.05) 100%);
+  /* 垂直居中 */
+  gap: 0.625em;
+  /* 子元素间距 */
+  padding: 0.625em 0.875em;
+  /* 内边距：上下 左右 - 变矮 */
+  background: transparent;
+  /* 透明背景，现代简约风格 */
   cursor: pointer;
-  transition: background 0.2s;
+  /* 鼠标指针变手型 */
+  transition: background 0.15s ease;
+  /* 背景色过渡时长 */
+  position: relative;
+  /* 相对定位 */
 }
 
+/* 头部hover效果 */
 .plan-story-header:hover {
-  background: linear-gradient(135deg, rgba(var(--phone-primary-rgb, 52, 152, 219), 0.15) 0%, rgba(var(--phone-primary-rgb, 52, 152, 219), 0.08) 100%);
+  background: rgba(0, 0, 0, 0.02);
+  /* hover时极淡的灰色背景 */
 }
 
+/* ========================================
+   头部内部元素：图标、标题、展开按钮
+   ======================================== */
+
+/* 图标圆圈 */
 .plan-story-icon {
-  width: 2em;
-  height: 2em;
+  width: 1.75em;
+  /* 圆圈宽度 - 变小更精致 */
+  height: 1.75em;
+  /* 圆圈高度 - 变小更精致 */
   display: flex;
+  /* 弹性布局 */
   align-items: center;
+  /* 垂直居中 */
   justify-content: center;
-  background: #fff;
+  /* 水平居中 */
+  background: transparent;
+  /* 透明背景，无圆圈 */
   border-radius: 50%;
+  /* 圆形 */
   flex-shrink: 0;
+  /* 不缩小（保证固定大小） */
 }
 
+/* 图标大小和颜色 */
 .plan-story-icon i {
   font-size: 1em;
+  /* 图标字号 */
+  opacity: 0.7;
+  /* 图标半透明，更低调 */
 }
 
+/* 标题文字 */
 .plan-story-title {
   flex: 1;
-  font-size: 0.875em;
-  font-weight: 600;
+  /* 占据剩余空间 */
+  font-size: 0.8125em;
+  /* 字号 - 稍小更精致 */
+  font-weight: 500;
+  /* 字重（中等，不要太粗） */
   color: var(--phone-text-primary);
+  /* 文字颜色（#333） */
+  opacity: 0.85;
+  /* 轻微透明 */
 }
 
+/* 展开/折叠按钮 */
 .plan-story-toggle {
-  width: 2em;
-  height: 2em;
+  width: 1.75em;
+  /* 按钮宽度 - 变小 */
+  height: 1.75em;
+  /* 按钮高度 - 变小 */
   border: none;
+  /* 无边框 */
   background: transparent;
+  /* 透明背景 */
   color: var(--phone-text-secondary);
+  /* 图标颜色（灰色 #999） */
   cursor: pointer;
+  /* 鼠标指针变手型 */
   border-radius: 50%;
+  /* 圆形 */
   display: flex;
+  /* 弹性布局 */
   align-items: center;
+  /* 垂直居中 */
   justify-content: center;
-  transition: all 0.2s;
+  /* 水平居中 */
+  transition: all 0.15s ease;
+  /* 过渡动画 */
+  opacity: 0.5;
+  /* 默认半透明 */
 }
 
+/* 展开按钮hover效果 */
 .plan-story-toggle:hover {
-  background: rgba(0, 0, 0, 0.05);
+  opacity: 1;
+  /* hover时完全不透明 */
 }
 
+/* 展开按钮的箭头图标 */
 .plan-story-toggle i {
-  transition: transform 0.3s;
+  transition: transform 0.2s ease;
+  /* 旋转动画时长 */
+  font-size: 0.75em;
+  /* 箭头更小更精致 */
 }
 
+/* 展开状态时，箭头旋转180度（向下→向上） */
 .plan-story-card[data-expanded="true"] .plan-story-toggle i {
   transform: rotate(180deg);
+  /* 旋转180度 */
 }
+
+/* ========================================
+   卡片内容区域（展开后显示）
+   ======================================== */
 
 .plan-story-content {
-  padding: 1em;
-  border-top: 1px solid var(--phone-border);
+  padding: 0.875em;
+  /* 内边距 */
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  /* 顶部分隔线 - 极淡 */
 }
 
+/* 剧情文本 */
 .plan-story-text {
-  font-size: 0.875em;
-  line-height: 1.6;
+  font-size: 0.8125em;
+  /* 字号 */
+  line-height: 1.65;
+  /* 行高（影响阅读舒适度） */
   color: var(--phone-text-primary);
-  margin-bottom: 1em;
+  /* 文字颜色（#333） */
+  margin-bottom: 0.875em;
+  /* 底部间距 */
   white-space: pre-wrap;
+  /* 保留换行符和空格 */
+  opacity: 0.9;
+  /* 轻微透明 */
 }
 
+/* 操作按钮容器（右对齐） */
 .plan-story-actions {
   display: flex;
+  /* 弹性布局 */
   justify-content: flex-end;
+  /* 右对齐 */
 }
 
-.plan-story-send-btn {
-  padding: 0.5em 1em;
-  border: none;
-  background: var(--phone-primary);
-  color: #fff;
-  border-radius: 0.5em;
+/* ========================================
+   "记录要点"按钮
+   ======================================== */
+
+/* 默认状态（未记录） */
+.plan-story-save-note-btn {
+  padding: 0.5em 0.875em;
+  /* 内边距：上下 左右 - 更紧凑 */
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  /* 边框（极淡灰色） */
+  background: transparent;
+  /* 透明背景 */
+  color: var(--phone-text-secondary);
+  /* 文字颜色（灰色） */
+  border-radius: 1em;
+  /* 圆角 - 胶囊形状 */
   font-size: 0.75em;
+  /* 字号 - 更小更精致 */
   font-weight: 500;
+  /* 字重 */
   cursor: pointer;
-  transition: all 0.2s;
+  /* 鼠标指针变手型 */
+  transition: all 0.15s ease;
+  /* 过渡动画 */
   display: flex;
+  /* 弹性布局 */
   align-items: center;
-  gap: 0.5em;
+  /* 垂直居中 */
+  gap: 0.375em;
+  /* 图标和文字间距 */
+  white-space: nowrap;
+  /* 文字不换行 */
 }
 
-.plan-story-send-btn:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
+/* 未记录状态的hover效果 */
+.plan-story-save-note-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+  /* hover时极淡背景 */
+  border-color: rgba(0, 0, 0, 0.15);
+  /* 边框稍深一点 */
+}
+
+/* 已记录状态 - 简约灰色 */
+.plan-story-save-note-btn.saved {
+  background: rgba(0, 0, 0, 0.05);
+  /* 淡灰背景 */
+  color: var(--phone-text-primary);
+  /* 文字变黑 */
+  border-color: rgba(0, 0, 0, 0.1);
+  /* 边框灰色 */
+}
+
+/* 已记录状态的hover效果 */
+.plan-story-save-note-btn.saved:hover {
+  background: rgba(0, 0, 0, 0.08);
+  /* 背景稍深 */
+  border-color: rgba(0, 0, 0, 0.15);
+  /* 边框稍深 */
 }
 
 /* 约定计划执行器弹窗 */
@@ -4182,6 +4371,7 @@
   background: var(--phone-bg-white);
   border-radius: 0.5em;
   line-height: 1.5;
+  color: var(--phone-text-primary);
 }
 
 .plan-executor-hint {
@@ -4200,7 +4390,7 @@
 .plan-executor-btn {
   flex: 1;
   padding: 0.75em 1.25em;
-  border: none;
+  border: 1px solid var(--phone-border);
   border-radius: 0.5em;
   font-size: 0.875em;
   font-weight: 500;
@@ -4210,21 +4400,24 @@
   align-items: center;
   justify-content: center;
   gap: 0.5em;
+  background: var(--phone-bg-white);
+  color: var(--phone-text-primary);
 }
 
 .plan-executor-btn.accept-btn {
-  background: var(--phone-primary);
-  color: #fff;
+  border-color: var(--phone-primary);
+  color: var(--phone-primary);
 }
 
 .plan-executor-btn.reject-btn {
-  background: #f44336;
-  color: #fff;
+  border-color: var(--phone-border);
+  color: var(--phone-text-primary);
 }
 
 .plan-executor-btn.dice-btn {
-  background: linear-gradient(135deg, #ff9800 0%, #ff5722 100%);
+  background: var(--phone-primary);
   color: #fff;
+  border-color: var(--phone-primary);
 }
 
 .plan-executor-btn.confirm-btn {
@@ -4238,8 +4431,11 @@
 }
 
 .plan-executor-btn:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
+  background: var(--phone-bg-main);
+}
+
+.plan-executor-btn.accept-btn:hover {
+  background: var(--phone-primary-light);
 }
 
 .plan-executor-options {
@@ -4281,6 +4477,7 @@
 .dice-outcome {
   font-size: 1.1em;
   font-weight: 500;
+  color: var(--phone-text-primary);
 }
 
 
@@ -4353,7 +4550,8 @@
 }
 
 .plan-list-back-btn:hover {
-  background: var(--phone-bg-main);
+  /* 删除hover背景，保持和其他页面返回按钮一致 */
+  opacity: 0.7;
 }
 
 .plan-list-title {
@@ -4417,8 +4615,13 @@
 }
 
 .plan-list-item-icon {
-  font-size: 1.5em;
+  width: 2em;
+  height: 2em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  font-size: 1.125em;
 }
 
 .plan-list-item-content {
@@ -4431,6 +4634,16 @@
   font-weight: 500;
   margin-bottom: 0.4em;
   color: var(--phone-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.plan-has-notes-icon {
+  font-size: 0.875em;
+  color: var(--phone-primary);
+  flex-shrink: 0;
+  opacity: 0.8;
 }
 
 .plan-list-item-meta {
@@ -4452,20 +4665,20 @@
   width: 2.5em;
   height: 2.5em;
   border: none;
-  background: var(--phone-primary);
-  color: #fff;
-  border-radius: 50%;
+  background: transparent;
+  color: var(--phone-text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   transition: all 0.2s;
+  font-size: 1.125em;
 }
 
 .plan-list-item-btn:hover {
-  opacity: 0.9;
-  transform: scale(1.05);
+  color: var(--phone-primary);
+  transform: translateY(-0.125em);
 }
 
 .plan-list-empty {
@@ -4578,7 +4791,8 @@
 }
 
 /* 屏幕向左震动（我戳对方）- 有节奏感的版本 */
-#page-chat.shaking-left {
+/* 用户发戳一戳时，屏幕向左震动 */
+.phone-chat-page.shaking-left {
   animation: shake-left 0.9s ease-in-out;
 }
 
@@ -4634,29 +4848,46 @@
   </div>
 </div>
 */
-/*
-#page-chat.shaking-right {
-  animation: shake-right 0.5s ease-in-out;
+
+/* 对方戳一戳时，屏幕向右震动 */
+.phone-chat-page.shaking-right {
+  animation: shake-right 0.9s ease-in-out;
 }
 
 @keyframes shake-right {
-  0%, 100% {
+
+  0% {
     transform: translateX(0);
   }
-  15% {
+
+  12% {
     transform: translateX(0.5em);
   }
-  30% {
+
+  18% {
+    transform: translateX(-0.1em);
+  }
+
+  28% {
     transform: translateX(0);
   }
-  45% {
+
+  40% {
     transform: translateX(0.3em);
   }
-  60% {
+
+  52% {
+    transform: translateX(0);
+  }
+
+  64% {
+    transform: translateX(0.15em);
+  }
+
+  76% {
     transform: translateX(0);
   }
 }
-*/
 
 /* 红包气泡样式（普通、语音、口令） */
 .chat-msg-bubble-redpack {
@@ -7751,8 +7982,9 @@
   font-size: 0.75em;
   color: var(--phone-text-secondary);
   margin-top: 0.25em;
-  padding-left: 0.75em;
+  padding-right: 1.3em;
   line-height: 1.4;
+  text-align: right;
 }
 
 /* ========================================
@@ -9644,33 +9876,4 @@
 
 /* ========================================
    [END] 收藏选择器样式
-   ======================================== */
-
-/* ========================================
-   [START] iOS 专用适配（安全区域支持）
-   ======================================== */
-
-/* iOS 专用：使用 -webkit-touch-callout 特性检测 */
-@supports (-webkit-touch-callout: none) {
-
-  /* 手机容器：底部添加安全区域内边距，防止被 iOS home 指示器遮挡 */
-  .phone-container {
-    padding-bottom: max(env(safe-area-inset-bottom), 0px);
-  }
-
-  /* 手机底部导航栏：额外底部内边距 */
-  .phone-nav {
-    padding-bottom: max(env(safe-area-inset-bottom), 0px);
-  }
-
-  /* 所有弹窗容器：底部安全区域支持 */
-  .phone-popup-overlay .phone-popup-container,
-  .contact-bg-picker-overlay .contact-bg-picker,
-  .debug-overlay .debug-modal {
-    padding-bottom: max(env(safe-area-inset-bottom), 15px);
-  }
-}
-
-/* ========================================
-   [END] iOS 专用适配
    ======================================== */

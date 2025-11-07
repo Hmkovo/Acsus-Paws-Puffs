@@ -95,6 +95,9 @@ function getMessagePreview(message) {
       return `[视频] ${message.description?.substring(0, 20) || '无描述'}`;
     case 'file':
       return `[文件] ${message.filename || '未知文件'}`;
+    case 'poke':
+      // 戳一戳消息
+      return '[戳一戳]';
     case 'recalled':
       // 撤回消息：根据发送者显示不同提示
       return message.sender === 'user' ? '你撤回了一条消息' : '撤回了一条消息';

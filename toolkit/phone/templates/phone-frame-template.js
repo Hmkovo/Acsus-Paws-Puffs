@@ -34,7 +34,7 @@ export function getPhoneFrameHTML() {
                                 <i class="fa-solid fa-plus"></i>
                             </button>
                             <button class="phone-header-btn" id="phone-btn-close" title="关闭">
-                                <i class="fa-solid fa-times"></i>
+                                <i class="fa-solid fa-xmark"></i>
                             </button>
                         </div>
                     </div>
@@ -69,15 +69,15 @@ export function getPhoneFrameHTML() {
                     <!-- 底部导航（共享） -->
                     <div class="phone-nav">
                         <button class="phone-nav-item active" data-tab="messages">
-                            <i class="fa-solid fa-comment"></i>
+                            <i class="fa-regular fa-comment"></i>
                             <span>消息</span>
                         </button>
                         <button class="phone-nav-item" data-tab="contacts">
-                            <i class="fa-solid fa-user"></i>
+                            <i class="fa-regular fa-user"></i>
                             <span>联系人</span>
                         </button>
                         <button class="phone-nav-item" data-tab="moments">
-                            <i class="fa-solid fa-heart"></i>
+                            <i class="fa-regular fa-heart"></i>
                             <span>动态</span>
                         </button>
                     </div>

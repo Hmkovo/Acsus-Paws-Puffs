@@ -171,7 +171,7 @@ function createFavoriteItem(favorite) {
   item.dataset.favoriteId = favorite.id;
 
   // 获取头像
-  let avatarHTML = '<i class="fa-solid fa-user-circle"></i>';
+  let avatarHTML = '<i class="fa-regular fa-user-circle"></i>';
   if (favorite.contactAvatar) {
     const avatarUrl = getThumbnailUrl('avatar', favorite.contactAvatar);
     avatarHTML = `<img src="${avatarUrl}" alt="${favorite.contactName}">`;

@@ -18,16 +18,16 @@ import { bindLongPress } from '../../utils/message-actions-helper.js';
  * 解析计划消息格式
  * 
  * @param {string} content - 消息内容
+ * @param {Object} message - 完整消息对象（用于检查 quotedPlanId）
  * @returns {Object|null} 解析结果 { type, title, accepter, isCompleted }
  * 
  * @description
  * 支持的格式：
  * - [约定计划]一起去吃卷饼
- * - [约定计划]{{user}}接受了约定计划
- * - [约定计划]{{char}}拒绝了约定计划
+ * - [约定计划]Wade Wilson接受了约定计划（必须有 quotedPlanId 字段才显示特殊气泡）
  * - [约定计划已完成]一起去吃卷饼
  */
-export function parsePlanMessage(content) {
+export function parsePlanMessage(content, message = {}) {
   if (!content || typeof content !== 'string') {
     return null;
   }
@@ -51,12 +51,20 @@ export function parsePlanMessage(content) {
     // 检查是否是接受/拒绝格式
     const acceptMatch = planContent.match(/^(.+?)(接受|拒绝)了约定计划$/);
     if (acceptMatch) {
-      return {
-        type: 'plan-response',
-        accepter: acceptMatch[1].trim(),
-        action: acceptMatch[2], // '接受' | '拒绝'
-        isCompleted: false
-      };
+      // ⚠️ 只有通过引用格式（带 quotedPlanId）的响应才显示特殊气泡
+      if (message.quotedPlanId) {
+        logger.debug('[PlanMessage] 检测到计划响应（有引用关联），显示特殊气泡');
+        return {
+          type: 'plan-response',
+          accepter: acceptMatch[1].trim(),
+          action: acceptMatch[2], // '接受' | '拒绝'
+          isCompleted: false
+        };
+      } else {
+        // 没有引用编号，降级为 null（会被当作普通文本显示）
+        logger.warn('[PlanMessage] 检测到计划响应格式但缺少引用关联（quotedPlanId），降级为普通文本');
+        return null;
+      }
     }
 
     // 普通计划发起
@@ -80,7 +88,7 @@ export function isPlanMessage(message) {
   if (message.type === 'plan') return true;
   if (message.type !== 'text') return false;
 
-  return parsePlanMessage(message.content) !== null;
+  return parsePlanMessage(message.content, message) !== null;
 }
 
 /**
@@ -95,9 +103,9 @@ export function isPlanMessage(message) {
  * @returns {HTMLElement} 消息气泡DOM元素
  */
 export function renderPlanMessage(message, contact, contactId) {
-  logger.debug('[PlanMessage] 渲染计划消息:', message.content);
+  logger.debug('[PlanMessage] 渲染计划消息:', message.content, '是否有引用关联:', !!message.quotedPlanId);
 
-  const planData = parsePlanMessage(message.content);
+  const planData = parsePlanMessage(message.content, message);
   if (!planData) {
     logger.warn('[PlanMessage] 无法解析计划消息:', message.content);
     return null;
@@ -145,7 +153,7 @@ export function renderPlanMessage(message, contact, contactId) {
                 ${planData.isCompleted ? '<span class="chat-msg-plan-status completed">✓ 已完成</span>' : '<span class="chat-msg-plan-status pending">待执行</span>'}
             </div>
             <div class="chat-msg-plan-title">${planData.title}</div>
-            ${!planData.isCompleted ? '<button class="chat-msg-plan-action-btn" title="执行计划"><i class="fa-solid fa-play"></i></button>' : ''}
+            ${!planData.isCompleted ? '<button class="chat-msg-plan-action-btn" title="编辑计划"><i class="fa-regular fa-pen-to-square"></i></button>' : ''}
         `;
 
     // 绑定按钮点击事件（只有未完成的才显示按钮）

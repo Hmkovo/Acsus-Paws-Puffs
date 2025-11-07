@@ -194,8 +194,8 @@ function createSettingsList(contact) {
                    min="1" 
                    placeholder="仅影响聊天页面显示"
                    data-key="initialLoadCount">
-            <div class="chat-settings-item-desc">仅影响聊天页面显示,不影响发送给AI的消息条数</div>
         </div>
+        <div class="chat-settings-item-desc">仅影响聊天页面显示,不影响发送给AI的消息条数</div>
 
         <!-- 白色框框：聊天设置分组 -->
         <div class="chat-settings-section-content">

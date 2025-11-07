@@ -106,6 +106,8 @@ function createQuoteBubble(message, contactId) {
   // 绑定跳转事件
   jumpBtn.addEventListener('click', (e) => {
     e.stopPropagation();
+    logger.info('🔘 [QuoteMessage] 点击了跳转按钮');
+    logger.info('[QuoteMessage] 跳转目标 - 消息ID:', message.quotedMessage.id, '联系人ID:', contactId);
     handleQuoteJump(message.quotedMessage.id, contactId);
   });
 
@@ -223,18 +225,58 @@ function formatMessageTime(timestamp) {
  * @param {string} contactId - 联系人ID
  */
 function handleQuoteJump(msgId, contactId) {
-  logger.debug('[QuoteMessage] 跳转到原消息:', msgId);
+  logger.info('🔍 [QuoteJump] ===== 开始跳转诊断 =====');
+  logger.info('[QuoteJump] 目标消息ID:', msgId);
+  logger.info('[QuoteJump] 联系人ID:', contactId);
 
-  // 查找目标消息元素
-  const chatPage = document.querySelector(`[data-contact-id="${contactId}"]`);
+  // 1️⃣ 查找所有带 data-contact-id 的元素（诊断：看看有哪些元素）
+  const allElementsWithContactId = document.querySelectorAll(`[data-contact-id="${contactId}"]`);
+  logger.info('[QuoteJump] 找到', allElementsWithContactId.length, '个带 data-contact-id 的元素:');
+  allElementsWithContactId.forEach((el, index) => {
+    logger.info(`  [${index}] 类名: ${el.className} | 标签: ${el.tagName} | ID: ${el.id || '无'}`);
+  });
+
+  // 2️⃣ 尝试查找聊天页面容器（使用精确选择器）
+  let chatPage = document.querySelector(`.phone-chat-page[data-contact-id="${contactId}"]`);
+
+  // 🔍 诊断：如果精确选择器没找到，尝试旧选择器看看找到了什么
   if (!chatPage) {
-    logger.warn('[QuoteMessage] 聊天页不存在');
+    logger.warn('[QuoteJump] ⚠️ 精确选择器未找到页面，尝试旧选择器诊断...');
+    const fallbackElement = document.querySelector(`[data-contact-id="${contactId}"]`);
+    if (fallbackElement) {
+      logger.info('[QuoteJump] 旧选择器找到的元素:', {
+        类名: fallbackElement.className,
+        标签: fallbackElement.tagName,
+        ID: fallbackElement.id || '无',
+        是否是页面容器: fallbackElement.classList.contains('phone-page')
+      });
+    }
+    logger.error('[QuoteJump] ❌ 找不到聊天页面容器');
+    logger.error('[QuoteJump] 可能原因：页面未创建或contactId不匹配');
     return;
   }
 
+  logger.info('[QuoteJump] ✅ 找到聊天页面:', {
+    类名: chatPage.className,
+    标签: chatPage.tagName,
+    ID: chatPage.id || '无',
+    是否是页面容器: chatPage.classList.contains('phone-page')
+  });
+
+  // 3️⃣ 查看这个元素内的所有消息（诊断：看看消息是否在正确的容器里）
+  const allMessages = chatPage.querySelectorAll('[data-msg-id]');
+  logger.info('[QuoteJump] 聊天页面内有', allMessages.length, '条消息');
+
+  // 4️⃣ 尝试查找目标消息
   const targetMsg = chatPage.querySelector(`[data-msg-id="${msgId}"]`);
 
   if (!targetMsg) {
+    logger.warn('[QuoteJump] ❌ 找不到目标消息:', msgId);
+    logger.info('[QuoteJump] 所有消息ID列表:');
+    allMessages.forEach((msg, index) => {
+      logger.info(`  [${index}] ID: ${msg.dataset.msgId} | 类名: ${msg.className}`);
+    });
+
     // 显示提示
     const toast = document.createElement('div');
     toast.className = 'phone-toast phone-toast-info';
@@ -250,11 +292,37 @@ function handleQuoteJump(msgId, contactId) {
       setTimeout(() => toast.remove(), 300);
     }, 2000);
 
+    logger.info('🔍 [QuoteJump] ===== 跳转失败（消息不存在）=====');
     return;
   }
 
-  // 滚动到目标消息
-  targetMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  logger.info('[QuoteJump] ✅ 找到目标消息:', {
+    类名: targetMsg.className,
+    父容器: targetMsg.parentElement?.className,
+    位置: targetMsg.getBoundingClientRect()
+  });
+
+  // 5️⃣ 检查加号面板状态（诊断）
+  const plusPanel = chatPage.querySelector('.chat-plus-panel');
+  const emojiPanel = chatPage.querySelector('.chat-emoji-panel');
+  logger.info('[QuoteJump] 滚动前面板状态:', {
+    加号面板active: plusPanel?.classList.contains('active'),
+    表情面板active: emojiPanel?.classList.contains('active'),
+    页面panel_active: chatPage.classList.contains('panel-active')
+  });
+
+  // 执行滚动和高亮
+  logger.info('[QuoteJump] 开始滚动到目标消息...');
+  targetMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  // 🔍 滚动后立即检查面板状态
+  setTimeout(() => {
+    logger.info('[QuoteJump] 滚动后面板状态:', {
+      加号面板active: plusPanel?.classList.contains('active'),
+      表情面板active: emojiPanel?.classList.contains('active'),
+      页面panel_active: chatPage?.classList.contains('panel-active')
+    });
+  }, 100);
 
   // 高亮动画（1秒）
   targetMsg.classList.add('chat-msg-highlight');
@@ -262,6 +330,6 @@ function handleQuoteJump(msgId, contactId) {
     targetMsg.classList.remove('chat-msg-highlight');
   }, 1000);
 
-  logger.info('[QuoteMessage] 跳转成功');
+  logger.info('🔍 [QuoteJump] ===== 跳转成功 =====');
 }
 

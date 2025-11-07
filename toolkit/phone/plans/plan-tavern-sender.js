@@ -64,22 +64,57 @@ export async function sendPlanToTavern(plan, contactId) {
  * @returns {string} 提示词
  */
 function buildPlanPrompt(plan, contactName) {
-  const date = new Date(plan.timestamp);
+  const date = new Date(plan.timestamp * 1000);
   const dateStr = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
 
-  let prompt = `在${dateStr}，{{user}}和${contactName}一起${plan.title}。\n\n`;
-  prompt += `过程结果：🎲 ${plan.diceResult} - ${plan.outcome}\n`;
-  prompt += `${plan.story}\n\n`;
-  prompt += `请详细描述这次经历的完整过程（200字左右）。`;
+  // 检查是否有记录的要点
+  const hasNotes = plan.notes && (plan.notes.notedProcess || plan.notes.notedInnerThought || plan.notes.notedRecord);
 
-  if (plan.options?.includeInnerThought) {
-    prompt += `\n\n同时请输出 [约定计划内心印象]，描述${contactName}对这次经历的内心感受。`;
+  if (hasNotes) {
+    // 基于要点扩写模式
+    let prompt = `在${dateStr}，{{user}}和${contactName}一起${plan.title}。\n\n`;
+    prompt += `过程结果：🎲 ${plan.diceResult} - ${plan.outcome}\n\n`;
+    prompt += `以下是之前记录的要点素材：\n\n`;
+
+    if (plan.notes.notedProcess) {
+      prompt += `【计划过程】\n${plan.notes.notedProcess}\n\n`;
+    }
+
+    if (plan.notes.notedInnerThought) {
+      prompt += `【内心印象】\n${plan.notes.notedInnerThought}\n\n`;
+    }
+
+    if (plan.notes.notedRecord) {
+      prompt += `【过程记录】\n${plan.notes.notedRecord}\n\n`;
+    }
+
+    prompt += `请基于这些要点详细扩写剧情，添加具体的对话和细节描写。`;
+
+    if (plan.options?.includeInnerThought && !plan.notes.notedInnerThought) {
+      prompt += `\n\n同时请输出 [约定计划内心印象]，描述${contactName}对这次经历的内心感受。`;
+    }
+
+    if (plan.options?.includeRecord && !plan.notes.notedRecord) {
+      prompt += `\n\n同时请输出 [约定计划过程记录]，简要记录这次经历的关键事件。`;
+    }
+
+    return prompt;
+  } else {
+    // 标准模式（无要点）
+    let prompt = `在${dateStr}，{{user}}和${contactName}一起${plan.title}。\n\n`;
+    prompt += `过程结果：🎲 ${plan.diceResult} - ${plan.outcome}\n`;
+    prompt += `${plan.story}\n\n`;
+    prompt += `请详细描述这次经历的完整过程。`;
+
+    if (plan.options?.includeInnerThought) {
+      prompt += `\n\n同时请输出 [约定计划内心印象]，描述${contactName}对这次经历的内心感受。`;
+    }
+
+    if (plan.options?.includeRecord) {
+      prompt += `\n\n同时请输出 [约定计划过程记录]，简要记录这次经历的关键事件。`;
+    }
+
+    return prompt;
   }
-
-  if (plan.options?.includeRecord) {
-    prompt += `\n\n同时请输出 [约定计划过程记录]，简要记录这次经历的关键事件。`;
-  }
-
-  return prompt;
 }
 

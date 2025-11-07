@@ -148,7 +148,7 @@ function createInputArea() {
         <div class="chat-input-row-bottom">
             <button class="chat-voice-btn"><i class="fa-solid fa-microphone"></i></button>
             <button class="chat-placeholder-btn-1"><i class="fa-solid fa-circle"></i></button>
-            <button class="chat-placeholder-btn-2" title="约定计划列表"><i class="fa-solid fa-clipboard-list"></i></button>
+            <button class="chat-plan-list-btn" title="约定计划列表"><i class="fa-solid fa-clipboard-list"></i></button>
             <button class="chat-debug-btn" title="AI消息调试"><i class="fa-solid fa-robot"></i></button>
             <button class="chat-emoji-btn"><i class="fa-regular fa-face-smile"></i></button>
             <button class="chat-plus-btn"><i class="fa-solid fa-plus"></i></button>
@@ -648,8 +648,8 @@ async function bindInputEvents(page, contactId, contact) {
     });
   }
 
-  // 第二个占位按钮：打开约定计划列表
-  const planBtn = page.querySelector('.chat-placeholder-btn-2');
+  // 约定计划列表按钮：打开约定计划列表
+  const planBtn = page.querySelector('.chat-plan-list-btn');
   if (planBtn) {
     planBtn.addEventListener('click', async () => {
       logger.info('[ChatView] 打开约定计划列表');
@@ -947,6 +947,15 @@ function bindPlusPanel(page) {
         return;
       }
 
+      // 识别戳一戳按钮
+      if (text === '戳一戳') {
+        logger.info('[ChatView] 点击戳一戳按钮');
+        closePanels(page);
+        const contactId = page.dataset.contactId;
+        await handleSendPoke(contactId);
+        return;
+      }
+
       // 其他功能暂时输出日志
       logger.info('[ChatView] 点击+号菜单项:', text, '（功能待实现）');
       closePanels(page);
@@ -995,7 +1004,7 @@ function bindPlusPanel(page) {
       isDragging = false;
 
       const diff = currentX - startX;
-      const threshold = slider.offsetWidth / 4; // 滑动超过1/4宽度才翻页
+      const threshold = slider.offsetWidth / 6; // 滑动超过1/6宽度才翻页（更敏感）
 
       if (diff < -threshold && currentPage < dots.length - 1) {
         currentPage++;
@@ -1652,6 +1661,7 @@ export async function appendMessageToChat(page, message, contact, contactId) {
   const { renderRecalledMessage } = await import('./message-types/recalled-message.js');
   const { renderPlanMessage } = await import('./message-types/plan-message.js');
   const { renderPlanStoryMessage } = await import('./message-types/plan-story-message.js');
+  const { renderPokeMessage } = await import('./message-types/poke-message.js');
 
   // 根据消息类型渲染不同的气泡
   let bubble;
@@ -1674,6 +1684,11 @@ export async function appendMessageToChat(page, message, contact, contactId) {
       else if (message.content?.startsWith('[约定计划')) {
         logger.debug('[ChatView.appendMessageToChat] 渲染计划消息');
         bubble = renderPlanMessage(message, contact, contactId);
+        // 如果返回 null（例如旧数据的响应消息缺少 quotedPlanId），降级为普通文本
+        if (!bubble) {
+          logger.debug('[ChatView.appendMessageToChat] 计划消息渲染器返回null，降级为普通文本');
+          bubble = renderTextMessage(message, contact, contactId);
+        }
       } else {
         logger.debug('[ChatView.appendMessageToChat] 渲染文本消息');
         bubble = renderTextMessage(message, contact, contactId);
@@ -1711,6 +1726,12 @@ export async function appendMessageToChat(page, message, contact, contactId) {
       // 待撤回消息（先显示原消息，随机3-8秒后变撤回提示）
       logger.debug('[ChatView.appendMessageToChat] 渲染待撤回消息（触发动画）');
       bubble = handleRecalledPending(message, contact, contactId, renderTextMessage, renderRecalledMessage);
+      break;
+
+    case 'poke':
+      // 戳一戳消息
+      logger.debug('[ChatView.appendMessageToChat] 渲染戳一戳消息');
+      bubble = renderPokeMessage(message, contact, contactId);
       break;
 
     // TODO 第二期：实现专门的渲染器
@@ -1803,6 +1824,49 @@ export async function appendMessageToChat(page, message, contact, contactId) {
     .map(el => /** @type {HTMLElement} */(el).dataset.msgId);
   logger.info('📊 [追加后] DOM消息数:', afterCount, '(+', afterCount - beforeCount, ')', '新消息ID:', message.id);
 
+  // ✅ 戳一戳消息：触发屏幕震动
+  if (message.type === 'poke') {
+    logger.debug('[ChatView.appendMessageToChat.Poke] ========== 戳一戳震动调试开始 ==========');
+    logger.debug('[ChatView.appendMessageToChat.Poke] 消息发送者:', message.sender);
+
+    const chatPage = page.closest('.phone-chat-page') || page;
+    const direction = message.sender === 'user' ? 'left' : 'right';
+
+    logger.debug('[ChatView.appendMessageToChat.Poke] page元素:', {
+      id: page.id,
+      className: page.className,
+      tagName: page.tagName
+    });
+    logger.debug('[ChatView.appendMessageToChat.Poke] 查找.phone-chat-page结果:', !!page.closest('.phone-chat-page'));
+    logger.debug('[ChatView.appendMessageToChat.Poke] chatPage元素:', {
+      id: chatPage.id,
+      className: chatPage.className,
+      tagName: chatPage.tagName,
+      isPage: chatPage === page
+    });
+    logger.debug('[ChatView.appendMessageToChat.Poke] 震动方向:', direction);
+    logger.debug('[ChatView.appendMessageToChat.Poke] 将添加的类名:', `shaking-${direction}`);
+
+    // 延迟250ms触发震动（让手指动画先开始）
+    setTimeout(() => {
+      logger.debug('[ChatView.appendMessageToChat.Poke] 250ms后，准备添加震动类');
+      logger.debug('[ChatView.appendMessageToChat.Poke] 添加前的classList:', Array.from(chatPage.classList).join(', '));
+
+      chatPage.classList.add(`shaking-${direction}`);
+
+      logger.debug('[ChatView.appendMessageToChat.Poke] 添加后的classList:', Array.from(chatPage.classList).join(', '));
+      logger.info('[ChatView.appendMessageToChat.Poke] ✅ 震动类已添加:', `shaking-${direction}`);
+
+      setTimeout(() => {
+        logger.debug('[ChatView.appendMessageToChat.Poke] 900ms后，准备移除震动类');
+        chatPage.classList.remove(`shaking-${direction}`);
+        logger.debug('[ChatView.appendMessageToChat.Poke] 震动类已移除');
+      }, 900);
+    }, 250);
+
+    logger.debug('[ChatView.appendMessageToChat.Poke] ========== 戳一戳震动调试结束 ==========');
+  }
+
   // 添加动画效果（根据发送者使用不同动画）
   const animClass = message.sender === 'contact' ? 'chat-msg-enter-ai' : 'chat-msg-enter-user';
   logger.debug('[ChatView.appendMessageToChat] 准备添加动画类:', animClass, 'sender:', message.sender);
@@ -1864,6 +1928,7 @@ async function renderMessagesToBottom(chatContent, messages, contact, contactId,
   const { renderRecalledMessage } = await import('./message-types/recalled-message.js');
   const { renderPlanMessage } = await import('./message-types/plan-message.js');
   const { renderPlanStoryMessage } = await import('./message-types/plan-story-message.js');
+  const { renderPokeMessage } = await import('./message-types/poke-message.js');
 
   let lastTime = null;
 
@@ -1883,7 +1948,8 @@ async function renderMessagesToBottom(chatContent, messages, contact, contactId,
       renderTransferMessage,
       renderRecalledMessage,
       renderPlanMessage,
-      renderPlanStoryMessage
+      renderPlanStoryMessage,
+      renderPokeMessage
     });
     chatContent.appendChild(bubble);
   });
@@ -1902,6 +1968,7 @@ async function renderMessagesToTop(chatContent, messages, contact, contactId, ph
   const { renderRecalledMessage } = await import('./message-types/recalled-message.js');
   const { renderPlanMessage } = await import('./message-types/plan-message.js');
   const { renderPlanStoryMessage } = await import('./message-types/plan-story-message.js');
+  const { renderPokeMessage } = await import('./message-types/poke-message.js');
 
   const fragment = document.createDocumentFragment();
   let lastTime = null;
@@ -1925,7 +1992,8 @@ async function renderMessagesToTop(chatContent, messages, contact, contactId, ph
       renderTransferMessage,
       renderRecalledMessage,
       renderPlanMessage,
-      renderPlanStoryMessage
+      renderPlanStoryMessage,
+      renderPokeMessage
     });
     fragment.appendChild(bubble);
   });
@@ -1963,6 +2031,11 @@ function renderSingleBubble(message, contact, contactId, phoneAPI, renderers) {
       // 检查是否是计划消息
       else if (message.content?.startsWith('[约定计划')) {
         bubble = renderPlanMessage ? renderPlanMessage(message, contact, contactId) : renderTextMessage(message, contact, contactId);
+        // 如果返回 null（例如旧数据的响应消息缺少 quotedPlanId），降级为普通文本
+        if (!bubble) {
+          logger.debug('[ChatView.renderSingleBubble] 计划消息渲染器返回null，降级为普通文本');
+          bubble = renderTextMessage(message, contact, contactId);
+        }
       } else {
         bubble = renderTextMessage(message, contact, contactId);
       }
@@ -1984,6 +2057,10 @@ function renderSingleBubble(message, contact, contactId, phoneAPI, renderers) {
       // 待撤回消息（先显示原消息，随机3-8秒后变成撤回提示）
       bubble = handleRecalledPending(message, contact, contactId, renderTextMessage, renderRecalledMessage);
       break;
+    case 'poke':
+      // 戳一戳消息
+      bubble = renderers.renderPokeMessage ? renderers.renderPokeMessage(message, contact, contactId) : renderTextMessage({ ...message, content: '[戳一戳]', type: 'text' }, contact, contactId);
+      break;
     case 'redpacket':
       bubble = renderTextMessage({ ...message, content: `[红包] ¥${message.amount}`, type: 'text' }, contact, contactId);
       break;
@@ -1996,6 +2073,12 @@ function renderSingleBubble(message, contact, contactId, phoneAPI, renderers) {
     default:
       bubble = renderTextMessage({ ...message, content: message.content || '[未知消息类型]', type: 'text' }, contact, contactId);
       break;
+  }
+
+  // 安全检查：确保 bubble 不为 null（防御性编程）
+  if (!bubble) {
+    logger.error('[ChatView.renderSingleBubble] 渲染器返回null，消息:', message);
+    bubble = renderTextMessage({ ...message, content: message.content || '[渲染失败]', type: 'text' }, contact, contactId);
   }
 
   // 添加消息ID到DOM
@@ -2565,4 +2648,45 @@ async function handleCreatePlan(contactId) {
   window.dispatchEvent(new CustomEvent('phone-chat-updated', {
     detail: { contactId }
   }));
+}
+
+/**
+ * 处理发送戳一戳
+ * @param {string} contactId - 联系人ID
+ */
+async function handleSendPoke(contactId) {
+  logger.info('[ChatView] 发送戳一戳，联系人:', contactId);
+
+  // 动态导入
+  const { saveChatMessage } = await import('./message-chat-data.js');
+  const { loadContacts } = await import('../contacts/contact-list-data.js');
+  const { generateMessageId } = await import('../utils/message-actions-helper.js');
+  const { addPendingMessage } = await import('../ai-integration/pending-operations.js');
+
+  // 获取联系人对象
+  const contacts = await loadContacts();
+  const contact = contacts.find(c => c.id === contactId);
+
+  // 创建戳一戳消息对象
+  const message = {
+    id: generateMessageId(),
+    type: 'poke',
+    sender: 'user',
+    time: Math.floor(Date.now() / 1000)
+  };
+
+  // 保存到数据库
+  await saveChatMessage(contactId, message);
+
+  // 暂存到队列（等待纸飞机发送）
+  addPendingMessage(contactId, '[戳一戳]', message.time);
+
+  // 渲染到聊天界面
+  const page = document.querySelector(`#page-chat-${contactId.replace(/[^a-zA-Z0-9_-]/g, '_')}`);
+  if (page && contact) {
+    await appendMessageToChat(page, message, contact, contactId);
+    logger.info('[ChatView] 戳一戳已发送并渲染');
+  } else {
+    logger.warn('[ChatView] 找不到聊天页面或联系人，戳一戳已保存但未渲染');
+  }
 }

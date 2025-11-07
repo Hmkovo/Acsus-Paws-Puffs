@@ -205,7 +205,7 @@ function createHeader() {
         <button class="debug-btn debug-font-plus" title="放大字体">A+</button>
         <div class="debug-header-spacer"></div>
         <button class="debug-btn debug-close-btn" title="关闭">
-            <i class="fa-solid fa-xmark"></i>
+            <i class="fa-regular fa-circle-xmark"></i>
         </button>
     `;
   return header;
@@ -240,11 +240,11 @@ function createContentArea(state) {
     versionIndicator.className = 'debug-version-indicator';
     versionIndicator.innerHTML = `
             <button class="debug-version-prev" ${state.currentIndex === 0 ? 'disabled' : ''}>
-                <i class="fa-solid fa-chevron-left"></i>
+                <i class="fa-regular fa-chevron-left"></i>
             </button>
             <span class="debug-version-text">${state.currentIndex + 1}/${state.versions.length}</span>
             <button class="debug-version-next" ${state.currentIndex === state.versions.length - 1 ? 'disabled' : ''}>
-                <i class="fa-solid fa-chevron-right"></i>
+                <i class="fa-regular fa-chevron-right"></i>
             </button>
         `;
     textareaContainer.appendChild(versionIndicator);
@@ -417,11 +417,11 @@ async function handleCompare(popup, contactId) {
       versionIndicator.className = 'debug-version-indicator';
       versionIndicator.innerHTML = `
                 <button class="debug-version-prev" ${state.currentIndex === 0 ? 'disabled' : ''}>
-                    <i class="fa-solid fa-chevron-left"></i>
+                    <i class="fa-regular fa-chevron-left"></i>
                 </button>
                 <span class="debug-version-text">${state.currentIndex + 1}/${state.versions.length}</span>
                 <button class="debug-version-next" ${state.currentIndex === state.versions.length - 1 ? 'disabled' : ''}>
-                    <i class="fa-solid fa-chevron-right"></i>
+                    <i class="fa-regular fa-chevron-right"></i>
                 </button>
             `;
       rightContainer.querySelector('.debug-textarea-container').appendChild(versionIndicator);
@@ -601,7 +601,7 @@ async function handleReroll(popup, contactId) {
   try {
     // 显示加载状态
     rerollBtn.disabled = true;
-    rerollBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 生成中...';
+    rerollBtn.innerHTML = '<i class="fa-regular fa-spinner fa-spin"></i> 生成中...';
 
     // ✅ 触发事件：通知聊天页面改变按钮状态
     document.dispatchEvent(new CustomEvent('phone-debug-reroll-start', {
@@ -796,7 +796,7 @@ async function rollbackAndReparse(contactId, newText) {
   logger.info('📝 [重新应用] 步骤2：构建引用映射表并解析新文本');
   const messageNumberMap = buildMessageNumberMap(chatHistory);
   logger.debug('📝 [重新应用] 映射表大小:', messageNumberMap.size);
-  
+
   // 步骤4：重新解析
   const parsed = await parseAIResponse(newText, contactId, messageNumberMap);
   logger.debug('📝 [重新应用] 解析完成，共', parsed.length, '条消息');
@@ -875,7 +875,7 @@ async function rollbackToSnapshot(contactId) {
   const afterOther = afterSnapshot.filter(msg => msg.sender !== 'contact' && msg.sender !== 'user');
 
   logger.info('🔄 [快照后消息] AI消息:', afterAI.length, '用户消息:', afterUser.length, '其他消息:', afterOther.length);
-  
+
   // 记录要删除的AI消息ID
   const deletedAIIds = afterAI.map(msg => msg.id || '(无ID)');
   logger.info('🔄 [即将删除] AI消息ID:', deletedAIIds.join(', ') || '(无)');
@@ -899,7 +899,7 @@ async function rollbackToSnapshot(contactId) {
   if (page) {
     const chatContent = page.querySelector('.chat-content');
     const allMessages = Array.from(chatContent.querySelectorAll('.chat-msg'));
-    
+
     logger.debug('🔄 [回退前] DOM消息总数:', allMessages.length);
 
     let deletedDOMCount = 0;
@@ -908,7 +908,7 @@ async function rollbackToSnapshot(contactId) {
     // 遍历所有DOM消息，删除AI消息ID匹配的
     allMessages.forEach(msgElement => {
       const msgId = msgElement.dataset.msgId;
-      
+
       // 如果消息ID在要删除的AI消息列表中，删除它
       if (msgId && deletedAIIds.includes(msgId)) {
         logger.debug('🔄 [删除DOM] 消息ID:', msgId);
@@ -934,6 +934,81 @@ async function rollbackToSnapshot(contactId) {
     logger.info('🔄 [清除记录] PhoneAPI渲染记录已重置');
   } else {
     logger.warn('🔄 [警告] PhoneAPI未初始化，跳过渲染记录清除');
+  }
+
+  // ========================================
+  // 步骤4：回退约定计划状态（防止roll导致数据不一致）
+  // ========================================
+  logger.info('🔄 [计划回退] 开始回退约定计划状态');
+
+  try {
+    const { getPlanByMessageId, updatePlanResult, updatePlanStatus } = await import('../plans/plan-data.js');
+
+    let rollbackCount = 0;
+
+    // 遍历快照后删除的AI消息，查找约定计划相关消息
+    for (const aiMsg of afterAI) {
+      // 检查消息内容是否包含约定计划标记
+      const content = aiMsg.content || '';
+
+      // 如果是约定计划响应消息（char接受/拒绝）
+      if (content.includes('[约定计划]') && (content.includes('接受') || content.includes('拒绝'))) {
+        // 尝试找到对应的计划（通过原始计划消息ID）
+        // 注意：这里需要找到原始的user发起的计划消息
+
+        // 遍历所有计划，找到状态被修改的
+        const { getPlans } = await import('../plans/plan-data.js');
+        const allPlans = getPlans(contactId);
+
+        for (const plan of allPlans) {
+          // 如果计划有骰子结果（说明被处理过了），且在快照后
+          if (plan.diceResult && plan.status === 'completed') {
+            // 回退计划状态
+            logger.debug('🔄 [计划回退] 发现被处理的计划:', plan.title, 'ID:', plan.id);
+
+            // 清除骰子结果，状态改回pending
+            updatePlanResult(contactId, plan.id, {
+              diceResult: null,
+              outcome: null,
+              story: null,
+              options: {}
+            });
+            updatePlanStatus(contactId, plan.id, 'pending');
+
+            rollbackCount++;
+            logger.info('🔄 [计划回退] 已回退计划:', plan.title);
+          }
+        }
+      }
+
+      // 如果是约定计划原始消息（user发起），且状态被修改过
+      if (content.startsWith('[约定计划]') && !content.includes('接受') && !content.includes('拒绝')) {
+        const plan = getPlanByMessageId(contactId, aiMsg.id);
+        if (plan && (plan.status === 'completed' || plan.status === 'rejected')) {
+          // 回退状态
+          updatePlanStatus(contactId, plan.id, 'pending');
+          if (plan.diceResult) {
+            updatePlanResult(contactId, plan.id, {
+              diceResult: null,
+              outcome: null,
+              story: null,
+              options: {}
+            });
+          }
+          rollbackCount++;
+          logger.info('🔄 [计划回退] 已回退计划:', plan.title);
+        }
+      }
+    }
+
+    if (rollbackCount > 0) {
+      logger.info('🔄 [计划回退] 共回退', rollbackCount, '个计划状态');
+    } else {
+      logger.debug('🔄 [计划回退] 没有需要回退的计划');
+    }
+  } catch (error) {
+    logger.error('🔄 [计划回退] 回退失败:', error);
+    // 不影响主流程，继续执行
   }
 
   logger.info('🔄 [重roll回退] ========== 回退完成 ==========');

@@ -12,6 +12,8 @@
 
 import logger from '../../../../logger.js';
 import { bindLongPress } from '../../utils/message-actions-helper.js';
+import { getCompletedPlans, savePlanNote, deletePlanNote } from '../../plans/plan-data.js';
+import { showSuccessToast, showErrorToast } from '../../ui-components/toast-notification.js';
 
 /**
  * 解析计划剧情消息格式
@@ -78,9 +80,10 @@ export function isPlanStoryMessage(message) {
  * 
  * @param {Object} message - 消息对象
  * @param {string} contactId - 联系人ID
+ * @param {Object} [cachedPlan] - 缓存的计划对象（可选，避免重复查找）
  * @returns {HTMLElement} 消息元素
  */
-export function renderPlanStoryMessage(message, contactId) {
+export function renderPlanStoryMessage(message, contactId, cachedPlan = null) {
   logger.debug('[PlanStoryMessage] 渲染计划剧情消息');
 
   const storyData = parsePlanStoryMessage(message.content);
@@ -89,10 +92,26 @@ export function renderPlanStoryMessage(message, contactId) {
     return null;
   }
 
+  // 查找关联的计划（优先使用缓存，避免重复查找）
+  let plan = cachedPlan;
+  if (!plan) {
+    const completedPlans = getCompletedPlans(contactId);
+    plan = completedPlans.length > 0 ? completedPlans[completedPlans.length - 1] : null;
+  }
+
+  if (!plan) {
+    logger.warn('[PlanStoryMessage] 未找到关联的计划');
+  }
+
   const container = document.createElement('div');
   container.className = 'chat-msg chat-msg-plan-story';
   container.setAttribute('data-msg-id', message.id);
   container.setAttribute('data-message-time', message.time?.toString() || '');
+
+  // 检查当前要点类型的保存状态
+  const noteType = getNoteType(storyData.type);
+  const noteField = getNoteField(noteType);
+  const isSaved = plan && plan.notes && plan.notes[noteField];
 
   // 创建卡片
   const card = document.createElement('div');
@@ -112,8 +131,8 @@ export function renderPlanStoryMessage(message, contactId) {
     <div class="plan-story-content" style="display: none;">
       <div class="plan-story-text">${storyData.storyContent}</div>
       <div class="plan-story-actions">
-        <button class="plan-story-send-btn" title="发送到酒馆">
-          <i class="fa-solid fa-paper-plane"></i> 发送到酒馆
+        <button class="plan-story-save-note-btn ${isSaved ? 'saved' : ''}" title="${isSaved ? '已记录要点' : '记录要点'}">
+          <i class="fa-solid fa-bookmark"></i> ${isSaved ? '已记录 ✓' : '记录要点'}
         </button>
       </div>
     </div>
@@ -140,25 +159,40 @@ export function renderPlanStoryMessage(message, contactId) {
     }
   });
 
-  // 绑定发送到酒馆
-  const sendBtn = card.querySelector('.plan-story-send-btn');
-  sendBtn.addEventListener('click', async () => {
-    const tavernTextarea = document.querySelector('#send_textarea');
-    if (!tavernTextarea) {
-      const { showErrorToast } = await import('../../ui-components/toast-notification.js');
-      showErrorToast('未找到酒馆输入框');
+  // 绑定记录要点按钮
+  const saveNoteBtn = card.querySelector('.plan-story-save-note-btn');
+  saveNoteBtn.addEventListener('click', () => {
+    if (!plan) {
+      showErrorToast('未找到关联的计划');
       return;
     }
 
-    // 插入内容
-    tavernTextarea.value = storyData.storyContent;
-    tavernTextarea.focus();
-    tavernTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+    // 检查当前状态（需要转换字段名）
+    const noteField = getNoteField(noteType);
+    const currentlySaved = plan.notes && plan.notes[noteField];
 
-    const { showSuccessToast } = await import('../../ui-components/toast-notification.js');
-    showSuccessToast('已发送到酒馆输入框');
+    if (currentlySaved) {
+      // 已记录 → 取消记录
+      deletePlanNote(contactId, plan.id, noteType);
+      saveNoteBtn.classList.remove('saved');
+      saveNoteBtn.innerHTML = '<i class="fa-solid fa-bookmark"></i> 记录要点';
+      saveNoteBtn.title = '记录要点';
+      showSuccessToast('已取消记录');
+      logger.info('[PlanStoryMessage] 取消记录要点:', storyData.title);
+    } else {
+      // 未记录 → 记录要点
+      savePlanNote(contactId, plan.id, noteType, storyData.storyContent);
+      saveNoteBtn.classList.add('saved');
+      saveNoteBtn.innerHTML = '<i class="fa-solid fa-bookmark"></i> 已记录 ✓';
+      saveNoteBtn.title = '已记录要点';
+      showSuccessToast('已记录要点');
+      logger.info('[PlanStoryMessage] 记录要点:', storyData.title);
+    }
 
-    logger.info('[PlanStoryMessage] 已发送到酒馆:', storyData.title);
+    // 触发事件，通知列表页更新
+    window.dispatchEvent(new CustomEvent('phone-plan-notes-changed', {
+      detail: { contactId, planId: plan.id }
+    }));
   });
 
   container.appendChild(card);
@@ -170,5 +204,33 @@ export function renderPlanStoryMessage(message, contactId) {
 
   logger.info('[PlanStoryMessage] ✅ 计划剧情消息渲染完成:', storyData.title);
   return container;
+}
+
+/**
+ * 获取要点类型（用于保存）
+ * @param {string} storyType - 剧情类型
+ * @returns {string} 要点类型（'process' | 'innerThought' | 'record'）
+ */
+function getNoteType(storyType) {
+  const typeMap = {
+    'plan-story-process': 'process',
+    'plan-story-thought': 'innerThought',
+    'plan-story-record': 'record'
+  };
+  return typeMap[storyType] || 'process';
+}
+
+/**
+ * 将要点类型转换为数据字段名
+ * @param {string} noteType - 要点类型（'process' | 'innerThought' | 'record'）
+ * @returns {string} 数据字段名（'notedProcess' | 'notedInnerThought' | 'notedRecord'）
+ */
+function getNoteField(noteType) {
+  const fieldMap = {
+    'process': 'notedProcess',
+    'innerThought': 'notedInnerThought',
+    'record': 'notedRecord'
+  };
+  return fieldMap[noteType] || 'notedProcess';
 }
 

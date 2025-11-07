@@ -357,7 +357,7 @@ export function showPhoneMessageNotification(options = {}) {
   if (status === 'loading') {
     notification.innerHTML = `
       <div class="phone-notification-avatar">
-        ${avatarUrl ? `<img src="${avatarUrl}" alt="${characterName}" />` : '<i class="fa-solid fa-user"></i>'}
+        ${avatarUrl ? `<img src="${avatarUrl}" alt="${characterName}" />` : '<i class="fa-regular fa-user"></i>'}
       </div>
       <div class="phone-notification-content">
         <div class="phone-notification-header">
@@ -373,7 +373,7 @@ export function showPhoneMessageNotification(options = {}) {
     // 成功状态（删除了 phone-notification-title 元素）
     notification.innerHTML = `
       <div class="phone-notification-avatar">
-        ${avatarUrl ? `<img src="${avatarUrl}" alt="${characterName}" />` : '<i class="fa-solid fa-user-circle"></i>'}
+        ${avatarUrl ? `<img src="${avatarUrl}" alt="${characterName}" />` : '<i class="fa-regular fa-user-circle"></i>'}
       </div>
       <div class="phone-notification-content">
         <div class="phone-notification-header">

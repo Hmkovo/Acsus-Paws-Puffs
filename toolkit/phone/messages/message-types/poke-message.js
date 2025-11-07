@@ -1,0 +1,87 @@
+/**
+ * 戳一戳消息渲染器
+ * @module phone/messages/message-types/poke-message
+ * 
+ * @description
+ * 渲染戳一戳消息（特殊交互类型）
+ * - 我发的：(👈 + 左震动
+ * - 对方发的：👉) + 右震动
+ */
+
+import { getThumbnailUrl } from '../../../../../../../../script.js';
+import logger from '../../../../logger.js';
+
+/**
+ * 渲染戳一戳消息
+ * 
+ * @param {Object} message - 消息对象
+ * @param {string} message.sender - 发送者（'user' | 'contact'）
+ * @param {number} message.time - 时间戳（秒）
+ * @param {string} message.id - 消息ID
+ * @param {Object} contact - 联系人对象（用于获取头像）
+ * @param {string} [contactId] - 联系人ID
+ * @returns {HTMLElement} 戳一戳消息元素
+ * 
+ * @example
+ * const poke = renderPokeMessage(
+ *   { sender: 'user', time: 1730976543, id: 'msg_xxx' },
+ *   { avatar: 'path/to/avatar.png' },
+ *   'tavern_张三'
+ * );
+ */
+export function renderPokeMessage(message, contact, contactId) {
+  logger.debug('[PokeMessage] 开始渲染戳一戳消息:', message.id);
+
+  const container = document.createElement('div');
+  container.className = 'chat-msg-poke';
+
+  // 判断是发送还是接收
+  const isSent = message.sender === 'user';
+  container.classList.add(isSent ? 'chat-msg-poke-sent' : 'chat-msg-poke-received');
+  container.setAttribute('data-msg-id', message.id);
+  container.setAttribute('data-message-time', message.time.toString());
+
+  // 创建头像
+  const avatar = document.createElement('img');
+  avatar.className = 'chat-msg-avatar';
+
+  if (isSent) {
+    // 用户头像（从顶部栏获取，完整路径，不压缩）
+    const userAvatar = /** @type {HTMLImageElement} */ (document.querySelector('#phone-user-avatar'));
+    avatar.src = userAvatar?.src || 'img/default-user.png';
+    logger.debug('[PokeMessage] 用户头像src:', avatar.src);
+  } else {
+    // 联系人头像（使用getThumbnailUrl，不压缩）
+    avatar.src = getThumbnailUrl('avatar', contact?.avatar) || 'img/default-avatar.png';
+    logger.debug('[PokeMessage] 联系人头像src:', avatar.src);
+  }
+
+  avatar.alt = isSent ? '我' : contact?.name || '联系人';
+
+  // 创建戳一戳内容
+  const content = document.createElement('div');
+  content.className = 'chat-msg-poke-content';
+
+  // 弧线符号
+  const arc = document.createElement('span');
+  arc.className = 'chat-msg-poke-arc';
+  arc.textContent = isSent ? '(' : ')';
+
+  // 手指emoji
+  const hand = document.createElement('span');
+  hand.className = 'chat-msg-poke-hand';
+  hand.textContent = isSent ? '👈' : '👉';
+
+  content.appendChild(arc);
+  content.appendChild(hand);
+
+  // 组装（DOM顺序：头像在前，内容在后）
+  // CSS的 flex-direction 会控制视觉顺序
+  container.appendChild(avatar);
+  container.appendChild(content);
+
+  logger.info('[PokeMessage] ✅ 戳一戳消息渲染完成:', message.id, isSent ? '(我发的)' : '(对方发的)');
+
+  return container;
+}
+

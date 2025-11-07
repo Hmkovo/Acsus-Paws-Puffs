@@ -231,15 +231,12 @@ async function processPlanResponsePlaceholders(messages, contactId, messageNumbe
       const isRejected = msg.content.includes('拒绝');
 
       if (isAccepted) {
-        // 角色接受计划：自动掷骰子
+        // 角色接受计划：自动掷骰子并默认勾选内心印象+过程记录
         const { updatePlanStatus, getPlanByMessageId } = await import('../plans/plan-data.js');
-        
+
         let plan = getPlanByMessageId(contactId, planMsgId);
-        
+
         if (plan) {
-          // 更新状态为已接受
-          updatePlanStatus(contactId, plan.id, 'accepted');
-          
           // 自动掷骰子（角色接受时立即执行）
           const diceResult = Math.floor(Math.random() * 100) + 1;
           const outcome = diceResult <= 40 ? '顺利' : diceResult <= 80 ? '麻烦' : '好事';
@@ -249,42 +246,49 @@ async function processPlanResponsePlaceholders(messages, contactId, messageNumbe
             '好事': ['意外收获了惊喜！', '发生了意想不到的好事', '运气真好，遇到了特别开心的事']
           };
           const story = storyTemplates[outcome][Math.floor(Math.random() * storyTemplates[outcome].length)];
-          
+
           const { updatePlanResult } = await import('../plans/plan-data.js');
           updatePlanResult(contactId, plan.id, {
             diceResult,
             outcome,
             story,
-            options: {}
+            options: {
+              includeInnerThought: true,  // 默认勾选内心印象
+              includeRecord: true  // 默认勾选过程记录
+            }
           });
-          
+
+          // 状态直接改为已完成（不是accepted）
+          updatePlanStatus(contactId, plan.id, 'completed');
+
           // 更新原计划消息为已完成
           const { updateMessage } = await import('../messages/message-chat-data.js');
           await updateMessage(contactId, planMsgId, {
             content: `[约定计划已完成]${plan.title}`
           });
-          
-          logger.info('[ResponseParser] 角色接受计划，自动掷骰子:', diceResult, outcome);
+
+          logger.info('[ResponseParser] 角色接受计划，自动掷骰子并默认勾选内心印象+过程记录:', diceResult, outcome);
         }
       } else if (isRejected) {
         // 角色拒绝计划：更新状态
         const { updatePlanStatus, getPlanByMessageId } = await import('../plans/plan-data.js');
         const plan = getPlanByMessageId(contactId, planMsgId);
-        
+
         if (plan) {
           updatePlanStatus(contactId, plan.id, 'rejected');
           logger.info('[ResponseParser] 角色拒绝计划:', plan.title);
         }
       }
 
-      // 转换为文本消息
+      // 转换为文本消息（添加 quotedPlanId 标记，用于渲染时判断）
       messages[i] = {
         id: msg.id,
         time: msg.time,
         role: msg.role,
         sender: 'contact',
         type: 'text',
-        content: msg.content
+        content: msg.content,
+        quotedPlanId: planMsgId  // 标记关联的计划消息ID
       };
 
       logger.info('[ResponseParser] 计划响应已处理，编号#', msg.refNumber, '→', isAccepted ? '接受' : '拒绝');
@@ -377,7 +381,17 @@ function extractMessagesContent(content) {
  * @returns {Object|null} 解析后的消息对象
  */
 function parseMessageBubble(bubble, roleName) {
-  // 1. 撤回消息：[撤回]原消息内容
+  // 1. 戳一戳消息：[戳一戳]
+  if (bubble.trim() === '[戳一戳]') {
+    logger.debug('[ResponseParser] 戳一戳消息');
+    return {
+      role: roleName,
+      sender: 'contact',
+      type: 'poke'
+    };
+  }
+
+  // 2. 撤回消息：[撤回]原消息内容
   const recallMatch = bubble.match(/^\[撤回\](.+)$/);
   if (recallMatch) {
     const originalContent = recallMatch[1].trim();
@@ -395,7 +409,26 @@ function parseMessageBubble(bubble, roleName) {
     };
   }
 
-  // 2. 引用消息：[引用]#N[回复]回复内容（编号格式，精确匹配）
+  // 3. 约定计划响应：[引用]#N[回复][约定计划]接受/拒绝了约定计划
+  // ⚠️ 必须放在普通引用消息之前，因为格式更具体（回复内容必须以[约定计划]开头）
+  const planResponseMatch = bubble.match(/^\[引用\]#(\d+)\[回复\]\[约定计划\](.+)$/);
+  if (planResponseMatch) {
+    const refNumber = parseInt(planResponseMatch[1]);
+    const responseContent = planResponseMatch[2].trim();
+
+    logger.debug('[ResponseParser] 约定计划响应（引用格式）:', { refNumber, responseContent });
+
+    // 返回计划响应占位符（需要在后续处理中关联计划）
+    return {
+      role: roleName,
+      type: 'plan-response-placeholder',
+      refNumber,
+      content: `[约定计划]${responseContent}`,
+      sender: 'contact'
+    };
+  }
+
+  // 4. 引用消息：[引用]#N[回复]回复内容（编号格式，精确匹配）
   const quoteNumberMatch = bubble.match(/^\[引用\]#(\d+)\[回复\](.+)$/);
   if (quoteNumberMatch) {
     const refNumber = parseInt(quoteNumberMatch[1]);
@@ -428,30 +461,12 @@ function parseMessageBubble(bubble, roleName) {
     };
   }
 
-  // 2.5 约定计划响应：[回复]#N [约定计划]接受/拒绝了约定计划
-  const planResponseMatch = bubble.match(/^\[回复\]#(\d+)\s*\[约定计划\](.+)$/);
-  if (planResponseMatch) {
-    const refNumber = parseInt(planResponseMatch[1]);
-    const responseContent = planResponseMatch[2].trim();
-
-    logger.debug('[ResponseParser] 约定计划响应（编号格式）:', { refNumber, responseContent });
-
-    // 返回计划响应占位符（需要在后续处理中关联计划）
-    return {
-      role: roleName,
-      type: 'plan-response-placeholder',
-      refNumber,
-      content: `[约定计划]${responseContent}`,
-      sender: 'contact'
-    };
-  }
-
-  // 3. 表情消息：[表情]名称 → 转换为ID存储
+  // 5. 表情消息：[表情]名称 → 转换为ID存储
   const emojiMatch = bubble.match(/^\[表情\](.+)$/);
   if (emojiMatch) {
     const emojiName = emojiMatch[1].trim();
     const emoji = findEmojiByName(emojiName);
-    
+
     if (emoji) {
       // 找到表情包：存储ID（与用户发送格式一致）
       logger.debug('[ResponseParser] 表情消息（已转换）:', emojiName, '→ ID:', emoji.id.substring(0, 20));
@@ -473,7 +488,7 @@ function parseMessageBubble(bubble, roleName) {
     }
   }
 
-  // 4. 红包消息：[红包]金额（支持多种格式）
+  // 6. 红包消息：[红包]金额（支持多种格式）
   // 支持格式：[红包]100 / [红包]¥100 / [红包]88.88
   const redpacketMatch = bubble.match(/^\[红包\]\s*(.+)$/);
   if (redpacketMatch) {
@@ -496,7 +511,7 @@ function parseMessageBubble(bubble, roleName) {
     };
   }
 
-  // 3. 转账消息：[转账]金额|留言（支持多种格式）
+  // 7. 转账消息：[转账]金额|留言（支持多种格式）
   // 支持格式：
   // - [转账]500
   // - [转账]¥500
@@ -534,7 +549,7 @@ function parseMessageBubble(bubble, roleName) {
     };
   }
 
-  // 4. 图片消息：[图片]描述 或 [图片]描述|链接
+  // 8. 图片消息：[图片]描述 或 [图片]描述|链接
   const imageMatch = bubble.match(/^\[图片\](.+)$/);
   if (imageMatch) {
     const parts = imageMatch[1].split('|');
@@ -557,7 +572,7 @@ function parseMessageBubble(bubble, roleName) {
     return result;
   }
 
-  // 5. 视频消息：[视频]描述
+  // 9. 视频消息：[视频]描述
   const videoMatch = bubble.match(/^\[视频\](.+)$/);
   if (videoMatch) {
     logger.debug('[ResponseParser] 视频消息:', videoMatch[1]);
@@ -568,7 +583,7 @@ function parseMessageBubble(bubble, roleName) {
     };
   }
 
-  // 6. 文件消息：[文件]文件名|大小
+  // 10. 文件消息：[文件]文件名|大小
   const fileMatch = bubble.match(/^\[文件\](.+?)\|(.+)$/);
   if (fileMatch) {
     logger.debug('[ResponseParser] 文件消息:', fileMatch[1], fileMatch[2]);
@@ -580,7 +595,7 @@ function parseMessageBubble(bubble, roleName) {
     };
   }
 
-  // 7. 普通文字消息
+  // 11. 普通文字消息
   logger.debug('[ResponseParser] 文字消息:', bubble.substring(0, 20) + '...');
   return {
     role: roleName,

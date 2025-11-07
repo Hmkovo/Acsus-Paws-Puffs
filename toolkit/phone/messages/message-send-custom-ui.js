@@ -20,6 +20,13 @@ import { showSuccessToast, showErrorToast } from '../ui-components/toast-notific
 import { formatTimeForMessageList } from '../utils/time-helper.js';
 import { renderTextMessage } from './message-types/text-message.js';
 import { renderEmojiMessage } from './message-types/emoji-message.js';
+import { renderImageMessage } from './message-types/image-message.js';
+import { renderQuoteMessage } from './message-types/quote-message.js';
+import { renderTransferMessage } from './message-types/transfer-message.js';
+import { renderRecalledMessage } from './message-types/recalled-message.js';
+import { renderPlanMessage } from './message-types/plan-message.js';
+import { renderPlanStoryMessage } from './message-types/plan-story-message.js';
+import { renderPokeMessage } from './message-types/poke-message.js';
 
 /**
  * 渲染消息发送管理页面
@@ -387,7 +394,7 @@ function createDivider(type, sendSettings) {
  * 创建消息项（复用聊天页面渲染器）
  * 
  * @description
- * 复用 renderTextMessage() 和 renderEmojiMessage() 渲染器，
+ * 复用所有消息类型渲染器，保持和主聊天界面完全一致的视觉效果
  * 在外层包装时间、复选框、排除状态等额外功能
  * 
  * @param {Object} message - 消息对象
@@ -398,10 +405,99 @@ function createDivider(type, sendSettings) {
 async function createMessageBubble(message, contact, contactId) {
   // 1. 复用聊天页面的渲染器（得到完全一致的气泡）
   let innerBubble;
-  if (message.type === 'emoji') {
-    innerBubble = renderEmojiMessage(message, contact, contactId);
-  } else {
-    innerBubble = renderTextMessage(message, contact, contactId);
+
+  switch (message.type) {
+    case 'emoji':
+      innerBubble = renderEmojiMessage(message, contact, contactId);
+      break;
+
+    case 'text':
+      // 检查是否是计划剧情消息
+      if (message.content?.match(/^\[约定计划(过程|内心印象|过程记录)\]/)) {
+        innerBubble = renderPlanStoryMessage(message, contactId);
+      }
+      // 检查是否是计划消息
+      else if (message.content?.startsWith('[约定计划')) {
+        innerBubble = renderPlanMessage(message, contact, contactId);
+        // 如果返回 null（例如旧数据的响应消息缺少 quotedPlanId），降级为普通文本
+        if (!innerBubble) {
+          logger.debug('[MessageSendCustom] 计划消息渲染器返回null，降级为普通文本');
+          innerBubble = renderTextMessage(message, contact, contactId);
+        }
+      } else {
+        innerBubble = renderTextMessage(message, contact, contactId);
+      }
+      break;
+
+    case 'image':
+      innerBubble = renderImageMessage(message, contact, contactId);
+      break;
+
+    case 'quote':
+      innerBubble = renderQuoteMessage(message, contact, contactId);
+      break;
+
+    case 'transfer':
+      innerBubble = renderTransferMessage(message, contact, contactId);
+      break;
+
+    case 'recalled':
+      // 已撤回消息（直接显示撤回提示）
+      innerBubble = renderRecalledMessage(message, contact, contactId);
+      break;
+
+    case 'recalled-pending':
+      // 待撤回消息（在发送管理页面直接显示原消息，不触发动画）
+      innerBubble = renderTextMessage(message, contact, contactId);
+      logger.debug('[MessageSendCustom] 待撤回消息（发送管理页不触发动画）');
+      break;
+
+    case 'poke':
+      // 戳一戳消息
+      innerBubble = renderPokeMessage(message, contact, contactId);
+      break;
+
+    // TODO 第二期：实现专门的渲染器
+    // 临时降级：显示为文字提示
+    case 'redpacket':
+      innerBubble = renderTextMessage({
+        ...message,
+        content: `[红包] ¥${message.amount}`,
+        type: 'text'
+      }, contact, contactId);
+      break;
+
+    case 'video':
+      innerBubble = renderTextMessage({
+        ...message,
+        content: `[视频] ${message.description}`,
+        type: 'text'
+      }, contact, contactId);
+      break;
+
+    case 'file':
+      innerBubble = renderTextMessage({
+        ...message,
+        content: `[文件] ${message.filename} (${message.size})`,
+        type: 'text'
+      }, contact, contactId);
+      break;
+
+    default:
+      // 未知类型，降级为文字
+      logger.warn('[MessageSendCustom] 未知消息类型:', message.type);
+      innerBubble = renderTextMessage({
+        ...message,
+        content: message.content || '[未知消息类型]',
+        type: 'text'
+      }, contact, contactId);
+      break;
+  }
+
+  // 安全检查：确保 innerBubble 不为 null
+  if (!innerBubble) {
+    logger.error('[MessageSendCustom] 渲染器返回null，消息:', message);
+    innerBubble = renderTextMessage({ ...message, content: message.content || '[渲染失败]', type: 'text' }, contact, contactId);
   }
 
   // 2. 创建外层容器（添加额外功能）

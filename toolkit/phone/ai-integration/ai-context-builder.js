@@ -431,7 +431,10 @@ export async function buildChatHistoryInfo(contactId, contact, messageNumberMap,
       let messageContent = msg.content;
       let messagePrefix = '';
 
-      if (msg.type === 'emoji') {
+      if (msg.type === 'poke') {
+        // 戳一戳消息
+        messageContent = '[戳一戳]';
+      } else if (msg.type === 'emoji') {
         // ✅ 通过ID查找表情包名称（支持改名）
         const emoji = findEmojiById(msg.content);
         if (emoji) {
@@ -594,7 +597,10 @@ async function buildUserPendingOps(pendingMessages, messageNumberMap, startNumbe
 
       // 根据消息类型添加前缀
       let messageContent = msg.content;
-      if (msg.type === 'emoji') {
+      if (msg.type === 'poke') {
+        // 戳一戳消息
+        messageContent = '[戳一戳]';
+      } else if (msg.type === 'emoji') {
         // ✅ 通过ID查找表情包名称（支持改名）
         const emoji = findEmojiById(msg.content);
         if (emoji) {
@@ -676,7 +682,8 @@ async function buildUserPendingOps(pendingMessages, messageNumberMap, startNumbe
         content += `[约定计划过程记录]请简要记录这次经历的关键事件（30-50字），禁止换行。\n\n`;
       }
 
-      content += `必须在[消息]之后输出这些格式\n`;
+      content += `必须在角色的[消息]标签之后输出这些格式,输出后再正常发送对话消息\n`;
+      content += `注意：是[消息]的标签之后，而不是发完对话消息后再输出，先在[消息]之后输出这些内容\n`;
       content += `[/临时任务]\n`;
 
       // 标记该计划已生成剧情提示（避免重复生成）
@@ -746,7 +753,10 @@ export async function buildHistoryChatInfo(contactId, contact, messageNumberMap)
 
     // 根据消息类型添加前缀
     let messageContent = msg.content;
-    if (msg.type === 'emoji') {
+    if (msg.type === 'poke') {
+      // 戳一戳消息
+      messageContent = '[戳一戳]';
+    } else if (msg.type === 'emoji') {
       const emoji = findEmojiById(msg.content);
       if (emoji) {
         messageContent = `[表情]${emoji.name}`;

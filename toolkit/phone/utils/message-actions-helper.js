@@ -659,8 +659,8 @@ function handleMultiSelect(message) {
  * @param {string} contactId - 联系人ID
  */
 function handleQuote(message, contactId) {
-  // 检查消息类型（只支持text/emoji/image）
-  if (!['text', 'emoji', 'image'].includes(message.type)) {
+  // 检查消息类型（支持text/emoji/image/quote）
+  if (!['text', 'emoji', 'image', 'quote'].includes(message.type)) {
     // 显示提示
     const toast = document.createElement('div');
     toast.className = 'phone-toast phone-toast-warning';
@@ -680,13 +680,26 @@ function handleQuote(message, contactId) {
     return;
   }
 
+  // ✅ 引用的引用：转换为简化的消息对象（只引用回复部分）
+  let messageToQuote = message;
+  if (message.type === 'quote') {
+    messageToQuote = {
+      id: message.id,
+      sender: message.sender,
+      time: message.time,
+      type: 'text',  // 转换为text类型
+      content: message.replyContent  // 只引用回复部分
+    };
+    logger.debug('[MessageActions] 引用的引用，简化为文本:', message.replyContent?.substring(0, 20));
+  }
+
   // 触发自定义事件，通知聊天页面
   const event = new CustomEvent('phone-message-quote', {
-    detail: { message, contactId }
+    detail: { message: messageToQuote, contactId }
   });
   document.dispatchEvent(event);
 
-  logger.info('[MessageActions] 引用消息:', message.content?.substring(0, 20) || `[${message.type}]`);
+  logger.info('[MessageActions] 引用消息:', messageToQuote.content?.substring(0, 20) || `[${messageToQuote.type}]`);
   closeMessageActions();
 }
 

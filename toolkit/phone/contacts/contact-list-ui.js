@@ -97,7 +97,7 @@ async function createSpecialItems() {
   const newFriends = document.createElement('div');
   newFriends.className = 'contact-special-item';
   newFriends.innerHTML = `
-    <i class="fa-solid fa-user-plus contact-special-icon"></i>
+    <i class="fa-regular fa-user-plus contact-special-icon"></i>
     <span class="contact-special-text">新朋友</span>
     ${unreadCount > 0 ? `<div class="contact-special-badge">${unreadCount}</div>` : ''}
     <i class="fa-solid fa-chevron-right contact-special-arrow"></i>
@@ -116,7 +116,7 @@ async function createSpecialItems() {
   const groupNotify = document.createElement('div');
   groupNotify.className = 'contact-special-item';
   groupNotify.innerHTML = `
-    <i class="fa-solid fa-users contact-special-icon"></i>
+    <i class="fa-regular fa-users contact-special-icon"></i>
     <span class="contact-special-text">群通知</span>
     <i class="fa-solid fa-chevron-right contact-special-arrow"></i>
   `;

@@ -86,6 +86,11 @@ export function createPlan(contactId, planData) {
     outcome: null, // '顺利' | '麻烦' | '好事'
     story: null,
     storyGenerated: false, // 是否已生成剧情（避免重复提示）
+    notes: {
+      notedProcess: null,       // 记录的计划过程要点
+      notedInnerThought: null,  // 记录的内心印象要点
+      notedRecord: null         // 记录的过程记录要点
+    },
     options: {
       includeInnerThought: false,
       includeRecord: false
@@ -227,5 +232,107 @@ export function updatePlanStoryGenerated(contactId, planId, generated) {
 
   logger.info('[PlanData] 更新剧情生成状态:', plan.title, '→', generated);
   return true;
+}
+
+/**
+ * 保存计划要点
+ * 
+ * @param {string} contactId - 联系人ID
+ * @param {string} planId - 计划ID
+ * @param {string} noteType - 要点类型（'process' | 'innerThought' | 'record'）
+ * @param {string} content - 要点内容
+ * @returns {boolean} 是否成功
+ */
+export function savePlanNote(contactId, planId, noteType, content) {
+  const plans = getPlans(contactId);
+  const plan = plans.find(p => p.id === planId);
+
+  if (!plan) {
+    logger.warn('[PlanData] 未找到计划:', planId);
+    return false;
+  }
+
+  // 确保notes对象存在
+  if (!plan.notes) {
+    plan.notes = {
+      notedProcess: null,
+      notedInnerThought: null,
+      notedRecord: null
+    };
+  }
+
+  // 保存要点
+  const noteFieldMap = {
+    'process': 'notedProcess',
+    'innerThought': 'notedInnerThought',
+    'record': 'notedRecord'
+  };
+
+  const fieldName = noteFieldMap[noteType];
+  if (!fieldName) {
+    logger.error('[PlanData] 无效的要点类型:', noteType);
+    return false;
+  }
+
+  plan.notes[fieldName] = content;
+  saveSettingsDebounced();
+
+  logger.info('[PlanData] 保存计划要点:', plan.title, '类型:', noteType);
+  return true;
+}
+
+/**
+ * 删除计划要点
+ * 
+ * @param {string} contactId - 联系人ID
+ * @param {string} planId - 计划ID
+ * @param {string} noteType - 要点类型（'process' | 'innerThought' | 'record'）
+ * @returns {boolean} 是否成功
+ */
+export function deletePlanNote(contactId, planId, noteType) {
+  const plans = getPlans(contactId);
+  const plan = plans.find(p => p.id === planId);
+
+  if (!plan) {
+    logger.warn('[PlanData] 未找到计划:', planId);
+    return false;
+  }
+
+  if (!plan.notes) {
+    return true; // 本来就没有notes
+  }
+
+  // 删除要点
+  const noteFieldMap = {
+    'process': 'notedProcess',
+    'innerThought': 'notedInnerThought',
+    'record': 'notedRecord'
+  };
+
+  const fieldName = noteFieldMap[noteType];
+  if (!fieldName) {
+    logger.error('[PlanData] 无效的要点类型:', noteType);
+    return false;
+  }
+
+  plan.notes[fieldName] = null;
+  saveSettingsDebounced();
+
+  logger.info('[PlanData] 删除计划要点:', plan.title, '类型:', noteType);
+  return true;
+}
+
+/**
+ * 检查计划是否有任意记录的要点
+ * 
+ * @param {Object} plan - 计划对象
+ * @returns {boolean} 是否有记录的要点
+ */
+export function hasAnyNotes(plan) {
+  if (!plan || !plan.notes) {
+    return false;
+  }
+
+  return !!(plan.notes.notedProcess || plan.notes.notedInnerThought || plan.notes.notedRecord);
 }
 
