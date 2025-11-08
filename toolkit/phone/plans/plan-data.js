@@ -42,7 +42,9 @@ export function getPlans(contactId) {
     extension_settings.acsusPawsPuffs.phone.plans[contactId] = [];
   }
 
-  return extension_settings.acsusPawsPuffs.phone.plans[contactId];
+  const plans = extension_settings.acsusPawsPuffs.phone.plans[contactId];
+  logger.debug('[PlanData.getPlans] 获取计划列表:', contactId, '计划数:', plans.length, '数据:', plans);
+  return plans;
 }
 
 /**
@@ -102,6 +104,12 @@ export function createPlan(contactId, planData) {
   saveSettingsDebounced();
 
   logger.info('[PlanData] 创建计划:', plan.title, 'ID:', plan.id);
+
+  // 触发事件通知列表刷新
+  window.dispatchEvent(new CustomEvent('phone-plan-data-changed', {
+    detail: { contactId, planId: plan.id, action: 'create' }
+  }));
+
   return plan;
 }
 
@@ -126,6 +134,12 @@ export function updatePlanStatus(contactId, planId, status) {
   saveSettingsDebounced();
 
   logger.info('[PlanData] 更新计划状态:', plan.title, '→', status);
+
+  // 触发事件通知列表刷新
+  window.dispatchEvent(new CustomEvent('phone-plan-data-changed', {
+    detail: { contactId, planId, action: 'update' }
+  }));
+
   return true;
 }
 
@@ -162,6 +176,12 @@ export function updatePlanResult(contactId, planId, result) {
   saveSettingsDebounced();
 
   logger.info('[PlanData] 更新计划结果:', plan.title, '骰子:', plan.diceResult, '结果:', plan.outcome);
+
+  // 触发事件通知列表刷新
+  window.dispatchEvent(new CustomEvent('phone-plan-data-changed', {
+    detail: { contactId, planId, action: 'update' }
+  }));
+
   return true;
 }
 
@@ -188,6 +208,12 @@ export function deletePlan(contactId, planId) {
   saveSettingsDebounced();
 
   logger.info('[PlanData] 删除计划:', plan.title);
+
+  // 触发事件通知列表刷新
+  window.dispatchEvent(new CustomEvent('phone-plan-data-changed', {
+    detail: { contactId, planId, action: 'delete' }
+  }));
+
   return true;
 }
 
@@ -198,7 +224,9 @@ export function deletePlan(contactId, planId) {
  */
 export function getPendingPlans(contactId) {
   const plans = getPlans(contactId);
-  return plans.filter(p => p.status === 'pending' || p.status === 'accepted');
+  const pendingPlans = plans.filter(p => p.status === 'pending' || p.status === 'accepted');
+  logger.debug('[PlanData.getPendingPlans] 进行中计划:', contactId, '数量:', pendingPlans.length, '数据:', pendingPlans);
+  return pendingPlans;
 }
 
 /**
@@ -208,7 +236,9 @@ export function getPendingPlans(contactId) {
  */
 export function getCompletedPlans(contactId) {
   const plans = getPlans(contactId);
-  return plans.filter(p => p.status === 'completed');
+  const completedPlans = plans.filter(p => p.status === 'completed');
+  logger.debug('[PlanData.getCompletedPlans] 已完成计划:', contactId, '数量:', completedPlans.length, '数据:', completedPlans);
+  return completedPlans;
 }
 
 /**

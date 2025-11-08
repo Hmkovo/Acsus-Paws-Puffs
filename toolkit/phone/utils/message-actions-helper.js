@@ -606,6 +606,23 @@ async function handleDelete(message, contactId, messageElement) {
 
     await saveChatHistory(contactId, newHistory);
 
+    // 🎯 删除对应的计划数据（如果是计划消息）
+    if (message.content?.startsWith('[约定计划')) {
+      try {
+        const { getPlanByMessageId, deletePlan } = await import('../plans/plan-data.js');
+        const plan = getPlanByMessageId(contactId, message.id);
+        
+        if (plan) {
+          deletePlan(contactId, plan.id);
+          logger.info('[MessageActions] 已同步删除计划数据:', plan.title);
+        } else {
+          logger.debug('[MessageActions] 该计划消息无对应计划数据');
+        }
+      } catch (error) {
+        logger.warn('[MessageActions] 删除计划数据失败（不影响消息删除）:', error);
+      }
+    }
+
     // 2. 从DOM移除（删除整个消息容器，不是只删除气泡）
     // messageElement 是气泡元素（.chat-msg-bubble），需要找到父容器（.chat-msg）
     const messageContainer = messageElement.closest('.chat-msg');

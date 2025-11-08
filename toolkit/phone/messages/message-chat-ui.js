@@ -1476,7 +1476,7 @@ async function handleSendToAI(page, contactId, contact, sendBtn) {
   // 类型断言
   const sendButton = /** @type {HTMLButtonElement} */ (sendBtn);
 
-  // ✅ 清空上一轮的调试数据 + 保存当前快照（包含多联系人消息）
+  // ✅ 清空上一轮的调试数据 + 保存当前快照（包含多联系人消息 + 个签操作）
   const { clearDebugState, saveSnapshot } = await import('./message-debug-ui.js');
   const { loadChatHistory } = await import('./message-chat-data.js');
   const { getAllPendingOperations } = await import('../ai-integration/pending-operations.js');
@@ -1485,10 +1485,11 @@ async function handleSendToAI(page, contactId, contact, sendBtn) {
   const chatHistory = await loadChatHistory(contactId);
   const allPendingOps = getAllPendingOperations();
 
-  // 保存完整快照（消息数量 + 所有待发送消息）
+  // 保存完整快照（消息数量 + 所有待发送消息 + 个签操作）
   saveSnapshot(contactId, {
     messageCount: chatHistory.length,
-    allPendingMessages: allPendingOps.messages
+    allPendingMessages: allPendingOps.messages,
+    signatureActions: allPendingOps.signatureActions || []
   });
 
   // 获取 PhoneAPI 实例（完全照搬日记）
@@ -1562,10 +1563,14 @@ async function handleSendToAI(page, contactId, contact, sendBtn) {
       }
     },
     // onComplete: 完成时的回调
-    () => {
+    async () => {
       logger.info('[ChatView] AI回复完成');
 
       // ✅ 按钮状态由事件监听器自动更新（bindAIGenerationEvents）
+
+      // ✅ 清空个签操作记录（AI回复完成后，说明本轮对话结束）
+      const { clearSignatureActions } = await import('../ai-integration/pending-operations.js');
+      clearSignatureActions();
 
       // 更新消息列表
       updateMessageListItem(contactId);
@@ -1670,6 +1675,7 @@ export async function appendMessageToChat(page, message, contact, contactId) {
   const { renderPlanMessage } = await import('./message-types/plan-message.js');
   const { renderPlanStoryMessage } = await import('./message-types/plan-story-message.js');
   const { renderPokeMessage } = await import('./message-types/poke-message.js');
+  const { renderSignatureMessage } = await import('./message-types/signature-message.js');
 
   // 根据消息类型渲染不同的气泡
   let bubble;
@@ -1683,15 +1689,20 @@ export async function appendMessageToChat(page, message, contact, contactId) {
       break;
 
     case 'text':
+      // 检查是否是个签更新消息
+      if (message.content?.startsWith('[改个签]')) {
+        logger.debug('[ChatView.appendMessageToChat] 渲染个签更新消息');
+        bubble = renderSignatureMessage(message, contactId, contact);
+      }
       // 检查是否是计划剧情消息
-      if (message.content?.match(/^\[约定计划(过程|内心印象|过程记录)\]/)) {
+      else if (message.content?.match(/^\[约定计划(过程|内心印象|过程记录)\]/)) {
         logger.debug('[ChatView.appendMessageToChat] 渲染计划剧情消息');
         bubble = renderPlanStoryMessage(message, contactId);
       }
       // 检查是否是计划消息
       else if (message.content?.startsWith('[约定计划')) {
         logger.debug('[ChatView.appendMessageToChat] 渲染计划消息');
-        bubble = renderPlanMessage(message, contact, contactId);
+        bubble = await renderPlanMessage(message, contact, contactId);
         // 如果返回 null（例如旧数据的响应消息缺少 quotedPlanId），降级为普通文本
         if (!bubble) {
           logger.debug('[ChatView.appendMessageToChat] 计划消息渲染器返回null，降级为普通文本');
@@ -1937,10 +1948,12 @@ async function renderMessagesToBottom(chatContent, messages, contact, contactId,
   const { renderPlanMessage } = await import('./message-types/plan-message.js');
   const { renderPlanStoryMessage } = await import('./message-types/plan-story-message.js');
   const { renderPokeMessage } = await import('./message-types/poke-message.js');
+  const { renderSignatureMessage } = await import('./message-types/signature-message.js');
 
   let lastTime = null;
 
-  messages.forEach((message, index) => {
+  for (let index = 0; index < messages.length; index++) {
+    const message = messages[index];
     // 显示时间分隔（每5分钟显示一次）
     if (index === 0 || message.time - lastTime > 300) {
       const timeSep = renderTimeSepar(message.time);
@@ -1948,7 +1961,7 @@ async function renderMessagesToBottom(chatContent, messages, contact, contactId,
       lastTime = message.time;
     }
 
-    const bubble = renderSingleBubble(message, contact, contactId, phoneAPI, {
+    const bubble = await renderSingleBubble(message, contact, contactId, phoneAPI, {
       renderTextMessage,
       renderEmojiMessage,
       renderImageMessage,
@@ -1957,10 +1970,11 @@ async function renderMessagesToBottom(chatContent, messages, contact, contactId,
       renderRecalledMessage,
       renderPlanMessage,
       renderPlanStoryMessage,
-      renderPokeMessage
+      renderPokeMessage,
+      renderSignatureMessage
     });
     chatContent.appendChild(bubble);
-  });
+  }
 }
 
 /**
@@ -1977,6 +1991,7 @@ async function renderMessagesToTop(chatContent, messages, contact, contactId, ph
   const { renderPlanMessage } = await import('./message-types/plan-message.js');
   const { renderPlanStoryMessage } = await import('./message-types/plan-story-message.js');
   const { renderPokeMessage } = await import('./message-types/poke-message.js');
+  const { renderSignatureMessage } = await import('./message-types/signature-message.js');
 
   const fragment = document.createDocumentFragment();
   let lastTime = null;
@@ -1984,7 +1999,8 @@ async function renderMessagesToTop(chatContent, messages, contact, contactId, ph
   // 保存当前滚动位置
   const oldScrollHeight = chatContent.scrollHeight;
 
-  messages.forEach((message, index) => {
+  for (let index = 0; index < messages.length; index++) {
+    const message = messages[index];
     // 显示时间分隔（每5分钟显示一次）
     if (index === 0 || message.time - lastTime > 300) {
       const timeSep = renderTimeSepar(message.time);
@@ -1992,7 +2008,7 @@ async function renderMessagesToTop(chatContent, messages, contact, contactId, ph
       lastTime = message.time;
     }
 
-    const bubble = renderSingleBubble(message, contact, contactId, phoneAPI, {
+    const bubble = await renderSingleBubble(message, contact, contactId, phoneAPI, {
       renderTextMessage,
       renderEmojiMessage,
       renderImageMessage,
@@ -2001,10 +2017,11 @@ async function renderMessagesToTop(chatContent, messages, contact, contactId, ph
       renderRecalledMessage,
       renderPlanMessage,
       renderPlanStoryMessage,
-      renderPokeMessage
+      renderPokeMessage,
+      renderSignatureMessage
     });
     fragment.appendChild(bubble);
-  });
+  }
 
   // 在第一个子元素之前插入（跳过加载按钮）
   const firstMessage = chatContent.querySelector('.chat-msg, .chat-time-separ');
@@ -2022,8 +2039,8 @@ async function renderMessagesToTop(chatContent, messages, contact, contactId, ph
  * 渲染单个消息气泡
  * @private
  */
-function renderSingleBubble(message, contact, contactId, phoneAPI, renderers) {
-  const { renderTextMessage, renderEmojiMessage, renderImageMessage, renderQuoteMessage, renderTransferMessage, renderRecalledMessage, renderPlanMessage, renderPlanStoryMessage } = renderers;
+async function renderSingleBubble(message, contact, contactId, phoneAPI, renderers) {
+  const { renderTextMessage, renderEmojiMessage, renderImageMessage, renderQuoteMessage, renderTransferMessage, renderRecalledMessage, renderPlanMessage, renderPlanStoryMessage, renderSignatureMessage } = renderers;
 
   let bubble;
 
@@ -2032,13 +2049,17 @@ function renderSingleBubble(message, contact, contactId, phoneAPI, renderers) {
       bubble = renderEmojiMessage(message, contact, contactId);
       break;
     case 'text':
+      // 检查是否是个签更新消息
+      if (message.content?.startsWith('[改个签]')) {
+        bubble = renderSignatureMessage ? renderSignatureMessage(message, contactId, contact) : renderTextMessage(message, contact, contactId);
+      }
       // 检查是否是计划剧情消息
-      if (message.content?.match(/^\[约定计划(过程|内心印象|过程记录)\]/)) {
+      else if (message.content?.match(/^\[约定计划(过程|内心印象|过程记录)\]/)) {
         bubble = renderPlanStoryMessage ? renderPlanStoryMessage(message, contactId) : renderTextMessage(message, contact, contactId);
       }
       // 检查是否是计划消息
       else if (message.content?.startsWith('[约定计划')) {
-        bubble = renderPlanMessage ? renderPlanMessage(message, contact, contactId) : renderTextMessage(message, contact, contactId);
+        bubble = renderPlanMessage ? await renderPlanMessage(message, contact, contactId) : renderTextMessage(message, contact, contactId);
         // 如果返回 null（例如旧数据的响应消息缺少 quotedPlanId），降级为普通文本
         if (!bubble) {
           logger.debug('[ChatView.renderSingleBubble] 计划消息渲染器返回null，降级为普通文本');
@@ -2623,7 +2644,7 @@ async function handleSendFavorite(page, contactId) {
     const phoneAPI = getPhoneSystem().api;
 
     // 使用renderSingleBubble渲染消息
-    const msgElement = renderSingleBubble(message, contact, contactId, phoneAPI, {
+    const msgElement = await renderSingleBubble(message, contact, contactId, phoneAPI, {
       renderTextMessage,
       renderEmojiMessage,
       renderImageMessage,

@@ -412,13 +412,18 @@ async function createMessageBubble(message, contact, contactId) {
       break;
 
     case 'text':
+      // 检查是否是个签更新消息
+      if (message.content?.startsWith('[改个签]')) {
+        const { renderSignatureMessage } = await import('./message-types/signature-message.js');
+        innerBubble = renderSignatureMessage(message, contactId, contact);
+      }
       // 检查是否是计划剧情消息
-      if (message.content?.match(/^\[约定计划(过程|内心印象|过程记录)\]/)) {
+      else if (message.content?.match(/^\[约定计划(过程|内心印象|过程记录)\]/)) {
         innerBubble = renderPlanStoryMessage(message, contactId);
       }
       // 检查是否是计划消息
       else if (message.content?.startsWith('[约定计划')) {
-        innerBubble = renderPlanMessage(message, contact, contactId);
+        innerBubble = await renderPlanMessage(message, contact, contactId);
         // 如果返回 null（例如旧数据的响应消息缺少 quotedPlanId），降级为普通文本
         if (!innerBubble) {
           logger.debug('[MessageSendCustom] 计划消息渲染器返回null，降级为普通文本');

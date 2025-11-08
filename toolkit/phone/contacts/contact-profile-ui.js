@@ -49,6 +49,9 @@ export async function renderContactProfile(contactId) {
 
     fragment.appendChild(container);
 
+    // 3. 设置个签更新事件监听器
+    setupSignatureUpdateListener(contactId);
+
     logger.info('[ContactProfile] 角色个人页渲染完成:', contact.name);
     return fragment;
   } catch (error) {
@@ -123,7 +126,10 @@ function createMainCard(contact) {
   // 2. 等级徽章区
   card.appendChild(createBadges(contact));
 
-  // 3. 互动标识区
+  // 3. 个性签名行
+  card.appendChild(createSignatureRow(contact));
+
+  // 4. 互动标识区
   card.appendChild(createInteractionBadges(contact));
 
   // 4. QQ空间入口
@@ -199,6 +205,49 @@ function createBadges(contact) {
   badgesDiv.style.cursor = 'default';
 
   return badgesDiv;
+}
+
+/**
+ * 创建个性签名行
+ * 
+ * @param {Object} contact - 联系人对象
+ * @returns {HTMLElement} 个性签名行容器
+ */
+function createSignatureRow(contact) {
+  const signatureDiv = document.createElement('div');
+  signatureDiv.className = 'contact-profile-signature-row';
+  signatureDiv.dataset.contactId = contact.id;  // 添加 data-contact-id 用于更新
+
+  // 获取当前个签（如果有）
+  const currentSignature = contact.signature?.current || '';
+
+  signatureDiv.innerHTML = `
+        <div class="contact-profile-signature-text">${currentSignature}</div>
+        <i class="fa-solid fa-chevron-right"></i>
+    `;
+
+  // 点击进入个签历史页面
+  signatureDiv.addEventListener('click', () => {
+    handleOpenSignatureHistory(contact.id);
+  });
+
+  return signatureDiv;
+}
+
+/**
+ * 处理打开个签历史页面
+ * 
+ * @async
+ * @param {string} contactId - 角色ID
+ */
+async function handleOpenSignatureHistory(contactId) {
+  logger.debug('[ContactProfile] 打开个签历史页:', contactId);
+
+  const overlayElement = document.querySelector('.phone-overlay');
+  if (overlayElement) {
+    const { showPage } = await import('../phone-main-ui.js');
+    await showPage(overlayElement, 'signature-history', { targetType: 'contact', contactId });
+  }
 }
 
 /**
@@ -640,5 +689,76 @@ function createErrorView() {
   errorDiv.style.cssText = 'padding: 20px; text-align: center; color: #999;';
   fragment.appendChild(errorDiv);
   return fragment;
+}
+
+// 存储事件监听器（用于清理）
+let signatureUpdateHandler = null;
+
+/**
+ * 设置个签更新事件监听器
+ * 
+ * @description
+ * 监听 signature-data-changed 事件，当角色改签时自动更新显示
+ * 
+ * @param {string} contactId - 联系人ID
+ */
+function setupSignatureUpdateListener(contactId) {
+  // 移除旧的监听器（如果有）
+  if (signatureUpdateHandler) {
+    document.removeEventListener('signature-data-changed', signatureUpdateHandler);
+  }
+
+  // 创建新的监听器
+  signatureUpdateHandler = async (event) => {
+    const { targetType, contactId: changedContactId, signature } = event.detail;
+
+    // 检查是否匹配当前页面
+    if (targetType !== 'contact' || changedContactId !== contactId) {
+      return;
+    }
+
+    logger.debug('[ContactProfile] 检测到个签更新，刷新显示:', signature?.substring(0, 20));
+
+    // 查找个签行元素
+    const signatureRow = document.querySelector(`.contact-profile-signature-row[data-contact-id="${contactId}"]`);
+    if (!signatureRow) {
+      logger.warn('[ContactProfile] 未找到个签行元素');
+      return;
+    }
+
+    // 更新显示
+    const signatureText = signatureRow.querySelector('.contact-profile-signature-text');
+    if (signatureText) {
+      signatureText.textContent = signature || '';
+      logger.info('[ContactProfile] 个签显示已更新');
+    }
+  };
+
+  // 添加监听器
+  document.addEventListener('signature-data-changed', signatureUpdateHandler);
+
+  // 清理逻辑：使用 MutationObserver 监听页面被移除
+  const profilePage = document.querySelector('#page-contact-profile');
+  if (profilePage) {
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of mutation.removedNodes) {
+          if (node === profilePage || node.contains?.(profilePage)) {
+            logger.debug('[ContactProfile] 页面已关闭，移除事件监听器');
+            document.removeEventListener('signature-data-changed', signatureUpdateHandler);
+            signatureUpdateHandler = null;
+            observer.disconnect();
+            return;
+          }
+        }
+      }
+    });
+
+    // 监听父容器的子节点变化
+    const parent = profilePage.parentElement;
+    if (parent) {
+      observer.observe(parent, { childList: true, subtree: true });
+    }
+  }
 }
 

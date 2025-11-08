@@ -54,6 +54,9 @@ export async function renderPlanList(params) {
 
         fragment.appendChild(container);
 
+        // 4. 监听计划数据变化（实时刷新列表）
+        setupPlanDataListener(contactId);
+
         logger.info('[PlanListUI] 页面渲染完成');
         return fragment;
     } catch (error) {
@@ -139,6 +142,7 @@ async function createPlanListContainer(contactId) {
 
     // 进行中的计划
     const pendingPlans = getPendingPlans(contactId);
+    logger.debug('[PlanListUI.createPlanListContainer] 进行中计划数:', pendingPlans.length);
     const pendingList = document.createElement('div');
     pendingList.className = 'plan-list-pending';
 
@@ -146,12 +150,14 @@ async function createPlanListContainer(contactId) {
         pendingList.innerHTML = '<div class="plan-list-empty">暂无进行中的计划</div>';
     } else {
         pendingPlans.forEach(plan => {
+            logger.debug('[PlanListUI.createPlanListContainer] 渲染进行中计划:', plan.id, plan.title);
             pendingList.appendChild(createPlanItem(plan, contactId, 'pending'));
         });
     }
 
     // 已完成的计划
     const completedPlans = getCompletedPlans(contactId);
+    logger.debug('[PlanListUI.createPlanListContainer] 已完成计划数:', completedPlans.length);
     const completedList = document.createElement('div');
     completedList.className = 'plan-list-completed';
     completedList.style.display = 'none';
@@ -160,6 +166,7 @@ async function createPlanListContainer(contactId) {
         completedList.innerHTML = '<div class="plan-list-empty">暂无已完成的计划</div>';
     } else {
         completedPlans.forEach(plan => {
+            logger.debug('[PlanListUI.createPlanListContainer] 渲染已完成计划:', plan.id, plan.title);
             completedList.appendChild(createPlanItem(plan, contactId, 'completed'));
         });
     }
@@ -267,6 +274,72 @@ function handleBack() {
         import('../phone-main-ui.js').then(({ hidePage }) => {
             hidePage(overlayElement, 'plan-list');
         });
+    }
+}
+
+/**
+ * 设置计划数据变化监听器
+ * @param {string} contactId - 联系人ID
+ * 
+ * @description
+ * 监听计划数据变化事件，自动刷新列表
+ * 支持场景：
+ * - AI接受/拒绝计划后自动更新
+ * - 快照回滚后自动刷新
+ * - 手动删除计划后刷新
+ */
+function setupPlanDataListener(contactId) {
+    // 定义监听器函数（需要保存引用以便后续移除）
+    const handlePlanDataChange = async (event) => {
+        const { contactId: changedContactId } = event.detail;
+        
+        // 只处理当前联系人的数据变化
+        if (changedContactId !== contactId) {
+            return;
+        }
+
+        logger.debug('[PlanListUI] 检测到计划数据变化，刷新列表');
+
+        // 查找列表容器
+        const container = document.querySelector('.plan-list-page');
+        if (!container) {
+            logger.warn('[PlanListUI] 未找到列表容器，跳过刷新');
+            return;
+        }
+
+        // 重新渲染列表
+        const oldListContainer = container.querySelector('.plan-list-container');
+        if (oldListContainer) {
+            const newListContainer = await createPlanListContainer(contactId);
+            oldListContainer.replaceWith(newListContainer);
+            logger.info('[PlanListUI] 列表已刷新');
+        }
+    };
+
+    // 添加监听器
+    window.addEventListener('phone-plan-data-changed', handlePlanDataChange);
+
+    // 保存监听器引用到容器（用于清理）
+    const container = document.querySelector('.plan-list-page');
+    if (container) {
+        container._planDataListener = handlePlanDataChange;
+    }
+
+    logger.debug('[PlanListUI] 已设置计划数据监听器');
+}
+
+/**
+ * 清理计划数据监听器
+ * 
+ * @description
+ * 页面卸载时调用，移除事件监听器防止内存泄漏
+ */
+export function cleanupPlanListUI() {
+    const container = document.querySelector('.plan-list-page');
+    if (container && container._planDataListener) {
+        window.removeEventListener('phone-plan-data-changed', container._planDataListener);
+        delete container._planDataListener;
+        logger.debug('[PlanListUI] 已清理计划数据监听器');
     }
 }
 

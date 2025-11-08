@@ -394,6 +394,28 @@ function checkIfParamsChanged(pageElement, newParams, pageName) {
     return true;
   }
 
+  // 个签历史页需要检查 targetType 和 contactId
+  if (pageName === 'signature-history') {
+    const oldTargetType = pageElement.dataset.targetType;
+    const newTargetType = newParams.targetType;
+    const oldContactId = pageElement.dataset.contactId;
+    const newContactId = newParams.contactId;
+
+    // targetType 变化（用户 ↔ 角色）
+    if (oldTargetType !== newTargetType) {
+      logger.debug('[PhoneUI.checkIfParamsChanged] targetType变化:', oldTargetType, '→', newTargetType);
+      return true;
+    }
+
+    // contactId 变化（不同角色）
+    if (oldContactId && newContactId && oldContactId !== newContactId) {
+      logger.debug('[PhoneUI.checkIfParamsChanged] contactId变化:', oldContactId, '→', newContactId);
+      return true;
+    }
+
+    return false;
+  }
+
   // 从页面元素的dataset读取上次的参数
   const oldContactId = pageElement.dataset.contactId;
   const newContactId = newParams.contactId;
@@ -1145,6 +1167,25 @@ async function refreshPageContent(pageName, params = {}) {
       }
       break;
 
+    case 'signature-history':
+      // 刷新个签历史页内容
+      const signatureHistoryPage = /** @type {HTMLElement} */ (document.querySelector('#page-signature-history'));
+      if (signatureHistoryPage) {
+        const { renderSignatureHistory } = await import('./profile/signature-history-ui.js');
+        const newContent = await renderSignatureHistory(params);
+        signatureHistoryPage.innerHTML = '';
+        signatureHistoryPage.appendChild(newContent);
+        // 更新 dataset
+        signatureHistoryPage.dataset.targetType = params.targetType;
+        if (params.contactId) {
+          signatureHistoryPage.dataset.contactId = params.contactId;
+        } else {
+          delete signatureHistoryPage.dataset.contactId;
+        }
+        logger.debug('[PhoneUI] 个签历史页内容已刷新:', params);
+      }
+      break;
+
     case 'chat':
       // 聊天页使用独立ID（page-chat-{contactId}），每个角色一个DOM
       // 不需要刷新逻辑，因为切换角色时会创建新的DOM
@@ -1263,6 +1304,14 @@ export async function hidePage(overlayElement, pageName) {
               当时栈深度: '见上方日志',
               删除原因: '页面不在栈中'
             });
+
+            // 清理计划列表监听器（防止内存泄漏）
+            if (poppedPage && poppedPage.pageName === 'plan-list') {
+              import('./plans/plan-list-ui.js').then(({ cleanupPlanListUI }) => {
+                cleanupPlanListUI();
+              });
+            }
+
             currentPage.remove();
             logger.warn('[PhoneUI.hidePage] 页面DOM已删除 ← 如果误删，检查这里');
           }
@@ -1280,6 +1329,13 @@ export async function hidePage(overlayElement, pageName) {
         const shouldDeletePage = poppedPage
           && (poppedPage.pageName === 'chat' || poppedPage.pageName === 'transfer')
           && pageStack.findPageIndex(currentPage.id) < 0;
+
+        // 清理计划列表监听器（防止内存泄漏）
+        if (shouldDeletePage && poppedPage && poppedPage.pageName === 'plan-list') {
+          import('./plans/plan-list-ui.js').then(({ cleanupPlanListUI }) => {
+            cleanupPlanListUI();
+          });
+        }
 
         currentPage.classList.remove('active');
 
@@ -1642,9 +1698,31 @@ async function createPage(pageName, params = {}) {
 
       return helpCenterPage;
 
+    case 'signature-history':
+      // 动态导入个签历史页渲染函数
+      if (!params.targetType) {
+        logger.warn('[PhoneUI.createPage] 个签历史页缺少targetType参数');
+        return null;
+      }
+
+      const { renderSignatureHistory } = await import('./profile/signature-history-ui.js');
+      const signatureHistoryContent = await renderSignatureHistory(params);
+
+      // 创建页面容器
+      const signatureHistoryPage = document.createElement('div');
+      signatureHistoryPage.id = 'page-signature-history';
+      signatureHistoryPage.className = 'phone-page phone-page-scrollable';  // 标准布局
+      signatureHistoryPage.dataset.targetType = params.targetType;
+      if (params.contactId) {
+        signatureHistoryPage.dataset.contactId = params.contactId;
+      }
+      signatureHistoryPage.appendChild(signatureHistoryContent);
+
+      return signatureHistoryPage;
+
     case 'emoji-guide-detail':
       // 动态导入表情包详细说明页渲染函数
-      const { renderEmojiGuideDetail } = await import('./emojis/emoji-guide-detail-ui.js');
+      const { renderEmojiGuideDetail } = await import('./help/emoji-guide-detail-ui.js');
       const emojiGuideDetailContent = await renderEmojiGuideDetail();
 
       // 创建页面容器

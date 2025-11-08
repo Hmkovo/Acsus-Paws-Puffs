@@ -186,6 +186,30 @@ class PageStackManager {
   }
 
   /**
+   * 从栈中移除指定页面（不影响其他页面）
+   * 
+   * @description
+   * 用于删除聊天记录等场景，需要彻底移除某个页面的栈记录
+   * 
+   * @param {string} pageId - 实际DOM ID（如 'page-chat-tavern_xxx'）
+   * @returns {boolean} 是否成功移除
+   */
+  removePageById(pageId) {
+    const index = this.findPageIndex(pageId);
+
+    if (index === -1) {
+      logger.debug('[PageStack.removePageById] 页面不在栈中:', pageId);
+      return false;
+    }
+
+    // 从栈中移除该页面
+    const removed = this.stack.splice(index, 1)[0];
+    logger.info('[PageStack.removePageById] 已从栈中移除页面:', removed.pageName, '剩余栈深度:', this.stack.length);
+
+    return true;
+  }
+
+  /**
    * 调试：打印栈内容
    */
   debugPrintStack() {

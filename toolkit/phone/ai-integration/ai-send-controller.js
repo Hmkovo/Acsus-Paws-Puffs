@@ -465,7 +465,7 @@ export class PhoneAPI {
         }
       }
 
-      // 清空待发送消息
+      // 清空待发送消息（只清空消息，不清空个签操作，个签操作由用户发送新消息时清空）
       clearPendingMessages(contactId);
 
       // ✅ 触发生成完成事件

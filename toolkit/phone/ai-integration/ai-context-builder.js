@@ -16,6 +16,7 @@ import { loadContacts } from '../contacts/contact-list-data.js';
 import { loadChatHistory } from '../messages/message-chat-data.js';
 import { characters, chat, this_chid, saveSettingsDebounced, getRequestHeaders } from '../../../../../../../script.js';
 import { extension_settings } from '../../../../../../../scripts/extensions.js';
+import { power_user } from '../../../../../../../scripts/power-user.js';
 
 /**
  * 获取角色数据
@@ -247,6 +248,9 @@ export async function buildMessagesArray(contactId, allPendingMessages) {
       const chatResult = await buildAllChatHistoryInfo(triggeredContactIds, messageNumberMap, currentNumber);
       content = chatResult.content;
       currentNumber = chatResult.nextNumber;
+    } else if (item.id === 'signature-history') {
+      // 构建用户个签历史
+      content = await buildSignatureHistory();
     } else if (item.id === 'user-pending-ops') {
       // 构建用户待操作（传递映射表和当前编号）
       const pendingResult = await buildUserPendingOps(allPendingMessages, messageNumberMap, currentNumber);
@@ -255,6 +259,14 @@ export async function buildMessagesArray(contactId, allPendingMessages) {
     } else if (item.id === 'emoji-library') {
       // 表情包库：动态生成表情包列表 + 用户提示词
       content = await buildEmojiLibrary(item.content);
+    }
+
+    // ✅ 替换自定义占位符
+    if (typeof content === 'string' && content.includes('__AUTO_USER_PERSONA__')) {
+      // 获取用户设定描述
+      const personaDesc = power_user.persona_description || '';
+      content = content.replace(/__AUTO_USER_PERSONA__/g, personaDesc);
+      logger.debug('[ContextBuilder.buildMessagesArray] 已替换用户设定占位符');
     }
 
     // ✅ 变量替换由 SillyTavern 的 MacrosParser 自动处理
@@ -703,6 +715,52 @@ function formatQuotedMessageForAI(quotedMessage) {
 }
 
 /**
+ * 构建用户个签历史（用于[个签历史]）
+ * 
+ * @async
+ * @private
+ * @returns {Promise<string>} 个签历史内容
+ * 
+ * @description
+ * 格式：
+ * [用户个签历史]
+ * 2025-11-08 17:30 - 今天心情不错～
+ * 2025-11-07 20:15 - 明天见！
+ * 2025-11-06 15:00 - 忙碌的一天
+ * [/用户个签历史]
+ */
+async function buildSignatureHistory() {
+  try {
+    const { getUserSignatureTop3 } = await import('../profile/signature-data.js');
+    const { getUserDisplayName } = await import('../utils/contact-display-helper.js');
+
+    const userName = getUserDisplayName();
+    const history = await getUserSignatureTop3();
+
+    if (!history || history.length === 0) {
+      return ''; // 没有历史记录时返回空
+    }
+
+    let content = `[用户个签历史]\n`;
+
+    history.forEach(item => {
+      const date = new Date(item.timestamp * 1000);  // 秒级时间戳转毫秒级
+      const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      const timeStr = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+      content += `${dateStr} ${timeStr} - ${item.content}\n`;
+    });
+
+    content += `[/用户个签历史]`;
+
+    logger.debug('[ContextBuilder] 个签历史已构建，共', history.length, '条');
+    return content;
+  } catch (error) {
+    logger.error('[ContextBuilder] 构建个签历史失败:', error);
+    return '';
+  }
+}
+
+/**
  * 构建用户待操作内容（用于[{{user}}本轮操作]）
  * 
  * @private
@@ -864,6 +922,31 @@ async function buildUserPendingOps(pendingMessages, messageNumberMap, startNumbe
       const { updatePlanStoryGenerated } = await import('../plans/plan-data.js');
       updatePlanStoryGenerated(contactId, plan.id, true);
     }
+  }
+
+  // 添加个签操作记录
+  const { getSignatureActions } = await import('./pending-operations.js');
+  const signatureActions = getSignatureActions();
+
+  if (signatureActions.length > 0) {
+    content += `\n[其他操作]\n`;
+
+    for (const action of signatureActions) {
+      const time = formatTimeForAI(action.time, null, false);
+
+      if (action.actionType === 'update') {
+        // 用户修改自己的个签
+        content += `${time}${userName}修改了个性签名：${action.signature}\n`;
+      } else if (action.actionType === 'like') {
+        // 用户点赞角色的个签
+        content += `${time}${userName}点赞了${action.contactName}的个性签名\n`;
+      } else if (action.actionType === 'comment') {
+        // 用户评论角色的个签
+        content += `${time}${userName}评论了${action.contactName}的个性签名：${action.comment}\n`;
+      }
+    }
+
+    content += `[/其他操作]\n`;
   }
 
   content += `[/{{user}}本轮操作]`;

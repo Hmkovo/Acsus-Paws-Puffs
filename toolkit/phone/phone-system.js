@@ -91,6 +91,17 @@ export class PhoneSystem {
       await registerPhoneMacros();
       logger.info('[PhoneSystem] 已注册酒馆宏');
 
+      // 注册回退处理器（用于重roll时自动回退各模块数据）
+      const { initPlanRollbackHandler } = await import('./plans/plan-rollback-handler.js');
+      const { initSignatureRollbackHandler } = await import('./profile/signature-rollback-handler.js');
+      const { initTransferRollbackHandler } = await import('./transfers/transfer-rollback-handler.js');
+      const { initPlanStoryRollbackHandler } = await import('./plans/plan-story-rollback-handler.js');
+      initPlanRollbackHandler();
+      initSignatureRollbackHandler();
+      initTransferRollbackHandler();
+      initPlanStoryRollbackHandler();
+      logger.info('[PhoneSystem] 已注册回退处理器（约定计划、个签、转账、计划剧情）');
+
       this.initialized = true;
       logger.info('[PhoneSystem] 初始化完成');
     } catch (error) {

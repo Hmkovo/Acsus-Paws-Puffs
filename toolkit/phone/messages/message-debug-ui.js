@@ -44,11 +44,13 @@ export function clearDebugState(contactId) {
  * @param {Object} snapshotData - 快照数据
  * @param {number} snapshotData.messageCount - 发送前的消息数量
  * @param {Object} [snapshotData.allPendingMessages] - 所有待发送消息（多联系人）格式：{ contactId: [messages] }
+ * @param {Array} [snapshotData.signatureActions] - 个签操作记录（用于重roll时恢复）
  * 
  * @description
  * 保存完整的发送前状态，用于重roll时恢复：
  * - messageCount：聊天记录数量（用于回退）
  * - allPendingMessages：所有待发送消息（包括多个联系人，用于重新构建上下文）
+ * - signatureActions：个签操作记录（点赞、评论、修改个签）
  */
 export function saveSnapshot(contactId, snapshotData) {
   let state = debugStates.get(contactId);
@@ -63,7 +65,8 @@ export function saveSnapshot(contactId, snapshotData) {
 
   state.snapshot = {
     messageCount: snapshotData.messageCount || snapshotData, // 兼容旧版本：如果传数字则作为 messageCount
-    allPendingMessages: snapshotData.allPendingMessages || null
+    allPendingMessages: snapshotData.allPendingMessages || null,
+    signatureActions: snapshotData.signatureActions || []
   };
 
   logger.debug('[Debug] 保存快照:', contactId, '消息数量:', state.snapshot.messageCount, '待发送联系人数:',
@@ -626,16 +629,24 @@ async function handleReroll(popup, contactId) {
     await rollbackToSnapshot(contactId);
     logger.info('🎲 [重roll] 步骤1完成：回退成功');
 
-    // ✅ 获取快照中的多联系人消息（用于重新构建上下文）
+    // ✅ 获取快照中的多联系人消息和个签操作（用于重新构建上下文）
     const state = debugStates.get(contactId);
     const snapshot = state?.snapshot;
     const allPendingMessages = snapshot?.allPendingMessages || null;
+    const signatureActions = snapshot?.signatureActions || [];
 
     if (allPendingMessages) {
       const contactCount = Object.keys(allPendingMessages).length;
       logger.info('🎲 [重roll] 从快照恢复多联系人消息，共', contactCount, '个联系人');
     } else {
       logger.debug('🎲 [重roll] 快照中没有多联系人消息（可能是旧版本快照）');
+    }
+
+    // ✅ 恢复个签操作到待处理队列（重roll时保留个签操作）
+    if (signatureActions.length > 0) {
+      const { restoreSignatureActions } = await import('../ai-integration/pending-operations.js');
+      restoreSignatureActions(signatureActions);
+      logger.info('🎲 [重roll] 从快照恢复个签操作，共', signatureActions.length, '条');
     }
 
     logger.info('🎲 [重roll] 步骤2：重新调用API生成消息');
@@ -664,12 +675,16 @@ async function handleReroll(popup, contactId) {
           }
         }
       },
-      () => {
+      async () => {
         // 完成
         logger.info('🎲 [重roll] 步骤2完成：AI生成完成');
         logger.info('🎲 [重roll] ========== 重roll成功 ==========');
         rerollBtn.disabled = false;
         rerollBtn.textContent = originalText;
+
+        // ✅ 清空个签操作记录（重roll完成后，为下一轮对话做准备）
+        const { clearSignatureActions } = await import('../ai-integration/pending-operations.js');
+        clearSignatureActions();
 
         // ✅ 触发事件：通知聊天页面恢复按钮状态
         document.dispatchEvent(new CustomEvent('phone-debug-reroll-end', {
@@ -964,77 +979,17 @@ async function rollbackToSnapshot(contactId) {
   }
 
   // ========================================
-  // 步骤4：回退约定计划状态（防止roll导致数据不一致）
+  // 步骤4：执行所有注册的回退处理器（约定计划、个签、空间消息等）
   // ========================================
-  logger.info('🔄 [计划回退] 开始回退约定计划状态');
+  logger.info('🔄 [统一回退] 开始执行所有回退处理器');
 
   try {
-    const { getPlanByMessageId, updatePlanResult, updatePlanStatus } = await import('../plans/plan-data.js');
+    const { executeRollbackHandlers } = await import('./message-rollback-manager.js');
+    const result = await executeRollbackHandlers(contactId, afterAI);
 
-    let rollbackCount = 0;
-
-    // 遍历快照后删除的AI消息，查找约定计划相关消息
-    for (const aiMsg of afterAI) {
-      // 检查消息内容是否包含约定计划标记
-      const content = aiMsg.content || '';
-
-      // 如果是约定计划响应消息（char接受/拒绝）
-      if (content.includes('[约定计划]') && (content.includes('接受') || content.includes('拒绝'))) {
-        // 尝试找到对应的计划（通过原始计划消息ID）
-        // 注意：这里需要找到原始的user发起的计划消息
-
-        // 遍历所有计划，找到状态被修改的
-        const { getPlans } = await import('../plans/plan-data.js');
-        const allPlans = getPlans(contactId);
-
-        for (const plan of allPlans) {
-          // 如果计划有骰子结果（说明被处理过了），且在快照后
-          if (plan.diceResult && plan.status === 'completed') {
-            // 回退计划状态
-            logger.debug('🔄 [计划回退] 发现被处理的计划:', plan.title, 'ID:', plan.id);
-
-            // 清除骰子结果，状态改回pending
-            updatePlanResult(contactId, plan.id, {
-              diceResult: null,
-              outcome: null,
-              story: null,
-              options: {}
-            });
-            updatePlanStatus(contactId, plan.id, 'pending');
-
-            rollbackCount++;
-            logger.info('🔄 [计划回退] 已回退计划:', plan.title);
-          }
-        }
-      }
-
-      // 如果是约定计划原始消息（user发起），且状态被修改过
-      if (content.startsWith('[约定计划]') && !content.includes('接受') && !content.includes('拒绝')) {
-        const plan = getPlanByMessageId(contactId, aiMsg.id);
-        if (plan && (plan.status === 'completed' || plan.status === 'rejected')) {
-          // 回退状态
-          updatePlanStatus(contactId, plan.id, 'pending');
-          if (plan.diceResult) {
-            updatePlanResult(contactId, plan.id, {
-              diceResult: null,
-              outcome: null,
-              story: null,
-              options: {}
-            });
-          }
-          rollbackCount++;
-          logger.info('🔄 [计划回退] 已回退计划:', plan.title);
-        }
-      }
-    }
-
-    if (rollbackCount > 0) {
-      logger.info('🔄 [计划回退] 共回退', rollbackCount, '个计划状态');
-    } else {
-      logger.debug('🔄 [计划回退] 没有需要回退的计划');
-    }
+    logger.info('🔄 [统一回退] 回退处理器执行完成:', result.success, '成功', result.failed, '失败', '共', result.total, '个');
   } catch (error) {
-    logger.error('🔄 [计划回退] 回退失败:', error);
+    logger.error('🔄 [统一回退] 执行回退处理器失败:', error);
     // 不影响主流程，继续执行
   }
 

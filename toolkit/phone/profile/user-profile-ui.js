@@ -162,7 +162,8 @@ function createMenuList() {
     { icon: 'fa-file', label: '文件', handler: null },  // 占位
     { icon: 'fa-wallet', label: '钱包', handler: () => handleOpenWallet() },  // 已实现
     { icon: 'fa-palette', label: '个性装扮', handler: null },  // 占位
-    { icon: 'fa-circle-info', label: '说明+教程', handler: () => handleOpenHelpCenter() }  // 已实现
+    { icon: 'fa-pen', label: '历史个签', handler: () => handleOpenSignatureHistory() },  // 已实现
+    { icon: 'fa-circle-info', label: '甜品指南', handler: () => handleOpenHelpCenter() }  // 已实现
   ];
 
   menuItems.forEach(item => {
@@ -281,6 +282,7 @@ async function handleEditSignature() {
       {
         multiline: true,
         placeholder: '写下你的个性签名...',
+        maxLength: 80,
         okButton: '确定',
         cancelButton: '取消'
       }
@@ -291,18 +293,41 @@ async function handleEditSignature() {
       return;
     }
 
-    const newSignature = result;
+    const newSignature = result.trim();
 
-    // 保存新签名
-    userConfig.signature = newSignature;
-    await saveUserConfig(userConfig);
+    // 检查字数限制（80字符）
+    if (newSignature.length > 80) {
+      showWarningToast('个性签名最多80个字符');
+      return;
+    }
 
-    // 局部更新DOM
-    updateSignatureDisplay(newSignature);
+    // 使用个签数据管理模块保存（会自动创建历史记录）
+    const { updateUserSignature } = await import('./signature-data.js');
+    const historyItem = await updateUserSignature(newSignature);
 
-    logger.info('[UserProfile] 个性签名已更新:', newSignature);
+    if (historyItem) {
+      // 同时更新 userConfig（向后兼容）
+      userConfig.signature = newSignature;
+      await saveUserConfig(userConfig);
+
+      // 局部更新DOM
+      updateSignatureDisplay(newSignature);
+
+      // 记录到"本轮操作"
+      const { addSignatureAction } = await import('../ai-integration/pending-operations.js');
+      addSignatureAction('update', {
+        signature: newSignature,
+        time: Math.floor(Date.now() / 1000)
+      });
+
+      showSuccessToast('个性签名已更新');
+      logger.info('[UserProfile] 个性签名已更新并记录到本轮操作:', newSignature);
+    } else {
+      showErrorToast('保存失败，请重试');
+    }
   } catch (error) {
     logger.error('[UserProfile] 编辑个性签名失败:', error);
+    showErrorToast('编辑失败，请重试');
   }
 }
 
@@ -822,6 +847,21 @@ async function handleOpenHelpCenter() {
   if (overlayElement) {
     const { showPage } = await import('../phone-main-ui.js');
     await showPage(overlayElement, 'help-center');
+  }
+}
+
+/**
+ * 处理打开个签历史页面
+ * 
+ * @async
+ */
+async function handleOpenSignatureHistory() {
+  logger.info('[UserProfile] 打开历史个签页面');
+
+  const overlayElement = document.querySelector('.phone-overlay');
+  if (overlayElement) {
+    const { showPage } = await import('../phone-main-ui.js');
+    await showPage(overlayElement, 'signature-history', { targetType: 'user' });
   }
 }
 

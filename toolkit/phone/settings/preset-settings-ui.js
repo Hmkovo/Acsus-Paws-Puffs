@@ -727,6 +727,17 @@ function getDefaultPresets() {
         order: 3
       },
       {
+        id: 'signature-history',
+        type: 'fixed',
+        label: '个签历史 - 用户个性签名',
+        role: 'system',
+        content: '__AUTO_SIGNATURE_HISTORY__',  // 自动获取用户个签历史（最近3条）
+        enabled: true,
+        editable: false,  // 只读，自动获取
+        deletable: false,
+        order: 4
+      },
+      {
         id: 'char-info',
         type: 'fixed',
         label: '角色档案 - 人设、历史记录、线下剧情等',
@@ -736,7 +747,7 @@ function getDefaultPresets() {
         editable: false,  // 不可编辑，点击显示Toast
         deletable: false,
         hasSubSettings: true,  // 有子设置（在角色聊天设置中配置）
-        order: 4
+        order: 5
       },
       {
         id: 'custom-1761820947062',
@@ -747,7 +758,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 5
+        order: 6
       },
       {
         id: 'phone-records',
@@ -758,7 +769,7 @@ function getDefaultPresets() {
         enabled: false,  // ✅ 默认禁用
         editable: true,
         deletable: false,
-        order: 6
+        order: 7
       },
       {
         id: 'emoji-library',
@@ -769,7 +780,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: false,
-        order: 7
+        order: 8
       },
       {
         id: 'custom-1762340602847',
@@ -780,7 +791,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 8
+        order: 9
       },
       {
         id: 'custom-1762338335057',
@@ -791,7 +802,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 9
+        order: 10
       },
       {
         id: 'custom-1761727717853',
@@ -802,7 +813,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 10
+        order: 11
       },
       {
         id: 'custom-1762528914691',
@@ -813,7 +824,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 11
+        order: 12
       },
       {
         id: 'custom-1762346128860',
@@ -824,7 +835,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 12
+        order: 13
       },
       {
         id: 'custom-1761743479648',
@@ -835,7 +846,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 13
+        order: 14
       },
       {
         id: 'custom-1761563217155',
@@ -846,7 +857,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 14
+        order: 15
       },
       {
         id: 'custom-1761560957639',
@@ -857,7 +868,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 15
+        order: 16
       },
       {
         id: 'chat-history',
@@ -868,7 +879,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: false,  // 只读，自动获取
         deletable: false,
-        order: 16
+        order: 17
       },
       {
         id: 'user-pending-ops',
@@ -879,7 +890,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: false,  // 不可编辑，内容由系统生成
         deletable: false,
-        order: 17
+        order: 18
       },
       {
         id: 'custom-1761564289893',
@@ -890,7 +901,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 18
+        order: 19
       },
       {
         id: 'custom-1761735545010',
@@ -901,7 +912,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 19
+        order: 20
       },
       {
         id: 'format-req',
@@ -912,7 +923,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: false,
-        order: 20
+        order: 21
       },
       {
         id: 'footer-jb',
@@ -923,7 +934,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: false,
-        order: 21
+        order: 22
       }
     ]
   };

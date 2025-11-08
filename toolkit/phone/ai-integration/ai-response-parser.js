@@ -488,7 +488,32 @@ function parseMessageBubble(bubble, roleName) {
     }
   }
 
-  // 6. 红包消息：[红包]金额（支持多种格式）
+  // 6. 个性签名更新消息：[改个签]新个签内容
+  const signatureMatch = bubble.match(/^\[改个签\](.+)$/);
+  if (signatureMatch) {
+    const newSignature = signatureMatch[1].trim();
+
+    // 检查字数限制（80字符）
+    if (newSignature.length > 80) {
+      logger.warn('[ResponseParser] 个签超过80字符限制，截断:', newSignature.length);
+      return {
+        role: roleName,
+        sender: 'contact',
+        type: 'text',
+        content: bubble  // 降级为普通文本
+      };
+    }
+
+    logger.debug('[ResponseParser] 个签更新消息:', newSignature.substring(0, 20));
+    return {
+      role: roleName,
+      sender: 'contact',
+      type: 'text',
+      content: `[改个签]${newSignature}`  // 保持原格式，由渲染器处理
+    };
+  }
+
+  // 7. 红包消息：[红包]金额（支持多种格式）
   // 支持格式：[红包]100 / [红包]¥100 / [红包]88.88
   const redpacketMatch = bubble.match(/^\[红包\]\s*(.+)$/);
   if (redpacketMatch) {

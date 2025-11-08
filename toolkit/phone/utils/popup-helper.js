@@ -25,12 +25,14 @@ import logger from '../../../logger.js';
  * @param {string} [options.okButton='保存'] - 确定按钮文字
  * @param {string} [options.cancelButton='取消'] - 取消按钮文字
  * @param {number} [options.maxLength=500] - 最大字符数
+ * @param {string} [options.hint=''] - 提示信息（显示在输入框上方）
  * @returns {Promise<string|null>} 用户输入（取消返回 null）
  * 
  * @example
  * const remark = await showInputPopup('设置备注', contact.remark, { 
  *   placeholder: '请输入备注',
- *   maxLength: 50
+ *   maxLength: 50,
+ *   hint: '这是一个小提示'
  * });
  */
 export async function showInputPopup(title, defaultValue = '', options = {}) {
@@ -39,7 +41,8 @@ export async function showInputPopup(title, defaultValue = '', options = {}) {
     placeholder = '',
     okButton = '保存',
     cancelButton = '取消',
-    maxLength = 500
+    maxLength = 500,
+    hint = ''
   } = options;
 
   logger.debug('[PopupHelper.showInputPopup] 显示输入弹窗:', title);
@@ -50,6 +53,8 @@ export async function showInputPopup(title, defaultValue = '', options = {}) {
       ? `<textarea class="phone-popup-input" placeholder="${placeholder}" maxlength="${maxLength}" rows="4">${defaultValue}</textarea>`
       : `<input type="text" class="phone-popup-input" placeholder="${placeholder}" maxlength="${maxLength}" value="${defaultValue}">`;
 
+    const hintHTML = hint ? `<div class="phone-popup-hint">${hint}</div>` : '';
+
     const popupHTML = `
             <div class="phone-popup">
                 <div class="phone-popup-header">
@@ -57,6 +62,7 @@ export async function showInputPopup(title, defaultValue = '', options = {}) {
                     <button class="phone-popup-close" aria-label="关闭"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div class="phone-popup-content">
+                    ${hintHTML}
                     ${inputHTML}
                 </div>
                 <div class="phone-popup-footer">

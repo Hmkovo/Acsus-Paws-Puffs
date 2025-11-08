@@ -74,6 +74,25 @@
   box-sizing: border-box;
 }
 
+/* 手机容器内所有滚动条的全局样式（不影响酒馆其他部分） */
+.phone-container *::-webkit-scrollbar {
+  width: 0.25em;
+  height: 0.25em;
+}
+
+.phone-container *::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 0.125em;
+}
+
+.phone-container *::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.phone-container *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 .phone-container {
   font-size: 16px;
   color: var(--phone-text-primary);
@@ -1769,16 +1788,6 @@
   transform: scale(0.95);
 }
 
-/* 复用滚动条样式 */
-.chat-emoji-grid::-webkit-scrollbar {
-  width: 0.25em;
-}
-
-.chat-emoji-grid::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 0.125em;
-}
-
 /* ================================
    加号菜单面板（chat-plus-panel）
    ================================ */
@@ -2686,6 +2695,163 @@
 }
 
 .emoji-guide-warning i {
+  color: var(--phone-red, #ff4d4f);
+  flex-shrink: 0;
+  margin-top: 0.125em;
+}
+
+/* ================================
+   聊天记录删除说明页样式（chat-delete-guide-*）
+   ================================ */
+
+.chat-delete-guide-wrapper {
+  background: var(--phone-bg-main);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+/* 顶部栏（固定，不滚动） */
+.chat-delete-guide-topbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75em;
+  padding: 0;
+  background: var(--phone-bg-white);
+  border-bottom: 1px solid var(--phone-border);
+  flex-shrink: 0;
+}
+
+/* 返回按钮（绝对定位到左侧） */
+.chat-delete-guide-back-btn {
+  position: absolute;
+  left: 0.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--phone-text-primary);
+  font-size: 1.1em;
+  cursor: pointer;
+  padding: 0;
+  min-width: 2.5em;
+}
+
+.chat-delete-guide-back-btn:hover {
+  opacity: 0.7;
+}
+
+/* 标题（自然居中） */
+.chat-delete-guide-title {
+  flex: 1;
+  text-align: center;
+  font-size: 1.0625em;
+  color: var(--phone-text-primary);
+}
+
+/* 内容区（可滚动区域） */
+.chat-delete-guide-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1em;
+  background: var(--phone-bg-main);
+}
+
+/* 说明章节（复用 emoji-guide 的样式） */
+.chat-guide-section {
+  background: var(--phone-bg-white);
+  border-radius: 0.5em;
+  padding: 1em;
+  margin-bottom: 1em;
+}
+
+.chat-guide-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 1.125em;
+  color: var(--phone-text-primary);
+  margin-bottom: 0.75em;
+}
+
+.chat-guide-section-title i {
+  color: var(--phone-primary);
+}
+
+.chat-guide-section-content {
+  font-size: 0.875em;
+  line-height: 1.6;
+  color: var(--phone-text-primary);
+}
+
+.chat-guide-section-content h4 {
+  font-size: 1em;
+  margin: 1em 0 0.5em 0;
+  color: var(--phone-text-primary);
+}
+
+.chat-guide-section-content h4:first-child {
+  margin-top: 0;
+}
+
+.chat-guide-section-content p {
+  margin: 0.5em 0;
+}
+
+.chat-guide-section-content ol,
+.chat-guide-section-content ul {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+
+.chat-guide-section-content li {
+  margin: 0.25em 0;
+}
+
+.chat-guide-section-content code {
+  background: var(--phone-bg-main);
+  padding: 0.125em 0.25em;
+  border-radius: 0.25em;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.875em;
+  color: var(--phone-primary);
+}
+
+/* 提示框样式 */
+.chat-guide-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+  padding: 0.75em;
+  background: rgba(18, 150, 219, 0.1);
+  border-left: 3px solid var(--phone-primary);
+  border-radius: 0.25em;
+  margin: 0.75em 0;
+}
+
+.chat-guide-note i {
+  color: var(--phone-primary);
+  flex-shrink: 0;
+  margin-top: 0.125em;
+}
+
+.chat-guide-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+  padding: 0.75em;
+  background: rgba(255, 77, 79, 0.1);
+  border-left: 3px solid var(--phone-red, #ff4d4f);
+  border-radius: 0.25em;
+  margin: 0.75em 0;
+}
+
+.chat-guide-warning i {
   color: var(--phone-red, #ff4d4f);
   flex-shrink: 0;
   margin-top: 0.125em;
@@ -5159,65 +5325,6 @@
 }
 
 /* ================================
-   全局滚动条美化（统一样式）
-   ================================ */
-
-/* 所有可滚动区域使用统一的滚动条样式 */
-.phone-content::-webkit-scrollbar,
-.chat-content::-webkit-scrollbar,
-.user-content::-webkit-scrollbar,
-.newfriend-content::-webkit-scrollbar,
-.groupnotify-content::-webkit-scrollbar,
-.settings-content::-webkit-scrollbar,
-.api-settings-content::-webkit-scrollbar,
-.moments-feed-content::-webkit-scrollbar,
-.chat-msg-bubble-image-no-url::-webkit-scrollbar,
-.chat-msg-video-placeholder-text::-webkit-scrollbar,
-.worldbook-selector-list::-webkit-scrollbar,
-.chat-settings-content::-webkit-scrollbar,
-.char-prompt-content::-webkit-scrollbar,
-.msg-send-custom-list::-webkit-scrollbar,
-.chat-bg-settings-content::-webkit-scrollbar,
-.debug-textarea::-webkit-scrollbar,
-#char-prompt-edit-content::-webkit-scrollbar,
-#preset-edit-content::-webkit-scrollbar,
-.wallet-bill-section::-webkit-scrollbar,
-.transfer-form::-webkit-scrollbar,
-.help-center-content::-webkit-scrollbar,
-.emoji-guide-detail-content::-webkit-scrollbar {
-  width: 0.25em;
-  /* 4px 细滚动条 */
-}
-
-.phone-content::-webkit-scrollbar-thumb,
-.chat-content::-webkit-scrollbar-thumb,
-.user-content::-webkit-scrollbar-thumb,
-.newfriend-content::-webkit-scrollbar-thumb,
-.groupnotify-content::-webkit-scrollbar-thumb,
-.settings-content::-webkit-scrollbar-thumb,
-.api-settings-content::-webkit-scrollbar-thumb,
-.moments-feed-content::-webkit-scrollbar-thumb,
-.chat-msg-bubble-image-no-url::-webkit-scrollbar-thumb,
-.chat-msg-video-placeholder-text::-webkit-scrollbar-thumb,
-.worldbook-selector-list::-webkit-scrollbar-thumb,
-.chat-settings-content::-webkit-scrollbar-thumb,
-.char-prompt-content::-webkit-scrollbar-thumb,
-.msg-send-custom-list::-webkit-scrollbar-thumb,
-.chat-bg-settings-content::-webkit-scrollbar-thumb,
-.debug-textarea::-webkit-scrollbar-thumb,
-#char-prompt-edit-content::-webkit-scrollbar-thumb,
-#preset-edit-content::-webkit-scrollbar-thumb,
-.wallet-bill-section::-webkit-scrollbar-thumb,
-.transfer-form::-webkit-scrollbar-thumb,
-.help-center-content::-webkit-scrollbar-thumb,
-.emoji-guide-detail-content::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
-  /* 半透明黑色 */
-  border-radius: 0.125em;
-  /* 圆角 */
-}
-
-/* ================================
    工具类
    ================================ */
 
@@ -5440,17 +5547,6 @@
 
 .group-manage-item-drag:active {
   cursor: grabbing;
-}
-
-/* 分组管理页面滚动条 */
-.group-manage-content::-webkit-scrollbar {
-  width: 0.25em;
-  /* 4px */
-}
-
-.group-manage-content::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 0.125em;
 }
 
 /* ================================
@@ -5937,16 +6033,6 @@
   background: var(--phone-primary-light);
 }
 
-/* 背景网格滚动条 */
-.contact-bg-picker-grid::-webkit-scrollbar {
-  width: 0.25em;
-}
-
-.contact-bg-picker-grid::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 0.125em;
-}
-
 /* 移动端适配 */
 @media (max-width: 768px) {
   .contact-bg-picker {
@@ -6208,11 +6294,18 @@
   transform: scale(0.9);
   opacity: 0;
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+  /* 统一弹窗内部默认字体颜色 */
+  color: var(--phone-popup-text-main);
 }
 
 .phone-popup-overlay.show .phone-popup {
   transform: scale(1);
   opacity: 1;
+}
+
+/* 弹窗内所有文本元素默认继承弹窗颜色（除非特别指定） */
+.phone-popup *:not(.phone-popup-ok):not(.phone-popup-message):not(.phone-popup-hint):not([style*="color"]) {
+  color: inherit;
 }
 
 /* 弹窗头部 */
@@ -6228,7 +6321,7 @@
 .phone-popup-header h3 {
   margin: 0;
   font-size: 1.125em;
-  color: var(--phone-text-primary);
+  /* 继承 .phone-popup 的默认颜色 */
 }
 
 .phone-popup-close {
@@ -6237,7 +6330,7 @@
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid var(--phone-border);
-  color: var(--phone-text-primary);
+  /* 继承 .phone-popup 的默认颜色 */
   font-size: 1em;
   cursor: pointer;
   transition: background 0.2s;
@@ -6258,9 +6351,9 @@
   padding: 0.5em;
 }
 
-/* 弹窗中的 label 样式（统一文字颜色） */
+/* 弹窗中的 label 样式（继承弹窗默认颜色） */
 .phone-popup label {
-  color: var(--phone-popup-text-main);
+  /* 继承 .phone-popup 的默认颜色 */
 }
 
 /* 弹窗中的所有 textarea 和 input 统一样式 */
@@ -6280,10 +6373,8 @@
   border: 1px solid var(--phone-border);
   border-radius: 0.5em;
   font-size: 1em;
-  color: var(--phone-popup-text-main);
-  /* 弹窗文字色 */
+  /* 继承 .phone-popup 的默认颜色 */
   background: var(--phone-popup-bg);
-  /* 弹窗背景色 */
   box-sizing: border-box;
   transition: border-color 0.2s;
   font-family: inherit;
@@ -6307,6 +6398,18 @@
   line-height: 1.6;
 }
 
+/* 小提示样式（显示在输入框上方） */
+.phone-popup-hint {
+  margin: 0 0 0.75em 0;
+  padding: 0.5em 0.75em;
+  font-size: 0.875em;
+  color: var(--phone-text-secondary);
+  background: var(--phone-bg-main);
+  border-left: 3px solid var(--phone-primary);
+  border-radius: 0.25em;
+  line-height: 1.5;
+}
+
 /* 弹窗底部按钮区 */
 .phone-popup-footer {
   display: flex;
@@ -6324,7 +6427,7 @@
   border: 1px solid var(--phone-border);
   border-radius: 0.5em;
   background: var(--phone-bg-white);
-  color: var(--phone-text-primary);
+  /* 继承 .phone-popup 的默认颜色 */
   font-size: 0.875em;
   cursor: pointer;
   transition: all 0.2s;
@@ -6351,16 +6454,6 @@
 
 .phone-popup-ok.danger:hover {
   background: #fef0f0;
-}
-
-/* 内容区滚动条 */
-.phone-popup-content::-webkit-scrollbar {
-  width: 0.25em;
-}
-
-.phone-popup-content::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 0.125em;
 }
 
 /* 移动端适配 */
@@ -9867,16 +9960,6 @@
   margin: 0;
 }
 
-/* 滚动条 */
-.favorites-list-content::-webkit-scrollbar {
-  width: 0.25em;
-}
-
-.favorites-list-content::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 0.125em;
-}
-
 /* ========================================
    [END] 收藏列表页样式
    ======================================== */
@@ -10074,16 +10157,456 @@
   margin: 0;
 }
 
-/* 滚动条 */
-.favorites-picker-list::-webkit-scrollbar {
-  width: 0.25em;
+/* ========================================
+   [END] 收藏选择器样式
+   ======================================== */
+
+/* ========================================
+   个性签名功能样式
+   ======================================== */
+
+/* === 1. 角色个人页 - 个性签名行 === */
+
+.contact-profile-signature-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.75em 0;
+  margin-bottom: 0.5em;
+  cursor: pointer;
 }
 
-.favorites-picker-list::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 0.125em;
+.contact-profile-signature-row .contact-profile-signature-text {
+  flex: 1;
+  font-size: 0.9375em;
+  color: var(--phone-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.contact-profile-signature-row .fa-chevron-right {
+  color: var(--phone-text-secondary);
+  font-size: 0.875em;
+}
+
+/* === 2. 个签更新消息卡片 (聊天页) === */
+
+.chat-msg-signature-update {
+  display: flex;
+  justify-content: center;
+  /* 卡片在聊天区域居中 */
+  padding: 0 1em;
+}
+
+.signature-update-card {
+  width: 75%;
+  max-width: 22em;
+  background: var(--phone-bg-white);
+  border-radius: 0.5em;
+  overflow: hidden;
+  box-shadow: 0 0.125em 0.375em rgba(0, 0, 0, 0.08);
+  margin: 0.5em 0;
+  padding: 1em;
+}
+
+.signature-update-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  /* 左对齐 */
+  gap: 0.625em;
+  margin-bottom: 0.75em;
+}
+
+.signature-update-avatar {
+  width: 1.25em;
+  /* 缩小到原来的二分之一 */
+  height: 1.25em;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.signature-update-title {
+  font-size: 0.875em;
+  color: var(--phone-text-secondary);
+}
+
+.signature-update-text {
+  font-size: 0.92em;
+  line-height: 1.5;
+  color: var(--phone-text-primary);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  text-align: left;
+  /* 左对齐 */
+}
+
+/* === 3. 个签历史页面样式 === */
+
+.signature-history-page {
+  background: var(--phone-bg-main);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.signature-history-topbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75em;
+  padding: 0;
+  background: var(--phone-bg-white);
+  border-bottom: 1px solid var(--phone-border);
+  flex-shrink: 0;
+}
+
+.signature-history-back-btn,
+.signature-history-settings-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--phone-text-primary);
+  font-size: 1.1em;
+  cursor: pointer;
+  padding: 0;
+  min-width: 2.5em;
+}
+
+.signature-history-back-btn {
+  position: absolute;
+  left: 0.5em;
+}
+
+.signature-history-settings-btn {
+  position: absolute;
+  right: 0.5em;
+}
+
+.signature-history-back-btn:hover,
+.signature-history-settings-btn:hover {
+  opacity: 0.7;
+}
+
+.signature-history-title {
+  flex: 1;
+  text-align: center;
+  font-size: 1.0625em;
+  font-weight: 500;
+  color: var(--phone-text-primary);
+}
+
+.signature-history-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1em;
+}
+
+/* 当前个签卡片 */
+.signature-current-card {
+  background: linear-gradient(135deg, var(--phone-primary-light), #f0f9ff);
+  border-radius: 0.75em;
+  padding: 1.25em;
+  margin-bottom: 1.5em;
+  box-shadow: 0 0.125em 0.5em rgba(0, 153, 255, 0.1);
+}
+
+.signature-current-label {
+  font-size: 0.75em;
+  color: var(--phone-primary-dark);
+  font-weight: 600;
+  margin-bottom: 0.5em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.signature-current-text {
+  font-size: 1.125em;
+  line-height: 1.6;
+  color: var(--phone-text-primary);
+  font-weight: 500;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* 历史列表 */
+.signature-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75em;
+}
+
+.signature-history-list-header {
+  padding: 0.75em 1em;
+  background: var(--phone-bg-white);
+  font-size: 0.875em;
+  color: var(--phone-text-secondary);
+  font-weight: 500;
+  border-radius: 0.75em;
+}
+
+/* 每个个签独立白色框 */
+.signature-history-item {
+  background: var(--phone-bg-white);
+  border-radius: 0.75em;
+  padding: 1em;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.signature-history-item:active {
+  background: var(--phone-bg-main);
+}
+
+.signature-history-item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+.signature-history-item-text {
+  font-size: 0.9375em;
+  line-height: 1.5;
+  color: var(--phone-text-primary);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  padding-right: 6em;
+  /* 为右下角时间留空间 */
+}
+
+.signature-history-item-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.signature-history-item-time {
+  position: absolute;
+  bottom: 1em;
+  right: 1em;
+  font-size: 0.75em;
+  color: var(--phone-text-secondary);
+  text-align: right;
+}
+
+.signature-history-item-stats {
+  display: flex;
+  gap: 1em;
+  font-size: 0.75em;
+  color: var(--phone-text-secondary);
+  align-items: center;
+  margin-top: 0.5em;
+}
+
+.signature-history-item-likes,
+.signature-history-item-comments {
+  display: flex;
+  align-items: center;
+  gap: 0.25em;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.signature-history-item-likes:hover,
+.signature-history-item-comments:hover {
+  color: var(--phone-primary);
+}
+
+.signature-history-item-likes.liked {
+  color: #ff6b6b;
+}
+
+.signature-expand-btn {
+  background: none;
+  border: none;
+  color: var(--phone-text-secondary);
+  font-size: 1em;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.signature-expand-btn:hover {
+  color: var(--phone-primary);
+}
+
+.signature-history-item-actions {
+  display: flex;
+  gap: 0.5em;
+  justify-content: flex-end;
+  /* 绝对定位，不占位 */
+  position: absolute;
+  right: 0.5em;
+  top: 0.5em;
+  z-index: 10;
+  /* 默认隐藏 */
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s;
+}
+
+/* PC端悬停显示 */
+@media (min-width: 769px) {
+  .signature-history-item:hover>.signature-history-item-actions {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* 手机端/通用：点击显示 */
+.signature-history-item.show-actions>.signature-history-item-actions {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 手机端自动隐藏倒计时指示器 */
+@media (max-width: 768px) {
+  .signature-history-item.show-actions>.signature-history-item-actions::before {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--SmartThemeQuoteColor);
+    animation: signature-countdown 3s linear forwards;
+  }
+}
+
+@keyframes signature-countdown {
+  from {
+    width: 100%;
+  }
+
+  to {
+    width: 0%;
+  }
+}
+
+.signature-delete-history-btn {
+  background: rgba(250, 81, 81, 0.1);
+  border: 1px solid rgba(250, 81, 81, 0.3);
+  border-radius: 0.25em;
+  padding: 0.25em 0.5em;
+  cursor: pointer;
+  color: #fa5151;
+  font-size: 0.875em;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.25em;
+}
+
+.signature-delete-history-btn:hover {
+  background: rgba(250, 81, 81, 0.2);
+  border-color: #fa5151;
+}
+
+/* 评论区 */
+.signature-comments-section {
+  margin-top: 1em;
+  padding-top: 1em;
+  border-top: 1px solid var(--phone-border);
+}
+
+.signature-comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75em;
+}
+
+.signature-comment-item {
+  padding: 0.75em;
+  background: var(--phone-bg-main);
+  border-radius: 0.5em;
+}
+
+.signature-comment-content {
+  display: flex;
+  gap: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.signature-comment-from {
+  font-size: 0.75em;
+  color: var(--phone-primary);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.signature-comment-text {
+  font-size: 0.875em;
+  color: var(--phone-text-primary);
+  line-height: 1.4;
+  flex: 1;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.signature-comment-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.signature-comment-time {
+  font-size: 0.6875em;
+  color: var(--phone-text-secondary);
+}
+
+.signature-delete-comment-btn {
+  background: none;
+  border: none;
+  color: var(--phone-text-secondary);
+  font-size: 0.75em;
+  cursor: pointer;
+  padding: 0.25em 0.5em;
+  border-radius: 0.25em;
+  transition: all 0.2s;
+}
+
+.signature-delete-comment-btn:hover {
+  color: #ff4444;
+  background: #ffe0e0;
+}
+
+/* 空状态 */
+.signature-history-empty {
+  text-align: center;
+  padding: 3em 1em;
+  color: var(--phone-text-secondary);
+}
+
+.signature-history-empty i {
+  font-size: 3em;
+  margin-bottom: 0.5em;
+  opacity: 0.3;
+}
+
+.signature-history-empty p {
+  font-size: 0.875em;
+  margin: 0;
+}
+
+/* 错误视图 */
+.signature-history-error {
+  text-align: center;
+  padding: 3em 1em;
+  color: #ff4444;
+  font-size: 0.875em;
 }
 
 /* ========================================
-   [END] 收藏选择器样式
+   [END] 个性签名功能样式
    ======================================== */

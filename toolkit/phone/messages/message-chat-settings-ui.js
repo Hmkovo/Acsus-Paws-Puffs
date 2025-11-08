@@ -455,7 +455,7 @@ async function handleTransactions(contact) {
   logger.debug('[ChatSettings] 打开往来记录页面:', contact.name);
 
   const { showPage } = await import('../phone-main-ui.js');
-  const overlayElement = document.querySelector('.phone-overlay');
+  const overlayElement = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
   if (overlayElement) {
     await showPage(overlayElement, 'contact-transactions', { contactId: contact.id });
   }
@@ -566,16 +566,25 @@ async function handleDeleteHistory(contact) {
   // 先关闭设置页
   hidePage(overlay, 'chat-settings');
 
-  // 销毁该联系人的聊天页DOM（而不是只关闭）
-  const chatPage = overlay.querySelector(`.page-chat-${contact.id}`);
-  if (chatPage) {
-    logger.debug('[ChatSettings] 销毁聊天页DOM:', contact.id);
-    chatPage.remove(); // 直接移除DOM，下次打开时会重新创建
+  // 销毁该联系人的聊天页（DOM + 页面栈）
+  const sanitizedId = contact.id.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const chatPageId = `page-chat-${sanitizedId}`;
+  const chatPage = overlay.querySelector(`#${chatPageId}`);
 
-    // 如果聊天页正在显示，需要同时关闭
+  if (chatPage) {
+    logger.debug('[ChatSettings] 销毁聊天页:', contact.id);
+
+    // 1. 如果聊天页正在显示，先关闭
     if (chatPage.classList.contains('active')) {
       hidePage(overlay, 'chat');
     }
+
+    // 2. 从页面栈中移除（防止"幻影"问题）
+    const pageStack = (await import('../utils/page-stack-helper.js')).default;
+    pageStack.removePageById(chatPageId);
+
+    // 3. 删除DOM（最后删除，避免引用丢失）
+    chatPage.remove();
   }
 
   // 从消息列表移除该项

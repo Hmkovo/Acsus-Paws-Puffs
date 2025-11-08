@@ -29,7 +29,7 @@ export async function renderHelpCenter() {
       <button class="help-center-back-btn">
         <i class="fa-solid fa-chevron-left"></i>
       </button>
-      <div class="help-center-title">说明+教程</div>
+      <div class="help-center-title">甜品指南</div>
     </div>
 
     <!-- 内容区（可滚动） -->

@@ -102,13 +102,33 @@ export function isPlanMessage(message) {
  * @param {string} contactId - 联系人ID
  * @returns {HTMLElement} 消息气泡DOM元素
  */
-export function renderPlanMessage(message, contact, contactId) {
+export async function renderPlanMessage(message, contact, contactId) {
   logger.debug('[PlanMessage] 渲染计划消息:', message.content, '是否有引用关联:', !!message.quotedPlanId);
 
   const planData = parsePlanMessage(message.content, message);
   if (!planData) {
     logger.warn('[PlanMessage] 无法解析计划消息:', message.content);
     return null;
+  }
+
+  // 🎯 关键修复：如果是新计划发起（不是响应消息），立即创建计划数据
+  if (planData.type === 'plan' && !planData.isCompleted) {
+    const { getPlanByMessageId, createPlan } = await import('../../plans/plan-data.js');
+    
+    // 检查是否已经创建过（避免重复创建）
+    const existingPlan = getPlanByMessageId(contactId, message.id);
+    if (!existingPlan) {
+      createPlan(contactId, {
+        messageId: message.id,
+        title: planData.title,
+        content: planData.title,
+        initiator: message.sender === 'user' ? 'user' : 'char',
+        timestamp: message.time || Date.now()
+      });
+      logger.info('[PlanMessage] ✅ 已自动创建计划数据:', planData.title);
+    } else {
+      logger.debug('[PlanMessage] 计划数据已存在，跳过创建:', planData.title);
+    }
   }
 
   const container = document.createElement('div');
