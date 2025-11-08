@@ -62,14 +62,6 @@
   --phone-badge: #ff4d4f;
 }
 
-/* ================================
-   导入图标
-   ================================ */
-
-@font-face {
-  font-family: "Font Awesome 6 Free";
-  src: url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/webfonts/fa-regular-400.woff2") format("woff2");
-}
 
 /* ================================
    手机容器（通用组件 phone-*）
@@ -2467,6 +2459,239 @@
 }
 
 /* ================================
+   帮助中心页样式（help-center-*）
+   ================================ */
+
+.help-center-wrapper {
+  background: var(--phone-bg-main);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+/* 顶部栏（固定，不滚动） */
+.help-center-topbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75em;
+  padding: 0;
+  background: var(--phone-bg-white);
+  border-bottom: 1px solid var(--phone-border);
+  flex-shrink: 0;
+}
+
+/* 返回按钮（绝对定位到左侧） */
+.help-center-back-btn {
+  position: absolute;
+  left: 0.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--phone-text-primary);
+  font-size: 1.1em;
+  cursor: pointer;
+  padding: 0;
+  min-width: 2.5em;
+}
+
+.help-center-back-btn:hover {
+  opacity: 0.7;
+}
+
+/* 标题（自然居中） */
+.help-center-title {
+  flex: 1;
+  text-align: center;
+  font-size: 1.0625em;
+  color: var(--phone-text-primary);
+}
+
+/* 内容区（可滚动区域） */
+.help-center-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--phone-bg-main);
+}
+
+/* ================================
+   表情包详细说明页样式（emoji-guide-detail-*）
+   ================================ */
+
+.emoji-guide-detail-wrapper {
+  background: var(--phone-bg-main);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+/* 顶部栏（固定，不滚动） */
+.emoji-guide-detail-topbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75em;
+  padding: 0;
+  background: var(--phone-bg-white);
+  border-bottom: 1px solid var(--phone-border);
+  flex-shrink: 0;
+}
+
+/* 返回按钮（绝对定位到左侧） */
+.emoji-guide-detail-back-btn {
+  position: absolute;
+  left: 0.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--phone-text-primary);
+  font-size: 1.1em;
+  cursor: pointer;
+  padding: 0;
+  min-width: 2.5em;
+}
+
+.emoji-guide-detail-back-btn:hover {
+  opacity: 0.7;
+}
+
+/* 标题（自然居中） */
+.emoji-guide-detail-title {
+  flex: 1;
+  text-align: center;
+  font-size: 1.0625em;
+  color: var(--phone-text-primary);
+}
+
+/* 内容区（可滚动区域） */
+.emoji-guide-detail-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1em;
+  background: var(--phone-bg-main);
+}
+
+/* 说明章节 */
+.emoji-guide-section {
+  background: var(--phone-bg-white);
+  border-radius: 0.5em;
+  padding: 1em;
+  margin-bottom: 1em;
+}
+
+.emoji-guide-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 1.125em;
+  color: var(--phone-text-primary);
+  margin-bottom: 0.75em;
+}
+
+.emoji-guide-section-title i {
+  color: var(--phone-primary);
+}
+
+.emoji-guide-section-content {
+  font-size: 0.875em;
+  line-height: 1.6;
+  color: var(--phone-text-primary);
+}
+
+.emoji-guide-section-content h4 {
+  font-size: 1em;
+  margin: 1em 0 0.5em 0;
+  color: var(--phone-text-primary);
+}
+
+.emoji-guide-section-content h4:first-child {
+  margin-top: 0;
+}
+
+.emoji-guide-section-content p {
+  margin: 0.5em 0;
+}
+
+.emoji-guide-section-content ol {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+
+.emoji-guide-section-content li {
+  margin: 0.25em 0;
+}
+
+/* 代码块样式 */
+.emoji-guide-code-block {
+  background: var(--phone-bg-main);
+  border: 1px solid var(--phone-border);
+  border-radius: 0.25em;
+  padding: 0.5em;
+  margin: 0.5em 0;
+  overflow-x: auto;
+}
+
+.emoji-guide-code-block code {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.875em;
+  color: var(--phone-text-primary);
+}
+
+.emoji-guide-section-content code {
+  background: var(--phone-bg-main);
+  padding: 0.125em 0.25em;
+  border-radius: 0.25em;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.875em;
+  color: var(--phone-primary);
+}
+
+/* 提示框样式 */
+.emoji-guide-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+  padding: 0.75em;
+  background: rgba(18, 150, 219, 0.1);
+  border-left: 3px solid var(--phone-primary);
+  border-radius: 0.25em;
+  margin: 0.75em 0;
+}
+
+.emoji-guide-note i {
+  color: var(--phone-primary);
+  flex-shrink: 0;
+  margin-top: 0.125em;
+}
+
+.emoji-guide-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+  padding: 0.75em;
+  background: rgba(255, 77, 79, 0.1);
+  border-left: 3px solid var(--phone-red, #ff4d4f);
+  border-radius: 0.25em;
+  margin: 0.75em 0;
+}
+
+.emoji-guide-warning i {
+  color: var(--phone-red, #ff4d4f);
+  flex-shrink: 0;
+  margin-top: 0.125em;
+}
+
+/* ================================
    用户设置页样式（user-*）
    ================================ */
 
@@ -4017,13 +4242,11 @@
 .chat-msg-plan-label {
   font-size: 0.6875em;
   color: rgba(0, 0, 0, 0.6);
-  font-weight: 500;
   flex: 1;
 }
 
 .chat-msg-plan-status {
   font-size: 0.625em;
-  font-weight: 500;
   padding: 0.25em 0.5em;
   border-radius: 0.25em;
 }
@@ -4201,8 +4424,6 @@
   flex: 1;
   /* 占据剩余空间 */
   font-size: 0.8125em;
-  /* 字号 - 稍小更精致 */
-  font-weight: 500;
   /* 字重（中等，不要太粗） */
   color: var(--phone-text-primary);
   /* 文字颜色（#333） */
@@ -4310,8 +4531,6 @@
   border-radius: 1em;
   /* 圆角 - 胶囊形状 */
   font-size: 0.75em;
-  /* 字号 - 更小更精致 */
-  font-weight: 500;
   /* 字重 */
   cursor: pointer;
   /* 鼠标指针变手型 */
@@ -4393,7 +4612,6 @@
   border: 1px solid var(--phone-border);
   border-radius: 0.5em;
   font-size: 0.875em;
-  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
@@ -4469,14 +4687,12 @@
 
 .dice-number {
   font-size: 2em;
-  font-weight: 700;
   color: var(--phone-primary);
   margin-bottom: 0.5em;
 }
 
 .dice-outcome {
   font-size: 1.1em;
-  font-weight: 500;
   color: var(--phone-text-primary);
 }
 
@@ -4507,7 +4723,6 @@
   border: none;
   border-radius: 0.5em;
   font-size: 0.875em;
-  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -4558,7 +4773,6 @@
   flex: 1;
   text-align: center;
   font-size: 1em;
-  font-weight: 600;
   color: var(--phone-text-primary);
   margin-right: 2.5em;
 }
@@ -4577,7 +4791,6 @@
   background: transparent;
   color: var(--phone-text-secondary);
   font-size: 0.875em;
-  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
   border-bottom: 2px solid transparent;
@@ -4631,7 +4844,6 @@
 
 .plan-list-item-title {
   font-size: 0.875em;
-  font-weight: 500;
   margin-bottom: 0.4em;
   color: var(--phone-text-primary);
   display: flex;
@@ -4970,7 +5182,9 @@
 #char-prompt-edit-content::-webkit-scrollbar,
 #preset-edit-content::-webkit-scrollbar,
 .wallet-bill-section::-webkit-scrollbar,
-.transfer-form::-webkit-scrollbar {
+.transfer-form::-webkit-scrollbar,
+.help-center-content::-webkit-scrollbar,
+.emoji-guide-detail-content::-webkit-scrollbar {
   width: 0.25em;
   /* 4px 细滚动条 */
 }
@@ -4994,7 +5208,9 @@
 #char-prompt-edit-content::-webkit-scrollbar-thumb,
 #preset-edit-content::-webkit-scrollbar-thumb,
 .wallet-bill-section::-webkit-scrollbar-thumb,
-.transfer-form::-webkit-scrollbar-thumb {
+.transfer-form::-webkit-scrollbar-thumb,
+.help-center-content::-webkit-scrollbar-thumb,
+.emoji-guide-detail-content::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.2);
   /* 半透明黑色 */
   border-radius: 0.125em;
@@ -9297,7 +9513,6 @@
   flex: 1;
   text-align: center;
   font-size: 1.0625em;
-  font-weight: 500;
   color: var(--phone-text-primary);
 }
 
@@ -9327,7 +9542,6 @@
 .transfer-balance-amount {
   font-size: 1.75em;
   color: var(--phone-text-primary);
-  font-weight: 300;
 }
 
 /* 输入组 */
@@ -9372,7 +9586,6 @@
 .transfer-input-amount {
   font-size: 1.5em;
   text-align: center;
-  font-weight: 300;
 }
 
 /* 转账按钮（固定底部） */
@@ -9458,7 +9671,6 @@
   flex: 1;
   text-align: center;
   font-size: 1.0625em;
-  font-weight: 500;
   color: var(--phone-text-primary);
 }
 
@@ -9593,7 +9805,6 @@
 
 .favorites-list-item-name {
   font-size: 0.9375em;
-  font-weight: 500;
   color: var(--phone-text-primary);
 }
 
@@ -9806,7 +10017,6 @@
 
 .favorites-picker-item-name {
   font-size: 0.9375em;
-  font-weight: 500;
   color: var(--phone-text-primary);
 }
 

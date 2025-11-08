@@ -162,7 +162,7 @@ function createMenuList() {
     { icon: 'fa-file', label: '文件', handler: null },  // 占位
     { icon: 'fa-wallet', label: '钱包', handler: () => handleOpenWallet() },  // 已实现
     { icon: 'fa-palette', label: '个性装扮', handler: null },  // 占位
-    { icon: 'fa-face-smile', label: '表情包管理', handler: null }  // 占位
+    { icon: 'fa-circle-info', label: '说明+教程', handler: () => handleOpenHelpCenter() }  // 已实现
   ];
 
   menuItems.forEach(item => {
@@ -807,6 +807,21 @@ async function handleOpenFavorites() {
   if (overlayElement) {
     const { showPage } = await import('../phone-main-ui.js');
     await showPage(overlayElement, 'favorites-list');
+  }
+}
+
+/**
+ * 处理打开帮助中心
+ * 
+ * @async
+ */
+async function handleOpenHelpCenter() {
+  logger.info('[UserProfile] 打开帮助中心');
+
+  const overlayElement = document.querySelector('.phone-overlay');
+  if (overlayElement) {
+    const { showPage } = await import('../phone-main-ui.js');
+    await showPage(overlayElement, 'help-center');
   }
 }
 

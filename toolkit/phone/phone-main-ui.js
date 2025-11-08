@@ -1629,6 +1629,32 @@ async function createPage(pageName, params = {}) {
 
       return emojiManagerPage;
 
+    case 'help-center':
+      // 动态导入帮助中心页渲染函数
+      const { renderHelpCenter } = await import('./help/help-center-ui.js');
+      const helpCenterContent = await renderHelpCenter();
+
+      // 创建页面容器
+      const helpCenterPage = document.createElement('div');
+      helpCenterPage.id = 'page-help-center';
+      helpCenterPage.className = 'phone-page phone-page-scrollable';  // 标准布局：整页滚动
+      helpCenterPage.appendChild(helpCenterContent);
+
+      return helpCenterPage;
+
+    case 'emoji-guide-detail':
+      // 动态导入表情包详细说明页渲染函数
+      const { renderEmojiGuideDetail } = await import('./emojis/emoji-guide-detail-ui.js');
+      const emojiGuideDetailContent = await renderEmojiGuideDetail();
+
+      // 创建页面容器
+      const emojiGuideDetailPage = document.createElement('div');
+      emojiGuideDetailPage.id = 'page-emoji-guide-detail';
+      emojiGuideDetailPage.className = 'phone-page phone-page-scrollable';  // 标准布局：整页滚动
+      emojiGuideDetailPage.appendChild(emojiGuideDetailContent);
+
+      return emojiGuideDetailPage;
+
     case 'transfer':
       // 动态导入转账页面渲染函数
       logger.debug('[PhoneUI.createPage] 开始创建转账页，params:', params);

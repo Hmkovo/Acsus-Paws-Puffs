@@ -54,7 +54,7 @@ export async function renderUserSettings() {
 
             <!-- 账号与安全 -->
             <div class="settings-account-card">
-                <i class="fa-regular fa-user settings-account-icon"></i>
+                <i class="fa-solid fa-user-shield settings-account-icon"></i>
                 <span class="settings-account-text">账号与安全</span>
                 <img src="${userAvatar}" alt="头像" class="settings-account-avatar">
                 <i class="fa-solid fa-chevron-right settings-account-arrow"></i>

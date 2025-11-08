@@ -133,7 +133,7 @@ function createInputArea() {
                 <img class="chat-quote-preview-img" style="display: none;">
             </div>
             <button class="chat-quote-preview-close">
-                <i class="fa-solid fa-xmark"></i>
+                <i class="fa-solid fa-circle-xmark"></i>
             </button>
         </div>
 
@@ -150,8 +150,8 @@ function createInputArea() {
             <button class="chat-placeholder-btn-1"><i class="fa-solid fa-circle"></i></button>
             <button class="chat-plan-list-btn" title="约定计划列表"><i class="fa-solid fa-clipboard-list"></i></button>
             <button class="chat-debug-btn" title="AI消息调试"><i class="fa-solid fa-robot"></i></button>
-            <button class="chat-emoji-btn"><i class="fa-regular fa-face-smile"></i></button>
-            <button class="chat-plus-btn"><i class="fa-solid fa-plus"></i></button>
+            <button class="chat-emoji-btn"><i class="fa-solid fa-face-smile"></i></button>
+            <button class="chat-plus-btn"><i class="fa-solid fa-circle-plus"></i></button>
         </div>
     `;
   return inputArea;
@@ -171,7 +171,7 @@ function createEmojiPanel() {
   // 添加按钮（第一个）
   const addBtn = document.createElement('div');
   addBtn.className = 'chat-emoji-add';
-  addBtn.innerHTML = '<i class="fa-solid fa-plus"></i>';
+  addBtn.innerHTML = '<i class="fa-solid fa-circle-plus"></i>';
   grid.appendChild(addBtn);
 
   // 加载表情包列表
@@ -280,7 +280,7 @@ function refreshEmojiPanel() {
     // 如果找不到原按钮，创建新的
     const newAddBtn = document.createElement('div');
     newAddBtn.className = 'chat-emoji-add';
-    newAddBtn.innerHTML = '<i class="fa-solid fa-plus"></i>';
+    newAddBtn.innerHTML = '<i class="fa-solid fa-circle-plus"></i>';
     grid.appendChild(newAddBtn);
   }
 
