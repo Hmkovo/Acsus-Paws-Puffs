@@ -110,6 +110,8 @@ export class PhoneAPI {
    * @param {Function} onMessageReceived - 收到消息的回调函数（接收解析后的消息对象）
    * @param {Function} onComplete - 完成的回调函数
    * @param {Function} onError - 错误的回调函数
+   * @param {Object} [options] - 可选配置（用于重roll等场景）
+   * @param {Object} [options.allPendingMessages] - 所有待发送消息（多联系人）格式：{ contactId: [messages] }
    * @returns {Promise<void>}
    * 
    * @description
@@ -121,8 +123,12 @@ export class PhoneAPI {
    * - image: { sender, description, time, type: 'image' }
    * - video: { sender, description, time, type: 'video' }
    * - file: { sender, filename, size, time, type: 'file' }
+   * 
+   * ✅ 支持重roll场景（2025-11-07新增）：
+   * - 如果提供 options.allPendingMessages，则使用该数据构建上下文
+   * - 否则自动从暂存队列或聊天历史中获取
    */
-  async sendToAI(contactId, onMessageReceived, onComplete, onError) {
+  async sendToAI(contactId, onMessageReceived, onComplete, onError, options = {}) {
     logger.info('[PhoneAPI.sendToAI] 开始发送到AI:', contactId);
 
     // ✅ 检查是否启用工具调用
@@ -133,7 +139,7 @@ export class PhoneAPI {
     // 工具调用仅在自定义API模式下可用
     if (useToolCalling && apiSource === 'custom') {
       logger.info('[PhoneAPI.sendToAI] 使用工具调用模式');
-      return await this.sendToAIWithToolCalling(contactId, onMessageReceived, onComplete, onError);
+      return await this.sendToAIWithToolCalling(contactId, onMessageReceived, onComplete, onError, options);
     }
 
     // 否则使用传统的标签解析模式
@@ -203,9 +209,16 @@ export class PhoneAPI {
         logger.debug('[PhoneAPI] 从暂存队列获取待发送消息，共', pendingMessages.length, '条');
       }
 
-      // ✅ 获取所有待操作（包括其他联系人的消息）
-      const allPendingOps = getAllPendingOperations();
-      const allPendingMessages = allPendingOps.messages;
+      // ✅ 获取所有待操作（支持从 options 传入，用于重roll场景）
+      let allPendingMessages;
+      if (options.allPendingMessages) {
+        allPendingMessages = options.allPendingMessages;
+        logger.info('[PhoneAPI] 使用传入的多联系人消息（重roll模式），共', Object.keys(allPendingMessages).length, '个联系人');
+      } else {
+        const allPendingOps = getAllPendingOperations();
+        allPendingMessages = allPendingOps.messages;
+        logger.debug('[PhoneAPI] 从暂存队列获取多联系人消息');
+      }
 
       // 构建messages数组（新版，返回messages和编号映射表）
       const buildResult = await buildMessagesArray(contactId, allPendingMessages);
@@ -748,9 +761,11 @@ export class PhoneAPI {
    * @param {Function} onMessageReceived - 收到消息的回调函数
    * @param {Function} onComplete - 完成的回调函数
    * @param {Function} onError - 错误的回调函数
+   * @param {Object} [options] - 可选配置（用于重roll等场景）
+   * @param {Object} [options.allPendingMessages] - 所有待发送消息（多联系人）格式：{ contactId: [messages] }
    * @returns {Promise<void>}
    */
-  async sendToAIWithToolCalling(contactId, onMessageReceived, onComplete, onError) {
+  async sendToAIWithToolCalling(contactId, onMessageReceived, onComplete, onError, options = {}) {
     logger.info('[PhoneAPI.sendToAIWithToolCalling] 使用工具调用模式发送到AI:', contactId);
 
     try {
@@ -784,9 +799,19 @@ export class PhoneAPI {
         }];
       }
 
+      // ✅ 获取所有待操作（支持从 options 传入，用于重roll场景）
+      let allPendingMessages;
+      if (options.allPendingMessages) {
+        allPendingMessages = options.allPendingMessages;
+        logger.info('[PhoneAPI] 工具调用模式 - 使用传入的多联系人消息（重roll模式），共', Object.keys(allPendingMessages).length, '个联系人');
+      } else {
+        const allPendingOps = getAllPendingOperations();
+        allPendingMessages = allPendingOps.messages;
+        logger.debug('[PhoneAPI] 工具调用模式 - 从暂存队列获取多联系人消息');
+      }
+
       // 构建 messages 数组（返回messages和编号映射表）
-      const allPendingOps = getAllPendingOperations();
-      const buildResult = await buildMessagesArray(contactId, allPendingOps.messages);
+      const buildResult = await buildMessagesArray(contactId, allPendingMessages);
       const messages = buildResult.messages;
       const messageNumberMap = buildResult.messageNumberMap;
 

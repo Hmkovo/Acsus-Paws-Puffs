@@ -39,10 +39,18 @@ export function clearDebugState(contactId) {
 
 /**
  * 保存快照（发送前的状态）
+ * 
  * @param {string} contactId - 联系人ID
- * @param {number} messageCount - 发送前的消息数量
+ * @param {Object} snapshotData - 快照数据
+ * @param {number} snapshotData.messageCount - 发送前的消息数量
+ * @param {Object} [snapshotData.allPendingMessages] - 所有待发送消息（多联系人）格式：{ contactId: [messages] }
+ * 
+ * @description
+ * 保存完整的发送前状态，用于重roll时恢复：
+ * - messageCount：聊天记录数量（用于回退）
+ * - allPendingMessages：所有待发送消息（包括多个联系人，用于重新构建上下文）
  */
-export function saveSnapshot(contactId, messageCount) {
+export function saveSnapshot(contactId, snapshotData) {
   let state = debugStates.get(contactId);
   if (!state) {
     state = {
@@ -53,8 +61,13 @@ export function saveSnapshot(contactId, messageCount) {
     debugStates.set(contactId, state);
   }
 
-  state.snapshot = { messageCount };
-  logger.debug('[Debug] 保存快照:', contactId, messageCount);
+  state.snapshot = {
+    messageCount: snapshotData.messageCount || snapshotData, // 兼容旧版本：如果传数字则作为 messageCount
+    allPendingMessages: snapshotData.allPendingMessages || null
+  };
+
+  logger.debug('[Debug] 保存快照:', contactId, '消息数量:', state.snapshot.messageCount, '待发送联系人数:',
+    state.snapshot.allPendingMessages ? Object.keys(state.snapshot.allPendingMessages).length : 0);
 }
 
 /**
@@ -613,6 +626,18 @@ async function handleReroll(popup, contactId) {
     await rollbackToSnapshot(contactId);
     logger.info('🎲 [重roll] 步骤1完成：回退成功');
 
+    // ✅ 获取快照中的多联系人消息（用于重新构建上下文）
+    const state = debugStates.get(contactId);
+    const snapshot = state?.snapshot;
+    const allPendingMessages = snapshot?.allPendingMessages || null;
+
+    if (allPendingMessages) {
+      const contactCount = Object.keys(allPendingMessages).length;
+      logger.info('🎲 [重roll] 从快照恢复多联系人消息，共', contactCount, '个联系人');
+    } else {
+      logger.debug('🎲 [重roll] 快照中没有多联系人消息（可能是旧版本快照）');
+    }
+
     logger.info('🎲 [重roll] 步骤2：重新调用API生成消息');
     // 重新调用API
     const { getPhoneSystem } = await import('../phone-system.js');
@@ -622,7 +647,7 @@ async function handleReroll(popup, contactId) {
       throw new Error('手机系统未初始化');
     }
 
-    // 调用API
+    // ✅ 调用API（传递快照中的多联系人消息）
     await phoneSystem.api.sendToAI(
       contactId,
       async (message) => {
@@ -675,7 +700,9 @@ async function handleReroll(popup, contactId) {
         if (toastr) {
           toastr.error(`重roll失败: ${error}`);
         }
-      }
+      },
+      // ✅ 可选参数：从快照恢复多联系人消息（用于多角色触发）
+      allPendingMessages ? { allPendingMessages } : undefined
     );
   } catch (error) {
     logger.error('🎲 [重roll] ❌ 重roll异常:', error);

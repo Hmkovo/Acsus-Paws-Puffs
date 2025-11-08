@@ -1476,12 +1476,20 @@ async function handleSendToAI(page, contactId, contact, sendBtn) {
   // 类型断言
   const sendButton = /** @type {HTMLButtonElement} */ (sendBtn);
 
-  // ✅ 清空上一轮的调试数据 + 保存当前快照
+  // ✅ 清空上一轮的调试数据 + 保存当前快照（包含多联系人消息）
   const { clearDebugState, saveSnapshot } = await import('./message-debug-ui.js');
   const { loadChatHistory } = await import('./message-chat-data.js');
+  const { getAllPendingOperations } = await import('../ai-integration/pending-operations.js');
+
   clearDebugState(contactId);
   const chatHistory = await loadChatHistory(contactId);
-  saveSnapshot(contactId, chatHistory.length);
+  const allPendingOps = getAllPendingOperations();
+
+  // 保存完整快照（消息数量 + 所有待发送消息）
+  saveSnapshot(contactId, {
+    messageCount: chatHistory.length,
+    allPendingMessages: allPendingOps.messages
+  });
 
   // 获取 PhoneAPI 实例（完全照搬日记）
   const { getPhoneSystem } = await import('../phone-system.js');
