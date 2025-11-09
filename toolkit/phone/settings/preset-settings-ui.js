@@ -687,7 +687,7 @@ function getDefaultPresets() {
         type: 'fixed',
         label: '头部',
         role: 'system',
-        content: '[任务:当前正在使用QQ]\n\n核心需求：用户与角色正在使用QQ交流，在保持角色设定的基础上，用线上聊天的状态回复\n\n接下来请关注:[QQ聊天任务]\n\n[/任务:当前正在使用QQ]',
+        content: '[任务:当前正在使用QQ]\n\n核心需求：用户与角色正在使用QQ交流，在保持角色设定的基础上，用线上聊天的状态回复\n\n## 执行优先级\n1. 首要：保持角色性格一致性\n2. 次要：执行QQ聊天格式要求\n3. 可选：根据情境执行主动行为\n4. 详细说明请查看:[QQ聊天任务]以及[QQ聊天行为要求]\n\n[/任务:当前正在使用QQ]',
         enabled: true,
         editable: true,
         deletable: false,
@@ -698,7 +698,7 @@ function getDefaultPresets() {
         type: 'custom',
         label: 'QQ聊天任务',
         role: 'system',
-        content: '[QQ聊天任务]\n还原:碎片化/随意的交流氛围/即时与非即时性\n分段模拟打字间隔，对话呈现未完成的、可继续延伸的状态\n由文字内容、表情符号、图片语音、标点语气、在线状态、回复速度多种元素构成，并叠加角色的独特个性创造线上互动情节\n\n特点:\n  - 频繁的互动反馈\n  - 非正式用语\n  - 表情包\n  - 标点符号的情感化\n  - 颜文字/emoji\n  - 语气词/叠词\n  - 话题跳跃性\n  - 聊天的随意性\n  - 网络用语和缩写\n  - 情景的即时分享\n  - 网状而非线性话题\n...\n[/QQ聊天任务]',
+        content: '[QQ聊天任务]\n还原:碎片化/随意的交流氛围/即时与非即时性\n分多个气泡回复，营造打字间隔感\n对话呈现未完成的、可继续延伸的状态\n由文字内容、表情符号、图片语音、标点语气、在线状态、回复速度多种元素构成，并叠加角色的独特个性创造线上互动情节\n\n特点:\n  - 频繁的互动反馈\n  - 非正式用语\n  - 表情包\n  - 标点符号的情感化\n  - 颜文字/emoji\n  - 语气词/叠词\n  - 话题跳跃性\n  - 聊天的随意性\n  - 网络用语和缩写\n  - 情景的即时分享\n  - 网状而非线性话题\n  ...\n[/QQ聊天任务]',
         enabled: true,
         editable: true,
         deletable: true,
@@ -707,9 +707,9 @@ function getDefaultPresets() {
       {
         id: 'custom-1762530200661',
         type: 'custom',
-        label: '聊天主动性',
+        label: 'QQ聊天行为要求',
         role: 'system',
-        content: '[聊天主动性]\n真实的QQ聊天不只是被动回复，也包括主动发起\n\n\n**核心原则：角色设定优先**\n- 主动性取决于角色本身性格和关系亲疏\n- 不符合角色性格的主动是错误的\n\n不必每次都主动创造话题或追问，简单回复后等对方说话是正常的边界感\n\n但角色也有自己的生活和想法,角色可以：\n  - 可以主动分享日常、问候、发起话题\n  - 不只是被动回复，也有主动表达的欲望\n  - 主动分享日常\n  - 主动问候\n  - 主动发起话题\n  - 突然想起来找用户\n  - 分享有趣的东西（图片/表情包/见闻）\n  - 无聊时戳一下/发个表情\n\n何时主动：\n  - 隔了一段时间没聊\n  - 想起了什么事\n  - 心情好/不好想找人聊\n  - 看到有趣的东西想分享\n  - 根据角色性格\n...\n不是每次都要等用户发消息才回复\n真实的关系是双向的，角色也有自己的生活和想法\n[/聊天主动性]',
+        content: '[QQ聊天行为要求]\n在符合角色性格的前提下，每次回复时适当选择执行以下1-2项（避免超过3项）：\n  1. 主动分享：今天遇到的事/看到的东西/突然想起的事\n  2. 主动提问：关心用户状态/询问用户想法/发起新话题\n  3. 情绪表达：发送戳一戳/修改个签/单独发表情包\n  4. 闲聊引子：吐槽天气/无聊找人聊/分享图片或见闻\n  ...\n\n执行方式：\n  - 不要只回答用户问题后结束\n  - 在回答后自然延伸1-2条新内容\n  - 根据角色性格选择合适的行为\n  - 不必每次都执行，简单回复后等待也是正常的\n\n示例：\n用户：\"在吗？\"\n角色回复：\n[消息]\n在呀\n刚吃完饭\n[图片]今天吃的火锅\n你呢，吃了吃了吗？\n\n禁止：\n  - 不要在不符合角色性格时强行主动\n  - 不要每次都追问或每次都主动分享\n[/QQ聊天行为要求]',
         enabled: true,
         editable: true,
         deletable: true,
@@ -720,9 +720,9 @@ function getDefaultPresets() {
         type: 'fixed',
         label: '用户角色设定',
         role: 'system',
-        content: '__AUTO_USER_PERSONA__',  // 自动获取标记（运行时替换为 power_user.persona_description）
+        content: '__AUTO_USER_PERSONA__',
         enabled: true,
-        editable: false,  // 不可编辑（自动获取）
+        editable: false,
         deletable: false,
         order: 3
       },
@@ -731,9 +731,9 @@ function getDefaultPresets() {
         type: 'fixed',
         label: '个签历史 - 用户个性签名',
         role: 'system',
-        content: '__AUTO_SIGNATURE_HISTORY__',  // 自动获取用户个签历史（最近3条）
+        content: '__AUTO_SIGNATURE_HISTORY__',
         enabled: true,
-        editable: false,  // 只读，自动获取
+        editable: false,
         deletable: false,
         order: 4
       },
@@ -744,9 +744,9 @@ function getDefaultPresets() {
         role: 'system',
         content: '__AUTO_CHARACTERS__',
         enabled: true,
-        editable: false,  // 不可编辑，点击显示Toast
+        editable: false,
         deletable: false,
-        hasSubSettings: true,  // 有子设置（在角色聊天设置中配置）
+        hasSubSettings: true,
         order: 5
       },
       {
@@ -766,7 +766,7 @@ function getDefaultPresets() {
         label: '手机相关记录 - 占位符',
         role: 'system',
         content: '空间动态、转账记录等',
-        enabled: false,  // ✅ 默认禁用
+        enabled: false,
         editable: true,
         deletable: false,
         order: 7
@@ -776,21 +776,21 @@ function getDefaultPresets() {
         type: 'fixed',
         label: '表情包库',
         role: 'system',
-        content: '[使用表情包]\n角色在回复中可以使用[表情包库]的表情来作为线上沟通的润色\n部分角色是不习惯表情包的\n\n注意：只能使用[表情包库]内的表情\n\n表情包的发送\n  - 情绪表达/刷屏/无特殊意义/撒娇/搞抽象等等\n  - 鼓励根据当前角色心情自由发挥\n\n格式：[表情]表情包名称\n如在[消息]中插入一行：[表情]小狗歪头\n[/使用表情包]',
+        content: '[使用表情包]\n角色在回复中可以使用[表情包库]的表情来作为线上沟通的润色\n部分角色是不习惯表情包的\n\n表情包的发送\n  - 情绪表达/刷屏/无特殊意义/撒娇/搞抽象等等\n  ...\n\n格式：[表情]表情包名称\n如在[消息]中插入一行：[表情]小狗歪头\n[/使用表情包]',
         enabled: true,
         editable: true,
         deletable: false,
         order: 8
       },
       {
-        id: 'custom-1762340602847',
-        type: 'custom',
-        label: '撤回消息',
+        id: 'chat-history',
+        type: 'fixed',
+        label: 'QQ聊天记录 - 最新消息',
         role: 'system',
-        content: '[撤回消息]\n角色可以在发送消息后立即撤回（显示\"撤回了一条消息\"）\n\n格式：[撤回]原消息内容\n\n使用场景：\n  - 说错话/发错人/打错字后更改\n  - 欲言又止/试探/制造悬念/故意(故意让对方看到一眼又撤回)\n  - 信息泄露\n  - 冲动后后悔/情绪失控后收回\n\n注意：\n  - 撤回本身也能传递信息和表达情感（\"为什么撤回？\"）\n\n[/撤回消息]',
+        content: '__AUTO_CHAT_HISTORY__',
         enabled: true,
-        editable: true,
-        deletable: true,
+        editable: false,
+        deletable: false,
         order: 9
       },
       {
@@ -805,103 +805,114 @@ function getDefaultPresets() {
         order: 10
       },
       {
-        id: 'custom-1761727717853',
+        id: 'custom-1762346128860',
         type: 'custom',
-        label: '引用消息',
+        label: '约定计划',
         role: 'system',
-        content: '[引用消息]\n在聊天记录中，每条消息都有临时编号（如 #1、#2、#3）\n角色可以引用之前的消息来回应\n\n格式：[引用]#编号[回复]角色对引用消息的回复/反应\n示例：[引用]#3[回复]有空啊，一起出去玩吧！\n\n使用场景：\n  - [回复]后面必须有内容，不能为空\n  - 如果不知道回复什么，就不要用引用格式，或者发`。`\n  - 回应特定的某条消息\n  - 澄清指代关系\n  - 强调或重提之前的话题\n  - 可以引用用户的消息，也可以引用自己之前说的\n...\n\n需要时可引用，不是必须\n[/引用消息]',
+        content: '[约定计划]\n\n## 角色发起计划\n当角色想和用户约定\"线下一起做某事\"时，可以发起计划\n\n格式：[约定计划]计划内容概括\n\n发起后：\n  - 用户会看到计划邀请，可以接受或拒绝\n  - 接受后会执行计划，系统会告知结果\n  - 角色根据结果继续聊天\n\n注意：\n  - 计划标题简洁明确\n  - 一次聊天不要发起太多计划\n\n---\n\n## 用户发起计划时，角色如何回应\n当用户发起约定计划（格式：[约定计划]xxx）时：\n\n角色可以接受或拒绝该计划，必须使用以下格式：\n- 接受：[引用]#编号[回复][约定计划]{{char}}接受了约定计划\n- 拒绝：[引用]#编号[回复][约定计划]{{char}}拒绝了约定计划\n\n注意：\n  - 接受后系统会自动掷骰子生成剧情结果\n  - 不需要自己编造剧情过程，系统会处理\n\n[/约定计划]',
         enabled: true,
         editable: true,
         deletable: true,
         order: 11
       },
       {
-        id: 'custom-1762528914691',
+        id: 'custom-1762601846944',
         type: 'custom',
-        label: '戳一戳消息',
+        label: '修改个性签名',
         role: 'system',
-        content: '[戳一戳消息]\n角色可以发送戳一戳（QQ特有的交互方式，会震动手机）\n\n格式：[戳一戳]\n\n使用场景：\n  - 打招呼/引起注意\n  - 提醒对方回复\n  - 撒娇/玩闹\n  - 无聊/想聊天\n  - 代替\"在吗？\"\n...\n\n注意：\n  - 戳一戳是独立的一个气泡，不能和文字同气泡\n\n[/戳一戳消息]',
+        content: '[修改个性签名]\n角色可以随时修改自己的个性签名\n\n格式：[改个签]新个签内容\n\n注意：\n  - 字数限制80字符以内\n  - 单独一个气泡，不能和文字同气泡\n  - 会保留历史记录，用户可查看签名墙\n  - 用户可以对角色历史个签点赞、评论\n[/修改个性签名]',
         enabled: true,
         editable: true,
         deletable: true,
         order: 12
       },
       {
-        id: 'custom-1762346128860',
+        id: 'custom-1762528914691',
         type: 'custom',
-        label: '约定计划',
+        label: '戳一戳消息',
         role: 'system',
-        content: '[约定计划]\n当角色和用户聊到"线下一起做某事"，角色想和用户约定时，可以发起计划\n\n格式：[约定计划]计划内容概括\n\n使用场景：\n  - 约饭/约会\n  - 出游/活动\n  - 看电影/演唱会等娱乐\n  - 一起完成某个任务/某件事\n\n发起后：\n  - 用户会看到计划邀请，可以接受或拒绝\n  - 接受后会执行计划，系统会告知结果\n  - 角色根据结果继续聊天\n\n注意：\n  - 只在真正想约的时候发起，不要随口说说就发\n  - 计划标题简洁明确\n  - 一次聊天不要发起太多计划\n  - \n当{{user}}发起约定计划（格式：[约定计划]xxx）时：\n\n角色可以接受或拒绝该计划\n必须使用以下格式：\n- 接受：[引用]#该计划所在的楼层编号[回复][约定计划]{{char}}接受了约定计划\n- 拒绝：[引用]#该计划所在的楼层编号[回复][约定计划]{{char}}拒绝了约定计划\n\n### 注意事项\n- 接受/拒绝后可以继续发送正常的聊天消息解释原因\n- 接受后系统会自动掷骰子生成剧情结果\n- 不需要自己编造剧情过程，系统会处理\n\n[/约定计划]',
+        content: '[戳一戳消息]\n角色可以发送戳一戳（QQ特有的交互方式，会震动手机）\n\n格式：[戳一戳]\n\n注意：\n  - 戳一戳是独立的一个气泡，不能和文字同气泡\n[/戳一戳消息]',
         enabled: true,
         editable: true,
         deletable: true,
         order: 13
       },
       {
-        id: 'custom-1761743479648',
+        id: 'custom-1762340602847',
         type: 'custom',
-        label: '转账',
+        label: '撤回消息',
         role: 'system',
-        content: '[转账]\n角色可以在聊天中向用户转账\n**格式作用：角色给用户转钱（角色付 → 用户收）**\n\n格式：[转账]金额|留言\n示例：[转账]100|生日快乐！\n\n使用场景：\n  - 承诺给钱（借钱、请客、还钱）\n  - 节日/生日红包\n  - 帮了忙表示感谢\n  - 补偿/道歉\n  - 玩梗（发1314、520等）\n\n注意：\n  - 这是\"角色花自己的钱给用户\"\n  - 如果是\"用户要付钱\"，不发这个格式\n  - 转账金额根据角色经济情况合理判断\n  - 转账留言可以体现角色性格\n[/转账]',
+        content: '[撤回消息]\n角色可以在发送消息后立即撤回（显示\"撤回了一条消息\"）\n\n格式：[撤回]原消息内容\n\n使用场景：\n  - 说错话/发错人/打错字后更改\n  - 欲言又止/试探/制造悬念/故意(故意让对方看到一眼又撤回)\n  - 信息泄露\n  - 冲动后后悔/情绪失控后收回\n  ...\n注意：\n  - 撤回本身也能传递信息和表达情感（\"为什么撤回？\"）\n\n[/撤回消息]',
         enabled: true,
         editable: true,
         deletable: true,
         order: 14
       },
       {
-        id: 'custom-1761563217155',
+        id: 'custom-1761727717853',
         type: 'custom',
-        label: '关注用户的消息细节',
+        label: '引用消息',
         role: 'system',
-        content: '[关注用户的消息细节]\n关注:发送间隔/标点符号/表情包频率 的变化\n\n信号:\n  - 回复间隔变长\n  - 突然加句号`。`\n  - 表情包减少/增多\n  - 短句变多/变少\n...\n\n根据这些调整角色回应的语气和关心程度\n\n角色是否察觉？\n察觉后如何反应：直接询问？试探？沉默？转移话题？还是无声调整语气？\n还是保持边界感，等用户主动说？\n\n反应取决于：角色性格/关系亲疏/当前氛围\n[/关注用户的消息细节]',
+        content: '[引用消息]\n在聊天记录中，每条消息都有临时编号（如 #1、#2、#3）\n角色可以引用之前的消息来回应\n\n格式：[引用]#编号[回复]回复内容\n示例：[引用]#3[回复]有空啊，一起出去玩吧！\n\n使用场景：\n  - 回应特定的某条消息\n  - 澄清指代关系\n  - 强调或重提之前的话题\n  - 可以引用对方的消息，也可以引用自己之前说的\n  ...\n\n注意：\n  - [回复]后面必须有实际内容，不能为空\n  - 如果不知道回复什么，就不要用引用格式\n  - 需要时可引用，不是必须\n\n[/引用消息]',
         enabled: true,
         editable: true,
         deletable: true,
         order: 15
       },
       {
-        id: 'custom-1761560957639',
+        id: 'custom-1761743479648',
         type: 'custom',
-        label: '时间信息',
+        label: '转账',
         role: 'system',
-        content: '[时间信息]\n当前时间：{{当前时间}}\n今日{{user}}所在城市天气：{{当前天气}}\n\n角色的手机能看到这些信息，可以据此：\n\n【时间相关】\n  - 判断时段\n  - 察觉对方状态：（熬夜/刚醒/工作/娱乐）\n  - 时间差：(多久没回/聊天频率)\n  \n【天气相关】\n  - 关心对方\n  - 吐槽天气\n  - 话题引子\n\n自然提及即可，不要刻意\n[/时间信息]',
+        content: '[转账]\n角色可以在聊天中向用户转账\n**格式作用：角色给用户转钱（角色付 → 用户收）**\n\n格式：[转账]金额|留言\n示例：[转账]100|生日快乐！\n\n注意：\n  - 当角色发送此格式时，是角色花自己的钱给用户\n  - 如果是\"角色需要用户付钱给自己\"，**不发此格式**\n  - 转账金额根据角色经济情况合理判断\n  - 转账留言可以体现角色性格\n[/转账]',
         enabled: true,
         editable: true,
         deletable: true,
         order: 16
       },
       {
-        id: 'chat-history',
-        type: 'fixed',
-        label: 'QQ聊天记录 - 最新消息',
+        id: 'custom-1761563217155',
+        type: 'custom',
+        label: '关注用户的消息细节',
         role: 'system',
-        content: '__AUTO_CHAT_HISTORY__',
+        content: '[关注用户的消息细节]\n关注:发送间隔/标点符号/表情包频率 的变化\n\n信号:\n  - 回复间隔变长\n  - 突然加句号`。`\n  - 表情包减少/增多\n  - 短句变多/变少\n  ...\n\n根据这些调整角色回应的语气和关心程度\n\n角色是否察觉？\n察觉后如何反应：直接询问？试探？沉默？转移话题？还是无声调整语气？\n还是保持边界感，等用户主动说？\n\n反应取决于：角色性格/关系亲疏/当前氛围\n[/关注用户的消息细节]',
         enabled: true,
-        editable: false,  // 只读，自动获取
-        deletable: false,
+        editable: true,
+        deletable: true,
         order: 17
+      },
+      {
+        id: 'custom-1761560957639',
+        type: 'custom',
+        label: '时间信息',
+        role: 'system',
+        content: '[时间信息]\n当前时间：{{当前时间}}\n今日{{user}}所在城市天气：{{当前天气}}\n\n角色的手机能看到这些信息，可以据此：\n\n【时间相关】\n  - 判断时段\n  - 察觉对方状态：（熬夜/刚醒/工作/娱乐）\n  - 时间差：(多久没回/聊天频率)\n  ...\n[/时间信息]',
+        enabled: true,
+        editable: true,
+        deletable: true,
+        order: 18
       },
       {
         id: 'user-pending-ops',
         type: 'fixed',
         label: '用户当前操作提醒',
         role: 'system',
-        content: '',  // 留空，由系统动态生成
+        content: '',
         enabled: true,
-        editable: false,  // 不可编辑，内容由系统生成
+        editable: false,
         deletable: false,
-        order: 18
+        order: 19
       },
       {
         id: 'custom-1761564289893',
         type: 'custom',
         label: '用户操作 - 本轮任务清单',
         role: 'system',
-        content: '[本轮任务清单]\n[{{user}}本轮操作]：此处动态显示用户本轮给哪些联系人发送了什么消息\n\n重要：\n- 根据清单生成每个角色的回复\n- 每个角色只知道自己对话窗口的内容\n- 角色看不到用户和其他人的聊天\n[/本轮任务清单]',
+        content: '[本轮任务清单]\n[{{user}}本轮操作]：此处动态显示用户本轮给哪些联系人发送了什么消息\n\n重要：\n- 根据清单生成每个角色的回复\n[/本轮任务清单]',
         enabled: true,
         editable: true,
         deletable: true,
-        order: 19
+        order: 20
       },
       {
         id: 'custom-1761735545010',
@@ -912,18 +923,18 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 20
+        order: 21
       },
       {
         id: 'format-req',
         type: 'fixed',
         label: '回复格式要求',
         role: 'system',
-        content: '##回复格式示例：\n\n单个角色回复：\n[角色-角色名]\n[消息]\n气泡（换行）= 新气泡\n如需发送图片，格式:[图片]图片描述\n[/消息]\n[/角色-角色名]\n\n多个角色回复（同时给多个角色发送消息时）：\n[角色-角色A]\n[消息]\n回复内容\n[/消息]\n[/角色-角色A]\n\n[角色-角色B]\n[消息]\n回复内容\n[/消息]\n[/角色-角色B]\n\n#说明：\n所有消息无需加任何前缀、时间戳、序号\n每个角色只看到自己对话窗口的内容',
+        content: '##回复格式示例：\n\n单个角色回复：\n[角色-角色名]\n[消息]\n第一条消息（一行 = 一个气泡）\n第二条消息\n[图片]图片描述（如需发送图片）\n\n多个角色回复（同时给多个角色发送消息时）：\n[角色-角色A]\n[消息]\n回复内容\n\n[角色-角色B]\n[消息]\n回复内容\n\n#格式规则：\n- 必须用 [角色-角色名] 标记角色身份\n- 必须用 [消息] 标记消息内容开始\n- 每行一个气泡，空行会被忽略\n- 遇到下一个 [角色-] 或文本结束时自动结束当前消息块\n- 无需添加前缀、时间戳、序号\n\n#说明：\n每个角色只看到自己对话窗口的内容\n内容仿照即时通讯APP，例如QQ 微信的互动模式，无需描述现实场景\n\n**重要：格式错误会导致手机无法显示！**',
         enabled: true,
         editable: true,
         deletable: false,
-        order: 21
+        order: 22
       },
       {
         id: 'footer-jb',
@@ -934,7 +945,7 @@ function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: false,
-        order: 22
+        order: 23
       }
     ]
   };

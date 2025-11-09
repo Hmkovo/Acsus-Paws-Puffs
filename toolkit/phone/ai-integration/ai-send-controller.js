@@ -227,6 +227,21 @@ export class PhoneAPI {
 
       logger.debug('[PhoneAPI] messages数组构建完成，共', messages.length, '条，编号映射表大小:', messageNumberMap.size);
 
+      // ✅ 替换宏（{{user}}、{{当前时间}}、{{当前天气}} 等）
+      try {
+        const { substituteParams } = getContext();
+        if (substituteParams) {
+          for (const message of messages) {
+            if (message.content && typeof message.content === 'string') {
+              message.content = substituteParams(message.content);
+            }
+          }
+          logger.debug('[PhoneAPI] 已替换所有宏变量');
+        }
+      } catch (error) {
+        logger.warn('[PhoneAPI] 宏替换失败（继续发送）:', error);
+      }
+
       // 创建终止控制器
       this.currentAbortController = new AbortController();
       this.isGenerating = true;
@@ -816,6 +831,21 @@ export class PhoneAPI {
       const messageNumberMap = buildResult.messageNumberMap;
 
       logger.debug('[PhoneAPI] 工具调用模式 - messages 构建完成，共', messages.length, '条，编号映射表大小:', messageNumberMap.size);
+
+      // ✅ 替换宏（{{user}}、{{当前时间}}、{{当前天气}} 等）
+      try {
+        const { substituteParams } = getContext();
+        if (substituteParams) {
+          for (const message of messages) {
+            if (message.content && typeof message.content === 'string') {
+              message.content = substituteParams(message.content);
+            }
+          }
+          logger.debug('[PhoneAPI] 已替换所有宏变量（工具调用模式）');
+        }
+      } catch (error) {
+        logger.warn('[PhoneAPI] 宏替换失败（继续发送）:', error);
+      }
 
       // 创建终止控制器
       this.currentAbortController = new AbortController();
