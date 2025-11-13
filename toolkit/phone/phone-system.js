@@ -96,11 +96,13 @@ export class PhoneSystem {
       const { initSignatureRollbackHandler } = await import('./profile/signature-rollback-handler.js');
       const { initTransferRollbackHandler } = await import('./transfers/transfer-rollback-handler.js');
       const { initPlanStoryRollbackHandler } = await import('./plans/plan-story-rollback-handler.js');
+      const { initFriendRequestRollbackHandler } = await import('./messages/friend-request-rollback-handler.js');
       initPlanRollbackHandler();
       initSignatureRollbackHandler();
       initTransferRollbackHandler();
       initPlanStoryRollbackHandler();
-      logger.info('[PhoneSystem] 已注册回退处理器（约定计划、个签、转账、计划剧情）');
+      initFriendRequestRollbackHandler();
+      logger.info('[PhoneSystem] 已注册回退处理器（约定计划、个签、转账、计划剧情、好友申请）');
 
       this.initialized = true;
       logger.info('[PhoneSystem] 初始化完成');

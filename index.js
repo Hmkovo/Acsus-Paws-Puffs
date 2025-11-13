@@ -911,7 +911,8 @@ async function showPhoneSettingsPopup(updateCardStatus) {
           <div>
             <strong style="color: #f44336; font-size: 1.1em;">⚠️ 功能测试中</strong>
             <p style="margin: 8px 0 0 0; line-height: 1.6;">
-              未上线，作者在测试，只能纯聊天，不要随便使用导致问题！
+              未上线，作者在测试，只能纯聊天，不要随便使用内部功能导致问题！<br>
+              更新扩展后预设管理处可以点击重置按钮来获取最新预设。<br>
             </p>
           </div>
         </div>

@@ -95,10 +95,10 @@ async function saveContact(contact) {
 
     // 保存到存储
     await saveData(CONTACTS_KEY, contacts);
-    
+
     // 触发联系人列表变化事件（通知酒馆宏刷新）
     triggerContactListChanged();
-    
+
     return true;
   } catch (error) {
     logger.error('[ContactData] 保存联系人失败:', error);
@@ -135,10 +135,10 @@ async function deleteContact(contactId) {
     // 保存到存储
     await saveData(CONTACTS_KEY, filteredContacts);
     logger.info('[ContactData] 联系人已删除:', contactId);
-    
+
     // 触发联系人列表变化事件（通知酒馆宏刷新）
     triggerContactListChanged();
-    
+
     return true;
   } catch (error) {
     logger.error('[ContactData] 删除联系人失败:', error);
@@ -622,6 +622,310 @@ function triggerContactListChanged() {
   logger.debug('[ContactData] 已触发联系人列表变化事件');
 }
 
+// ==================== AI感知删除相关函数 ====================
+
+const AI_AWARE_DELETED_KEY = 'aiAwareDeletedFriends';
+
+/**
+ * 添加AI感知删除的好友申请
+ * 
+ * @async
+ * @param {Object} contact - 联系人对象
+ * @param {string} contact.id - 联系人ID
+ * @param {string} contact.name - 联系人名称
+ * @param {number} deleteTime - 删除时间戳（秒）
+ * @returns {Promise<boolean>} 是否添加成功
+ */
+async function addAIAwareDeletedRequest(contact, deleteTime) {
+  logger.debug('[ContactData] 添加AI感知删除申请:', contact.name);
+
+  try {
+    const requests = await loadData(AI_AWARE_DELETED_KEY) || [];
+
+    // 检查是否已存在（避免重复）
+    const exists = requests.find(r => r.contactId === contact.id);
+    if (exists) {
+      logger.warn('[ContactData] 该角色已在AI感知删除列表中:', contact.name);
+      return false;
+    }
+
+    // 添加新记录
+    requests.push({
+      contactId: contact.id,
+      contactName: contact.name,
+      avatar: contact.avatar,
+      status: 'ai_aware_deleted',
+      deleteTime: deleteTime,
+      reapplyMessages: [],  // 附加消息历史
+      reapplyConfig: {
+        allowReapply: false,  // 默认禁止继续申请
+        probability: 0,       // 默认概率0%
+        lastApplyTime: null
+      }
+    });
+
+    await saveData(AI_AWARE_DELETED_KEY, requests);
+    logger.info('[ContactData] 已添加AI感知删除申请:', contact.name);
+    return true;
+  } catch (error) {
+    logger.error('[ContactData] 添加AI感知删除申请失败:', error);
+    return false;
+  }
+}
+
+/**
+ * 获取所有AI感知删除的申请
+ * 
+ * @async
+ * @returns {Promise<Array>} AI感知删除申请列表
+ */
+async function getAIAwareDeletedRequests() {
+  try {
+    const requests = await loadData(AI_AWARE_DELETED_KEY) || [];
+    logger.debug('[ContactData] 获取AI感知删除申请，共', requests.length, '个');
+    return requests;
+  } catch (error) {
+    logger.error('[ContactData] 获取AI感知删除申请失败:', error);
+    return [];
+  }
+}
+
+/**
+ * 移除AI感知删除申请（用户同意后）
+ * 
+ * @async
+ * @param {string} contactId - 联系人ID
+ * @returns {Promise<boolean>} 是否移除成功
+ */
+async function removeAIAwareDeletedRequest(contactId) {
+  logger.debug('[ContactData] 移除AI感知删除申请:', contactId);
+
+  try {
+    const requests = await loadData(AI_AWARE_DELETED_KEY) || [];
+    const filtered = requests.filter(r => r.contactId !== contactId);
+
+    if (filtered.length === requests.length) {
+      logger.warn('[ContactData] 未找到该申请:', contactId);
+      return false;
+    }
+
+    await saveData(AI_AWARE_DELETED_KEY, filtered);
+    logger.info('[ContactData] 已移除AI感知删除申请:', contactId);
+    return true;
+  } catch (error) {
+    logger.error('[ContactData] 移除AI感知删除申请失败:', error);
+    return false;
+  }
+}
+
+/**
+ * 添加好友重新申请消息
+ * 
+ * @async
+ * @param {string} contactId - 联系人ID
+ * @param {string} message - 附加消息
+ * @param {number} time - 时间戳（秒）
+ * @param {string} [msgId] - 消息ID（用于回退处理）
+ * @returns {Promise<boolean>} 是否添加成功
+ */
+async function addReapplyMessage(contactId, message, time, msgId) {
+  logger.debug('[ContactData] 添加重新申请消息:', contactId, message.substring(0, 20));
+
+  try {
+    const requests = await loadData(AI_AWARE_DELETED_KEY) || [];
+    const request = requests.find(r => r.contactId === contactId);
+
+    if (!request) {
+      logger.warn('[ContactData] 未找到AI感知删除申请:', contactId);
+      return false;
+    }
+
+    // 添加新消息（含msgId用于回退）
+    request.reapplyMessages.push({
+      message: message,
+      time: time,
+      msgId: msgId,  // ✅ 保存消息ID（用于回退处理）
+      isRead: false  // 是否已读（用于标记"新消息"）
+    });
+
+    // 更新最后申请时间
+    request.reapplyConfig.lastApplyTime = time;
+
+    await saveData(AI_AWARE_DELETED_KEY, requests);
+    logger.info('[ContactData] 已添加重新申请消息:', contactId, msgId ? `(msgId: ${msgId})` : '');
+    return true;
+  } catch (error) {
+    logger.error('[ContactData] 添加重新申请消息失败:', error);
+    return false;
+  }
+}
+
+/**
+ * 删除指定的重新申请消息
+ * @async
+ * @param {string} contactId - 联系人ID
+ * @param {number} messageIndex - 消息索引
+ * @returns {Promise<boolean>} 是否删除成功
+ */
+async function deleteReapplyMessage(contactId, messageIndex) {
+  logger.debug('[ContactData] 删除重新申请消息:', contactId, messageIndex);
+
+  try {
+    const requests = await loadData(AI_AWARE_DELETED_KEY) || [];
+    const request = requests.find(r => r.contactId === contactId);
+
+    if (!request) {
+      logger.warn('[ContactData] 未找到AI感知删除申请:', contactId);
+      return false;
+    }
+
+    if (messageIndex < 0 || messageIndex >= request.reapplyMessages.length) {
+      logger.warn('[ContactData] 消息索引超出范围:', messageIndex);
+      return false;
+    }
+
+    // 删除指定消息
+    request.reapplyMessages.splice(messageIndex, 1);
+
+    await saveData(AI_AWARE_DELETED_KEY, requests);
+    logger.info('[ContactData] 已删除重新申请消息:', contactId, messageIndex);
+    return true;
+  } catch (error) {
+    logger.error('[ContactData] 删除重新申请消息失败:', error);
+    return false;
+  }
+}
+
+/**
+ * 根据消息ID删除重新申请消息（用于回退处理）
+ * 
+ * @async
+ * @param {string} contactId - 联系人ID
+ * @param {string} msgId - 消息ID
+ * @returns {Promise<boolean>} 是否删除成功
+ */
+async function deleteReapplyMessageByMsgId(contactId, msgId) {
+  logger.debug('[ContactData] 根据msgId删除重新申请消息:', contactId, msgId);
+
+  try {
+    const requests = await loadData(AI_AWARE_DELETED_KEY) || [];
+    const request = requests.find(r => r.contactId === contactId);
+
+    if (!request) {
+      logger.warn('[ContactData] 未找到AI感知删除申请:', contactId);
+      return false;
+    }
+
+    // 查找匹配的消息索引
+    const messageIndex = request.reapplyMessages.findIndex(msg => msg.msgId === msgId);
+    
+    if (messageIndex === -1) {
+      logger.warn('[ContactData] 未找到msgId对应的消息:', msgId);
+      return false;
+    }
+
+    // 删除找到的消息
+    request.reapplyMessages.splice(messageIndex, 1);
+
+    await saveData(AI_AWARE_DELETED_KEY, requests);
+    logger.info('[ContactData] 已根据msgId删除重新申请消息:', contactId, msgId);
+    return true;
+  } catch (error) {
+    logger.error('[ContactData] 根据msgId删除重新申请消息失败:', error);
+    return false;
+  }
+}
+
+/**
+ * 更新好友申请配置（概率、是否允许继续申请）
+ * 
+ * @async
+ * @param {string} contactId - 联系人ID
+ * @param {Object} config - 配置对象
+ * @param {boolean} [config.allowReapply] - 是否允许继续申请
+ * @param {number} [config.probability] - 概率（0-100）
+ * @returns {Promise<boolean>} 是否更新成功
+ */
+async function updateReapplyConfig(contactId, config) {
+  logger.debug('[ContactData] 更新申请配置:', contactId, config);
+
+  try {
+    const requests = await loadData(AI_AWARE_DELETED_KEY) || [];
+    const request = requests.find(r => r.contactId === contactId);
+
+    if (!request) {
+      logger.warn('[ContactData] 未找到AI感知删除申请:', contactId);
+      return false;
+    }
+
+    // 更新配置
+    Object.assign(request.reapplyConfig, config);
+
+    await saveData(AI_AWARE_DELETED_KEY, requests);
+    logger.info('[ContactData] 已更新申请配置:', contactId);
+    return true;
+  } catch (error) {
+    logger.error('[ContactData] 更新申请配置失败:', error);
+    return false;
+  }
+}
+
+/**
+ * 标记所有申请消息为已读
+ * 
+ * @async
+ * @param {string} contactId - 联系人ID
+ * @returns {Promise<boolean>} 是否更新成功
+ */
+async function markReapplyMessagesAsRead(contactId) {
+  logger.debug('[ContactData] 标记申请消息为已读:', contactId);
+
+  try {
+    const requests = await loadData(AI_AWARE_DELETED_KEY) || [];
+    const request = requests.find(r => r.contactId === contactId);
+
+    if (!request) {
+      return false;
+    }
+
+    // 标记所有消息为已读
+    request.reapplyMessages.forEach(msg => {
+      msg.isRead = true;
+    });
+
+    await saveData(AI_AWARE_DELETED_KEY, requests);
+    logger.info('[ContactData] 已标记申请消息为已读:', contactId);
+    return true;
+  } catch (error) {
+    logger.error('[ContactData] 标记申请消息为已读失败:', error);
+    return false;
+  }
+}
+
+/**
+ * 获取未读申请消息数量
+ * 
+ * @async
+ * @param {string} contactId - 联系人ID
+ * @returns {Promise<number>} 未读消息数量
+ */
+async function getUnreadReapplyCount(contactId) {
+  try {
+    const requests = await loadData(AI_AWARE_DELETED_KEY) || [];
+    const request = requests.find(r => r.contactId === contactId);
+
+    if (!request) {
+      return 0;
+    }
+
+    const unreadCount = request.reapplyMessages.filter(msg => !msg.isRead).length;
+    return unreadCount;
+  } catch (error) {
+    logger.error('[ContactData] 获取未读申请消息数量失败:', error);
+    return 0;
+  }
+}
+
 export {
   loadContacts,
   saveContact,
@@ -638,6 +942,16 @@ export {
   loadContactGroups,
   saveContactGroup,
   deleteContactGroup,
-  updateGroupsOrder
+  updateGroupsOrder,
+  // AI感知删除
+  addAIAwareDeletedRequest,
+  getAIAwareDeletedRequests,
+  removeAIAwareDeletedRequest,
+  addReapplyMessage,
+  deleteReapplyMessage,
+  deleteReapplyMessageByMsgId,
+  updateReapplyConfig,
+  markReapplyMessagesAsRead,
+  getUnreadReapplyCount
 };
 

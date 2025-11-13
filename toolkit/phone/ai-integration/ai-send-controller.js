@@ -368,11 +368,48 @@ export class PhoneAPI {
       // 获取联系人列表（用于匹配角色名）
       const contacts = await loadContacts();
 
+      // ✅ 收集所有触发的联系人ID（用于清空待发送消息）
+      const triggeredContactIds = new Set();
+
       // 逐条处理消息
       for (let i = 0; i < parsedMessages.length; i++) {
         const msg = parsedMessages[i];
 
-        // 匹配联系人ID
+        // ✅ 特殊处理：好友申请消息（联系人已被删除，不在列表中）
+        if (msg.type === 'friend_request') {
+          // 从角色名推导contactId（格式：tavern_角色名）
+          const friendRequestContactId = `tavern_${msg.role}`;
+
+          logger.debug('[PhoneAPI] 处理好友申请消息:', msg.role, '→', friendRequestContactId);
+
+          // 保存消息到聊天记录
+          const message = {
+            id: msg.id,
+            sender: 'contact',
+            time: msg.time,
+            type: 'friend_request',
+            content: msg.content
+          };
+
+          await saveChatMessage(friendRequestContactId, message);
+
+          // 模拟打字间隔（好友申请消息不需要太长间隔）
+          const typingDelay = 800;
+          logger.debug('[PhoneAPI] 模拟打字中...', typingDelay, 'ms（好友申请）');
+          await new Promise(resolve => setTimeout(resolve, typingDelay));
+
+          // ✅ 好友申请消息不应在当前聊天界面显示（因为是其他联系人的消息）
+          // 只触发全局消息列表刷新事件（显示小红点）
+          logger.debug('[PhoneAPI] 触发全局消息列表刷新');
+          document.dispatchEvent(new CustomEvent('phone-message-received', {
+            detail: { contactId: friendRequestContactId, message }
+          }));
+
+          logger.info('[PhoneAPI] 好友申请消息已保存，不在当前界面显示');
+          continue;  // 跳过后续的普通消息处理逻辑
+        }
+
+        // 匹配联系人ID（支持多角色消息路由）
         const matchedContactId = matchContactId(msg.role, contacts);
 
         if (!matchedContactId) {
@@ -380,10 +417,14 @@ export class PhoneAPI {
           continue;
         }
 
-        // 只处理当前联系人的消息
-        if (matchedContactId !== contactId) {
-          logger.warn('[PhoneAPI] 跳过其他联系人的消息:', msg.role);
-          continue;
+        // ✅ 新逻辑：所有消息都处理，但根据目标联系人路由
+        const isCurrentChat = (matchedContactId === contactId);
+
+        // 收集触发的联系人ID
+        triggeredContactIds.add(matchedContactId);
+
+        if (!isCurrentChat) {
+          logger.info('[PhoneAPI] 检测到其他联系人的消息，将保存并触发通知:', msg.role);
         }
 
         // 保存消息到数据库（保留解析器返回的ID和时间戳，避免误删）
@@ -443,14 +484,15 @@ export class PhoneAPI {
           }
           : message;
 
-        await saveChatMessage(contactId, messageToSave);
+        // ✅ 保存到目标联系人的聊天记录（不是当前界面的contactId）
+        await saveChatMessage(matchedContactId, messageToSave);
 
         // ✅ 转账消息自动到账（数据层处理，不依赖UI）
         if (message.type === 'transfer' && message.sender === 'contact') {
           const { receiveTransfer } = await import('../data-storage/storage-wallet.js');
           try {
             // ✅ 传递消息ID，建立转账记录和聊天消息的关联
-            await receiveTransfer(contactId, message.amount, message.message || '', message.id);
+            await receiveTransfer(matchedContactId, message.amount, message.message || '', message.id);
             logger.info('[PhoneAPI] AI转账已自动到账:', message.amount, '(数据层处理)');
           } catch (error) {
             logger.error('[PhoneAPI] AI转账到账失败:', error.message);
@@ -464,24 +506,37 @@ export class PhoneAPI {
           await this.sleep(delay);
         }
 
-        // 触发回调（显示气泡）
-        // ✅ 传入原始消息对象（包括recalled-pending），用于触发动画
-        logger.debug('[PhoneAPI] 触发onMessageReceived回调，消息类型:', message.type);
-        if (onMessageReceived) {
-          try {
-            await onMessageReceived(message);
-            logger.debug('[PhoneAPI] 消息已显示');
-          } catch (error) {
-            logger.error('[PhoneAPI] onMessageReceived回调执行失败:', error);
-            throw error;
+        // ✅ 判断是否需要立即显示（只有当前聊天界面的消息才立即显示）
+        if (isCurrentChat) {
+          // 触发回调（显示气泡）
+          logger.debug('[PhoneAPI] 触发onMessageReceived回调，消息类型:', message.type);
+          if (onMessageReceived) {
+            try {
+              // ✅ 只传递 message 参数，contactId 可以从 message.contactId 获取
+              await onMessageReceived(message);
+              logger.debug('[PhoneAPI] 消息已显示');
+            } catch (error) {
+              logger.error('[PhoneAPI] onMessageReceived回调执行失败:', error);
+              throw error;
+            }
+          } else {
+            logger.warn('[PhoneAPI] onMessageReceived回调未定义！');
           }
         } else {
-          logger.warn('[PhoneAPI] onMessageReceived回调未定义！');
+          // ✅ 其他联系人的消息：触发全局事件（更新消息列表小红点）
+          logger.debug('[PhoneAPI] 触发全局消息列表刷新');
+          document.dispatchEvent(new CustomEvent('phone-message-received', {
+            detail: { contactId: matchedContactId, message }
+          }));
+          logger.info('[PhoneAPI] 其他联系人消息已保存并触发通知:', msg.role);
         }
       }
 
-      // 清空待发送消息（只清空消息，不清空个签操作，个签操作由用户发送新消息时清空）
-      clearPendingMessages(contactId);
+      // ✅ 清空所有触发联系人的待发送消息
+      triggeredContactIds.forEach(triggeredId => {
+        clearPendingMessages(triggeredId);
+        logger.debug('[PhoneAPI] 已清空待发送消息:', triggeredId);
+      });
 
       // ✅ 触发生成完成事件
       document.dispatchEvent(new CustomEvent('phone-ai-generation-complete', {

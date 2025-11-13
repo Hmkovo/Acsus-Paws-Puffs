@@ -457,6 +457,14 @@ async function createMessageBubble(message, contact, contactId) {
       logger.debug('[MessageSendCustom] 待撤回消息（发送管理页不触发动画）');
       break;
 
+    case 'friend_added':
+      // 添加好友系统消息（居中显示）
+      {
+        const { renderFriendAddedMessage } = await import('./message-types/friend-added-message.js');
+        innerBubble = renderFriendAddedMessage(message);
+      }
+      break;
+
     case 'poke':
       // 戳一戳消息
       innerBubble = renderPokeMessage(message, contact, contactId);

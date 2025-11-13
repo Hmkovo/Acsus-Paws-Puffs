@@ -137,5 +137,14 @@ export function formatTimeForMessageList(timestamp) {
   }
 }
 
+/**
+ * 获取当前Unix时间戳（秒）
+ * 
+ * @returns {number} 当前时间的Unix时间戳（秒）
+ */
+export function getCurrentTimestamp() {
+  return Math.floor(Date.now() / 1000);
+}
+
 export { formatTime };
 

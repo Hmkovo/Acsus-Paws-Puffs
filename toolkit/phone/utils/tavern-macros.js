@@ -29,14 +29,6 @@ let loadContacts, buildChatHistoryInfo, buildHistoryChatInfo;
 // 已注册的角色宏（用于清理）
 const registeredCharacterMacros = new Set();
 
-// 消息缓存（用于同步宏函数）
-// 结构：{ contactId: { recent: '...', history: '...' } }
-const messageCache = new Map();
-
-// 角色名到 contactId 的映射（用于快速查找）
-// 结构：{ '张三': 'tavern_zhang_san' }
-const nameToIdMap = new Map();
-
 /**
  * 注册所有手机相关的酒馆宏
  * 
@@ -61,64 +53,15 @@ export async function registerPhoneMacros() {
   registerMacro('当前时间', getCurrentTime, '当前时间（手机格式）');
   registerMacro('当前天气', getCurrentWeather, '当前天气（手机格式）');
 
-  // 预加载所有消息到缓存（异步）
-  await refreshMessageCache();
-
   // 注册所有联系人的宏
   await registerAllContactMacros();
 
   logger.info('[TavernMacros] 已注册手机宏: {{最新消息}}, {{历史消息}}, {{当前时间}}, {{当前天气}}');
 
-  // 监听联系人变化事件（最小化监听）
+  // 监听联系人变化事件（只监听联系人列表变化）
   setupContactChangeListener();
 }
 
-/**
- * 刷新消息缓存
- * 
- * @description
- * 预加载所有联系人的消息到缓存
- * 因为宏函数必须是同步的，所以需要提前缓存数据
- * 同时构建 name -> contactId 映射
- * 
- * @async
- * @private
- * @returns {Promise<void>}
- */
-async function refreshMessageCache() {
-  try {
-    const contacts = await loadContacts();
-
-    messageCache.clear();
-    nameToIdMap.clear();
-
-    for (const contact of contacts) {
-      try {
-        // ✅ 创建临时的 messageNumberMap（酒馆宏不需要编号，但函数签名需要）
-        const tempMap = new Map();
-
-        const recentResult = await buildChatHistoryInfo(contact.id, contact, tempMap, 1);
-        const historyResult = await buildHistoryChatInfo(contact.id, contact, new Map());
-
-        // ✅ 提取 content 字段（函数返回 { content, nextNumber }）
-        messageCache.set(contact.id, {
-          recent: recentResult.content,
-          history: historyResult.content
-        });
-        nameToIdMap.set(contact.name, contact.id);  // 构建名字映射
-      } catch (error) {
-        logger.warn(`[TavernMacros] 加载消息失败 (${contact.name}):`, error);
-        // 设置空缓存，避免后续报错
-        messageCache.set(contact.id, { recent: '', history: '' });
-        nameToIdMap.set(contact.name, contact.id);
-      }
-    }
-
-    logger.debug(`[TavernMacros] 消息缓存已刷新，共 ${contacts.length} 个联系人`);
-  } catch (error) {
-    logger.error('[TavernMacros] 刷新消息缓存失败:', error);
-  }
-}
 
 /**
  * 注册所有联系人的专属宏
@@ -175,20 +118,18 @@ async function registerAllContactMacros() {
 }
 
 /**
- * 监听联系人变化事件（最小化监听）
+ * 监听联系人变化事件
  * 
  * @description
- * 只监听一个事件：phone_contact_list_changed
- * 当联系人列表发生变化时（同步角色、添加好友、删除好友），自动刷新宏和缓存
+ * 监听联系人列表变化事件，重新注册宏
  * 
  * @private
  */
 function setupContactChangeListener() {
-  // 监听联系人列表变化事件
+  // 监听联系人列表变化事件（新增/删除联系人时重新注册宏）
   document.addEventListener('phone-contact-list-changed', async () => {
-    logger.debug('[TavernMacros] 检测到联系人变化，刷新缓存和宏');
-    await refreshMessageCache();  // 先刷新缓存
-    await registerAllContactMacros();  // 再注册宏
+    logger.debug('[TavernMacros] 检测到联系人变化，重新注册宏');
+    await registerAllContactMacros();
   });
 
   logger.debug('[TavernMacros] 已设置联系人变化监听器');
@@ -221,7 +162,7 @@ function sanitizeMacroName(name) {
  * 获取当前角色的最新消息（用于 {{最新消息}}）
  * 
  * @description
- * 宏函数必须是同步的，从缓存读取数据
+ * 宏函数必须是同步的，直接从持久化存储读取数据
  * 
  * @returns {string} 格式化的聊天记录
  */
@@ -246,7 +187,7 @@ function getRecentMessages() {
  * 获取当前角色的历史消息（用于 {{历史消息}}）
  * 
  * @description
- * 宏函数必须是同步的，从缓存读取数据
+ * 宏函数必须是同步的，直接从持久化存储读取数据
  * 
  * @returns {string} 格式化的聊天记录
  */
@@ -268,47 +209,119 @@ function getHistoryMessages() {
 }
 
 /**
- * 根据角色名获取消息（同步，从缓存读取）
+ * 根据角色名获取消息（同步，直接读取持久化存储）
  * 
  * @description
  * 宏函数必须是同步的，不能返回 Promise
- * 通过 name -> contactId 映射快速查找
+ * 通过角色名查找对应的联系人ID，然后读取持久化存储
  * 
  * @param {'recent'|'history'} type - 消息类型
  * @param {string} charName - 角色名（从酒馆的 name2 获取）
  * @returns {string} 格式化的聊天记录
  */
 function getMessagesByCharName(type, charName) {
-  // 通过名字查找 contactId
-  const contactId = nameToIdMap.get(charName);
+  try {
+    // 从持久化存储读取联系人列表
+    const STORAGE_KEY = 'acsusPawsPuffs';
+    const contacts = extension_settings[STORAGE_KEY]?.phone?.contacts || [];
 
-  if (!contactId) {
-    logger.debug(`[TavernMacros] 角色 ${charName} 没有手机聊天记录或缓存未加载`);
-    return ''; // 没有手机记录，返回空字符串
+    // 查找匹配的联系人
+    const contact = contacts.find(c => c.name === charName);
+
+    if (!contact) {
+      logger.debug(`[TavernMacros] 角色 ${charName} 没有手机联系人记录`);
+      return ''; // 没有手机记录，返回空字符串
+    }
+
+    return getContactMessages(type, contact.id, contact);
+  } catch (error) {
+    logger.error(`[TavernMacros] 获取角色消息失败 (${charName}):`, error);
+    return '';
   }
-
-  return getContactMessages(type, contactId);
 }
 
 /**
- * 根据 contactId 获取消息（同步，从缓存读取）
+ * 根据 contactId 获取消息（同步，直接读取持久化存储）
  * 
  * @description
- * 宏函数必须是同步的，从缓存直接读取
+ * 宏函数必须是同步的，直接从 extension_settings 读取数据并格式化
  * 
  * @param {'recent'|'history'} type - 消息类型
  * @param {string} contactId - 联系人ID
+ * @param {Object} contact - 联系人对象
  * @returns {string} 格式化的聊天记录
  */
-function getContactMessages(type, contactId) {
-  const cached = messageCache.get(contactId);
+function getContactMessages(type, contactId, contact) {
+  try {
+    // 从持久化存储读取聊天记录
+    const STORAGE_KEY = 'acsusPawsPuffs';
+    const chatKey = `chat_${contactId}`;
+    const messages = extension_settings[STORAGE_KEY]?.phone?.chats?.[chatKey] || [];
 
-  if (!cached) {
-    logger.debug(`[TavernMacros] 联系人 ${contactId} 缓存不存在`);
+    if (messages.length === 0) {
+      return ''; // 没有消息
+    }
+
+    // 根据类型选择消息范围
+    let selectedMessages;
+    if (type === 'recent') {
+      // 最新消息：最后20条
+      selectedMessages = messages.slice(-20);
+    } else {
+      // 历史消息：除最新20条外的所有消息
+      selectedMessages = messages.slice(0, -20);
+    }
+
+    if (selectedMessages.length === 0) {
+      return '';
+    }
+
+    // 格式化消息（同步版本，简化格式）
+    return formatMessagesSync(selectedMessages, contact);
+  } catch (error) {
+    logger.error(`[TavernMacros] 获取联系人消息失败 (${contactId}):`, error);
     return '';
   }
+}
 
-  return cached[type] || '';
+/**
+ * 格式化消息（同步版本）
+ * 
+ * @description
+ * 将消息数组格式化为可读的字符串
+ * 简化版本，不需要异步操作
+ * 
+ * @param {Array<Object>} messages - 消息数组
+ * @param {Object} contact - 联系人对象
+ * @returns {string} 格式化的消息文本
+ */
+function formatMessagesSync(messages, contact) {
+  const lines = [];
+
+  for (const msg of messages) {
+    // 格式化时间
+    const time = msg.timestamp ? new Date(msg.timestamp).toLocaleString('zh-CN', {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }) : '';
+
+    // 格式化发送者
+    const sender = msg.sender === 'user' ? '我' : contact.name;
+
+    // 格式化内容
+    const content = msg.content || '';
+
+    // 组装消息行
+    if (time) {
+      lines.push(`[${time}] ${sender}: ${content}`);
+    } else {
+      lines.push(`${sender}: ${content}`);
+    }
+  }
+
+  return lines.join('\n');
 }
 
 /**
@@ -385,6 +398,9 @@ function getCurrentWeather() {
 /**
  * 手动刷新所有宏（供外部调用）
  * 
+ * @description
+ * 重新注册所有联系人的宏（当联系人列表变化时）
+ * 
  * @async
  * @returns {Promise<void>}
  * 
@@ -394,7 +410,6 @@ function getCurrentWeather() {
  */
 export async function refreshPhoneMacros() {
   logger.info('[TavernMacros] 手动刷新宏...');
-  await refreshMessageCache();  // 先刷新缓存
-  await registerAllContactMacros();  // 再注册宏
+  await registerAllContactMacros();
 }
 

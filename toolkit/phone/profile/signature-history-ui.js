@@ -11,6 +11,7 @@
  */
 
 import logger from '../../../logger.js';
+import { registerListener, destroyPageListeners } from '../utils/listener-manager.js';
 import {
   loadUserSignature,
   loadContactSignature,
@@ -730,29 +731,28 @@ function setupAutoRefresh(container, targetType, contactId) {
   };
 
   // 添加监听器
-  document.addEventListener('signature-data-changed', refreshHandler);
-
-  // 清理逻辑：当页面隐藏/销毁时移除监听器
-  // 使用 MutationObserver 监听容器被移除
-  const observer = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-      for (const node of mutation.removedNodes) {
-        if (node === container || node.contains?.(container)) {
-          logger.debug('[SignatureHistory] 页面已关闭，移除事件监听器');
-          document.removeEventListener('signature-data-changed', refreshHandler);
-          refreshHandler = null;
-          currentPageParams = null;
-          observer.disconnect();
-          return;
-        }
-      }
-    }
+  registerListener('signature-history', 'signature-data-changed', refreshHandler, {
+    description: '签名数据变化后刷新历史列表'
   });
 
-  // 监听父容器的子节点变化
+  // 监听父容器的子节点变化（用于页面销毁时清理）
   const parentObserver = () => {
     const parent = container.parentElement;
     if (parent) {
+      const observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          for (const node of mutation.removedNodes) {
+            if (node === container || node.contains?.(container)) {
+              logger.debug('[SignatureHistory] 页面已关闭，清理监听器');
+              destroyPageListeners('signature-history');
+              refreshHandler = null;
+              currentPageParams = null;
+              observer.disconnect();
+              return;
+            }
+          }
+        }
+      });
       observer.observe(parent, { childList: true, subtree: true });
     } else {
       // 如果还没添加到DOM，延迟观察

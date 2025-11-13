@@ -248,6 +248,27 @@ export async function loadContactSignature(contactId) {
       };
     }
 
+    // ✅ 防御性编程：确保数据结构完整
+    // 兼容初始格式：新同步的角色 signature 是字符串，需转换为对象格式
+    if (typeof contact.signature === 'string') {
+      logger.debug('[SignatureData] 检测到字符串格式个签，转换为对象格式');
+      return {
+        current: contact.signature,
+        history: []
+      };
+    }
+
+    // 确保 history 字段存在
+    if (!contact.signature.history) {
+      logger.debug('[SignatureData] 个签数据缺少 history 字段，自动补全');
+      contact.signature.history = [];
+    }
+
+    // 确保 current 字段存在
+    if (contact.signature.current === undefined) {
+      contact.signature.current = '';
+    }
+
     return contact.signature;
   } catch (error) {
     logger.error('[SignatureData] 加载角色个签失败:', error);

@@ -83,6 +83,30 @@ async function syncContacts() {
     // 1. 获取酒馆角色列表
     const tavernContacts = await getTavernCharacters();
 
+    // ✅ 修复同名角色ID冲突：检测重复的 ID 并添加后缀
+    const usedIds = new Set();
+    const idCounts = {};
+
+    for (const contact of tavernContacts) {
+      const baseId = contact.id;
+
+      // 如果 ID 已存在，添加数字后缀
+      if (usedIds.has(contact.id)) {
+        // 统计这个 baseId 出现的次数
+        if (!idCounts[baseId]) {
+          idCounts[baseId] = 1;
+        }
+        idCounts[baseId]++;
+
+        // 生成新的唯一 ID
+        const newId = `${baseId}_${idCounts[baseId]}`;
+        logger.warn(`[Sync] 检测到同名角色，ID已调整: ${contact.id} → ${newId}`);
+        contact.id = newId;
+      }
+
+      usedIds.add(contact.id);
+    }
+
     // 2. 获取本地联系人列表
     const localContacts = await loadContacts();
 

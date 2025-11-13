@@ -10,12 +10,14 @@ import {
   getAgreedFriends,
   getUnreadFriendRequestsCount,
   getPendingRequests,
-  loadContactGroups
+  loadContactGroups,
+  getAIAwareDeletedRequests
 } from './contact-list-data.js';
 import { loadData, saveData } from '../data-storage/storage-api.js';
 import { hidePage, showPage } from '../phone-main-ui.js';
 import { showSuccessToast } from '../ui-components/toast-notification.js';
 import { getThumbnailUrl } from '../../../../../../../script.js';
+import { formatTime } from '../utils/time-helper.js';
 
 /**
  * 渲染联系人列表
@@ -329,6 +331,9 @@ export async function renderNewFriendsPage() {
 
     page.appendChild(contentContainer);
 
+    // 4. 监听AI生成完成事件，自动刷新页面
+    bindNewFriendsPageEvents();
+
     logger.info('[NewFriends] 新朋友页面渲染完成');
     return page;
   } catch (error) {
@@ -450,11 +455,17 @@ async function createFriendRequestList() {
   listContainer.className = 'newfriend-list';
 
   try {
-    // 从待处理列表（快照）获取角色
+    // 1. 获取AI感知删除的申请（置顶显示）
+    const aiAwareRequests = await getAIAwareDeletedRequests();
+
+    // 2. 从待处理列表（快照）获取普通角色
     const characters = await getPendingRequests();
 
-    if (characters.length === 0) {
-      // 没有待处理申请时显示提示
+    // 3. 性能优化：一次性获取已同意列表
+    const agreedList = await getAgreedFriends();
+
+    // 4. 如果两个列表都为空
+    if (aiAwareRequests.length === 0 && characters.length === 0) {
       const emptyHint = document.createElement('div');
       emptyHint.style.cssText = 'padding: 40px 20px; text-align: center; color: #999;';
       emptyHint.innerHTML = `
@@ -466,21 +477,110 @@ async function createFriendRequestList() {
       return listContainer;
     }
 
-    // 性能优化：一次性获取已同意列表（避免为每个角色都读取一次）
-    const agreedList = await getAgreedFriends();
+    // 5. 先显示AI感知删除的申请（按最新消息时间倒序）
+    const sortedAIRequests = aiAwareRequests
+      .map(req => ({
+        ...req,
+        lastMessageTime: req.reapplyMessages.length > 0
+          ? req.reapplyMessages[req.reapplyMessages.length - 1].time
+          : req.deleteTime
+      }))
+      .sort((a, b) => b.lastMessageTime - a.lastMessageTime);
 
-    // 为每个角色创建申请项
+    for (const request of sortedAIRequests) {
+      const requestItem = await createAIAwareRequestItem(request);
+      listContainer.appendChild(requestItem);
+    }
+
+    // 6. 再显示普通角色申请
     for (const character of characters) {
       const requestItem = createFriendRequestItem(character, agreedList);
       listContainer.appendChild(requestItem);
     }
 
-    logger.info('[NewFriends] 好友申请列表创建完成，共', characters.length, '个角色');
+    logger.info('[NewFriends] 好友申请列表创建完成，AI感知:', aiAwareRequests.length, '普通:', characters.length);
     return listContainer;
   } catch (error) {
     logger.error('[NewFriends] 创建申请列表失败:', error);
     return listContainer;
   }
+}
+
+/**
+ * 创建AI感知删除的好友申请项
+ * 
+ * @async
+ * @param {Object} request - AI感知删除申请对象
+ * @returns {Promise<HTMLElement>} 申请项元素
+ */
+async function createAIAwareRequestItem(request) {
+  const item = document.createElement('div');
+  item.className = 'newfriend-item ai-aware-deleted';
+
+  // 构建头像路径
+  const avatarUrl = getThumbnailUrl('avatar', request.avatar);
+
+  // 最新的附加消息
+  const latestMessage = request.reapplyMessages.length > 0
+    ? request.reapplyMessages[request.reapplyMessages.length - 1].message
+    : '（暂无申请消息）';
+
+  item.innerHTML = `
+    <img src="${avatarUrl}" alt="头像" class="newfriend-item-avatar"
+         onerror="this.src='https://i.postimg.cc/LXQrd0s0/icon.jpg'">
+    <div class="newfriend-item-info">
+      <div class="newfriend-item-name">${request.contactName}</div>
+      <div class="newfriend-item-message">${escapeHtml(latestMessage)}</div>
+    </div>
+  `;
+
+  // 创建"查看"按钮
+  const viewBtn = document.createElement('button');
+  viewBtn.className = 'newfriend-item-btn-view';
+  viewBtn.textContent = '查看';
+  viewBtn.addEventListener('click', () => handleViewAIAwareRequest(request));
+  item.appendChild(viewBtn);
+
+  return item;
+}
+
+/**
+ * 处理查看AI感知删除申请
+ * 
+ * @async
+ * @param {Object} request - 申请对象
+ */
+async function handleViewAIAwareRequest(request) {
+  logger.info('[NewFriends] 查看AI感知删除申请:', request.contactName);
+
+  try {
+    // 获取手机遮罩层元素
+    const overlayElement = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
+    if (!overlayElement) {
+      logger.warn('[NewFriends] 未找到手机遮罩层元素');
+      return;
+    }
+
+    // 动态导入showPage函数并跳转
+    const { showPage } = await import('../phone-main-ui.js');
+    await showPage(overlayElement, 'friend-request-detail', { contactId: request.contactId });
+  } catch (error) {
+    logger.error('[NewFriends] 打开详情页失败:', error);
+  }
+}
+
+/**
+ * HTML转义
+ * 
+ * @private
+ * @param {string} str - 要转义的字符串
+ * @returns {string} 转义后的字符串
+ */
+function escapeHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }
 
 /**
@@ -582,8 +682,10 @@ async function handleAgreeRequest(character, buttonElement) {
   logger.info('[NewFriends] 同意好友申请:', character.name);
 
   try {
-    // 导入 saveContact 函数
+    // 导入所需函数
     const { saveContact } = await import('./contact-list-data.js');
+    const { addSystemMessage } = await import('../messages/message-chat-data.js');
+    const { getCurrentTimestamp } = await import('../utils/time-helper.js');
 
     // 1. 保存到联系人列表
     const success = await saveContact(character);
@@ -597,15 +699,24 @@ async function handleAgreeRequest(character, buttonElement) {
     // 2. 标记为已同意
     await markFriendAsAgreed(character.id);
 
-    // 3. 局部更新按钮状态（最小化影响范围）
+    // 3. ✅ 添加系统消息："{{user}}添加了你为好友"
+    const currentTime = getCurrentTimestamp();
+    await addSystemMessage(character.id, {
+      type: 'friend_added',
+      content: '{{user}}添加了你为好友',
+      time: currentTime
+    });
+    logger.info('[NewFriends] 已插入同意好友系统消息');
+
+    // 4. 局部更新按钮状态（最小化影响范围）
     buttonElement.className = 'newfriend-item-btn-agreed';
     buttonElement.textContent = '已同意';
     buttonElement.disabled = true;
 
-    // 4. 刷新联系人标签页（显示新添加的联系人）
+    // 5. 刷新联系人标签页（显示新添加的联系人）
     await refreshContactListInBackground();
 
-    // 5. 显示成功通知
+    // 6. 显示成功通知
     showSuccessToast(`已添加 ${character.name} 为联系人`);
 
     logger.info('[NewFriends] 好友申请已同意:', character.name);
@@ -659,6 +770,29 @@ async function refreshContactListInBackground() {
   } catch (error) {
     logger.error('[NewFriends] 刷新联系人列表失败:', error);
   }
+}
+
+/**
+ * 绑定新朋友页面事件
+ * 
+ * @description
+ * 监听AI生成完成事件，自动刷新页面内容
+ * 
+ * @private
+ */
+function bindNewFriendsPageEvents() {
+  // 监听 AI 生成完成事件，自动刷新页面
+  const handleAIGenerationComplete = async () => {
+    // 等待一小段时间，确保数据已保存
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // 刷新新朋友页面
+    await refreshNewFriendsPage();
+    logger.debug('[NewFriends] AI生成完成，已刷新页面');
+  };
+
+  document.addEventListener('phone-ai-generation-complete', handleAIGenerationComplete);
+  logger.debug('[NewFriends] 已绑定AI生成完成事件');
 }
 
 /**

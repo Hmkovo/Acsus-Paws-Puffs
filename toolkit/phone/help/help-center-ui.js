@@ -43,14 +43,14 @@ export async function renderHelpCenter() {
             <span class="settings-item-text">表情包相关说明</span>
             <i class="fa-solid fa-chevron-right settings-item-arrow"></i>
           </div>
-          <div class="settings-item" data-action="placeholder-2">
-            <i class="fa-solid fa-2"></i>
-            <span class="settings-item-text">教程占位符 2</span>
+          <div class="settings-item" data-action="faq">
+            <i class="fa-solid fa-circle-question"></i>
+            <span class="settings-item-text">常见问题</span>
             <i class="fa-solid fa-chevron-right settings-item-arrow"></i>
           </div>
-          <div class="settings-item" data-action="placeholder-3">
-            <i class="fa-solid fa-3"></i>
-            <span class="settings-item-text">教程占位符 3</span>
+          <div class="settings-item" data-action="macro-guide">
+            <i class="fa-solid fa-code"></i>
+            <span class="settings-item-text">宏变量使用教程</span>
             <i class="fa-solid fa-chevron-right settings-item-arrow"></i>
           </div>
           <div class="settings-item" data-action="placeholder-4">
@@ -128,8 +128,18 @@ async function handleItemClick(action) {
       await showPage(overlayElement, 'emoji-guide-detail', {});
       break;
 
-    case 'placeholder-2':
-    case 'placeholder-3':
+    case 'faq':
+      // 跳转到常见问题页
+      const { showPage: showFaqPage } = await import('../phone-main-ui.js');
+      await showFaqPage(overlayElement, 'faq-detail', {});
+      break;
+
+    case 'macro-guide':
+      // 跳转到宏变量使用教程页
+      const { showPage: showMacroPage } = await import('../phone-main-ui.js');
+      await showMacroPage(overlayElement, 'macro-guide-detail', {});
+      break;
+
     case 'placeholder-4':
       // 占位符，暂无操作
       logger.debug('[HelpCenter] 占位符，暂无操作');

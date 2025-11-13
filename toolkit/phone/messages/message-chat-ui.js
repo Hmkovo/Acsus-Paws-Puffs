@@ -8,6 +8,7 @@ import { loadContacts } from '../contacts/contact-list-data.js';
 import { getContactDisplayName } from '../utils/contact-display-helper.js';
 import { getEmojis } from '../emojis/emoji-manager-data.js';
 import { bindLongPress } from '../utils/message-actions-helper.js';
+import { createPageListenerManager } from '../utils/listener-manager.js';
 
 /**
  * 渲染聊天界面（完整DOM结构）
@@ -69,6 +70,9 @@ export async function renderChatView(contactId) {
   // 加载并渲染历史聊天记录（支持分页加载）
   loadChatHistoryAndRender(page, contactId, contact);
 
+  // 【新】统一注册所有监听器（自动清理！）
+  setupChatListeners(page, contactId, contact);
+
   // 绑定事件（延迟执行，确保DOM已挂载）
   setTimeout(() => {
     bindInputEvents(page, contactId, contact);
@@ -76,10 +80,6 @@ export async function renderChatView(contactId) {
     bindPlusPanel(page);
     bindReturnButton(page);
     bindSettingsButton(page, contactId);
-    bindEmojiDataListener(page);  // 监听表情包数据变化
-    bindQuoteListener(page, contactId, contact);  // 监听引用事件
-    bindAIGenerationEvents(page, contactId);  // 监听AI生成事件（完成/错误）
-    bindLoadSettingsChangeListener(page, contactId);  // 监听设置变化
 
     // 恢复草稿
     restoreDraft(page, contactId);
@@ -306,98 +306,8 @@ function refreshEmojiPanel() {
   initEmojiLazyLoad();
 }
 
-/**
- * 监听表情包数据变化
- * 
- * @private
- * @param {HTMLElement} page - 聊天页面容器
- * 
- * @description
- * 监听自定义事件 'emoji-data-changed'，当表情包添加/删除时自动刷新表情选择器
- */
-function bindEmojiDataListener(page) {
-  const handler = () => {
-    logger.debug('[ChatView] 收到表情包数据变化事件，刷新表情选择器');
-    refreshEmojiPanel();
-  };
-
-  // 添加事件监听器
-  document.addEventListener('emoji-data-changed', handler);
-
-  // 页面销毁时移除监听器（防止内存泄漏）
-  // 使用 MutationObserver 监听页面是否被移除
-  const observer = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-      if (mutation.type === 'childList' && mutation.removedNodes) {
-        for (const node of mutation.removedNodes) {
-          if (node === page) {
-            document.removeEventListener('emoji-data-changed', handler);
-            observer.disconnect();
-            logger.debug('[ChatView] 表情包数据监听器已移除');
-            return;
-          }
-        }
-      }
-    }
-  });
-
-  if (page.parentNode) {
-    observer.observe(page.parentNode, { childList: true });
-  }
-
-  logger.debug('[ChatView] 表情包数据监听器已绑定');
-}
-
-/**
- * 监听引用事件
- * 
- * @private
- * @param {HTMLElement} page - 聊天页面容器
- * @param {string} contactId - 联系人ID
- * @param {Object} contact - 联系人对象
- * 
- * @description
- * 监听自定义事件 'phone-message-quote'，当用户点击引用按钮时显示引用预览框
- */
-function bindQuoteListener(page, contactId, contact) {
-  const handler = (e) => {
-    if (e.detail.contactId !== contactId) return;
-    showQuotePreview(page, e.detail.message, contact);
-  };
-
-  // 添加事件监听器
-  document.addEventListener('phone-message-quote', handler);
-
-  // 页面销毁时移除监听器
-  const observer = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-      if (mutation.type === 'childList' && mutation.removedNodes) {
-        for (const node of mutation.removedNodes) {
-          if (node === page) {
-            document.removeEventListener('phone-message-quote', handler);
-            observer.disconnect();
-            logger.debug('[ChatView] 引用事件监听器已移除');
-            return;
-          }
-        }
-      }
-    }
-  });
-
-  if (page.parentNode) {
-    observer.observe(page.parentNode, { childList: true });
-  }
-
-  // 绑定关闭按钮
-  const closeBtn = page.querySelector('.chat-quote-preview-close');
-  if (closeBtn) {
-    closeBtn.addEventListener('click', () => {
-      hideQuotePreview(page);
-    });
-  }
-
-  logger.debug('[ChatView] 引用事件监听器已绑定');
-}
+// ✅ 已迁移到 setupChatListeners（监听器中心统一管理）
+// ✅ 已迁移到 setupChatListeners（监听器中心统一管理）
 
 /**
  * 显示引用预览框
@@ -659,8 +569,7 @@ async function bindInputEvents(page, contactId, contact) {
     });
   }
 
-  // ✅ 监听重roll事件，同步按钮状态
-  bindDebugRerollEvents(page, contactId, sendBtn);
+  // ✅ 已迁移到 setupChatListeners（监听器中心统一管理重roll事件）
 
   // 点击其他地方关闭面板
   document.addEventListener('click', (e) => {
@@ -677,135 +586,9 @@ async function bindInputEvents(page, contactId, contact) {
   });
 }
 
-/**
- * 绑定重roll事件监听器
- * @private
- * @param {HTMLElement} page - 页面元素
- * @param {string} contactId - 联系人ID
- * @param {HTMLElement} sendBtn - 纸飞机按钮
- */
-function bindDebugRerollEvents(page, contactId, sendBtn) {
-  if (!sendBtn) return;
+// ✅ 已迁移到 setupChatListeners（监听器中心统一管理）
 
-  // 类型断言
-  const sendButton = /** @type {HTMLButtonElement} */ (sendBtn);
-
-  // 监听重roll开始事件
-  const handleRerollStart = (e) => {
-    if (e.detail.contactId !== contactId) return;
-
-    logger.debug('[ChatView] 收到重roll开始事件，改变按钮状态');
-
-    // 改变按钮为终止键
-    sendButton.innerHTML = '<i class="fa-solid fa-circle-stop"></i>';
-    sendButton.classList.add('generating');
-  };
-
-  // 监听重roll结束事件
-  const handleRerollEnd = (e) => {
-    if (e.detail.contactId !== contactId) return;
-
-    logger.debug('[ChatView] 收到重roll结束事件，恢复按钮状态');
-
-    // 恢复按钮为纸飞机
-    sendButton.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
-    sendButton.classList.remove('generating');
-    sendButton.disabled = false;
-  };
-
-  document.addEventListener('phone-debug-reroll-start', handleRerollStart);
-  document.addEventListener('phone-debug-reroll-end', handleRerollEnd);
-
-  // 页面销毁时清理监听器（防止内存泄漏）
-  const observer = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-      for (const node of mutation.removedNodes) {
-        if (node === page) {
-          document.removeEventListener('phone-debug-reroll-start', handleRerollStart);
-          document.removeEventListener('phone-debug-reroll-end', handleRerollEnd);
-          observer.disconnect();
-          logger.debug('[ChatView] 重roll事件监听器已清理');
-          break;
-        }
-      }
-    }
-  });
-
-  observer.observe(page.parentElement, { childList: true });
-}
-
-/**
- * 监听AI生成事件，自动更新按钮状态
- * 
- * @description
- * 监听 phone-ai-generation-complete 和 phone-ai-generation-error 事件，
- * 当AI生成完成或失败时，动态查找当前活跃页面的发送按钮并恢复状态。
- * 解决切换页面后按钮状态不更新的问题（不依赖闭包捕获的旧DOM）。
- * 
- * @param {HTMLElement} page - 聊天页面元素
- * @param {string} contactId - 联系人ID
- */
-function bindAIGenerationEvents(page, contactId) {
-  // 监听生成完成事件
-  const handleGenerationComplete = (e) => {
-    if (e.detail.contactId !== contactId) return;
-
-    logger.debug('[ChatView] 收到AI生成完成事件，更新按钮状态');
-
-    // ✅ 动态查找当前活跃页面的发送按钮（不依赖闭包）
-    const currentPage = findActiveChatPage(contactId);
-    if (currentPage) {
-      const sendBtn = /** @type {HTMLButtonElement} */ (currentPage.querySelector('.chat-send-btn'));
-      if (sendBtn) {
-        sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
-        sendBtn.disabled = false;
-        sendBtn.classList.remove('generating');
-        logger.debug('[ChatView] 发送按钮已恢复（AI完成）');
-      }
-    } else {
-      logger.debug('[ChatView] 当前页面不活跃，跳过按钮更新');
-    }
-  };
-
-  // 监听生成错误事件
-  const handleGenerationError = (e) => {
-    if (e.detail.contactId !== contactId) return;
-
-    logger.debug('[ChatView] 收到AI生成错误事件，恢复按钮状态');
-
-    // ✅ 动态查找当前活跃页面的发送按钮
-    const currentPage = findActiveChatPage(contactId);
-    if (currentPage) {
-      const sendBtn = /** @type {HTMLButtonElement} */ (currentPage.querySelector('.chat-send-btn'));
-      if (sendBtn) {
-        sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
-        sendBtn.disabled = false;
-        sendBtn.classList.remove('generating');
-        logger.debug('[ChatView] 发送按钮已恢复（AI错误）');
-      }
-    }
-  };
-
-  document.addEventListener('phone-ai-generation-complete', handleGenerationComplete);
-  document.addEventListener('phone-ai-generation-error', handleGenerationError);
-
-  // 页面销毁时清理监听器（防止内存泄漏）
-  const observer = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-      for (const node of mutation.removedNodes) {
-        if (node === page) {
-          document.removeEventListener('phone-ai-generation-complete', handleGenerationComplete);
-          document.removeEventListener('phone-ai-generation-error', handleGenerationError);
-          observer.disconnect();
-          logger.debug('[ChatView] AI生成事件监听器已清理');
-          break;
-        }
-      }
-    }
-  });
-
-  observer.observe(page.parentElement, { childList: true });
-}
+// ✅ 已迁移到 setupChatListeners（监听器中心统一管理）
 
 /**
  * 绑定表情面板事件
@@ -1544,6 +1327,13 @@ async function handleSendToAI(page, contactId, contact, sendBtn) {
       // 2. 检查是否需要显示通知（页面不可见时显示）
       const isCurrentChatVisible = isChatPageVisible(contactId);
 
+      // 3. 增加未读计数（仅当页面不可见时）
+      if (!isCurrentChatVisible) {
+        const { incrementUnreadCount } = await import('../messages/message-chat-data.js');
+        incrementUnreadCount(contactId);
+        logger.debug('[ChatView] 未读计数+1:', contactId);
+      }
+
       // 检查通知设置
       if (!isCurrentChatVisible && shouldShowNotification(contact, message)) {
         // 页面不可见且允许通知，显示通知
@@ -1745,6 +1535,27 @@ export async function appendMessageToChat(page, message, contact, contactId) {
       // 待撤回消息（先显示原消息，随机3-8秒后变撤回提示）
       logger.debug('[ChatView.appendMessageToChat] 渲染待撤回消息（触发动画）');
       bubble = handleRecalledPending(message, contact, contactId, renderTextMessage, renderRecalledMessage);
+      break;
+
+    case 'friend_added':
+      // 添加好友系统消息（居中显示）
+      logger.debug('[ChatView.appendMessageToChat] 渲染添加好友消息');
+      const { renderFriendAddedMessage } = await import('./message-types/friend-added-message.js');
+      bubble = renderFriendAddedMessage(message);
+      break;
+
+    case 'friend_deleted':
+      // 删除好友系统消息（居中显示）
+      logger.debug('[ChatView.appendMessageToChat] 渲染删除好友消息');
+      const { renderFriendDeletedMessage } = await import('./message-types/friend-deleted-message.js');
+      bubble = renderFriendDeletedMessage(message);
+      break;
+
+    case 'friend_request':
+      // 好友申请消息（角色发送的申请消息）
+      logger.debug('[ChatView.appendMessageToChat] 渲染好友申请消息');
+      const { renderFriendRequestMessage } = await import('./message-types/friend-request-message.js');
+      bubble = renderFriendRequestMessage(message, contactId, contact);
       break;
 
     case 'poke':
@@ -2086,6 +1897,27 @@ async function renderSingleBubble(message, contact, contactId, phoneAPI, rendere
       // 待撤回消息（先显示原消息，随机3-8秒后变成撤回提示）
       bubble = handleRecalledPending(message, contact, contactId, renderTextMessage, renderRecalledMessage);
       break;
+    case 'friend_added':
+      // 添加好友系统消息（居中显示）
+      {
+        const { renderFriendAddedMessage } = await import('./message-types/friend-added-message.js');
+        bubble = renderFriendAddedMessage(message);
+      }
+      break;
+    case 'friend_deleted':
+      // 删除好友系统消息（居中显示）
+      {
+        const { renderFriendDeletedMessage } = await import('./message-types/friend-deleted-message.js');
+        bubble = renderFriendDeletedMessage(message);
+      }
+      break;
+    case 'friend_request':
+      // 好友申请消息（角色发送的申请消息）
+      {
+        const { renderFriendRequestMessage } = await import('./message-types/friend-request-message.js');
+        bubble = renderFriendRequestMessage(message, contactId, contact);
+      }
+      break;
     case 'poke':
       // 戳一戳消息
       bubble = renderers.renderPokeMessage ? renderers.renderPokeMessage(message, contact, contactId) : renderTextMessage({ ...message, content: '[戳一戳]', type: 'text' }, contact, contactId);
@@ -2224,46 +2056,7 @@ function updateLoadMoreButton(page, hasMore, remainingCount, contactId, contact)
   }
 }
 
-/**
- * 监听设置变化事件
- * @private
- */
-function bindLoadSettingsChangeListener(page, contactId) {
-  const handler = async (e) => {
-    if (e.detail.contactId === contactId) {
-      logger.info('[ChatView] 检测到设置变化，重新加载消息');
-
-      // 重置加载状态
-      page.dataset.loadedCount = '0';
-
-      // 重新加载消息
-      const contacts = await (await import('../contacts/contact-list-data.js')).loadContacts();
-      const contact = contacts.find(c => c.id === contactId);
-      if (contact) {
-        await loadChatHistoryAndRender(page, contactId, contact, false);
-      }
-    }
-  };
-
-  document.addEventListener('chat-send-settings-changed', handler);
-
-  // 页面销毁时自动清理
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      mutation.removedNodes.forEach((node) => {
-        if (node === page) {
-          document.removeEventListener('chat-send-settings-changed', handler);
-          observer.disconnect();
-          logger.debug('[ChatView] 已清理设置变化监听器');
-        }
-      });
-    });
-  });
-
-  if (page.parentElement) {
-    observer.observe(page.parentElement, { childList: true });
-  }
-}
+// ✅ 已迁移到 setupChatListeners（监听器中心统一管理）
 
 /**
  * 更新消息列表中的联系人项（后台更新）
@@ -2717,5 +2510,185 @@ async function handleSendPoke(contactId) {
     logger.info('[ChatView] 戳一戳已发送并渲染');
   } else {
     logger.warn('[ChatView] 找不到聊天页面或联系人，戳一戳已保存但未渲染');
+  }
+}
+
+// ============================================================================
+// 监听器统一管理（2025-11-10 迁移到监听器中心）
+// ============================================================================
+
+/**
+ * 统一注册聊天页面的所有监听器
+ * 
+ * @description
+ * 使用监听器中心统一管理所有事件监听，页面关闭时自动清理
+ * 
+ * @param {HTMLElement} page - 聊天页面容器
+ * @param {string} contactId - 联系人ID
+ * @param {Object} contact - 联系人对象
+ */
+function setupChatListeners(page, contactId, contact) {
+  // 页面唯一标识
+  const pageId = `message-chat-${contactId}`;
+
+  // 统一注册所有监听器（自动清理！）
+  createPageListenerManager(pageId, page, [
+    // 1. 表情包数据变化
+    {
+      eventName: 'emoji-data-changed',
+      handler: () => {
+        logger.debug('[ChatView] 收到表情包数据变化事件，刷新表情选择器');
+        refreshEmojiPanel();
+      },
+      description: '刷新表情选择器',
+    },
+
+    // 2. 引用消息事件
+    {
+      eventName: 'phone-message-quote',
+      handler: (e) => {
+        if (e.detail.contactId !== contactId) return;
+        showQuotePreview(page, e.detail.message, contact);
+      },
+      description: '显示引用预览框',
+    },
+
+    // 3. 调试重roll开始
+    {
+      eventName: 'phone-debug-reroll-start',
+      handler: (e) => {
+        if (e.detail.contactId !== contactId) return;
+        handleRerollStart(page);
+      },
+      description: '纸飞机变成终止键',
+    },
+
+    // 4. 调试重roll结束
+    {
+      eventName: 'phone-debug-reroll-end',
+      handler: (e) => {
+        if (e.detail.contactId !== contactId) return;
+        handleRerollEnd(page);
+      },
+      description: '恢复纸飞机按钮',
+    },
+
+    // 5. AI生成完成
+    {
+      eventName: 'phone-ai-generation-complete',
+      handler: async (e) => {
+        if (e.detail.contactId !== contactId) return;
+        await handleAIGenerationComplete(page, contactId, e.detail);
+      },
+      description: '追加AI消息到聊天框',
+    },
+
+    // 6. AI生成错误
+    {
+      eventName: 'phone-ai-generation-error',
+      handler: (e) => {
+        if (e.detail.contactId !== contactId) return;
+        handleAIGenerationError(page, e.detail.error);
+      },
+      description: '显示生成错误提示',
+    },
+
+    // 7. 聊天发送设置变化
+    {
+      eventName: 'chat-send-settings-changed',
+      handler: async (e) => {
+        if (e.detail.contactId === contactId) {
+          logger.info('[ChatView] 检测到设置变化，重新加载消息');
+          await reloadChatMessages(page, contactId, contact);
+        }
+      },
+      description: '更新发送按钮状态/重新加载消息',
+    },
+  ]);
+
+  logger.info('[ChatView] 监听器已注册，共7个事件');
+}
+
+// ============================================================================
+// 监听器的 Handler 函数（被 setupChatListeners 调用）
+// ============================================================================
+
+/**
+ * 处理重roll开始事件（改变纸飞机按钮为终止键）
+ */
+function handleRerollStart(page) {
+  const sendBtn = /** @type {HTMLButtonElement} */ (page.querySelector('.chat-send-btn'));
+  if (sendBtn) {
+    sendBtn.innerHTML = '<i class="fa-solid fa-circle-stop"></i>';
+    sendBtn.classList.add('generating');
+    logger.debug('[ChatView] 纸飞机按钮已变为终止键');
+  }
+}
+
+/**
+ * 处理重roll结束事件（恢复纸飞机按钮）
+ */
+function handleRerollEnd(page) {
+  const sendBtn = /** @type {HTMLButtonElement} */ (page.querySelector('.chat-send-btn'));
+  if (sendBtn) {
+    sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+    sendBtn.classList.remove('generating');
+    sendBtn.disabled = false;
+    logger.debug('[ChatView] 纸飞机按钮已恢复');
+  }
+}
+
+/**
+ * 处理AI生成完成事件（追加AI消息到聊天框）
+ */
+async function handleAIGenerationComplete(page, contactId, detail) {
+  logger.debug('[ChatView] AI生成完成，准备追加消息');
+
+  // 动态查找当前活跃页面的发送按钮（不依赖闭包）
+  const currentPage = findActiveChatPage(contactId);
+  if (currentPage) {
+    const sendBtn = /** @type {HTMLButtonElement} */ (currentPage.querySelector('.chat-send-btn'));
+    if (sendBtn) {
+      sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+      sendBtn.disabled = false;
+      sendBtn.classList.remove('generating');
+      logger.debug('[ChatView] 发送按钮已恢复（AI完成）');
+    }
+  } else {
+    logger.debug('[ChatView] 当前页面不活跃，跳过按钮更新');
+  }
+}
+
+/**
+ * 处理AI生成错误事件（显示错误提示）
+ */
+function handleAIGenerationError(page, error) {
+  logger.error('[ChatView] AI生成错误:', error);
+
+  // 恢复发送按钮
+  const sendBtn = /** @type {HTMLButtonElement} */ (page.querySelector('.chat-send-btn'));
+  if (sendBtn) {
+    sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+    sendBtn.disabled = false;
+    sendBtn.classList.remove('generating');
+    logger.debug('[ChatView] 发送按钮已恢复（AI错误）');
+  }
+}
+
+/**
+ * 重新加载聊天消息（设置变化时调用）
+ */
+async function reloadChatMessages(page, contactId, contact) {
+  // 重置加载状态
+  page.dataset.loadedCount = '0';
+
+  // 重新加载消息
+  const { loadContacts } = await import('../contacts/contact-list-data.js');
+  const contacts = await loadContacts();
+  const latestContact = contacts.find(c => c.id === contactId);
+
+  if (latestContact) {
+    await loadChatHistoryAndRender(page, contactId, latestContact, false);
+    logger.info('[ChatView] 消息已重新加载');
   }
 }

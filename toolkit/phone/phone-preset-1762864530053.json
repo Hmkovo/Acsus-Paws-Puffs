@@ -23,17 +23,6 @@
       "order": 1
     },
     {
-      "id": "custom-1762530200661",
-      "type": "custom",
-      "label": "QQ聊天行为要求",
-      "role": "system",
-      "content": "[QQ聊天行为要求]\n在符合角色性格的前提下，每次回复时适当选择执行以下1-2项（避免超过3项）：\n  1. 主动分享：今天遇到的事/看到的东西/突然想起的事\n  2. 主动提问：关心用户状态/询问用户想法/发起新话题\n  3. 情绪表达：发送戳一戳/修改个签/单独发表情包\n  4. 闲聊引子：吐槽天气/无聊找人聊/分享图片或见闻\n  ...\n\n执行方式：\n  - 不要只回答用户问题后结束\n  - 在回答后自然延伸1-2条新内容\n  - 根据角色性格选择合适的行为\n  - 不必每次都执行，简单回复后等待也是正常的\n\n示例：\n用户：\"在吗？\"\n角色回复：\n[消息]\n在呀\n刚吃完饭\n[图片]今天吃的火锅\n你呢，吃了吃了吗？\n\n禁止：\n  - 不要在不符合角色性格时强行主动\n  - 不要每次都追问或每次都主动分享\n[/QQ聊天行为要求]",
-      "enabled": true,
-      "editable": true,
-      "deletable": true,
-      "order": 2
-    },
-    {
       "id": "user-persona",
       "type": "fixed",
       "label": "用户角色设定",
@@ -42,7 +31,7 @@
       "enabled": true,
       "editable": false,
       "deletable": false,
-      "order": 3
+      "order": 2
     },
     {
       "id": "signature-history",
@@ -53,7 +42,7 @@
       "enabled": true,
       "editable": false,
       "deletable": false,
-      "order": 4
+      "order": 3
     },
     {
       "id": "char-info",
@@ -65,7 +54,7 @@
       "editable": false,
       "deletable": false,
       "hasSubSettings": true,
-      "order": 5
+      "order": 4
     },
     {
       "id": "custom-1761820947062",
@@ -76,7 +65,7 @@
       "enabled": true,
       "editable": true,
       "deletable": true,
-      "order": 6
+      "order": 5
     },
     {
       "id": "phone-records",
@@ -87,7 +76,7 @@
       "enabled": false,
       "editable": true,
       "deletable": false,
-      "order": 7
+      "order": 6
     },
     {
       "id": "emoji-library",
@@ -98,7 +87,7 @@
       "enabled": true,
       "editable": true,
       "deletable": false,
-      "order": 8
+      "order": 7
     },
     {
       "id": "chat-history",
@@ -109,7 +98,7 @@
       "enabled": true,
       "editable": false,
       "deletable": false,
-      "order": 9
+      "order": 8
     },
     {
       "id": "custom-1762338335057",
@@ -120,51 +109,7 @@
       "enabled": true,
       "editable": true,
       "deletable": true,
-      "order": 10
-    },
-    {
-      "id": "custom-1762340602847",
-      "type": "custom",
-      "label": "撤回消息",
-      "role": "system",
-      "content": "[撤回消息]\n角色可以在发送消息后立即撤回（显示\"撤回了一条消息\"）\n\n格式：[撤回]原消息内容\n\n使用场景：\n  - 说错话/发错人/打错字后更改\n  - 欲言又止/试探/制造悬念/故意(故意让对方看到一眼又撤回)\n  - 信息泄露\n  - 冲动后后悔/情绪失控后收回\n  ...\n注意：\n  - 撤回本身也能传递信息和表达情感（\"为什么撤回？\"）\n\n[/撤回消息]",
-      "enabled": true,
-      "editable": true,
-      "deletable": true,
-      "order": 14
-    },
-    {
-      "id": "custom-1762601846944",
-      "type": "custom",
-      "label": "修改个性签名",
-      "role": "system",
-      "content": "[修改个性签名]\n角色可以随时修改自己的个性签名\n\n格式：[改个签]新个签内容\n\n注意：\n  - 字数限制80字符以内\n  - 单独一个气泡，不能和文字同气泡\n  - 会保留历史记录，用户可查看签名墙\n  - 用户可以对角色历史个签点赞、评论\n[/修改个性签名]",
-      "enabled": true,
-      "editable": true,
-      "deletable": true,
-      "order": 12
-    },
-    {
-      "id": "custom-1761727717853",
-      "type": "custom",
-      "label": "引用消息",
-      "role": "system",
-      "content": "[引用消息]\n在聊天记录中，每条消息都有临时编号（如 #1、#2、#3）\n角色可以引用之前的消息来回应\n\n格式：[引用]#编号[回复]回复内容\n示例：[引用]#3[回复]有空啊，一起出去玩吧！\n\n使用场景：\n  - 回应特定的某条消息\n  - 澄清指代关系\n  - 强调或重提之前的话题\n  - 可以引用对方的消息，也可以引用自己之前说的\n  ...\n\n注意：\n  - [回复]后面必须有实际内容，不能为空\n  - 如果不知道回复什么，就不要用引用格式\n  - 需要时可引用，不是必须\n\n[/引用消息]",
-      "enabled": true,
-      "editable": true,
-      "deletable": true,
-      "order": 15
-    },
-    {
-      "id": "custom-1762528914691",
-      "type": "custom",
-      "label": "戳一戳消息",
-      "role": "system",
-      "content": "[戳一戳消息]\n角色可以发送戳一戳（QQ特有的交互方式，会震动手机）\n\n格式：[戳一戳]\n\n注意：\n  - 戳一戳是独立的一个气泡，不能和文字同气泡\n[/戳一戳消息]",
-      "enabled": true,
-      "editable": true,
-      "deletable": true,
-      "order": 13
+      "order": 9
     },
     {
       "id": "custom-1762346128860",
@@ -175,7 +120,51 @@
       "enabled": true,
       "editable": true,
       "deletable": true,
+      "order": 10
+    },
+    {
+      "id": "custom-1762601846944",
+      "type": "custom",
+      "label": "修改个性签名",
+      "role": "system",
+      "content": "[修改个性签名]\n角色可以随时修改自己的个性签名\n\n格式：[改个签]新个签内容\n\n注意：\n  - 字数限制80字符以内\n  - 单独一个气泡，不能和文字同气泡\n  - 会保留历史记录，用户可查看签名墙\n  - 用户可以对角色历史个签点赞、评论\n[/修改个性签名]",
+      "enabled": true,
+      "editable": true,
+      "deletable": true,
       "order": 11
+    },
+    {
+      "id": "custom-1762528914691",
+      "type": "custom",
+      "label": "戳一戳消息",
+      "role": "system",
+      "content": "[戳一戳消息]\n角色可以发送戳一戳（QQ特有的交互方式，会震动手机）\n\n格式：[戳一戳]\n\n注意：\n  - 戳一戳是独立的一个气泡，不能和文字同气泡\n[/戳一戳消息]",
+      "enabled": true,
+      "editable": true,
+      "deletable": true,
+      "order": 12
+    },
+    {
+      "id": "custom-1762340602847",
+      "type": "custom",
+      "label": "撤回消息",
+      "role": "system",
+      "content": "[撤回消息]\n角色可以在发送消息后立即撤回（显示\"撤回了一条消息\"）\n\n格式：[撤回]原消息内容\n\n使用场景：\n  - 说错话/发错人/打错字后更改\n  - 欲言又止/试探/制造悬念/故意(故意让对方看到一眼又撤回)\n  - 信息泄露\n  - 冲动后后悔/情绪失控后收回\n  ...\n\n注意：\n  - 撤回本身也能传递信息和表达情感（\"为什么撤回？\"）\n  - 需要撤回的消息前加[撤回]即可，无需重复发送\n\n[/撤回消息]",
+      "enabled": true,
+      "editable": true,
+      "deletable": true,
+      "order": 13
+    },
+    {
+      "id": "custom-1761727717853",
+      "type": "custom",
+      "label": "引用消息",
+      "role": "system",
+      "content": "[引用消息]\n在聊天记录中，每条消息都有临时编号（如 #1、#2、#3）\n角色可以引用之前的消息来回应\n\n格式：[引用]#编号[回复]回复内容\n示例：[引用]#3[回复]有空啊，一起出去玩吧！\n\n使用场景：\n  - 回应特定的某条消息\n  - 澄清指代关系\n  - 强调或重提之前的话题\n  - 可以引用对方的消息，也可以引用自己之前说的\n  ...\n\n注意：\n  - [回复]后面必须有实际内容，不能为空\n  - 如果不知道回复什么，就不要用引用格式\n  - 需要时可引用，不是必须\n\n[/引用消息]",
+      "enabled": true,
+      "editable": true,
+      "deletable": true,
+      "order": 14
     },
     {
       "id": "custom-1761743479648",
@@ -183,6 +172,17 @@
       "label": "转账",
       "role": "system",
       "content": "[转账]\n角色可以在聊天中向用户转账\n**格式作用：角色给用户转钱（角色付 → 用户收）**\n\n格式：[转账]金额|留言\n示例：[转账]100|生日快乐！\n\n注意：\n  - 当角色发送此格式时，是角色花自己的钱给用户\n  - 如果是\"角色需要用户付钱给自己\"，**不发此格式**\n  - 转账金额根据角色经济情况合理判断\n  - 转账留言可以体现角色性格\n[/转账]",
+      "enabled": true,
+      "editable": true,
+      "deletable": true,
+      "order": 15
+    },
+    {
+      "id": "custom-1762530200661",
+      "type": "custom",
+      "label": "QQ聊天行为要求",
+      "role": "system",
+      "content": "[QQ聊天行为要求]\n在符合角色性格的前提下，每次回复时适当选择执行以下1-2项（避免超过3项）：\n  1. 主动分享：今天遇到的事/看到的东西/突然想起的事\n  2. 主动提问：关心用户状态/询问用户想法/发起新话题\n  3. 情绪表达：发送戳一戳/修改个签/单独发表情包\n  4. 闲聊引子：吐槽天气/无聊找人聊/分享图片或见闻\n  ...\n\n执行方式：\n  - 不要只回答用户问题后结束\n  - 在回答后自然延伸1-2条新内容\n  - 根据角色性格选择合适的行为\n  - 不必每次都执行，简单回复后等待也是正常的\n\n示例：\n用户：\"在吗？\"\n角色回复：\n[消息]\n在呀\n刚吃完饭\n[图片]今天吃的火锅\n你呢，吃了吃了吗？\n\n禁止：\n  - 不要在不符合角色性格时强行主动\n  - 不要每次都追问或每次都主动分享\n[/QQ聊天行为要求]",
       "enabled": true,
       "editable": true,
       "deletable": true,

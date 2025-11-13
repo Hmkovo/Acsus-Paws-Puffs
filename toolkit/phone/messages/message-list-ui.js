@@ -9,6 +9,7 @@ import { loadContacts } from '../contacts/contact-list-data.js';
 import { getContactDisplayName } from '../utils/contact-display-helper.js';
 import { getThumbnailUrl } from '../../../../../../../script.js';
 import { findEmojiById } from '../emojis/emoji-manager-data.js';
+import { registerListener, destroyPageListeners } from '../utils/listener-manager.js';
 
 /**
  * 渲染消息列表
@@ -34,6 +35,9 @@ export async function renderMessageList() {
 
   // 加载并渲染最近聊天
   await loadAndRenderChats(listContainer);
+
+  // ✅ 绑定全局消息接收事件监听器
+  bindMessageReceivedListener(listContainer);
 
   logger.debug('[MessageList] 消息列表渲染完成');
   return container;
@@ -376,14 +380,19 @@ export async function updateContactItem(contactId) {
 /**
  * 标记为已读
  * 
+ * @description
+ * 清除未读计数并更新UI（移除小红点）
+ * 
  * @param {string} contactId - 联系人ID
  */
 export async function markAsRead(contactId) {
   logger.debug('[MessageList] 标记已读:', contactId);
 
-  // TODO: 实现未读计数功能（第二阶段）
-  // 暂时只移除徽章
+  // 1. 清除未读计数（数据层）
+  const { clearUnreadCount } = await import('../messages/message-chat-data.js');
+  clearUnreadCount(contactId);
 
+  // 2. 更新UI（移除徽章）
   const item = document.querySelector(`.msg-item[data-contact-id="${contactId}"]`);
   if (item) {
     const badge = item.querySelector('.msg-item-badge');
@@ -492,5 +501,34 @@ export function removeContactItemFromList(contactId) {
   }
 
   logger.info('[MessageList] 已从列表移除:', contactId);
+}
+
+/**
+ * 绑定全局消息接收事件监听器
+ * 
+ * @param {HTMLElement} listContainer - 消息列表容器
+ * 
+ * @description
+ * 监听 `phone-message-received` 事件，当AI生成的消息路由到其他联系人时，
+ * 自动刷新消息列表中对应联系人的消息项（更新预览文本、时间、小红点）。
+ * 
+ * **事件来源：**
+ * - ai-send-controller.js 触发（当前聊天界面收到其他联系人的消息）
+ * 
+ * **清理机制：**
+ * - 使用 listenerManager 自动管理监听器生命周期
+ */
+function bindMessageReceivedListener(listContainer) {
+  const handleMessageReceived = async (e) => {
+    const { contactId, message } = e.detail;
+    logger.info('[MessageList] 收到全局消息事件，刷新联系人项:', contactId);
+    await updateContactItem(contactId);
+    await updateMessageItemPosition(contactId);
+  };
+
+  registerListener('message-list', 'phone-message-received', handleMessageReceived, {
+    description: '消息接收后刷新列表项'
+  });
+  logger.debug('[MessageList] 已绑定全局消息接收事件监听器');
 }
 

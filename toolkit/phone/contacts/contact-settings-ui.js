@@ -4,11 +4,12 @@
  */
 
 import logger from '../../../logger.js';
-import { loadContacts, saveContact, loadContactGroups, deleteContact } from './contact-list-data.js';
+import { loadContacts, saveContact, loadContactGroups, deleteContact, addAIAwareDeletedRequest } from './contact-list-data.js';
 import { showInputPopup, showConfirmPopup, showCustomPopup } from '../utils/popup-helper.js';
 import { syncContactDisplayName } from '../utils/contact-display-helper.js';
-import { clearChatHistory } from '../messages/message-chat-data.js';
+import { clearChatHistory, addSystemMessage } from '../messages/message-chat-data.js';
 import { showSuccessToast } from '../ui-components/toast-notification.js';
+import { getCurrentTimestamp } from '../utils/time-helper.js';
 
 /**
  * 渲染联系人设置页
@@ -397,9 +398,9 @@ async function handleSelectGroup(contact) {
  * 处理删除好友
  * 
  * @description
- * 显示二次确认弹窗，询问是否同时删除聊天记录。
+ * 显示删除模式选择、是否删除聊天记录的确认弹窗。
+ * 支持"AI可知"和"AI不知"两种删除模式。
  * 删除后显示成功通知，停留1秒后返回联系人列表。
- * 保留聊天记录的好友重新添加后可恢复聊天历史。
  * 
  * @async
  * @param {Object} contact - 联系人对象
@@ -408,13 +409,13 @@ async function handleDeleteContact(contact) {
   logger.debug('[ContactSettings] 删除好友:', contact.name);
 
   try {
-    // 第一次确认：是否删除好友（使用自定义弹窗）
+    // 第一次确认：是否删除好友
     const confirmDelete = await showConfirmPopup(
       '删除好友',
       `确定要删除好友"${contact.remark || contact.name}"吗？\n\n删除后可通过"同步酒馆角色"重新添加。`,
       {
         danger: true,
-        okButton: '删除',
+        okButton: '下一步',
         cancelButton: '取消'
       }
     );
@@ -423,7 +424,15 @@ async function handleDeleteContact(contact) {
       return;
     }
 
-    // 第二次确认：是否删除聊天记录（使用自定义弹窗）
+    // 第二次：选择删除模式（AI可知 / AI不知）
+    const deleteMode = await showDeleteModePopup(contact);
+
+    if (deleteMode === null) {
+      // 用户取消
+      return;
+    }
+
+    // 第三次确认：是否删除聊天记录
     const deleteMessages = await showConfirmPopup(
       '删除聊天记录',
       '是否同时删除与该好友的所有聊天记录？',
@@ -436,18 +445,36 @@ async function handleDeleteContact(contact) {
 
     logger.info('[ContactSettings] 删除好友确认:', {
       contactId: contact.id,
+      deleteMode: deleteMode,
       deleteMessages: deleteMessages
     });
 
-    // 1. 从 contacts 列表中移除
+    // 1. 如果是"AI可知"模式，添加到AI感知删除列表并插入系统消息
+    if (deleteMode === 'ai_aware') {
+      const currentTime = getCurrentTimestamp();
+      await addAIAwareDeletedRequest(contact, currentTime);
+      logger.info('[ContactSettings] 已添加到AI感知删除列表:', contact.name);
+
+      // ✅ 插入系统消息："{{user}}于xxxx时间删除了你的好友"
+      if (!deleteMessages) {
+        await addSystemMessage(contact.id, {
+          type: 'friend_deleted',
+          content: `{{user}}删除了你为好友`,
+          time: currentTime
+        });
+        logger.info('[ContactSettings] 已插入好友删除系统消息');
+      }
+    }
+
+    // 2. 从 contacts 列表中移除
     const deleteSuccess = await deleteContact(contact.id);
-    
+
     if (!deleteSuccess) {
       logger.error('[ContactSettings] 删除联系人失败');
       return;
     }
 
-    // 2. 如果选择删除聊天记录
+    // 3. 如果选择删除聊天记录
     if (deleteMessages) {
       await clearChatHistory(contact.id);
       logger.info('[ContactSettings] 已删除聊天记录:', contact.id);
@@ -455,14 +482,15 @@ async function handleDeleteContact(contact) {
       logger.info('[ContactSettings] 已保留聊天记录:', contact.id);
     }
 
-    // 3. 显示成功通知
+    // 4. 显示成功通知
     const displayName = contact.remark || contact.name;
-    showSuccessToast(`已删除好友"${displayName}"`);
+    const modeText = deleteMode === 'ai_aware' ? '（AI可知）' : '';
+    showSuccessToast(`已删除好友"${displayName}" ${modeText}`);
 
-    // 4. 刷新联系人列表（后台）
+    // 5. 刷新联系人列表（后台）
     refreshContactListInBackground();
 
-    // 5. 停留1秒后返回联系人列表
+    // 6. 停留1秒后返回联系人列表
     setTimeout(() => {
       handleBackToContactList();
     }, 1000);
@@ -470,6 +498,69 @@ async function handleDeleteContact(contact) {
   } catch (error) {
     logger.error('[ContactSettings] 删除好友失败:', error);
   }
+}
+
+/**
+ * 显示删除模式选择弹窗
+ * 
+ * @async
+ * @param {Object} contact - 联系人对象
+ * @returns {Promise<string|null>} 删除模式（'ai_aware' | 'silent' | null=取消）
+ */
+async function showDeleteModePopup(contact) {
+  logger.debug('[ContactSettings] 显示删除模式选择:', contact.name);
+
+  const displayName = contact.remark || contact.name;
+
+  const content = `
+    <div class="delete-mode-popup">
+      <p class="delete-mode-hint">选择删除"${displayName}"的方式：</p>
+      <div class="delete-mode-buttons">
+        <button class="delete-mode-btn" data-mode="ai_aware">
+          <i class="fa-solid fa-robot"></i>
+          <span>AI可知</span>
+          <small>AI会知道被删除，可能重新申请加好友</small>
+        </button>
+        <button class="delete-mode-btn" data-mode="silent">
+          <i class="fa-solid fa-user-slash"></i>
+          <span>AI不知</span>
+          <small>静默删除，不触发任何AI行为</small>
+        </button>
+      </div>
+    </div>
+  `;
+
+  return new Promise((resolve) => {
+    showCustomPopup('删除模式', content, {
+      buttons: [
+        { text: '取消', value: null }
+      ],
+      onButtonClick: (value) => {
+        // 如果点击了取消按钮
+        resolve(value);
+      }
+    });
+
+    // 绑定模式按钮事件
+    setTimeout(() => {
+      const modeButtons = document.querySelectorAll('.delete-mode-btn');
+      modeButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const mode = btn.dataset.mode;
+          logger.info('[ContactSettings] 选择删除模式:', mode);
+
+          // 关闭弹窗
+          const overlay = document.querySelector('.phone-popup-overlay');
+          if (overlay) {
+            overlay.classList.remove('show');
+            setTimeout(() => overlay.remove(), 300);
+          }
+
+          resolve(mode);
+        });
+      });
+    }, 100);
+  });
 }
 
 /**

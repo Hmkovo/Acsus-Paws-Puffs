@@ -13,6 +13,7 @@
 
 import logger from '../../../logger.js';
 import { loadContacts } from '../contacts/contact-list-data.js';
+import { getContext } from '../../../../../../../scripts/st-context.js';
 import { loadChatHistory } from '../messages/message-chat-data.js';
 import { characters, chat, this_chid, saveSettingsDebounced, getRequestHeaders } from '../../../../../../../script.js';
 import { extension_settings } from '../../../../../../../scripts/extensions.js';
@@ -161,15 +162,17 @@ function formatTimestamp(timestamp) {
 /**
  * 提取被触发的联系人ID列表（从待发送消息中提取）
  * 
+ * @async
  * @private
  * @param {Object} allPendingMessages - 所有待发送消息（按联系人ID分组）
- * @returns {string[]} 被触发的联系人ID数组（有消息的联系人）
+ * @returns {Promise<string[]>} 被触发的联系人ID数组（有消息的联系人 + AI感知删除触发的联系人）
  * 
  * @description
  * 从 allPendingMessages 中提取所有有消息的 contactId
- * 用于多角色触发场景（给多个角色发消息）
+ * 同时检查AI感知删除触发的角色，合并到触发列表中
+ * 用于多角色触发场景（给多个角色发消息 + AI感知删除申请）
  */
-function extractTriggeredContactIds(allPendingMessages) {
+async function extractTriggeredContactIds(allPendingMessages) {
   if (!allPendingMessages || typeof allPendingMessages !== 'object') {
     logger.warn('[ContextBuilder.extractTriggeredContactIds] allPendingMessages 为空或格式错误');
     return [];
@@ -180,6 +183,22 @@ function extractTriggeredContactIds(allPendingMessages) {
     const messages = allPendingMessages[id];
     return Array.isArray(messages) && messages.length > 0;
   });
+
+  // ✅ 检查AI感知删除触发的角色，并添加到触发列表
+  const triggeredRequests = await checkAndTriggerAIAwareReapply();
+  if (triggeredRequests.length > 0) {
+    // ✅ 按删除时间排序（早删除的排前面）
+    triggeredRequests.sort((a, b) => a.deleteTime - b.deleteTime);
+    const aiTriggeredIds = triggeredRequests.map(r => r.contactId);
+
+    // ✅ 合并列表：被删除的角色排在前面，当前聊天角色排在后面，去重
+    const allTriggeredIds = [...new Set([...aiTriggeredIds, ...triggeredIds])];
+
+    logger.debug('[ContextBuilder.extractTriggeredContactIds] 提取到', triggeredIds.length, '个有消息的联系人:', triggeredIds);
+    logger.debug('[ContextBuilder.extractTriggeredContactIds] 提取到', aiTriggeredIds.length, '个AI感知删除触发的联系人（按删除时间排序）:', aiTriggeredIds);
+    logger.debug('[ContextBuilder.extractTriggeredContactIds] 合并后共', allTriggeredIds.length, '个被触发的联系人:', allTriggeredIds);
+    return allTriggeredIds;
+  }
 
   logger.debug('[ContextBuilder.extractTriggeredContactIds] 提取到', triggeredIds.length, '个被触发的联系人:', triggeredIds);
   return triggeredIds;
@@ -218,7 +237,7 @@ export async function buildMessagesArray(contactId, allPendingMessages) {
   logger.info('[ContextBuilder.buildMessagesArray] 开始构建messages数组 - 主联系人:', contactId);
 
   // ✅ 提取被触发的联系人ID（有消息的才算触发）
-  const triggeredContactIds = extractTriggeredContactIds(allPendingMessages);
+  const triggeredContactIds = await extractTriggeredContactIds(allPendingMessages);
   logger.info('[ContextBuilder.buildMessagesArray] 共触发', triggeredContactIds.length, '个联系人:', triggeredContactIds);
 
   // ✅ 创建消息编号映射表（编号 → 消息ID）
@@ -336,7 +355,24 @@ async function buildAllCharacterInfo(triggeredContactIds, messageNumberMap, star
     logger.debug('[ContextBuilder.buildAllCharacterInfo] 处理角色:', contactId);
 
     // 查找联系人
-    const contact = contacts.find(c => c.id === contactId);
+    let contact = contacts.find(c => c.id === contactId);
+
+    // 如果联系人不存在，可能是AI感知删除的角色，尝试从酒馆角色列表查找
+    if (!contact && contactId.startsWith('tavern_')) {
+      const characterName = contactId.replace('tavern_', '');
+      const character = getContext().characters.find(c => c.avatar === `${characterName}.png`);
+
+      if (character) {
+        logger.info('[ContextBuilder.buildAllCharacterInfo] AI感知删除角色，从酒馆直接获取:', characterName);
+        // 创建临时contact对象
+        contact = {
+          id: contactId,
+          name: characterName,
+          source: 'tavern'
+        };
+      }
+    }
+
     if (!contact) {
       logger.warn('[ContextBuilder.buildAllCharacterInfo] 联系人不存在，跳过:', contactId);
       continue;
@@ -414,7 +450,24 @@ async function buildAllChatHistoryInfo(triggeredContactIds, messageNumberMap, st
     logger.debug('[ContextBuilder.buildAllChatHistoryInfo] 处理角色:', contactId);
 
     // 查找联系人
-    const contact = contacts.find(c => c.id === contactId);
+    let contact = contacts.find(c => c.id === contactId);
+
+    // 如果联系人不存在，可能是AI感知删除的角色，尝试从酒馆角色列表查找
+    if (!contact && contactId.startsWith('tavern_')) {
+      const characterName = contactId.replace('tavern_', '');
+      const character = getContext().characters.find(c => c.avatar === `${characterName}.png`);
+
+      if (character) {
+        logger.info('[ContextBuilder.buildAllChatHistoryInfo] AI感知删除角色，从酒馆直接获取:', characterName);
+        // 创建临时contact对象
+        contact = {
+          id: contactId,
+          name: characterName,
+          source: 'tavern'
+        };
+      }
+    }
+
     if (!contact) {
       logger.warn('[ContextBuilder.buildAllChatHistoryInfo] 联系人不存在，跳过:', contactId);
       continue;
@@ -949,6 +1002,50 @@ async function buildUserPendingOps(pendingMessages, messageNumberMap, startNumbe
     content += `[/其他操作]\n`;
   }
 
+  // ✅ 检查AI感知删除的角色，根据概率触发好友申请
+  const triggeredRequests = await checkAndTriggerAIAwareReapply();
+  if (triggeredRequests.length > 0) {
+    logger.info('[ContextBuilder.buildUserPendingOperations] 检测到', triggeredRequests.length, '个AI感知删除触发');
+
+    // 构建临时任务内容（只包含提示词，不包含角色信息）
+    content += `\n[临时任务]\n`;
+    content += `任务类型：AI感知删除的好友申请\n`;
+    content += `说明：以下角色在被删除后想要重新申请加为好友\n\n`;
+
+    // 添加每个角色的删除通知
+    for (const request of triggeredRequests) {
+      // 格式化删除时间
+      const deleteDate = new Date(request.deleteTime * 1000);
+      const dateStr = `${deleteDate.getFullYear()}-${String(deleteDate.getMonth() + 1).padStart(2, '0')}-${String(deleteDate.getDate()).padStart(2, '0')}`;
+      const timeStr = `${String(deleteDate.getHours()).padStart(2, '0')}:${String(deleteDate.getMinutes()).padStart(2, '0')}`;
+
+      content += `[角色-${request.contactName}]\n`;
+      content += `${userName}于${dateStr} ${timeStr}删除了你的好友\n`;
+      content += `[/角色-${request.contactName}]\n\n`;
+    }
+
+    // 添加好友申请格式说明和示例
+    content += `[好友申请格式说明]\n`;
+    content += `你可以在回复中使用以下格式重新申请加好友：\n\n`;
+    content += `[好友申请]附加消息内容\n\n`;
+    content += `示例：\n`;
+    content += `[角色-角色名]\n`;
+    content += `[消息]\n`;
+    content += `[好友申请]消息1\n`;
+    content += `消息2\n`;
+    content += `可以换行来表示发了几条申请消息，无需重复输出[好友申请]标签\n`;
+    content += `[/好友申请格式说明]\n\n`;
+
+    content += `注意：\n`;
+    content += `1. [好友申请]标签必须在[消息]标签内部，后面直接跟申请消息内容\n`;
+    content += `2. [好友申请]时无法发送特殊消息(如[戳一戳]、[表情]、[图片]等)，仅能发送普通文字消息\n`;
+    content += `3. 可以选择申请或不申请，根据角色性格和剧情决定\n`;
+    content += `4. 申请消息应该符合角色性格和当前情境\n`;
+    content += `[/临时任务]\n`;
+
+    logger.info('[ContextBuilder.buildUserPendingOperations] AI感知删除通知已添加到临时任务');
+  }
+
   content += `[/{{user}}本轮操作]`;
 
   return {
@@ -1148,5 +1245,75 @@ async function buildEmojiLibrary(userPrompt) {
 
   logger.debug('[ContextBuilder.buildEmojiLibrary] 构建完成，表情包数量:', emojiNames.length);
   return content;
+}
+
+/**
+ * 检查并触发AI感知删除的好友申请（概率触发机制）
+ * 
+ * @async
+ * @private
+ * @returns {Promise<Array>} 触发的好友申请列表（为空数组表示未触发）
+ * 
+ * @description
+ * 当用户发送消息时，检查所有AI感知删除的角色：
+ * 1. 获取所有AI感知删除的申请列表
+ * 2. 过滤出允许继续申请（allowReapply=true）且概率>0的角色
+ * 3. 对每个角色独立进行概率判断（roll点）
+ * 4. 返回触发的角色列表（包含contactId、contactName、deleteTime等信息）
+ */
+async function checkAndTriggerAIAwareReapply() {
+  logger.debug('[ContextBuilder.checkAIAwareReapply] 开始检查AI感知删除触发');
+
+  try {
+    // 动态导入数据层函数
+    const { getAIAwareDeletedRequests } = await import('../contacts/contact-list-data.js');
+
+    // 获取所有AI感知删除的申请
+    const requests = await getAIAwareDeletedRequests();
+
+    if (!requests || requests.length === 0) {
+      logger.debug('[ContextBuilder.checkAIAwareReapply] 没有AI感知删除的申请');
+      return [];
+    }
+
+    // 过滤出允许继续申请且概率>0的角色
+    const activeRequests = requests.filter(r => {
+      const config = r.reapplyConfig || {};
+      return config.allowReapply === true && (config.probability || 0) > 0;
+    });
+
+    if (activeRequests.length === 0) {
+      logger.debug('[ContextBuilder.checkAIAwareReapply] 没有允许继续申请的角色');
+      return [];
+    }
+
+    logger.info('[ContextBuilder.checkAIAwareReapply] 检测到', activeRequests.length, '个可触发角色');
+
+    // 对每个角色独立进行概率判断
+    const triggeredRequests = [];
+    for (const request of activeRequests) {
+      const probability = request.reapplyConfig.probability || 0;
+      const roll = Math.random() * 100;  // 0-100的随机数
+
+      logger.debug('[ContextBuilder.checkAIAwareReapply] 角色:', request.contactName, '概率:', probability, 'roll:', roll.toFixed(2));
+
+      if (roll <= probability) {
+        triggeredRequests.push(request);
+        logger.info('[ContextBuilder.checkAIAwareReapply] 触发!', request.contactName, `(${roll.toFixed(2)} <= ${probability})`);
+      }
+    }
+
+    if (triggeredRequests.length === 0) {
+      logger.debug('[ContextBuilder.checkAIAwareReapply] 本轮没有角色触发');
+      return [];
+    }
+
+    logger.info('[ContextBuilder.checkAIAwareReapply] 已触发', triggeredRequests.length, '个角色的好友申请');
+    return triggeredRequests;
+
+  } catch (error) {
+    logger.error('[ContextBuilder.checkAIAwareReapply] 检查失败:', error);
+    return [];
+  }
 }
 

@@ -26,6 +26,8 @@ import { generateMessageId } from '../utils/message-actions-helper.js';
 import { findMessageById } from '../messages/message-chat-data.js';
 import { getUserDisplayName } from '../utils/contact-display-helper.js';
 import { findEmojiByName } from '../emojis/emoji-manager-data.js';
+import { addReapplyMessage } from '../contacts/contact-list-data.js';
+import { extension_settings } from '../../../../../../extensions.js';
 
 /**
  * 解析AI回复（容错解析，支持多种消息类型）
@@ -62,31 +64,54 @@ export async function parseAIResponse(response, contactId, messageNumberMap) {
       return;
     }
 
-    // 第三步：解析消息内容（按单个换行符分隔气泡，忽略空行）
-    const bubbles = messagesContent
+    // 第三步：解析消息内容（智能合并连续的好友申请标签）
+    const rawBubbles = messagesContent
       .split('\n')
       .map(line => line.trim())
       .filter(line => line.length > 0);
 
+    // 合并连续的[好友申请]标签
+    const bubbles = mergeConsecutiveFriendRequests(rawBubbles);
+
     bubbles.forEach(bubble => {
       const parsed = parseMessageBubble(bubble, roleName);
       if (parsed) {
-        // 添加唯一ID和时间戳（AI消息也需要ID避免误删）
-        parsed.id = generateMessageId();
-        parsed.time = Math.floor(Date.now() / 1000);
-        messages.push(parsed);
+        // 好友申请可能返回多条消息（数组）
+        const parsedArray = Array.isArray(parsed) ? parsed : [parsed];
+        parsedArray.forEach(msg => {
+          // 添加唯一ID和时间戳（AI消息也需要ID避免误删）
+          msg.id = generateMessageId();
+          msg.time = Math.floor(Date.now() / 1000);
+          messages.push(msg);
+        });
       }
     });
 
     logger.debug('[ResponseParser] 该角色提取到', bubbles.length, '条消息');
   });
 
-  // 第四步：处理引用消息和计划响应占位符（使用编号映射表精确查找）
-  await processQuotePlaceholders(messages, contactId, messageNumberMap);
-  await processPlanResponsePlaceholders(messages, contactId, messageNumberMap);
+  // 第四步：处理好友申请消息（✅保留在消息列表，同时也保存到申请数据）
+  const friendRequests = messages.filter(msg => msg.type === 'friend_request');
+  for (const request of friendRequests) {
+    try {
+      // 从角色名推导contactId（假设格式为 tavern_角色名）
+      const contactId = `tavern_${request.role}`;
+      // ✅ 传入消息ID（用于回退处理）
+      await addReapplyMessage(contactId, request.content, request.time, request.id);
+      logger.info('[ResponseParser] 已保存好友申请消息:', request.role, request.content.substring(0, 20));
+    } catch (error) {
+      logger.error('[ResponseParser] 保存好友申请消息失败:', error);
+    }
+  }
+  // ✅ 不再过滤好友申请消息，让它们显示在聊天记录中
+  const regularMessages = messages;
 
-  logger.info('[ResponseParser] 解析完成，共', messages.length, '条消息');
-  return messages;
+  // 第五步：处理引用消息和计划响应占位符（使用编号映射表精确查找）
+  await processQuotePlaceholders(regularMessages, contactId, messageNumberMap);
+  await processPlanResponsePlaceholders(regularMessages, contactId, messageNumberMap);
+
+  logger.info('[ResponseParser] 解析完成，共', regularMessages.length, '条消息，', friendRequests.length, '条好友申请');
+  return regularMessages;
 }
 
 /**
@@ -374,14 +399,82 @@ function extractMessagesContent(content) {
 }
 
 /**
+ * 合并连续的[好友申请]标签
+ * 
+ * @description
+ * AI可能每条都加[好友申请]标签，需要智能合并：
+ * 输入：['[好友申请]消息1', '[好友申请]消息2', '普通消息']
+ * 输出：['[好友申请]消息1\n消息2', '普通消息']
+ * 
+ * @param {Array<string>} bubbles - 原始气泡数组
+ * @returns {Array<string>} 合并后的气泡数组
+ */
+function mergeConsecutiveFriendRequests(bubbles) {
+  const result = [];
+  let friendRequestBuffer = [];
+
+  for (let i = 0; i < bubbles.length; i++) {
+    const bubble = bubbles[i];
+
+    if (bubble.startsWith('[好友申请]')) {
+      // 去掉标签，保留内容
+      const content = bubble.substring('[好友申请]'.length).trim();
+      friendRequestBuffer.push(content);
+    } else {
+      // 遇到非好友申请消息，先输出缓存
+      if (friendRequestBuffer.length > 0) {
+        const merged = '[好友申请]' + friendRequestBuffer.join('\n');
+        result.push(merged);
+        friendRequestBuffer = [];
+      }
+      result.push(bubble);
+    }
+  }
+
+  // 处理最后的缓存
+  if (friendRequestBuffer.length > 0) {
+    const merged = '[好友申请]' + friendRequestBuffer.join('\n');
+    result.push(merged);
+  }
+
+  return result;
+}
+
+/**
  * 解析单个消息气泡（识别消息类型）
  * 
  * @param {string} bubble - 单个气泡内容
  * @param {string} roleName - 角色名称
- * @returns {Object|null} 解析后的消息对象
+ * @returns {Object|Object[]|null} 解析后的消息对象（好友申请可能返回数组）
  */
 function parseMessageBubble(bubble, roleName) {
-  // 1. 戳一戳消息：[戳一戳]
+  // 1. 好友申请消息：[好友申请]附加消息内容（支持多行 = 多条申请）
+  const friendRequestMatch = bubble.match(/^\[好友申请\](.+)$/s);
+  if (friendRequestMatch) {
+    const content = friendRequestMatch[1].trim();
+    const messages = content.split('\n').map(line => line.trim()).filter(line => line);
+
+    // 每行是一条独立的好友申请消息
+    if (messages.length === 1) {
+      logger.debug('[ResponseParser] 好友申请消息:', messages[0].substring(0, 20));
+      return {
+        role: roleName,
+        sender: 'contact',
+        type: 'friend_request',
+        content: messages[0]
+      };
+    } else {
+      logger.debug(`[ResponseParser] 好友申请消息（${messages.length}条）`);
+      return messages.map(msg => ({
+        role: roleName,
+        sender: 'contact',
+        type: 'friend_request',
+        content: msg
+      }));
+    }
+  }
+
+  // 2. 戳一戳消息：[戳一戳]
   if (bubble.trim() === '[戳一戳]') {
     logger.debug('[ResponseParser] 戳一戳消息');
     return {
@@ -678,7 +771,76 @@ export function matchContactId(roleName, contacts) {
     return contact.id;
   }
 
-  logger.warn('[ResponseParser] 未找到对应的联系人:', roleName);
-  return null;
+  // ==================== 新增：从持久化存储兜底匹配 ====================
+  try {
+    const phoneStore = extension_settings?.acsusPawsPuffs?.phone || {};
+
+    // 1) AI感知删除池（aiAwareDeletedFriends）
+    const aiAwareList = Array.isArray(phoneStore.aiAwareDeletedFriends)
+      ? phoneStore.aiAwareDeletedFriends
+      : [];
+    if (aiAwareList.length > 0) {
+      // 按显示名匹配
+      const exactByName = aiAwareList.find(r => r.contactName === roleName);
+      if (exactByName) {
+        logger.debug('[ResponseParser] 存储匹配(aiAware)成功(精确):', roleName, '→', exactByName.contactId);
+        return exactByName.contactId;
+      }
+      // 去空格模糊匹配
+      const simple = (s) => (s || '').replace(/\s/g, '');
+      const fuzzyByName = aiAwareList.find(r => simple(r.contactName) === simple(roleName));
+      if (fuzzyByName) {
+        logger.debug('[ResponseParser] 存储匹配(aiAware)成功(模糊):', roleName, '→', fuzzyByName.contactId);
+        return fuzzyByName.contactId;
+      }
+      // 以ID后缀匹配（约定 tavern_角色名）
+      const suffix = `_${roleName}`;
+      const bySuffix = aiAwareList.find(r => (r.contactId || '').endsWith(suffix));
+      if (bySuffix) {
+        logger.debug('[ResponseParser] 存储匹配(aiAware)成功(后缀):', roleName, '→', bySuffix.contactId);
+        return bySuffix.contactId;
+      }
+    }
+
+    // 2) 待处理申请快照（pendingRequests）
+    const pendingList = Array.isArray(phoneStore.pendingRequests)
+      ? phoneStore.pendingRequests
+      : [];
+    if (pendingList.length > 0) {
+      const exactByName = pendingList.find(r => r.name === roleName || r.contactName === roleName);
+      if (exactByName) {
+        const id = exactByName.id || exactByName.contactId;
+        if (id) {
+          logger.debug('[ResponseParser] 存储匹配(pending)成功(精确):', roleName, '→', id);
+          return id;
+        }
+      }
+      const simple = (s) => (s || '').replace(/\s/g, '');
+      const fuzzyByName = pendingList.find(r => simple(r.name || r.contactName) === simple(roleName));
+      if (fuzzyByName) {
+        const id = fuzzyByName.id || fuzzyByName.contactId;
+        if (id) {
+          logger.debug('[ResponseParser] 存储匹配(pending)成功(模糊):', roleName, '→', id);
+          return id;
+        }
+      }
+      const suffix = `_${roleName}`;
+      const bySuffix = pendingList.find(r => ((r.id || r.contactId || '')).endsWith(suffix));
+      if (bySuffix) {
+        const id = bySuffix.id || bySuffix.contactId;
+        if (id) {
+          logger.debug('[ResponseParser] 存储匹配(pending)成功(后缀):', roleName, '→', id);
+          return id;
+        }
+      }
+    }
+  } catch (err) {
+    logger.error('[ResponseParser] 存储兜底匹配失败:', err);
+  }
+
+  // 3) 最后兜底：按约定生成ID，确保消息不被丢弃
+  const fallbackId = `tavern_${roleName}`;
+  logger.warn('[ResponseParser] 未在联系人与存储中找到匹配，使用约定式ID兜底:', roleName, '→', fallbackId);
+  return fallbackId;
 }
 

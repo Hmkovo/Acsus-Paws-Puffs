@@ -876,8 +876,15 @@ export async function showPage(overlayElement, pageName, params = {}) {
         logger.debug('[PhoneUI.showPage] 参数已变化，刷新页面内容');
         await refreshPageContent(pageName, params);
       } else {
-        // 参数未变化，直接显示（不刷新，保留事件监听器）
+        // 参数未变化，直接显示
         logger.debug('[PhoneUI.showPage] 页面已存在，直接显示（参数未变）');
+        
+        // 好友申请详情页需要重新绑定监听器（因为hidePage时被清理了）
+        if (pageName === 'friend-request-detail') {
+          const { bindEventListeners } = await import('./contacts/friend-request-detail-ui.js');
+          bindEventListeners(pageId);
+          logger.debug('[PhoneUI.showPage] 已重新绑定好友申请详情页监听器');
+        }
       }
     }
 
@@ -1190,6 +1197,12 @@ async function refreshPageContent(pageName, params = {}) {
       // 聊天页使用独立ID（page-chat-{contactId}），每个角色一个DOM
       // 不需要刷新逻辑，因为切换角色时会创建新的DOM
       logger.debug('[PhoneUI] 聊天页使用独立DOM，无需刷新');
+      
+      // ✅ 打开聊天页时，标记为已读
+      if (params.contactId) {
+        const { markAsRead } = await import('./messages/message-list-ui.js');
+        await markAsRead(params.contactId);
+      }
       break;
 
     case 'plan-list':
@@ -1281,7 +1294,14 @@ export async function hidePage(overlayElement, pageName) {
           currentPage.classList.add('hiding');
         });
 
-        // 5. 立即检查聊天页/转账页是否在栈中（决策要在栈改变前做）
+        // 5. 清理特定页面的事件监听
+        if (poppedPage && poppedPage.pageName === 'friend-request-detail') {
+          const { cleanupEventListeners } = await import('./contacts/friend-request-detail-ui.js');
+          cleanupEventListeners(poppedPage.pageId);
+          logger.debug('[PhoneUI.hidePage] 已清理好友申请详情页事件监听');
+        }
+
+        // 6. 立即检查聊天页/转账页是否在栈中（决策要在栈改变前做）
         // 注意：判断pageName而不是ID前缀（chat-settings也包含'page-chat-'）
         const shouldDeletePage = poppedPage
           && (poppedPage.pageName === 'chat' || poppedPage.pageName === 'transfer')
@@ -1420,6 +1440,28 @@ async function createPage(pageName, params = {}) {
         newFriendsPage.classList.add('phone-page-scrollable');
       }
       return newFriendsPage;
+
+    case 'friend-request-detail':
+      // 动态导入好友申请详情页渲染函数
+      if (!params.contactId) {
+        logger.warn('[PhoneUI.createPage] 好友申请详情页缺少contactId参数');
+        return null;
+      }
+      const { renderFriendRequestDetail } = await import('./contacts/friend-request-detail-ui.js');
+      const detailContent = await renderFriendRequestDetail(params.contactId);
+
+      // 创建页面容器
+      const detailPage = document.createElement('div');
+      detailPage.id = 'page-friend-request-detail';
+      detailPage.className = 'phone-page phone-page-scrollable';
+      detailPage.dataset.contactId = params.contactId;  // 保存contactId，用于参数比较
+
+      // 将内容添加到容器中（DocumentFragment 的子节点会被移动）
+      if (detailContent) {
+        detailPage.appendChild(detailContent);
+      }
+
+      return detailPage;
 
     case 'contact-profile':
       // 动态导入角色个人页渲染函数
@@ -1732,6 +1774,32 @@ async function createPage(pageName, params = {}) {
       emojiGuideDetailPage.appendChild(emojiGuideDetailContent);
 
       return emojiGuideDetailPage;
+
+    case 'faq-detail':
+      // 动态导入常见问题详细页渲染函数
+      const { renderFaqDetail } = await import('./help/faq-detail-ui.js');
+      const faqDetailContent = await renderFaqDetail();
+
+      // 创建页面容器
+      const faqDetailPage = document.createElement('div');
+      faqDetailPage.id = 'page-faq-detail';
+      faqDetailPage.className = 'phone-page phone-page-scrollable';  // 标准布局：整页滚动
+      faqDetailPage.appendChild(faqDetailContent);
+
+      return faqDetailPage;
+
+    case 'macro-guide-detail':
+      // 动态导入宏变量使用教程页渲染函数
+      const { renderMacroGuideDetail } = await import('./help/macro-guide-detail.js');
+      const macroGuideDetailContent = await renderMacroGuideDetail();
+
+      // 创建页面容器
+      const macroGuideDetailPage = document.createElement('div');
+      macroGuideDetailPage.id = 'page-macro-guide-detail';
+      macroGuideDetailPage.className = 'phone-page phone-page-scrollable';  // 标准布局：整页滚动
+      macroGuideDetailPage.appendChild(macroGuideDetailContent);
+
+      return macroGuideDetailPage;
 
     case 'transfer':
       // 动态导入转账页面渲染函数

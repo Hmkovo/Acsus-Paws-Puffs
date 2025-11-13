@@ -17,6 +17,7 @@ import { loadContacts } from '../contacts/contact-list-data.js';
 import { loadChatHistory, saveChatMessage } from './message-chat-data.js';
 import { parseAIResponse } from '../ai-integration/ai-response-parser.js';
 import { getContactDisplayName } from '../utils/contact-display-helper.js';
+import { registerListener, destroyPageListeners } from '../utils/listener-manager.js';
 
 // ========================================
 // [CORE] 状态管理
@@ -366,16 +367,20 @@ function bindDebugEvents(popup, contactId) {
     }
   };
 
-  document.addEventListener('phone-debug-reroll-end', handleRerollEnd);
-  document.addEventListener('phone-ai-generation-complete', handleAIGenerationComplete);
-  document.addEventListener('phone-ai-generation-error', handleAIGenerationError);
+  registerListener('message-debug', 'phone-debug-reroll-end', handleRerollEnd, {
+    description: '重roll结束后更新按钮状态'
+  });
+  registerListener('message-debug', 'phone-ai-generation-complete', handleAIGenerationComplete, {
+    description: 'AI生成完成后更新按钮状态'
+  });
+  registerListener('message-debug', 'phone-ai-generation-error', handleAIGenerationError, {
+    description: 'AI生成错误后恢复按钮状态'
+  });
 
   // 弹窗关闭时清理监听器
   const originalClose = closeDebugUI;
   const cleanupAndClose = () => {
-    document.removeEventListener('phone-debug-reroll-end', handleRerollEnd);
-    document.removeEventListener('phone-ai-generation-complete', handleAIGenerationComplete);
-    document.removeEventListener('phone-ai-generation-error', handleAIGenerationError);
+    destroyPageListeners('message-debug');
     originalClose();
   };
 

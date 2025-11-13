@@ -35,6 +35,9 @@ function ensurePhoneData() {
   if (!extension_settings.acsusPawsPuffs.phone.chats) {
     extension_settings.acsusPawsPuffs.phone.chats = {};
   }
+  if (!extension_settings.acsusPawsPuffs.phone.unreadCounts) {
+    extension_settings.acsusPawsPuffs.phone.unreadCounts = {};
+  }
 }
 
 /**
@@ -188,6 +191,7 @@ export async function loadRecentChats() {
   ensurePhoneData();
 
   const chats = extension_settings.acsusPawsPuffs.phone.chats;
+  const unreadCounts = extension_settings.acsusPawsPuffs.phone.unreadCounts;
   const recentChats = [];
 
   // 遍历所有聊天记录
@@ -203,7 +207,7 @@ export async function loadRecentChats() {
     recentChats.push({
       contactId,
       lastMessage,
-      unreadCount: 0 // TODO: 实现未读计数
+      unreadCount: unreadCounts[contactId] || 0
     });
   }
 
@@ -375,5 +379,112 @@ export async function updateMessage(contactId, messageId, updates) {
 
   logger.info('[ChatData] 更新消息成功:', messageId, '更新字段:', Object.keys(updates));
   return true;
+}
+
+/**
+ * 添加系统消息
+ * 
+ * @description
+ * 添加特殊类型的系统消息（如"添加好友"提示）
+ * 
+ * @async
+ * @param {string} contactId - 联系人ID
+ * @param {Object} systemMessage - 系统消息对象
+ * @param {string} systemMessage.type - 系统消息类型（'friend_added' 等）
+ * @param {string} systemMessage.content - 消息内容
+ * @param {number} systemMessage.time - 时间戳（秒）
+ * @returns {Promise<boolean>} 是否添加成功
+ * 
+ * @example
+ * await addSystemMessage('tavern_Wade', {
+ *   type: 'friend_added',
+ *   content: '{{user}}添加了你为好友',
+ *   time: 1699999999
+ * });
+ */
+export async function addSystemMessage(contactId, systemMessage) {
+  logger.debug('[ChatData] 添加系统消息:', contactId, systemMessage.type);
+
+  try {
+    // 加载现有聊天记录
+    const messages = await loadChatHistory(contactId);
+
+    // 创建系统消息对象
+    const message = {
+      id: `msg_system_${Date.now()}`,
+      sender: 'system',
+      type: systemMessage.type,
+      content: systemMessage.content,
+      time: systemMessage.time
+    };
+
+    // 添加到消息列表
+    messages.push(message);
+
+    // 保存回去
+    await saveChatHistory(contactId, messages);
+
+    logger.info('[ChatData] 已添加系统消息:', contactId, systemMessage.type);
+    return true;
+  } catch (error) {
+    logger.error('[ChatData] 添加系统消息失败:', error);
+    return false;
+  }
+}
+
+/**
+ * 增加未读计数
+ * 
+ * @description
+ * 当联系人发来新消息时调用，未读数+1
+ * 
+ * @param {string} contactId - 联系人ID
+ */
+export function incrementUnreadCount(contactId) {
+  ensurePhoneData();
+
+  const unreadCounts = extension_settings.acsusPawsPuffs.phone.unreadCounts;
+  unreadCounts[contactId] = (unreadCounts[contactId] || 0) + 1;
+
+  saveSettingsDebounced();
+
+  logger.debug('[ChatData] 未读计数+1:', contactId, '→', unreadCounts[contactId]);
+}
+
+/**
+ * 清除未读计数（标记已读）
+ * 
+ * @description
+ * 当用户打开聊天界面时调用，清零未读计数
+ * 
+ * @param {string} contactId - 联系人ID
+ */
+export function clearUnreadCount(contactId) {
+  ensurePhoneData();
+
+  const unreadCounts = extension_settings.acsusPawsPuffs.phone.unreadCounts;
+  const prevCount = unreadCounts[contactId] || 0;
+
+  if (prevCount > 0) {
+    unreadCounts[contactId] = 0;
+    saveSettingsDebounced();
+    logger.info('[ChatData] 已清除未读计数:', contactId, `${prevCount} → 0`);
+  }
+}
+
+/**
+ * 获取未读计数
+ * 
+ * @description
+ * 获取指定联系人的未读消息数量
+ * 
+ * @param {string} contactId - 联系人ID
+ * @returns {number} 未读数量
+ */
+export function getUnreadCount(contactId) {
+  ensurePhoneData();
+
+  const unreadCounts = extension_settings.acsusPawsPuffs.phone.unreadCounts;
+  return unreadCounts[contactId] || 0;
 }
 
