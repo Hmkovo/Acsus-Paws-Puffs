@@ -15,7 +15,7 @@
  * true = 显示所有日志（开发/调试时使用）
  * false = 关闭所有日志（上传 Git 前设为 false）
  */
-const ENABLE_LOGGING = true;
+const ENABLE_LOGGING = false;
 
 /**
  * 日志前缀（方便识别是哪个插件的日志）
