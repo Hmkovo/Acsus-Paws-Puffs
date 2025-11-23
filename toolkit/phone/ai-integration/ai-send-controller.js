@@ -16,7 +16,7 @@ import { getPendingMessages, clearPendingMessages, getAllPendingOperations } fro
 import { loadContacts } from '../contacts/contact-list-data.js';
 import { saveChatMessage, loadChatHistory } from '../messages/message-chat-data.js';
 import { extension_settings, getContext } from '../../../../../../../scripts/extensions.js';
-import { getRequestHeaders, extractMessageFromData } from '../../../../../../../script.js';
+import { getRequestHeaders, extractMessageFromData, eventSource, event_types } from '../../../../../../../script.js';
 import { chat_completion_sources, oai_settings, getStreamingReply } from '../../../../../../../scripts/openai.js';
 import { getEventSourceStream } from '../../../../../../../scripts/sse-stream.js';
 import {
@@ -222,25 +222,17 @@ export class PhoneAPI {
 
       // 构建messages数组（新版，返回messages和编号映射表）
       const buildResult = await buildMessagesArray(contactId, allPendingMessages);
-      const messages = buildResult.messages;
+      let messages = buildResult.messages;  // ← 改为 let，允许后续 Gemini 格式转换
       const messageNumberMap = buildResult.messageNumberMap;
+      const imagesToAttach = buildResult.imagesToAttach || [];
 
       logger.debug('[PhoneAPI] messages数组构建完成，共', messages.length, '条，编号映射表大小:', messageNumberMap.size);
-
-      // ✅ 替换宏（{{user}}、{{当前时间}}、{{当前天气}} 等）
-      try {
-        const { substituteParams } = getContext();
-        if (substituteParams) {
-          for (const message of messages) {
-            if (message.content && typeof message.content === 'string') {
-              message.content = substituteParams(message.content);
-            }
-          }
-          logger.debug('[PhoneAPI] 已替换所有宏变量');
-        }
-      } catch (error) {
-        logger.warn('[PhoneAPI] 宏替换失败（继续发送）:', error);
+      if (imagesToAttach.length > 0) {
+        logger.info('[PhoneAPI] 检测到待附加图片，数量:', imagesToAttach.length);
       }
+
+      // ✅ 移除手动宏替换：generateRaw 会自动处理
+      logger.debug('[PhoneAPI] 跳过手动宏替换（由 generateRaw 内部处理）');
 
       // 创建终止控制器
       this.currentAbortController = new AbortController();
@@ -278,14 +270,16 @@ export class PhoneAPI {
           baseUrl: currentConfig.baseUrl,
           apiKey: currentConfig.apiKey,
           model: currentConfig.model,
-          format: currentConfig.format
+          format: currentConfig.format,
+          params: currentConfig.params || {}  // ← 传递高级参数配置
         };
 
         logger.debug('[PhoneAPI.sendToAI] 使用自定义API配置:', {
           name: currentConfig.name,
           baseUrl: currentConfig.baseUrl,
           model: currentConfig.model,
-          format: currentConfig.format || 'openai (默认)'
+          format: currentConfig.format || 'openai (默认)',
+          params: currentConfig.params ? Object.keys(currentConfig.params).length + '个参数' : '无参数'
         });
       }
 
@@ -294,16 +288,231 @@ export class PhoneAPI {
       logger.debug('[PhoneAPI] ========== messages结束 ==========');
       logger.debug('[PhoneAPI] API配置:', apiConfig.source, '流式:', apiConfig.stream);
 
+      // ✅ 临时绕过酒馆的 image_inlining 开关（2025-11-16新增）
+      // 原因：手机的图片识别设置应独立于酒馆的全局设置
+      const originalImageInlining = oai_settings.image_inlining;
+      const phoneImageMode = extension_settings.acsusPawsPuffs?.phone?.imageMode || 'once';
+      
+      // 如果手机需要发送图片（imageMode != 'never'），临时开启酒馆的图片发送
+      if (phoneImageMode !== 'never') {
+        logger.info('[PhoneAPI] 临时开启酒馆的 image_inlining（手机图片模式:', phoneImageMode, '）');
+        logger.debug('[PhoneAPI] 原始 image_inlining 状态:', originalImageInlining);
+        oai_settings.image_inlining = true;
+      } else {
+        logger.info('[PhoneAPI] 手机图片模式为 never，不修改 image_inlining（当前:', originalImageInlining, '）');
+      }
+
+      // ✅ 图片处理逻辑：区分自定义API和默认API
+      if (apiConfig.source === 'custom') {
+        // 🔥 自定义API：直接在 messages 中转换图片URL为base64
+        logger.info('[PhoneAPI] 自定义API：开始转换结构化消息中的图片');
+        
+        let successCount = 0;
+        let failCount = 0;
+        
+        for (const message of messages) {
+          if (Array.isArray(message.content)) {
+            // ✅ 遍历并处理图片，失败的图片会被标记删除
+            const partsToKeep = [];
+            
+            for (const part of message.content) {
+              if (part.type === 'image_url' && part.image_url?.url) {
+                const imageUrl = part.image_url.url;
+                
+                // 如果已经是base64，保留
+                if (imageUrl.startsWith('data:image/')) {
+                  logger.debug('[PhoneAPI] 图片已是base64格式，保留:', imageUrl.substring(0, 50));
+                  partsToKeep.push(part);
+                  continue;
+                }
+                
+                // 尝试转换图片
+                try {
+                  const fullUrl = imageUrl.startsWith('http') ? imageUrl : `${window.location.origin}${imageUrl}`;
+                  logger.debug('[PhoneAPI] 正在转换图片:', fullUrl);
+                  const response = await fetch(fullUrl, { method: 'GET', cache: 'force-cache' });
+                  
+                  if (!response.ok) {
+                    throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+                  }
+                  
+                  const blob = await response.blob();
+                  const reader = new FileReader();
+                  const imageBase64 = await new Promise((resolve) => {
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.readAsDataURL(blob);
+                  });
+                  
+                  // ✅ 转换成功，更新 URL 并保留
+                  part.image_url.url = imageBase64;
+                  partsToKeep.push(part);
+                  successCount++;
+                  logger.debug('[PhoneAPI] ✅ 图片转换成功');
+                } catch (error) {
+                  // ❌ 转换失败，移除此图片
+                  failCount++;
+                  logger.warn('[PhoneAPI] ⚠️ 图片转换失败，已从请求中移除:', imageUrl, error.message);
+                }
+              } else {
+                // 非图片内容，保留
+                partsToKeep.push(part);
+              }
+            }
+            
+            // ✅ 更新 message.content，只保留成功的部分
+            message.content = partsToKeep;
+          }
+        }
+        
+        if (successCount > 0 || failCount > 0) {
+          logger.info(`[PhoneAPI] 图片转换完成: ${successCount} 成功, ${failCount} 失败（已移除）`);
+        } else {
+          logger.debug('[PhoneAPI] 没有检测到需要转换的图片');
+        }
+      }
+      
+      // ✅ 默认API：提前转换图片为 base64（在注册事件之前）
+      let convertedImages = [];
+      if (apiConfig.source === 'default' && imagesToAttach.length > 0 && phoneImageMode !== 'never') {
+        logger.info('[PhoneAPI] 默认API：开始转换图片为 base64');
+        try {
+          for (const img of imagesToAttach) {
+            // ✅ 如果是相对路径，转换为绝对路径
+            const fullUrl = img.url.startsWith('http') ? img.url : `${window.location.origin}${img.url}`;
+            logger.debug('[PhoneAPI] 正在转换图片:', fullUrl);
+            const response = await fetch(fullUrl, { method: 'GET', cache: 'force-cache' });
+            if (!response.ok) throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+            const blob = await response.blob();
+            const reader = new FileReader();
+            const imageBase64 = await new Promise((resolve) => {
+              reader.onloadend = () => resolve(reader.result);
+              reader.readAsDataURL(blob);
+            });
+            convertedImages.push({ ...img, base64: imageBase64 });
+            logger.debug('[PhoneAPI] 图片转换完成');
+          }
+          logger.info('[PhoneAPI] ✅ 默认API图片已转换为 base64，数量:', convertedImages.length);
+        } catch (error) {
+          logger.error('[PhoneAPI] ❌ 默认API图片转换失败:', error);
+          convertedImages = []; // 转换失败，清空
+        }
+      }
+
       // 获取 generateRaw 函数
       const ctx = getContext();
       const generateRaw = ctx.generateRaw;
+
+      // ✅ 关键：注册同步事件处理器，在宏替换后附加图片（仅默认API）
+      if (apiConfig.source === 'default' && convertedImages.length > 0) {
+        const attachImageHandler = (eventData) => {  // ← 同步函数！
+          try {
+            logger.info('[PhoneAPI] 🖼️ 开始在事件中附加图片');
+            
+            // 找到最后一条 user 消息
+            let lastUserMessageIndex = -1;
+            for (let i = eventData.chat.length - 1; i >= 0; i--) {
+              if (eventData.chat[i].role === 'user') {
+                lastUserMessageIndex = i;
+                break;
+              }
+            }
+            
+            if (lastUserMessageIndex !== -1) {
+              const userMessage = eventData.chat[lastUserMessageIndex];
+              
+              // ✅ 转换为多模态格式，附加所有图片
+              const textContent = userMessage.content;
+              const contentArray = [{ type: 'text', text: textContent }];
+              
+              // ✅ 遍历所有图片并添加到 content 数组
+              for (const img of convertedImages) {
+                contentArray.push({
+                  type: 'image_url',
+                  image_url: { url: img.base64 }
+                });
+              }
+              
+              userMessage.content = contentArray;
+              
+              logger.info('[PhoneAPI] ✅ 图片已附加到用户消息');
+              logger.debug('[PhoneAPI] 附加图片数量:', convertedImages.length);
+              logger.debug('[PhoneAPI] 图片URL列表:', convertedImages.map(img => img.url));
+              logger.debug('[PhoneAPI] 多模态content长度:', userMessage.content.length)
+            } else {
+              logger.warn('[PhoneAPI] 未找到 user 消息，无法附加图片');
+            }
+          } catch (error) {
+            logger.error('[PhoneAPI] ❌ 图片附加失败:', error);
+            // 图片附加失败不影响整体流程，继续执行
+          }
+        };
+        
+        eventSource.once(event_types.CHAT_COMPLETION_PROMPT_READY, attachImageHandler);
+        logger.info('[PhoneAPI] 已注册同步图片附加事件监听器');
+      }
+
+      // ✅ 打印最终发送的 messages 结构（调试用）
+      logger.info('[PhoneAPI] ========== 最终发送给AI的messages ==========');
+      logger.info('[PhoneAPI] API源:', apiConfig.source);
+      logger.info('[PhoneAPI] messages数量:', messages.length);
+      for (let i = 0; i < messages.length; i++) {
+        const msg = messages[i];
+        if (Array.isArray(msg.content)) {
+          logger.debug(`[PhoneAPI] [${i}] role: ${msg.role}, content: 数组(${msg.content.length}项)`);
+          msg.content.forEach((part, j) => {
+            if (part.type === 'text') {
+              logger.debug(`  [${j}] type: text, text: ${part.text.substring(0, 50)}...`);
+            } else if (part.type === 'image_url') {
+              const url = part.image_url?.url || '';
+              logger.debug(`  [${j}] type: image_url, url: ${url.substring(0, 60)}...`);
+            }
+          });
+        } else {
+          logger.debug(`[PhoneAPI] [${i}] role: ${msg.role}, content: ${typeof msg.content === 'string' ? msg.content.substring(0, 100) + '...' : msg.content}`);
+        }
+      }
+      logger.info('[PhoneAPI] =============================================');
+
+      // ⭐ Gemini 格式转换（已禁用）
+      // ❌ 原因：大多数代理的 Gemini 渠道不支持 Google AI Studio 原生格式（inlineData）
+      // ❌ 测试结果：代理返回 HTTP 500 错误，无法识别 Gemini 图片格式
+      // ✅ 结论：继续使用 OpenAI 格式，GPT/Claude 渠道都能正常识别图片
+      // 
+      // 📌 如需启用（适用场景：官方 Google AI Studio API 或支持原生格式的代理）：
+      //    1. 取消注释（ai-send-controller.js 第 462-485 行）
+      //    2. 删除测试代码（第 463 行的 `const imageFormat = ...` 改为读取设置）
+      //    3. 添加 UI 设置（可选，让用户选择格式）
+      /*
+      const imageFormat = extension_settings.acsusPawsPuffs?.phone?.imageFormat || 'openai';
+      if (apiConfig.source === 'custom' && imageFormat === 'gemini') {
+        logger.info('[PhoneAPI] 🎯 检测到 Gemini 格式设置，开始转换');
+        messages = convertToGeminiFormat(messages);
+        
+        // 打印转换后的格式（仅显示包含图片的消息）
+        logger.info('[PhoneAPI] ========== 转换后的 Gemini 格式 ==========');
+        for (let i = 0; i < messages.length; i++) {
+          const msg = messages[i];
+          if (Array.isArray(msg.content) && msg.content.some(p => p.inlineData)) {
+            logger.debug(`[PhoneAPI] [${i}] role: ${msg.role}, content: 数组(${msg.content.length}项)`);
+            msg.content.forEach((part, j) => {
+              if (part.type === 'text') {
+                logger.debug(`  [${j}] type: text, text: ${part.text.substring(0, 50)}...`);
+              } else if (part.inlineData) {
+                logger.debug(`  [${j}] inlineData: { mimeType: '${part.inlineData.mimeType}', data: '${part.inlineData.data.substring(0, 30)}...' }`);
+              }
+            });
+          }
+        }
+        logger.info('[PhoneAPI] =============================================');
+      }
+      */
 
       // 使用try-catch捕获终止异常
       let response;
       try {
         if (apiConfig.source === 'custom') {
           // 使用自定义API（传入messages数组）
-          response = await this.callAPIWithStreaming(messages, apiConfig, this.currentAbortController.signal);
+          response = await this.callAPIWithStreaming(messages, apiConfig, this.currentAbortController.signal, contactId);
         } else {
           // 使用默认API（酒馆配置）
           // ✅ 修复：generateRaw支持直接传messages数组，不要合并成字符串！
@@ -320,6 +529,12 @@ export class PhoneAPI {
           return;
         }
         throw error; // 其他错误继续抛出
+      } finally {
+        // ✅ 关键：恢复原始 image_inlining 设置（无论成功或失败）
+        if (phoneImageMode !== 'never') {
+          oai_settings.image_inlining = originalImageInlining;
+          logger.debug('[PhoneAPI] 已恢复原始 image_inlining 状态:', originalImageInlining);
+        }
       }
 
       // 再次检查是否被终止
@@ -329,14 +544,30 @@ export class PhoneAPI {
         return;
       }
 
-      logger.debug('[PhoneAPI] AI回复接收完成，长度:', response.length);
+      // ✅ 处理响应对象（兼容新旧格式）
+      let responseText;
+      let responseMetadata = {};
+      
+      if (typeof response === 'object' && response.text !== undefined) {
+        // 新格式：{ text: string, metadata: {...} }
+        responseText = response.text;
+        responseMetadata = response.metadata || {};
+        logger.debug('[PhoneAPI] AI回复接收完成（带元数据），长度:', responseText.length);
+        if (Object.keys(responseMetadata).length > 0) {
+          logger.info('[PhoneAPI] 响应包含元数据:', Object.keys(responseMetadata));
+        }
+      } else {
+        // 旧格式：直接是字符串（流式或默认API）
+        responseText = response;
+        logger.debug('[PhoneAPI] AI回复接收完成，长度:', responseText.length);
+      }
 
       // ✅ 保存原始响应到调试器
       const { saveDebugVersion } = await import('../messages/message-debug-ui.js');
-      saveDebugVersion(contactId, response);
+      saveDebugVersion(contactId, responseText);
 
       // 验证格式
-      if (!validateAIResponse(response)) {
+      if (!validateAIResponse(responseText)) {
         logger.error('[PhoneAPI] AI回复格式错误');
 
         // ✅ 触发生成错误事件（修复按钮状态不恢复的bug）
@@ -350,7 +581,7 @@ export class PhoneAPI {
       }
 
       // 解析回复（传递编号映射表和contactId，用于精确查找引用消息）
-      const parsedMessages = await parseAIResponse(response, contactId, messageNumberMap);
+      const parsedMessages = await parseAIResponse(responseText, contactId, messageNumberMap);
 
       if (parsedMessages.length === 0) {
         logger.warn('[PhoneAPI] 未解析到任何消息');
@@ -367,6 +598,54 @@ export class PhoneAPI {
 
       // 获取联系人列表（用于匹配角色名）
       const contacts = await loadContacts();
+
+      // ✅ 如果有新的 API 元数据（如 Gemini 签名），先清除所有联系人的旧签名
+      if (Object.keys(responseMetadata).length > 0) {
+        logger.info('[PhoneAPI] 检测到新的 API 元数据，开始清除旧签名...');
+        const { loadChatHistory, saveChatHistory } = await import('../messages/message-chat-data.js');
+        
+        // 获取本次响应涉及的所有角色（从 parsedMessages 提取）
+        const involvedContactIds = new Set(
+          parsedMessages
+            .map(msg => msg.role)
+            .map(roleName => {
+              const contact = contacts.find(c => c.name === roleName || c.name.replace(/\s/g, '') === roleName.replace(/\s/g, ''));
+              return contact ? contact.id : `tavern_${roleName}`;
+            })
+        );
+        
+        // 清除每个涉及联系人的旧签名
+        for (const cid of involvedContactIds) {
+          const history = await loadChatHistory(cid);
+          let hasOldSignature = false;
+          
+          // 遍历消息，清除旧签名
+          history.forEach(msg => {
+            if (msg.metadata?.gemini?.thoughtSignature) {
+              delete msg.metadata.gemini.thoughtSignature;
+              hasOldSignature = true;
+              
+              // 如果 gemini 对象为空，也删除它
+              if (Object.keys(msg.metadata.gemini).length === 0) {
+                delete msg.metadata.gemini;
+              }
+              
+              // 如果 metadata 对象为空，也删除它
+              if (Object.keys(msg.metadata).length === 0) {
+                delete msg.metadata;
+              }
+            }
+          });
+          
+          // 如果有旧签名被删除，保存更新后的历史记录
+          if (hasOldSignature) {
+            await saveChatHistory(cid, history);
+            logger.info(`[PhoneAPI] 已清除联系人 ${cid} 的旧签名`);
+          }
+        }
+        
+        logger.info('[PhoneAPI] 旧签名清除完成，准备保存新签名');
+      }
 
       // ✅ 收集所有触发的联系人ID（用于清空待发送消息）
       const triggeredContactIds = new Set();
@@ -484,6 +763,15 @@ export class PhoneAPI {
           }
           : message;
 
+        // ✅ 为第一条 assistant 消息添加 API 元数据（如 Gemini 的 thoughtSignature）
+        // 官方要求：签名附加到整个回复的第一个 part
+        logger.debug(`[PhoneAPI] 检查元数据附加条件: i=${i}, msg.sender=${msg.sender}, responseMetadata.keys=${Object.keys(responseMetadata)}, 条件满足=${i === 0 && msg.sender === 'contact' && Object.keys(responseMetadata).length > 0}`);
+        
+        if (i === 0 && msg.sender === 'contact' && Object.keys(responseMetadata).length > 0) {
+          messageToSave.metadata = responseMetadata;
+          logger.info('[PhoneAPI] ✅ 第一条 assistant 消息已附加 API 元数据:', Object.keys(responseMetadata));
+        }
+
         // ✅ 保存到目标联系人的聊天记录（不是当前界面的contactId）
         await saveChatMessage(matchedContactId, messageToSave);
 
@@ -580,9 +868,10 @@ export class PhoneAPI {
    * @param {Array<Object>} messages - messages数组（支持多种角色类型）
    * @param {Object} apiConfig - API配置对象
    * @param {AbortSignal} signal - 终止信号
+   * @param {string} contactId - 联系人ID（用于保存错误信息到调试器）
    * @returns {Promise<string>} AI回复文本
    */
-  async callAPIWithStreaming(messages, apiConfig, signal) {
+  async callAPIWithStreaming(messages, apiConfig, signal, contactId) {
     // 🔍 调试日志：记录传入的完整 apiConfig（完全照搬日记）
     logger.debug('[PhoneAPI.callAPIWithStreaming] === 自定义API调试开始 ===');
     logger.debug('[PhoneAPI.callAPIWithStreaming] 传入的 apiConfig:', JSON.stringify(apiConfig, null, 2));
@@ -595,13 +884,14 @@ export class PhoneAPI {
     // 获取当前使用的 API 源
     let currentSource;
     if (apiConfig.source === 'custom') {
-      // 根据用户选择的格式映射到对应的 chat_completion_sources
+      // ✅ 修复：统一使用 OPENAI 源，通过 reverse_proxy 模式让后端使用我们的 proxy_password
+      // 原因：CUSTOM 源会强制从本地密钥文件读取，忽略 proxy_password，导致 401 认证失败
       const formatMap = {
-        'openai': chat_completion_sources.CUSTOM,
+        'openai': chat_completion_sources.OPENAI,      // ← 改为 OPENAI
         'claude': chat_completion_sources.CLAUDE,
         'google': chat_completion_sources.MAKERSUITE,
         'openrouter': chat_completion_sources.OPENROUTER,
-        'scale': chat_completion_sources.CUSTOM,
+        'scale': chat_completion_sources.OPENAI,       // ← 改为 OPENAI
         'ai21': chat_completion_sources.AI21,
         'mistral': chat_completion_sources.MISTRALAI,
         'custom': 'auto'
@@ -611,9 +901,9 @@ export class PhoneAPI {
 
       if (userFormat === 'custom') {
         currentSource = oai_settings.chat_completion_source || chat_completion_sources.OPENAI;
-        logger.debug('[SendController] 自定义API - 自动检测模式，使用酒馆API源:', currentSource);
+        logger.debug('[PhoneAPI] 自定义API - 自动检测模式，使用酒馆API源:', currentSource);
       } else {
-        currentSource = formatMap[userFormat] || chat_completion_sources.CUSTOM;
+        currentSource = formatMap[userFormat] || chat_completion_sources.OPENAI;  // ← 默认改为 OPENAI
         logger.debug('[PhoneAPI] 自定义API - 用户选择格式:', userFormat, '→ 映射到:', currentSource);
       }
     } else {
@@ -626,17 +916,74 @@ export class PhoneAPI {
       model = oai_settings.openai_model || 'gpt-4o-mini';
       logger.warn('[PhoneAPI.callAPIWithStreaming] 未设置模型，使用官方默认:', model);
     }
+    
+    // ✅ 移除 models/ 前缀（避免 URL 重复：/models/models/xxx）
+    // 参考：SillyTavern 官方在获取模型列表时也会 replace('models/', '')
+    if (model && model.startsWith('models/')) {
+      const originalModel = model;
+      model = model.replace('models/', '');
+      logger.debug('[PhoneAPI.callAPIWithStreaming] 移除 models/ 前缀:', originalModel, '→', model);
+    }
+    
     logger.debug('[PhoneAPI.callAPIWithStreaming] 最终使用的 model:', model);
 
-    // 读取 max_tokens 配置
-    const maxTokensRaw = oai_settings.openai_max_tokens;
-    const maxTokensNumber = Number(maxTokensRaw);
-    const maxTokensFinal = maxTokensNumber || 2000;
+    // ✅ 核心修复：区分 default 模式和 custom 模式的参数读取
+    let bodyParams = {};
 
-    logger.info('[PhoneAPI.callAPIWithStreaming] max_tokens读取详情:');
-    logger.info('  - 原始值 (oai_settings.openai_max_tokens):', maxTokensRaw, '类型:', typeof maxTokensRaw);
-    logger.info('  - Number转换后:', maxTokensNumber);
-    logger.info('  - 最终使用值:', maxTokensFinal, maxTokensFinal === 2000 ? '(使用默认值)' : '(使用用户配置)');
+    if (apiConfig.source === 'custom') {
+      // ✅ custom 模式：使用保存的参数配置（完全独立）
+      const savedParams = apiConfig.params || {};
+      
+      // 只添加用户保存的参数（避免发送不支持的参数）
+      if (savedParams.temperature !== undefined) {
+        bodyParams.temperature = savedParams.temperature;
+      } else {
+        bodyParams.temperature = 0.8; // 默认值
+      }
+
+      if (savedParams.max_tokens !== undefined) {
+        bodyParams.max_tokens = savedParams.max_tokens;
+      } else {
+        bodyParams.max_tokens = 8000; // 默认值
+      }
+
+      // 可选参数：只在用户设置了才添加
+      if (savedParams.frequency_penalty !== undefined) {
+        bodyParams.frequency_penalty = savedParams.frequency_penalty;
+      }
+      if (savedParams.presence_penalty !== undefined) {
+        bodyParams.presence_penalty = savedParams.presence_penalty;
+      }
+      if (savedParams.top_p !== undefined) {
+        bodyParams.top_p = savedParams.top_p;
+      }
+      if (savedParams.top_k !== undefined) {
+        bodyParams.top_k = savedParams.top_k;
+      }
+      if (savedParams.repetition_penalty !== undefined) {
+        bodyParams.repetition_penalty = savedParams.repetition_penalty;
+      }
+      if (savedParams.min_p !== undefined) {
+        bodyParams.min_p = savedParams.min_p;
+      }
+      if (savedParams.top_a !== undefined) {
+        bodyParams.top_a = savedParams.top_a;
+      }
+
+      logger.info('[PhoneAPI.callAPIWithStreaming] ✅ 使用自定义参数配置:', bodyParams);
+    } else {
+      // ✅ default 模式：使用酒馆配置
+      bodyParams.temperature = Number(oai_settings.temp_openai) || 1.0;
+      bodyParams.max_tokens = Number(oai_settings.openai_max_tokens) || 2000;
+      bodyParams.frequency_penalty = Number(oai_settings.freq_pen_openai) || 0;
+      bodyParams.presence_penalty = Number(oai_settings.pres_pen_openai) || 0;
+      bodyParams.top_p = Number(oai_settings.top_p_openai) || 1.0;
+      
+      const topK = Number(oai_settings.top_k_openai);
+      if (topK) bodyParams.top_k = topK;
+
+      logger.info('[PhoneAPI.callAPIWithStreaming] ✅ 使用酒馆参数配置:', bodyParams);
+    }
 
     const body = {
       type: 'quiet',
@@ -644,11 +991,7 @@ export class PhoneAPI {
       model: model,
       stream: apiConfig.stream || false,
       chat_completion_source: currentSource,
-      max_tokens: maxTokensFinal,
-      temperature: Number(oai_settings.temp_openai) || 1.0,
-      frequency_penalty: Number(oai_settings.freq_pen_openai) || 0,
-      presence_penalty: Number(oai_settings.pres_pen_openai) || 0,
-      top_p: Number(oai_settings.top_p_openai) || 1.0,
+      ...bodyParams,  // ← 只包含有值的参数
       use_makersuite_sysprompt: true,
       claude_use_sysprompt: true
     };
@@ -674,16 +1017,15 @@ export class PhoneAPI {
 
       logger.debug('[PhoneAPI.callAPIWithStreaming] ✅ 验证通过，开始设置 API 端点');
 
-      // 🔧 修复：chat_completion_source 为 "custom" 时，后端读取 custom_url 而不是 reverse_proxy
-      // 所以需要同时设置两个字段
+      // ✅ 修复：使用 reverse_proxy 模式让后端使用我们的 proxy_password
+      // 原因：CUSTOM 源会从本地密钥文件读取，忽略 proxy_password，导致 401 认证失败
+      // 现在使用 OPENAI 源（见上方映射），后端会检查 reverse_proxy 并使用 proxy_password
       body.reverse_proxy = apiConfig.baseUrl.trim();
-      body.custom_url = apiConfig.baseUrl.trim();  // ← 关键：custom 源需要 custom_url
       logger.debug('[PhoneAPI.callAPIWithStreaming] body.reverse_proxy 已设置为:', `"${body.reverse_proxy}"`);
-      logger.debug('[PhoneAPI.callAPIWithStreaming] body.custom_url 已设置为:', `"${body.custom_url}"`);
 
       if (apiConfig.apiKey) {
         body.proxy_password = apiConfig.apiKey.trim();
-        logger.debug('[PhoneAPI.callAPIWithStreaming] body.proxy_password 已设置');
+        logger.debug('[PhoneAPI.callAPIWithStreaming] body.proxy_password 已设置（后端将使用此密钥）');
       }
     } else {
       logger.debug('[PhoneAPI.callAPIWithStreaming] 跳过自定义API分支 (source !== "custom")');
@@ -691,6 +1033,23 @@ export class PhoneAPI {
 
     // 🔍 最终检查：记录 body 中的 reverse_proxy
     logger.debug('[PhoneAPI.callAPIWithStreaming] 最终 body.reverse_proxy:', body.reverse_proxy);
+    
+    // 🎯 检查 messages 中是否有 thoughtSignature
+    let hasSignatureInRequest = false;
+    body.messages.forEach((msg, idx) => {
+      if (Array.isArray(msg.content)) {
+        const signaturePart = msg.content.find(part => part.thoughtSignature);
+        if (signaturePart) {
+          hasSignatureInRequest = true;
+          logger.info(`[PhoneAPI.callAPIWithStreaming] 🎯 请求中包含 thoughtSignature: messages[${idx}].role=${msg.role}, 签名长度=${signaturePart.thoughtSignature.length}`);
+          logger.debug(`[PhoneAPI.callAPIWithStreaming] 签名内容（前100字符）: ${signaturePart.thoughtSignature.substring(0, 100)}...`);
+        }
+      }
+    });
+    if (!hasSignatureInRequest) {
+      logger.debug('[PhoneAPI.callAPIWithStreaming] 请求中不包含 thoughtSignature');
+    }
+    
     logger.debug('[PhoneAPI.callAPIWithStreaming] 完整 body 对象:', JSON.stringify(body, null, 2));
 
     logger.info('[PhoneAPI.callAPIWithStreaming] 最终请求配置:', {
@@ -711,9 +1070,36 @@ export class PhoneAPI {
     });
 
     if (!response.ok) {
+      // ✅ 提取完整响应体（原封不动）
       const errorText = await response.text();
-      logger.error('[PhoneAPI] API调用失败:', response.status, errorText);
-      throw new Error(`API调用失败: ${response.status} ${errorText}`);
+      
+      // ✅ 尝试解析 JSON 格式的错误
+      let errorJson = null;
+      try {
+        errorJson = JSON.parse(errorText);
+      } catch (e) {
+        // 不是 JSON，保持原样
+      }
+      
+      // ✅ 记录到日志（格式化 JSON）
+      logger.error('[PhoneAPI] ========== API 错误详情 ==========');
+      logger.error('[PhoneAPI] 状态码:', response.status);
+      logger.error('[PhoneAPI] 状态文本:', response.statusText);
+      if (errorJson) {
+        logger.error('[PhoneAPI] 错误内容（JSON）:', JSON.stringify(errorJson, null, 2));
+      } else {
+        logger.error('[PhoneAPI] 错误内容（纯文本）:', errorText);
+      }
+      logger.error('[PhoneAPI] ======================================');
+      
+      // ✅ 保存完整响应到调试器（让用户可以在 debug-textarea 中查看）
+      if (contactId) {
+        const { saveDebugVersion } = await import('../messages/message-debug-ui.js');
+        saveDebugVersion(contactId, errorText);
+      }
+      
+      // ✅ 抛出简洁的错误（给toast显示）
+      throw new Error(`API调用失败 (${response.status})`);
     }
 
     if (apiConfig.stream) {
@@ -722,7 +1108,15 @@ export class PhoneAPI {
       const data = await response.json();
       // ✅ 修复：使用 extractMessageFromData 自动适配各种 API 格式（OpenAI/Claude/Google AI等）
       const message = extractMessageFromData(data);
-      return message || '';
+      
+      // ✅ 提取 API 元数据（如 Gemini 的 thoughtSignature）
+      const metadata = this.extractAPIMetadata(data, currentSource);
+      
+      // ✅ 返回结构化对象（而不只是文本）
+      return {
+        text: message || '',
+        metadata: metadata
+      };
     }
   }
 
@@ -1121,4 +1515,207 @@ export class PhoneAPI {
   sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
+
+  /**
+   * 提取 API 元数据（如 Gemini 的 thoughtSignature）
+   * 
+   * @param {Object} data - API 响应数据
+   * @param {string} currentSource - API 源（makersuite / openai / claude 等）
+   * @returns {Object} 元数据对象，按 API 源分类
+   * 
+   * @description
+   * 从 API 响应中提取特定于该 API 的元数据：
+   * - Gemini (makersuite)：thoughtSignature、thinkingTokens
+   * - OpenAI：（暂无）
+   * - Claude：（暂无）
+   * 
+   * @example
+   * const metadata = this.extractAPIMetadata(geminiResponse, 'makersuite');
+   * // 返回：{ gemini: { thoughtSignature: '...', thinkingTokens: 1078 } }
+   */
+  extractAPIMetadata(data, currentSource) {
+    const metadata = {};
+
+    // ✅ Gemini / MakerSuite
+    if (currentSource === 'makersuite' || currentSource === chat_completion_sources.MAKERSUITE) {
+      metadata.gemini = {};
+      
+      // 🔍 调试：打印接收到的 data 结构
+      logger.debug('[PhoneAPI.extractAPIMetadata] 🔍 接收到的 data 对象键:', Object.keys(data));
+      logger.debug('[PhoneAPI.extractAPIMetadata] 🔍 data.candidates:', data.candidates ? '存在' : '不存在');
+      logger.debug('[PhoneAPI.extractAPIMetadata] 🔍 data.usageMetadata:', data.usageMetadata ? JSON.stringify(data.usageMetadata) : '不存在');
+      
+      // 🔍 检查是否是 OpenAI 格式（SillyTavern 转换后）
+      if (data.choices && data.responseContent) {
+        logger.debug('[PhoneAPI.extractAPIMetadata] 🔍 检测到 OpenAI 格式，尝试从 responseContent 提取');
+        
+        // SillyTavern 返回的 responseContent 直接是 content 对象：{ parts: [...], role: '...' }
+        // 需要重构为 Gemini 原始格式：{ candidates: [{ content: {...} }] }
+        if (data.responseContent.parts) {
+          logger.info('[PhoneAPI.extractAPIMetadata] 🎯 从 responseContent.parts 重构 Gemini 响应');
+          data = {
+            candidates: [{
+              content: data.responseContent
+            }],
+            usageMetadata: data.usageMetadata  // 保留 token 统计
+          };
+        }
+      }
+      
+      if (data.candidates) {
+        logger.debug('[PhoneAPI.extractAPIMetadata] 🔍 candidates[0]:', data.candidates[0] ? '存在' : '不存在');
+        if (data.candidates[0]) {
+          logger.debug('[PhoneAPI.extractAPIMetadata] 🔍 candidates[0] 键:', Object.keys(data.candidates[0]));
+          logger.debug('[PhoneAPI.extractAPIMetadata] 🔍 candidates[0].content:', data.candidates[0].content ? '存在' : '不存在');
+          if (data.candidates[0].content) {
+            logger.debug('[PhoneAPI.extractAPIMetadata] 🔍 content 键:', Object.keys(data.candidates[0].content));
+            logger.debug('[PhoneAPI.extractAPIMetadata] 🔍 content.parts:', data.candidates[0].content.parts ? `存在，长度: ${data.candidates[0].content.parts.length}` : '不存在');
+            if (data.candidates[0].content.parts?.[0]) {
+              logger.debug('[PhoneAPI.extractAPIMetadata] 🔍 parts[0] 键:', Object.keys(data.candidates[0].content.parts[0]));
+              logger.debug('[PhoneAPI.extractAPIMetadata] 🔍 parts[0].thoughtSignature:', data.candidates[0].content.parts[0].thoughtSignature ? '存在' : '不存在');
+            }
+          }
+        }
+      }
+      
+      try {
+        // 从第一个 candidate 的第一个 part 提取 thoughtSignature
+        const thoughtSignature = data.candidates?.[0]?.content?.parts?.[0]?.thoughtSignature;
+        if (thoughtSignature) {
+          metadata.gemini.thoughtSignature = thoughtSignature;
+          logger.info('[PhoneAPI.extractAPIMetadata] ✅ 提取到 Gemini thoughtSignature');
+          logger.debug('[PhoneAPI.extractAPIMetadata] Signature 长度:', thoughtSignature.length);
+        } else {
+          logger.warn('[PhoneAPI.extractAPIMetadata] ❌ 未找到 thoughtSignature');
+        }
+        
+        // 提取 thinking tokens 统计
+        const thinkingTokens = data.usageMetadata?.thoughtsTokenCount;
+        if (thinkingTokens) {
+          metadata.gemini.thinkingTokens = thinkingTokens;
+          logger.debug('[PhoneAPI.extractAPIMetadata] Thinking tokens:', thinkingTokens);
+        } else {
+          logger.debug('[PhoneAPI.extractAPIMetadata] 未找到 thoughtsTokenCount');
+        }
+      } catch (error) {
+        logger.warn('[PhoneAPI.extractAPIMetadata] Gemini 元数据提取失败:', error.message);
+      }
+    }
+
+    // ✅ Claude（未来扩展）
+    // if (currentSource === 'claude' || currentSource === chat_completion_sources.CLAUDE) {
+    //   metadata.claude = {};
+    //   // 提取 Claude 特有元数据
+    // }
+
+    // ✅ OpenAI（未来扩展）
+    // if (currentSource === 'openai' || currentSource === chat_completion_sources.OPENAI) {
+    //   metadata.openai = {};
+    //   // 提取 OpenAI 特有元数据
+    // }
+
+    logger.debug('[PhoneAPI.extractAPIMetadata] 元数据提取完成:', Object.keys(metadata));
+    return metadata;
+  }
+}
+
+// ========================================
+// [UTILITY] 格式转换工具函数（已禁用）
+// ========================================
+
+/**
+ * 转换 OpenAI 格式消息为 Gemini 格式
+ * 
+ * ⚠️ 当前已禁用：大多数代理不支持 Google AI Studio 原生格式
+ * 📌 保留此函数以备将来使用（如官方 API 或支持的代理）
+ * 
+ * 🔧 如需启用：
+ * 1. 取消注释（ai-send-controller.js 第 462-485 行）
+ * 2. 删除测试代码（第 463 行的 `const imageFormat = ...` 改为读取设置）
+ * 3. 添加 UI 设置（可选，让用户选择格式）
+ * 
+ * @description
+ * Gemini API 的格式要求（参考 SillyTavern 官方 prompt-converters.js）：
+ * 1. role: 'assistant' → 'model'
+ * 2. content 数组中的 image_url → inlineData
+ * 3. ⚠️ 注意：Gemini 不需要 type 字段！只保留 inlineData
+ * 4. 图片 URL 拆分：'data:image/jpeg;base64,xxx' → { mimeType: 'image/jpeg', data: 'xxx' }
+ * 
+ * @param {Array<Object>} messages - OpenAI 格式的 messages
+ * @returns {Array<Object>} Gemini 兼容格式的 messages
+ * 
+ * @example
+ * // OpenAI 格式
+ * { role: 'user', content: [
+ *   { type: 'text', text: '你好' },
+ *   { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,xxx' } }
+ * ]}
+ * 
+ * // Gemini 格式（与 SillyTavern 官方一致）
+ * { role: 'user', content: [
+ *   { type: 'text', text: '你好' },
+ *   { inlineData: { mimeType: 'image/jpeg', data: 'xxx' } }
+ * ]}
+ */
+function convertToGeminiFormat(messages) {
+  logger.info('[FormatConverter] 🔄 开始转换为 Gemini 格式');
+  let convertedImageCount = 0;
+  
+  const converted = messages.map((msg, msgIndex) => {
+    // 1. 转换 role（Gemini 用 'model' 而不是 'assistant'）
+    const role = msg.role === 'assistant' ? 'model' : msg.role;
+    
+    // 2. 如果 content 不是数组，直接返回（纯文本消息）
+    if (!Array.isArray(msg.content)) {
+      return { ...msg, role };
+    }
+    
+    // 3. 转换 content 数组中的图片格式
+    const convertedContent = msg.content.map((part, partIndex) => {
+      if (part.type === 'text') {
+        return part; // 文本部分不变
+      } 
+      else if (part.type === 'image_url') {
+        // OpenAI: { type: 'image_url', image_url: { url: 'data:image/webp;base64,...' } }
+        // Gemini: { inlineData: { mimeType: 'image/webp', data: '...' } }
+        //         ↑ 注意：Gemini 不需要 type 字段！
+        
+        const url = part.image_url.url;
+        
+        // 拆分 data URL
+        if (!url.startsWith('data:')) {
+          logger.warn('[FormatConverter] ⚠️ 图片 URL 不是 data URL，跳过:', url.substring(0, 50));
+          return part;
+        }
+        
+        const [header, data] = url.split(',');
+        if (!header || !data) {
+          logger.error('[FormatConverter] ❌ 无法解析图片 URL:', url.substring(0, 50));
+          return part;
+        }
+        
+        const mimeType = header.split(';')[0].split(':')[1];
+        
+        convertedImageCount++;
+        logger.debug(`[FormatConverter] ✅ [消息${msgIndex}/部分${partIndex}] ${mimeType}, 数据长度 ${data.length}`);
+        
+        // ✅ 修复：删除 type 字段，只保留 inlineData（与 SillyTavern 官方一致）
+        return {
+          inlineData: {
+            mimeType: mimeType,
+            data: data  // 纯 base64，不带前缀
+          }
+        };
+      }
+      return part; // 其他类型保持不变
+    });
+    
+    return {
+      role: role,
+      content: convertedContent
+    };
+  });
+  
+  logger.info(`[FormatConverter] ✅ Gemini 格式转换完成，共转换 ${convertedImageCount} 张图片`);
+  return converted;
 }

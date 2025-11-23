@@ -891,6 +891,13 @@ export async function showPage(overlayElement, pageName, params = {}) {
     // 压栈（记录页面跳转，包含实际的pageId）
     pageStack.pushPage(pageName, pageId, params, fromMainTab);
 
+    // ✅ 打开聊天页时，清除未读计数（无条件执行，不管是首次进入还是切换）
+    if (pageName === 'chat' && params.contactId) {
+      const { clearUnread } = await import('./messages/unread-badge-manager.js');
+      clearUnread(params.contactId);
+      logger.debug('[PhoneUI.showPage] 已清除未读计数:', params.contactId);
+    }
+
     // 显示目标页面（带动画）
     if (targetPage) {
       // 0. 移除目标页面的dimmed状态（如果之前被变暗过）
@@ -1196,13 +1203,8 @@ async function refreshPageContent(pageName, params = {}) {
     case 'chat':
       // 聊天页使用独立ID（page-chat-{contactId}），每个角色一个DOM
       // 不需要刷新逻辑，因为切换角色时会创建新的DOM
+      // 注意：清除未读的逻辑已移至 showPage() 函数中（压栈后），无条件执行
       logger.debug('[PhoneUI] 聊天页使用独立DOM，无需刷新');
-      
-      // ✅ 打开聊天页时，标记为已读
-      if (params.contactId) {
-        const { markAsRead } = await import('./messages/message-list-ui.js');
-        await markAsRead(params.contactId);
-      }
       break;
 
     case 'plan-list':
@@ -1597,6 +1599,45 @@ async function createPage(pageName, params = {}) {
       settingsPageEl.appendChild(settingsContentFrag);
 
       return settingsPageEl;
+
+    case 'image-mode-settings':
+      // 动态导入图片识别模式设置页渲染函数
+      const { renderImageModeSettings } = await import('./settings/image-mode-settings-ui.js');
+      const imageModeSettingsContentFrag = await renderImageModeSettings();
+
+      // 创建页面容器
+      const imageModeSettingsPageEl = document.createElement('div');
+      imageModeSettingsPageEl.id = 'page-image-mode-settings';
+      imageModeSettingsPageEl.className = 'phone-page phone-page-scrollable';  // 标准布局：整页滚动
+      imageModeSettingsPageEl.appendChild(imageModeSettingsContentFrag);
+
+      return imageModeSettingsPageEl;
+
+    case 'storage-space':
+      // 动态导入存储空间页渲染函数
+      const { renderStorageSpace } = await import('./storage/storage-space-ui.js');
+      const storageSpaceContentFrag = await renderStorageSpace();
+
+      // 创建页面容器
+      const storageSpacePageEl = document.createElement('div');
+      storageSpacePageEl.id = 'page-storage-space';
+      storageSpacePageEl.className = 'phone-page phone-page-scrollable';  // 标准布局：整页滚动
+      storageSpacePageEl.appendChild(storageSpaceContentFrag);
+
+      return storageSpacePageEl;
+
+    case 'image-storage':
+      // 动态导入图片管理页渲染函数
+      const { renderImageStorage } = await import('./storage/image-storage-ui.js');
+      const imageStorageContentFrag = await renderImageStorage();
+
+      // 创建页面容器
+      const imageStoragePageEl = document.createElement('div');
+      imageStoragePageEl.id = 'page-image-storage';
+      imageStoragePageEl.className = 'phone-page phone-page-scrollable';  // 标准布局：整页滚动
+      imageStoragePageEl.appendChild(imageStorageContentFrag);
+
+      return imageStoragePageEl;
 
     case 'favorites-list':
       // 动态导入收藏列表页渲染函数

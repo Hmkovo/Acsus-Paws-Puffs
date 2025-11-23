@@ -10,6 +10,7 @@
 import logger from '../../../logger.js';
 import { extension_settings } from '../../../../../../extensions.js';
 import { saveSettingsDebounced } from '../../../../../../../script.js';
+import { incrementUnread } from './unread-badge-manager.js';
 
 /**
  * 获取聊天文件路径（基于extension_settings）
@@ -37,6 +38,9 @@ function ensurePhoneData() {
   }
   if (!extension_settings.acsusPawsPuffs.phone.unreadCounts) {
     extension_settings.acsusPawsPuffs.phone.unreadCounts = {};
+  }
+  if (!extension_settings.acsusPawsPuffs.phone.chatRounds) {
+    extension_settings.acsusPawsPuffs.phone.chatRounds = {};
   }
 }
 
@@ -147,6 +151,27 @@ export async function saveChatMessage(contactId, message) {
   saveSettingsDebounced();
 
   logger.debug('[ChatData] 保存消息:', contactId, getMessagePreview(message));
+
+  // ✅ 如果是AI回复且聊天页面不可见，增加未读计数
+  if (message.sender === 'contact') {
+    const isChatVisible = isChatPageVisible(contactId);
+    if (!isChatVisible) {
+      incrementUnread(contactId);
+      logger.debug('[ChatData] AI回复且页面不可见，未读+1:', contactId);
+    }
+  }
+}
+
+/**
+ * 检查聊天页面是否可见
+ * @private
+ * @param {string} contactId - 联系人ID
+ * @returns {boolean} 是否可见
+ */
+function isChatPageVisible(contactId) {
+  const pageId = `page-chat-${contactId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+  const page = document.getElementById(pageId);
+  return !!(page && page.classList.contains('active') && page.parentElement);
 }
 
 /**
@@ -432,59 +457,52 @@ export async function addSystemMessage(contactId, systemMessage) {
   }
 }
 
+// 注意：未读计数管理函数已迁移到 unread-badge-manager.js
+// 使用 incrementUnread()、clearUnread()、getUnread() 替代
+
 /**
- * 增加未读计数
+ * 获取当前轮次
+ * 
+ * @async
+ * @param {string} contactId - 联系人ID
+ * @returns {Promise<number>} 当前轮次（从1开始）
  * 
  * @description
- * 当联系人发来新消息时调用，未读数+1
- * 
- * @param {string} contactId - 联系人ID
+ * 用于图片消息的轮次控制，标记图片属于哪一轮对话
  */
-export function incrementUnreadCount(contactId) {
+export async function getCurrentRound(contactId) {
   ensurePhoneData();
 
-  const unreadCounts = extension_settings.acsusPawsPuffs.phone.unreadCounts;
-  unreadCounts[contactId] = (unreadCounts[contactId] || 0) + 1;
+  if (!extension_settings.acsusPawsPuffs.phone.chatRounds[contactId]) {
+    extension_settings.acsusPawsPuffs.phone.chatRounds[contactId] = 1;
+  }
 
+  return extension_settings.acsusPawsPuffs.phone.chatRounds[contactId];
+}
+
+/**
+ * 递增轮次
+ * 
+ * @async
+ * @param {string} contactId - 联系人ID
+ * @returns {Promise<number>} 新的轮次
+ * 
+ * @description
+ * 每次用户发送消息后调用，轮次+1
+ */
+export async function incrementRound(contactId) {
+  ensurePhoneData();
+
+  if (!extension_settings.acsusPawsPuffs.phone.chatRounds[contactId]) {
+    extension_settings.acsusPawsPuffs.phone.chatRounds[contactId] = 1;
+  }
+
+  extension_settings.acsusPawsPuffs.phone.chatRounds[contactId]++;
   saveSettingsDebounced();
 
-  logger.debug('[ChatData] 未读计数+1:', contactId, '→', unreadCounts[contactId]);
-}
+  const newRound = extension_settings.acsusPawsPuffs.phone.chatRounds[contactId];
+  logger.debug('[ChatData] 轮次递增:', contactId, `现在是第${newRound}轮`);
 
-/**
- * 清除未读计数（标记已读）
- * 
- * @description
- * 当用户打开聊天界面时调用，清零未读计数
- * 
- * @param {string} contactId - 联系人ID
- */
-export function clearUnreadCount(contactId) {
-  ensurePhoneData();
-
-  const unreadCounts = extension_settings.acsusPawsPuffs.phone.unreadCounts;
-  const prevCount = unreadCounts[contactId] || 0;
-
-  if (prevCount > 0) {
-    unreadCounts[contactId] = 0;
-    saveSettingsDebounced();
-    logger.info('[ChatData] 已清除未读计数:', contactId, `${prevCount} → 0`);
-  }
-}
-
-/**
- * 获取未读计数
- * 
- * @description
- * 获取指定联系人的未读消息数量
- * 
- * @param {string} contactId - 联系人ID
- * @returns {number} 未读数量
- */
-export function getUnreadCount(contactId) {
-  ensurePhoneData();
-
-  const unreadCounts = extension_settings.acsusPawsPuffs.phone.unreadCounts;
-  return unreadCounts[contactId] || 0;
+  return newRound;
 }
 

@@ -146,9 +146,9 @@ function createAPISettingsHTML() {
           </div>
         </div>
 
-        <!-- API格式 -->
+        <!-- API类型 -->
         <div class="api-settings-section">
-          <div class="api-settings-section-title">API格式</div>
+          <div class="api-settings-section-title">API类型</div>
           <select id="phoneApiFormat" class="api-settings-select">
             <option value="openai">OpenAI 兼容格式</option>
             <option value="claude">Claude (Anthropic)</option>
@@ -159,7 +159,7 @@ function createAPISettingsHTML() {
             <option value="custom">自动检测</option>
           </select>
           <div class="api-settings-hint">
-            选择API的请求格式，大部分代理使用OpenAI兼容格式
+            选择API类型以确定消息格式转换方式，不同API需要不同的格式
           </div>
         </div>
 
@@ -186,6 +186,17 @@ function createAPISettingsHTML() {
           <button id="phoneApiTest" class="api-settings-btn api-settings-btn-test">
             <i class="fa-solid fa-flask"></i> 测试连接
           </button>
+        </div>
+
+        <!-- 高级参数（动态生成） -->
+        <div class="api-settings-section">
+          <div class="api-settings-section-title" style="cursor: pointer; user-select: none;" id="phoneApiParamsToggle">
+            <i class="fa-solid fa-chevron-down" id="phoneApiParamsIcon"></i>
+            高级参数
+          </div>
+          <div id="phoneApiParamsContainer" style="display: block; margin-top: 1em;">
+            <!-- 参数将根据选择的API格式动态插入到这里 -->
+          </div>
         </div>
       </div>
 

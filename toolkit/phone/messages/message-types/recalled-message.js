@@ -6,12 +6,13 @@
 import logger from '../../../../logger.js';
 import { getThumbnailUrl } from '../../../../../../../../script.js';
 import { getContactDisplayName } from '../../utils/contact-display-helper.js';
-import { showMessageActions } from '../../utils/message-actions-helper.js';
+import { bindLongPress } from '../../utils/message-actions-helper.js';
 
 /**
  * 渲染撤回消息气泡
  * 
  * @param {Object} message - 撤回消息对象
+ * @param {string} message.id - 消息ID
  * @param {string} message.sender - 发送者（'user' | 'contact'）
  * @param {string} [message.role] - 角色名称（contact消息需要）
  * @param {number} message.time - 原消息时间戳（秒）
@@ -45,6 +46,14 @@ export function renderRecalledMessage(message, contact, contactId) {
   // 判断是发送还是接收
   const isSent = message.sender === 'user';
   container.classList.add(isSent ? 'chat-msg-sent' : 'chat-msg-received');
+
+  // 设置完整的 data- 属性（用于删除、多选等操作）
+  container.dataset.msgId = message.id;
+  container.dataset.messageTime = message.time.toString();
+  container.dataset.time = message.time.toString();
+  container.dataset.sender = message.sender;
+  container.dataset.type = 'recalled';
+  container.dataset.contactId = contactId;
 
   // 创建头像
   const avatar = document.createElement('img');
@@ -103,11 +112,13 @@ export function renderRecalledMessage(message, contact, contactId) {
   container.appendChild(avatar);
   container.appendChild(bubble);
 
-  // 绑定长按菜单（撤回消息也可以删除、转发等）
-  // ✅ 修复：传入 container（.chat-msg），showMessageActions 需要完整的消息容器
-  bubble.addEventListener('click', (e) => {
-    showMessageActions(container, message, contactId);
-  });
+  // ✅ 绑定长按操作菜单（支持删除/转发/收藏/多选，禁用引用）
+  // 注：撤回消息禁用引用是因为引用撤回消息没有上下文意义
+  if (contactId) {
+    bindLongPress(container, message, contactId, {
+      disableQuote: true  // 撤回消息不适合被引用
+    });
+  }
 
   return container;
 }

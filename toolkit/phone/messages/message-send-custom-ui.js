@@ -435,6 +435,8 @@ async function createMessageBubble(message, contact, contactId) {
       break;
 
     case 'image':
+    case 'image-real':  // ✅ 新增：真实图片类型
+    case 'image-fake':  // ✅ 新增：假装图片类型
       innerBubble = renderImageMessage(message, contact, contactId);
       break;
 
@@ -468,6 +470,14 @@ async function createMessageBubble(message, contact, contactId) {
     case 'poke':
       // 戳一戳消息
       innerBubble = renderPokeMessage(message, contact, contactId);
+      break;
+
+    case 'forwarded':
+      // 转发消息
+      {
+        const { renderForwardedMessage: renderForwarded } = await import('./message-types/forwarded-message.js');
+        innerBubble = renderForwarded(message, contact, contactId);
+      }
       break;
 
     // TODO 第二期：实现专门的渲染器

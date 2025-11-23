@@ -24,7 +24,7 @@ import logger from '../../../logger.js';
 import { extension_settings } from '../../../../../../extensions.js';
 
 // 延迟导入，避免循环依赖
-let loadContacts, buildChatHistoryInfo, buildHistoryChatInfo;
+let loadContacts, buildChatHistoryInfo, buildHistoryChatInfo, loadChatHistory, getChatSendSettings;
 
 // 已注册的角色宏（用于清理）
 const registeredCharacterMacros = new Set();
@@ -39,10 +39,13 @@ export async function registerPhoneMacros() {
   // 动态导入依赖
   const contactModule = await import('../contacts/contact-list-data.js');
   const contextModule = await import('../ai-integration/ai-context-builder.js');
+  const chatDataModule = await import('../messages/message-chat-data.js');
 
   loadContacts = contactModule.loadContacts;
   buildChatHistoryInfo = contextModule.buildChatHistoryInfo;
   buildHistoryChatInfo = contextModule.buildHistoryChatInfo;
+  loadChatHistory = chatDataModule.loadChatHistory;
+  getChatSendSettings = chatDataModule.getChatSendSettings;
 
   // 使用官方 API（不直接导入 SillyTavern 内部模块）
   const { registerMacro } = SillyTavern.getContext();
@@ -162,7 +165,8 @@ function sanitizeMacroName(name) {
  * 获取当前角色的最新消息（用于 {{最新消息}}）
  * 
  * @description
- * 宏函数必须是同步的，直接从持久化存储读取数据
+ * ⚠️ 同步实现：宏系统不支持Promise
+ * 直接从持久化存储读取数据，使用正确的字段和格式化逻辑
  * 
  * @returns {string} 格式化的聊天记录
  */
@@ -187,7 +191,8 @@ function getRecentMessages() {
  * 获取当前角色的历史消息（用于 {{历史消息}}）
  * 
  * @description
- * 宏函数必须是同步的，直接从持久化存储读取数据
+ * ⚠️ 同步实现：宏系统不支持Promise
+ * 直接从持久化存储读取数据，使用正确的字段和格式化逻辑
  * 
  * @returns {string} 格式化的聊天记录
  */
@@ -209,11 +214,11 @@ function getHistoryMessages() {
 }
 
 /**
- * 根据角色名获取消息（同步，直接读取持久化存储）
+ * 根据角色名获取消息（同步）
  * 
  * @description
- * 宏函数必须是同步的，不能返回 Promise
- * 通过角色名查找对应的联系人ID，然后读取持久化存储
+ * ⚠️ 同步实现：宏系统不支持Promise
+ * 通过角色名查找对应的联系人ID，然后同步格式化消息
  * 
  * @param {'recent'|'history'} type - 消息类型
  * @param {string} charName - 角色名（从酒馆的 name2 获取）
@@ -241,10 +246,12 @@ function getMessagesByCharName(type, charName) {
 }
 
 /**
- * 根据 contactId 获取消息（同步，直接读取持久化存储）
+ * 根据 contactId 获取消息（同步实现）
  * 
  * @description
- * 宏函数必须是同步的，直接从 extension_settings 读取数据并格式化
+ * ⚠️ 同步实现：宏系统不支持Promise
+ * 直接从持久化存储读取数据，使用正确的字段名和格式化逻辑
+ * 复用 formatTimeForAISync 和消息类型处理逻辑
  * 
  * @param {'recent'|'history'} type - 消息类型
  * @param {string} contactId - 联系人ID
@@ -253,31 +260,40 @@ function getMessagesByCharName(type, charName) {
  */
 function getContactMessages(type, contactId, contact) {
   try {
-    // 从持久化存储读取聊天记录
+    // 从持久化存储读取聊天记录和设置
     const STORAGE_KEY = 'acsusPawsPuffs';
     const chatKey = `chat_${contactId}`;
-    const messages = extension_settings[STORAGE_KEY]?.phone?.chats?.[chatKey] || [];
+    const allMessages = extension_settings[STORAGE_KEY]?.phone?.chats?.[chatKey] || [];
+    const sendSettings = extension_settings[STORAGE_KEY]?.phone?.chatSettings?.[contactId] || {
+      recentCount: 20,
+      historyCount: 99
+    };
 
-    if (messages.length === 0) {
+    if (allMessages.length === 0) {
       return ''; // 没有消息
     }
+
+    // 过滤出非排除的消息
+    const validMessages = allMessages.filter(msg => !msg.excluded);
 
     // 根据类型选择消息范围
     let selectedMessages;
     if (type === 'recent') {
-      // 最新消息：最后20条
-      selectedMessages = messages.slice(-20);
+      // 最新消息：最后recentCount条
+      selectedMessages = validMessages.slice(Math.max(0, validMessages.length - sendSettings.recentCount));
     } else {
-      // 历史消息：除最新20条外的所有消息
-      selectedMessages = messages.slice(0, -20);
+      // 历史消息：除最新recentCount条外的historyCount条
+      const historyEnd = Math.max(0, validMessages.length - sendSettings.recentCount);
+      const historyStart = Math.max(0, historyEnd - sendSettings.historyCount);
+      selectedMessages = validMessages.slice(historyStart, historyEnd);
     }
 
     if (selectedMessages.length === 0) {
       return '';
     }
 
-    // 格式化消息（同步版本，简化格式）
-    return formatMessagesSync(selectedMessages, contact);
+    // 格式化消息（同步版本）
+    return formatMessagesForMacro(selectedMessages, contact);
   } catch (error) {
     logger.error(`[TavernMacros] 获取联系人消息失败 (${contactId}):`, error);
     return '';
@@ -285,43 +301,115 @@ function getContactMessages(type, contactId, contact) {
 }
 
 /**
- * 格式化消息（同步版本）
+ * 格式化消息列表为宏输出（同步版本）
  * 
  * @description
- * 将消息数组格式化为可读的字符串
- * 简化版本，不需要异步操作
+ * ✅ 正确的同步实现：
+ * - 使用 msg.time（秒级时间戳）
+ * - 获取真实用户名
+ * - 处理所有消息类型（emoji、image、quote等）
+ * - 复用时间格式化逻辑
  * 
  * @param {Array<Object>} messages - 消息数组
  * @param {Object} contact - 联系人对象
  * @returns {string} 格式化的消息文本
  */
-function formatMessagesSync(messages, contact) {
+function formatMessagesForMacro(messages, contact) {
+  // 获取真实用户名（而不是硬编码"我"）
+  const STORAGE_KEY = 'acsusPawsPuffs';
+  const userName = extension_settings[STORAGE_KEY]?.phone?.userProfile?.displayName || '我';
+  
   const lines = [];
 
-  for (const msg of messages) {
-    // 格式化时间
-    const time = msg.timestamp ? new Date(msg.timestamp).toLocaleString('zh-CN', {
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    }) : '';
+  for (let index = 0; index < messages.length; index++) {
+    const msg = messages[index];
+    const senderName = msg.sender === 'user' ? userName : contact.name;
+    const prevTime = index > 0 ? messages[index - 1].time : null;
+    const isFirst = index === 0;
 
-    // 格式化发送者
-    const sender = msg.sender === 'user' ? '我' : contact.name;
+    // 格式化时间（使用 msg.time 而不是 msg.timestamp）
+    const timeStr = formatTimeForAISync(msg.time, prevTime, isFirst);
 
-    // 格式化内容
-    const content = msg.content || '';
+    // 根据消息类型处理内容
+    let messageContent = formatMessageContent(msg);
 
     // 组装消息行
-    if (time) {
-      lines.push(`[${time}] ${sender}: ${content}`);
-    } else {
-      lines.push(`${sender}: ${content}`);
-    }
+    lines.push(`${timeStr}${senderName}: ${messageContent}`);
   }
 
   return lines.join('\n');
+}
+
+/**
+ * 格式化消息内容（根据类型）
+ * 
+ * @param {Object} msg - 消息对象
+ * @returns {string} 格式化后的内容
+ */
+function formatMessageContent(msg) {
+  // 同步版本：无法查询表情包名称，直接使用冗余存储的名字
+  if (msg.type === 'poke') {
+    return '[戳一戳]';
+  } else if (msg.type === 'emoji') {
+    return msg.emojiName ? `[表情]${msg.emojiName}` : `[表情包]`;
+  } else if (msg.type === 'image-real' || (msg.type === 'image' && msg.imageUrl)) {
+    return msg.description ? `[图片]${msg.description}` : '[图片]';
+  } else if (msg.type === 'image-fake' || (msg.type === 'image' && !msg.imageUrl)) {
+    return `[图片]${msg.description || '无描述'}`;
+  } else if (msg.type === 'quote') {
+    const quotedText = msg.quotedMessage?.content || '(已删除)';
+    return `[引用]${quotedText}[回复]${msg.replyContent}`;
+  } else if (msg.type === 'transfer') {
+    return msg.message ? `[转账]${msg.amount}元 ${msg.message}` : `[转账]${msg.amount}元`;
+  } else if (msg.type === 'recalled') {
+    // 撤回消息只显示提示，不显示原内容
+    return '撤回了一条消息';
+  } else if (msg.type === 'forwarded') {
+    return '[转发聊天记录]';
+  } else if (msg.type === 'plan') {
+    return `[约定计划]${msg.content}`;
+  } else {
+    // 默认：文字消息
+    return msg.content || '';
+  }
+}
+
+/**
+ * 格式化时间为AI可读格式（同步版本）
+ * 
+ * @param {number} timestamp - Unix时间戳（秒）
+ * @param {number|null} prevTimestamp - 上一条消息的时间戳
+ * @param {boolean} isFirst - 是否是第一条消息
+ * @returns {string} 格式化的时间字符串
+ */
+function formatTimeForAISync(timestamp, prevTimestamp = null, isFirst = false) {
+  const date = new Date(timestamp * 1000);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hour = String(date.getHours()).padStart(2, '0');
+  const minute = String(date.getMinutes()).padStart(2, '0');
+
+  // 第一条消息：显示完整日期
+  if (isFirst) {
+    return `[${year}-${month}-${day}]\n`;
+  }
+
+  // 如果有上一条消息，检查是否跨天
+  if (prevTimestamp !== null) {
+    const prevDate = new Date(prevTimestamp * 1000);
+    const isSameDay = date.getFullYear() === prevDate.getFullYear() &&
+      date.getMonth() === prevDate.getMonth() &&
+      date.getDate() === prevDate.getDate();
+
+    // 跨天了：显示新的日期分组
+    if (!isSameDay) {
+      return `[${year}-${month}-${day}]\n`;
+    }
+  }
+
+  // 同一天内：只显示时间
+  return `[${hour}:${minute}] `;
 }
 
 /**
@@ -392,6 +480,41 @@ function getCurrentWeather() {
   } catch (error) {
     logger.error('[TavernMacros] 获取当前天气失败:', error);
     return '';
+  }
+}
+
+/**
+ * 注销所有手机宏（供外部调用）
+ * 
+ * @description
+ * 当手机功能被禁用时调用，注销所有手机相关宏
+ * 包括：{{最新消息}}、{{历史消息}}、{{当前时间}}、{{当前天气}}、所有联系人专属宏
+ * 
+ * @returns {void}
+ * 
+ * @example
+ * import { unregisterPhoneMacros } from './utils/tavern-macros.js';
+ * unregisterPhoneMacros(); // 注销所有宏
+ */
+export function unregisterPhoneMacros() {
+  try {
+    const { unregisterMacro } = SillyTavern.getContext();
+
+    // 注销固定宏
+    unregisterMacro('最新消息');
+    unregisterMacro('历史消息');
+    unregisterMacro('当前时间');
+    unregisterMacro('当前天气');
+
+    // 注销所有联系人专属宏
+    for (const macroName of registeredCharacterMacros) {
+      unregisterMacro(macroName);
+    }
+    registeredCharacterMacros.clear();
+
+    logger.info('[TavernMacros] ✅ 已注销所有手机宏');
+  } catch (error) {
+    logger.error('[TavernMacros] 注销宏失败:', error);
   }
 }
 

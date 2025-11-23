@@ -10,6 +10,7 @@ import { getContactDisplayName } from '../utils/contact-display-helper.js';
 import { getThumbnailUrl } from '../../../../../../../script.js';
 import { findEmojiById } from '../emojis/emoji-manager-data.js';
 import { registerListener, destroyPageListeners } from '../utils/listener-manager.js';
+import { bindUnreadBadgeListener } from './unread-badge-manager.js';
 
 /**
  * 渲染消息列表
@@ -38,6 +39,9 @@ export async function renderMessageList() {
 
   // ✅ 绑定全局消息接收事件监听器
   bindMessageReceivedListener(listContainer);
+
+  // ✅ 绑定未读徽章UI更新监听器
+  bindUnreadBadgeListener(listContainer);
 
   logger.debug('[MessageList] 消息列表渲染完成');
   return container;
@@ -353,53 +357,26 @@ export async function updateContactItem(contactId) {
     timeEl.textContent = formatMessageTime(chatItem.lastMessage.time);
   }
 
-  // 局部更新：未读徽章
-  const badgeEl = item.querySelector('.msg-item-badge');
-  if (chatItem.unreadCount > 0) {
-    if (!badgeEl) {
-      // 创建徽章
-      const wrapper = item.querySelector('.msg-item-avatar-wrapper');
-      const badge = document.createElement('div');
-      badge.className = 'msg-item-badge';
-      badge.textContent = chatItem.unreadCount;
-      wrapper.appendChild(badge);
-    } else {
-      // 更新徽章数字
-      badgeEl.textContent = chatItem.unreadCount;
-    }
-  } else {
-    // 移除徽章
-    if (badgeEl) {
-      badgeEl.remove();
-    }
-  }
+  // 注意：未读徽章更新已由 unread-badge-manager 通过事件驱动自动处理
+  // 不需要在这里手动更新DOM
 
   logger.debug('[MessageList] 联系人项已更新');
 }
 
 /**
- * 标记为已读
+ * 标记为已读（已废弃，使用 unread-badge-manager 替代）
+ * 
+ * @deprecated 请使用 `clearUnread(contactId)` from './unread-badge-manager.js'
+ * @param {string} contactId - 联系人ID
  * 
  * @description
- * 清除未读计数并更新UI（移除小红点）
- * 
- * @param {string} contactId - 联系人ID
+ * 此函数已迁移到 unread-badge-manager.js 模块。
+ * 新的设计通过事件驱动自动更新UI，调用 clearUnread() 即可。
  */
 export async function markAsRead(contactId) {
-  logger.debug('[MessageList] 标记已读:', contactId);
-
-  // 1. 清除未读计数（数据层）
-  const { clearUnreadCount } = await import('../messages/message-chat-data.js');
-  clearUnreadCount(contactId);
-
-  // 2. 更新UI（移除徽章）
-  const item = document.querySelector(`.msg-item[data-contact-id="${contactId}"]`);
-  if (item) {
-    const badge = item.querySelector('.msg-item-badge');
-    if (badge) {
-      badge.remove();
-    }
-  }
+  logger.warn('[MessageList] markAsRead已废弃，请使用 unread-badge-manager.clearUnread()');
+  const { clearUnread } = await import('./unread-badge-manager.js');
+  clearUnread(contactId);
 }
 
 /**

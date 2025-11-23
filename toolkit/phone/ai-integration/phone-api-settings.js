@@ -21,6 +21,7 @@ import { showInfoToast, showSuccessToast, showErrorToast } from '../ui-component
 import { showConfirmPopup } from '../utils/popup-helper.js';
 import { extension_settings } from '../../../../../../../scripts/extensions.js';
 import { saveSettingsDebounced } from '../../../../../../../script.js';
+import { getSupportedParams, PARAMS_DEFINITIONS, getDefaultParams } from './phone-api-params-config.js';
 
 // ========================================
 // [CONST] 常量
@@ -48,6 +49,8 @@ export class PhoneAPIConfig {
   constructor(pageElement, options) {
     this.pageElement = pageElement;
     this.api = options.api;
+    // ✅ 临时参数存储（用于新建配置时保存参数）
+    this.tempParams = {};
   }
 
   /**
@@ -185,6 +188,28 @@ export class PhoneAPIConfig {
     if (apiTestBtn) {
       apiTestBtn.addEventListener('click', () => {
         this.testApiConnection();
+      });
+    }
+
+    // ✅ API格式选择（动态显示高级参数）
+    const apiFormatSelect = /** @type {HTMLSelectElement|null} */ (this.pageElement.querySelector('#phoneApiFormat'));
+    if (apiFormatSelect) {
+      apiFormatSelect.addEventListener('change', () => {
+        const format = apiFormatSelect.value;
+        logger.debug('[PhoneAPIConfig] API格式已切换:', format);
+        this.renderAdvancedParams(format);
+      });
+    }
+
+    // ✅ 高级参数折叠/展开
+    const paramsToggle = this.pageElement.querySelector('#phoneApiParamsToggle');
+    const paramsContainer = this.pageElement.querySelector('#phoneApiParamsContainer');
+    const paramsIcon = this.pageElement.querySelector('#phoneApiParamsIcon');
+    if (paramsToggle && paramsContainer && paramsIcon) {
+      paramsToggle.addEventListener('click', () => {
+        const isExpanded = paramsContainer.style.display !== 'none';
+        paramsContainer.style.display = isExpanded ? 'none' : 'block';
+        paramsIcon.className = isExpanded ? 'fa-solid fa-chevron-right' : 'fa-solid fa-chevron-down';
       });
     }
 
@@ -402,6 +427,12 @@ export class PhoneAPIConfig {
         }
       });
 
+      // ✅ 清空临时存储（加载现有配置）
+      this.tempParams = {};
+
+      // ✅ 渲染高级参数UI
+      this.renderAdvancedParams(config.format || 'openai');
+
       logger.info('[PhoneAPIConfig] 已加载配置:', config.name);
     } else {
       // 清空表单（新建配置）
@@ -413,6 +444,9 @@ export class PhoneAPIConfig {
       if (modelManualInput) modelManualInput.value = '';
       if (modelManualWrapper) modelManualWrapper.style.display = 'none';
 
+      // ✅ 清空临时存储（新建配置）
+      this.tempParams = {};
+
       // 清除当前配置ID
       this.updateSettings({
         apiConfig: {
@@ -420,6 +454,10 @@ export class PhoneAPIConfig {
           currentConfigId: null
         }
       });
+
+      // ✅ 渲染默认格式的参数UI
+      const defaultFormat = this.getDefaultFormatFromTavern();
+      this.renderAdvancedParams(defaultFormat);
 
       logger.debug('[PhoneAPIConfig] 表单已清空，准备新建配置');
     }
@@ -474,20 +512,26 @@ export class PhoneAPIConfig {
 
     // 检查是否是更新现有配置
     const existingIndex = configs.findIndex(c => c.id === currentConfigId);
+    const existingConfig = existingIndex >= 0 ? configs[existingIndex] : null;
 
+    // ✅ 关键修复：读取当前UI上的参数值（支持新建配置时保存参数）
+    const currentParams = this.readParamsFromUI(format);
+
+    // ✅ 关键修复：保留现有的 params（高级参数）
     const configData = {
       id: currentConfigId || `config_${Date.now()}`,
       name: name,
       baseUrl: baseUrl,
       apiKey: apiKey,
       format: format,
-      model: model
+      model: model,
+      params: currentParams  // ← 使用从UI读取的参数
     };
 
     if (existingIndex >= 0) {
       // 更新现有配置
       configs[existingIndex] = configData;
-      logger.info('[PhoneAPIConfig] 已更新配置:', name);
+      logger.info('[PhoneAPIConfig] 已更新配置:', name, '(保留', Object.keys(configData.params).length, '个参数)');
     } else {
       // 新增配置
       configs.push(configData);
@@ -505,6 +549,10 @@ export class PhoneAPIConfig {
 
     // 刷新配置列表
     this.refreshApiConfigList();
+
+    // ✅ 清空临时存储（参数已保存到配置）
+    this.tempParams = {};
+    logger.debug('[PhoneAPIConfig] 已清空临时参数存储');
 
     showSuccessToast(`配置「${name}」已保存`);
   }
@@ -737,6 +785,276 @@ export class PhoneAPIConfig {
     } catch (error) {
       logger.error('[PhoneAPIConfig] 测试失败:', error);
       showErrorToast('连接失败：' + error.message);
+    }
+  }
+
+  /**
+   * 从临时存储和已保存配置读取参数值
+   * 
+   * @description
+   * 合并两个来源的参数：
+   * 1. 临时存储（新建配置时的参数）
+   * 2. 已保存配置的参数
+   * 
+   * @param {string} format - API格式
+   * @returns {Object.<string, number>} 参数名 -> 参数值的映射
+   */
+  readParamsFromUI(format) {
+    const settings = this.getSettings();
+    const currentConfigId = settings.apiConfig.currentConfigId;
+    
+    // ✅ 优先使用临时存储的参数（新建配置时）
+    let params = { ...this.tempParams };
+
+    // ✅ 如果有当前配置，合并已保存的参数
+    if (currentConfigId) {
+      const configs = settings.apiConfig.customConfigs || [];
+      const config = configs.find(c => c.id === currentConfigId);
+      
+      if (config && config.params) {
+        // 已保存的参数作为基础，临时参数覆盖
+        params = { ...config.params, ...this.tempParams };
+      }
+    }
+
+    logger.info('[PhoneAPIConfig.readParamsFromUI] ✅ 读取了', Object.keys(params).length, '个参数');
+    return params;
+  }
+
+  /**
+   * 清理不支持的参数（避免格式切换后残留）
+   * 
+   * @description
+   * 当用户切换API格式时（如从Google切换到OpenAI），删除新格式不支持的旧参数
+   * 例如：OpenAI不支持top_k，切换到OpenAI时应删除旧的top_k值
+   * 
+   * @param {string} format - 新的API格式
+   * @param {string[]} supportedParams - 新格式支持的参数列表
+   */
+  cleanUnsupportedParams(format, supportedParams) {
+    const settings = this.getSettings();
+    const currentConfigId = settings.apiConfig.currentConfigId;
+    
+    if (!currentConfigId) {
+      return; // 没有当前配置，无需清理
+    }
+
+    const configs = settings.apiConfig.customConfigs || [];
+    const config = configs.find(c => c.id === currentConfigId);
+    
+    if (!config || !config.params) {
+      return; // 没有参数需要清理
+    }
+
+    // 找出不支持的参数
+    const allParamNames = Object.keys(config.params);
+    const unsupportedParams = allParamNames.filter(p => !supportedParams.includes(p));
+
+    if (unsupportedParams.length === 0) {
+      return; // 没有不支持的参数
+    }
+
+    // 删除不支持的参数
+    for (const paramName of unsupportedParams) {
+      delete config.params[paramName];
+      logger.info('[PhoneAPIConfig.cleanUnsupportedParams] 已删除不支持的参数:', paramName, '(格式:', format, ')');
+    }
+
+    // 保存更新
+    this.updateSettings({
+      apiConfig: {
+        ...settings.apiConfig,
+        customConfigs: configs
+      }
+    });
+
+    logger.info('[PhoneAPIConfig.cleanUnsupportedParams] ✅ 参数清理完成，删除了', unsupportedParams.length, '个不支持的参数');
+  }
+
+  /**
+   * 渲染高级参数UI（根据API格式动态生成）
+   * 
+   * @description
+   * 根据选择的API格式，动态生成对应的参数配置UI（温度、Top P等）
+   * 
+   * @param {string} format - API格式（openai/claude/google等）
+   */
+  renderAdvancedParams(format) {
+    const container = this.pageElement.querySelector('#phoneApiParamsContainer');
+    if (!container) {
+      logger.warn('[PhoneAPIConfig.renderAdvancedParams] 未找到参数容器');
+      return;
+    }
+
+    // 获取该格式支持的参数列表
+    const supportedParams = getSupportedParams(format);
+    logger.debug('[PhoneAPIConfig.renderAdvancedParams] 开始渲染参数，格式:', format, '参数列表:', supportedParams);
+
+    // ✅ 关键修复：清理不支持的旧参数（避免格式切换后残留）
+    this.cleanUnsupportedParams(format, supportedParams);
+
+    // 清空容器
+    container.innerHTML = '';
+
+    // 逐个生成参数控件
+    for (const paramName of supportedParams) {
+      const definition = PARAMS_DEFINITIONS[paramName];
+      if (!definition) {
+        logger.warn('[PhoneAPIConfig] 未知参数定义:', paramName);
+        continue;
+      }
+
+      // 创建参数控件HTML
+      const paramHtml = `
+        <div class="api-settings-param" data-param="${paramName}" style="margin-bottom: 1em;">
+          <div class="api-settings-section-title" style="font-size: 0.9em; margin-bottom: 0.5em;">
+            ${definition.label}
+            <span style="opacity: 0.6; font-size: 0.85em; font-weight: normal; margin-left: 0.5em;">
+              (${definition.min} - ${definition.max})
+            </span>
+          </div>
+          <div style="display: flex; gap: 0.5em; align-items: center;">
+            <input 
+              type="range" 
+              class="api-settings-range" 
+              id="phoneApiParam_${paramName}"
+              min="${definition.min}" 
+              max="${definition.max}" 
+              step="${definition.step}"
+              value="${definition.default}"
+              style="flex: 1;"
+            >
+            <input 
+              type="number" 
+              class="api-settings-input" 
+              id="phoneApiParamNumber_${paramName}"
+              min="${definition.min}" 
+              max="${definition.max}" 
+              step="${definition.step}"
+              value="${definition.default}"
+              style="width: 5em; padding: 0.3em 0.5em; text-align: center;"
+            >
+          </div>
+          <div class="api-settings-hint" style="font-size: 0.85em;">
+            ${definition.hint}
+          </div>
+        </div>
+      `;
+
+      container.insertAdjacentHTML('beforeend', paramHtml);
+
+      // 绑定双向同步事件
+      const rangeInput = /** @type {HTMLInputElement|null} */ (container.querySelector(`#phoneApiParam_${paramName}`));
+      const numberInput = /** @type {HTMLInputElement|null} */ (container.querySelector(`#phoneApiParamNumber_${paramName}`));
+
+      if (rangeInput && numberInput) {
+        // 滑块 → 数字框
+        rangeInput.addEventListener('input', () => {
+          numberInput.value = rangeInput.value;
+          this.saveParamValue(paramName, parseFloat(rangeInput.value));
+        });
+
+        // 数字框 → 滑块
+        numberInput.addEventListener('input', () => {
+          rangeInput.value = numberInput.value;
+          this.saveParamValue(paramName, parseFloat(numberInput.value));
+        });
+      }
+    }
+
+    // 加载保存的参数值到UI
+    this.loadParamValuesToUI(format);
+
+    logger.info('[PhoneAPIConfig.renderAdvancedParams] ✅ 参数UI已渲染，共', supportedParams.length, '个参数');
+  }
+
+  /**
+   * 保存参数值到配置（实时自动保存）
+   * 
+   * @description
+   * 用户调整参数时立即触发，实现实时保存
+   * - 如果有当前配置ID：保存到该配置
+   * - 如果是新建配置：保存到临时存储，等点击"保存配置"时一起保存
+   * 
+   * @param {string} paramName - 参数名
+   * @param {number} value - 参数值
+   */
+  saveParamValue(paramName, value) {
+    const settings = this.getSettings();
+    const currentConfigId = settings.apiConfig.currentConfigId;
+    
+    if (!currentConfigId) {
+      // ✅ 新建配置时：保存到临时存储
+      this.tempParams[paramName] = value;
+      logger.debug('[PhoneAPIConfig.saveParamValue] 已保存到临时存储:', paramName, '=', value);
+      return;
+    }
+
+    // ✅ 更新现有配置：直接保存到配置
+    const configs = settings.apiConfig.customConfigs || [];
+    const config = configs.find(c => c.id === currentConfigId);
+    
+    if (!config) {
+      logger.warn('[PhoneAPIConfig.saveParamValue] 未找到配置:', currentConfigId);
+      return;
+    }
+
+    // 初始化params对象（如果不存在）
+    if (!config.params) {
+      config.params = {};
+    }
+
+    // 保存参数值
+    config.params[paramName] = value;
+
+    // 更新到settings
+    this.updateSettings({
+      apiConfig: {
+        ...settings.apiConfig,
+        customConfigs: configs
+      }
+    });
+
+    logger.debug('[PhoneAPIConfig.saveParamValue] 已保存参数:', paramName, '=', value);
+  }
+
+  /**
+   * 加载参数值到UI
+   * 
+   * @param {string} format - API格式
+   */
+  loadParamValuesToUI(format) {
+    const settings = this.getSettings();
+    const currentConfigId = settings.apiConfig.currentConfigId;
+    
+    if (!currentConfigId) {
+      logger.debug('[PhoneAPIConfig.loadParamValuesToUI] 无当前配置ID，使用默认值');
+      return;
+    }
+
+    const configs = settings.apiConfig.customConfigs || [];
+    const config = configs.find(c => c.id === currentConfigId);
+    
+    if (!config || !config.params) {
+      logger.debug('[PhoneAPIConfig.loadParamValuesToUI] 无保存的参数，使用默认值');
+      return;
+    }
+
+    // 获取该格式支持的参数列表
+    const supportedParams = getSupportedParams(format);
+
+    for (const paramName of supportedParams) {
+      const savedValue = config.params[paramName];
+      if (savedValue === undefined) continue;
+
+      const rangeInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector(`#phoneApiParam_${paramName}`));
+      const numberInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector(`#phoneApiParamNumber_${paramName}`));
+
+      if (rangeInput && numberInput) {
+        rangeInput.value = String(savedValue);
+        numberInput.value = String(savedValue);
+        logger.debug('[PhoneAPIConfig.loadParamValuesToUI] 已加载参数:', paramName, '=', savedValue);
+      }
     }
   }
 }

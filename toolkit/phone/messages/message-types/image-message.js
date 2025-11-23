@@ -1,91 +1,49 @@
 import logger from '../../../../logger.js';
-import { getThumbnailUrl } from '../../../../../../../../script.js';
-import { showMessageActions } from '../../utils/message-actions-helper.js';
+import { renderImageRealMessage } from './image-real-message.js';
+import { renderImageFakeMessage } from './image-fake-message.js';
 
 /**
- * 渲染图片消息气泡
+ * 渲染图片消息气泡（兼容层）
  * 
  * @param {Object} message - 消息对象
+ * @param {string} message.type - 消息类型 ('image-real' | 'image-fake' | 'image')
  * @param {string} message.sender - 发送者 ('user' | 'contact')
- * @param {string} message.description - 图片描述
- * @param {string} [message.imageUrl] - 图片链接（可选）
+ * @param {string} [message.imageUrl] - 图片URL（真实图片必需）
+ * @param {string} [message.description] - 图片描述
+ * @param {number} [message.imageRound] - 图片所属轮次（真实图片必需）
  * @param {Object} contact - 联系人对象
  * @param {string} contact.avatar - 联系人头像
- * @param {string} contact.name - 联系人名字
  * @param {string} [contactId] - 联系人ID（用于删除等操作）
  * @returns {HTMLElement} 消息DOM元素
  * 
  * @description
- * 根据是否有imageUrl选择不同的气泡模板：
- * - 无URL：正方形气泡，文字居中可滚动
- * - 有URL：图片+描述叠加
+ * 兼容层：自动识别图片类型并调用对应的渲染器
+ * - 新消息应该直接使用 'image-real' 或 'image-fake' 类型
+ * - 旧消息（type='image'）会根据 imageUrl 字段自动识别类型
+ * 
+ * @deprecated 建议直接使用 renderImageRealMessage 或 renderImageFakeMessage
  */
 export function renderImageMessage(message, contact, contactId) {
-  logger.debug('[ImageMessage] 渲染图片消息:', message);
+  logger.debug('[ImageMessage] 渲染图片消息（兼容层）:', message);
 
-  const container = document.createElement('div');
-  container.className = 'chat-msg';
-
-  // 判断是发送还是接收
-  const isSent = message.sender === 'user';
-  container.classList.add(isSent ? 'chat-msg-sent' : 'chat-msg-received');
-
-  // 创建头像（与text-message.js保持一致）
-  const avatar = document.createElement('img');
-  avatar.className = 'chat-msg-avatar';
-
-  if (isSent) {
-    // 用户头像（从顶部栏获取）
-    const userAvatar = /** @type {HTMLImageElement} */ (document.querySelector('#phone-user-avatar'));
-    avatar.src = userAvatar?.src || 'img/default-user.png';
+  // ✅ 自动识别类型
+  if (message.type === 'image-real') {
+    return renderImageRealMessage(message, contact, contactId);
+  } else if (message.type === 'image-fake') {
+    return renderImageFakeMessage(message, contact, contactId);
+  } else if (message.type === 'image') {
+    // ✅ 旧数据兼容：根据 imageUrl 判断类型
+    if (message.imageUrl) {
+      logger.debug('[ImageMessage] 旧数据自动转换为 image-real');
+      return renderImageRealMessage(message, contact, contactId);
+    } else {
+      logger.debug('[ImageMessage] 旧数据自动转换为 image-fake');
+      return renderImageFakeMessage(message, contact, contactId);
+    }
   } else {
-    // 联系人头像（使用getThumbnailUrl）
-    avatar.src = getThumbnailUrl('avatar', contact?.avatar) || 'img/default-avatar.png';
+    logger.error('[ImageMessage] 未知的图片消息类型:', message.type);
+    // 降级处理：尝试按真实图片渲染
+    return renderImageRealMessage(message, contact, contactId);
   }
-
-  // 创建气泡容器（图片消息不使用 chat-msg-bubble 类）
-  const bubble = document.createElement('div');
-
-  // 根据是否有URL选择模板
-  if (message.imageUrl) {
-    // 有URL：图片+描述
-    bubble.className = 'chat-msg-bubble-image-with-url';
-
-    const img = document.createElement('img');
-    img.src = message.imageUrl;
-    img.classList.add('chat-msg-image');
-    img.alt = message.description || '图片';
-
-    const descDiv = document.createElement('div');
-    descDiv.classList.add('chat-msg-image-desc');
-    descDiv.textContent = message.description || '';
-
-    bubble.appendChild(img);
-    bubble.appendChild(descDiv);
-  } else {
-    // 无URL：纯描述正方形气泡
-    bubble.className = 'chat-msg-bubble-image-no-url';
-
-    const placeholderDiv = document.createElement('div');
-    placeholderDiv.classList.add('chat-msg-image-placeholder-text');
-    placeholderDiv.textContent = message.description || '图片';
-
-    bubble.appendChild(placeholderDiv);
-  }
-
-  // 添加点击事件（显示操作菜单）
-  if (contactId) {
-    container.addEventListener('click', (e) => {
-      e.stopPropagation();
-      showMessageActions(container, message, contactId);
-    });
-  }
-
-  // 组装（统一DOM顺序：头像在前，气泡在后）
-  // CSS的flex-direction: row-reverse会控制视觉顺序
-  container.appendChild(avatar);
-  container.appendChild(bubble);
-
-  return container;
 }
 

@@ -219,12 +219,18 @@ export async function renderMacroGuideDetail() {
           <h4>基础模板（世界书）</h4>
           <div class="macro-guide-copy-box">
             <div class="macro-guide-code-block">
-              <code>&lt;线上消息&gt;<br>
-              我和{{char}}的手机聊天记录：<br>
+              <code>&lt;手机聊天记录&gt;<br>
+              ##{{user}}和{{char}}的手机消息（背景信息）:<br>
               {{最新消息}}<br>
-              &lt;/线上消息&gt;</code>
+              &lt;/手机聊天记录&gt;<br>
+              <br>
+              **当前场景：线下剧情**<br>
+              - 手机聊天记录仅作为背景，{{char}}已知这些消息内容<br>
+              - 现在进行的是**线下剧情**（不是手机对话）<br>
+              - 根据手机聊天内容和当前时间推移，自然推进剧情<br>
+              - {{user}}的输入的user_input是**线下内容**</code>
             </div>
-            <button class="macro-guide-copy-btn" data-copy="<线上消息>\n我和{{char}}的手机聊天记录：\n{{最新消息}}\n</线上消息>">
+            <button class="macro-guide-copy-btn" data-copy="<手机聊天记录>\n##{{user}}和{{char}}的手机消息（背景信息）:\n{{最新消息}}\n</手机聊天记录>\n\n**当前场景：线下剧情**\n- 手机聊天记录仅作为背景，{{char}}已知这些消息内容\n- 现在进行的是**线下剧情**（不是手机对话）\n- 根据手机聊天内容和当前时间推移，自然推进剧情\n- {{user}}的输入的user_input是**线下内容**">
               <i class="fa-solid fa-copy"></i>
               <span>复制</span>
             </button>
@@ -244,19 +250,23 @@ export async function renderMacroGuideDetail() {
             </button>
           </div>
 
-          <h4>完整背景模板</h4>
+          <h4>完整背景模板（带时间天气）</h4>
           <div class="macro-guide-copy-box">
             <div class="macro-guide-code-block">
               <code>&lt;手机聊天记录&gt;<br>
-              当前时间：{{当前时间}}<br>
-              当前天气：{{当前天气}}<br>
-              我和{{char}}的手机聊天：<br>
+              ##{{user}}和{{char}}的手机消息（背景信息）:<br>
               {{最新消息}}<br>
+              &lt;/手机聊天记录&gt;<br>
               <br>
-              根据最新消息，时间有推移，可能需要进行新剧情<br>
-              &lt;/手机聊天记录&gt;</code>
+              **当前场景：线下剧情**<br>
+              - 当前时间：{{当前时间}}<br>
+              - 当前天气：{{当前天气}}<br>
+              - 手机聊天记录仅作为背景，{{char}}已知这些消息内容<br>
+              - 现在进行的是**线下剧情**（不是手机对话）<br>
+              - 根据手机聊天内容和当前时间推移，自然推进剧情<br>
+              - {{user}}的输入的user_input是**线下内容**</code>
             </div>
-            <button class="macro-guide-copy-btn" data-copy="<手机聊天记录>\n当前时间：{{当前时间}}\n当前天气：{{当前天气}}\n我和{{char}}的手机聊天：\n{{最新消息}}\n\n根据最新消息，时间有推移，可能需要进行新剧情\n</手机聊天记录>">
+            <button class="macro-guide-copy-btn" data-copy="<手机聊天记录>\n##{{user}}和{{char}}的手机消息（背景信息）:\n{{最新消息}}\n</手机聊天记录>\n\n**当前场景：线下剧情**\n- 当前时间：{{当前时间}}\n- 当前天气：{{当前天气}}\n- 手机聊天记录仅作为背景，{{char}}已知这些消息内容\n- 现在进行的是**线下剧情**（不是手机对话）\n- 根据手机聊天内容和当前时间推移，自然推进剧情\n- {{user}}的输入的user_input是**线下内容**">
               <i class="fa-solid fa-copy"></i>
               <span>复制</span>
             </button>

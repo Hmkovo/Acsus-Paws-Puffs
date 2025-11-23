@@ -25,23 +25,61 @@ const pendingOperations = {
 };
 
 /**
- * 添加待发送消息
+ * 添加待发送消息（统一对象接口）
+ * 
  * @param {string} contactId - 联系人ID
- * @param {string} content - 消息内容
- * @param {number} time - 时间戳（秒）
+ * @param {Object} message - 消息对象
+ * @param {string} message.id - 消息ID
+ * @param {string} message.sender - 发送者（'user' | 'character'）
+ * @param {string} message.type - 消息类型（'text' | 'emoji' | 'image' | 'poke' | 'quote' | 'link' | ...）
+ * @param {number} message.time - 时间戳（秒）
+ * @param {string} message.content - 显示内容（用于文本显示）
+ * 
+ * @description
+ * 支持的消息类型及其特定字段：
+ * - text: 普通文字消息，只需基础字段
+ * - emoji: 表情消息，额外字段: emojiName（表情包名称，冗余存储）
+ * - image: 图片消息，额外字段: imageUrl, imageRound, description
+ * - poke: 戳一戳消息，只需基础字段
+ * - quote: 引用消息，额外字段: quotedMessage, replyContent
+ * - link: 链接消息（未来扩展），额外字段: linkUrl, linkTitle, linkDescription, linkImage, needAIFetch
+ * 
+ * @example
+ * // 文字消息
+ * addPendingMessage(contactId, {
+ *   id: 'msg_123',
+ *   sender: 'user',
+ *   type: 'text',
+ *   time: 1763365585,
+ *   content: '你好'
+ * });
+ * 
+ * // 图片消息
+ * addPendingMessage(contactId, {
+ *   id: 'msg_125',
+ *   sender: 'user',
+ *   type: 'image',
+ *   time: 1763365587,
+ *   content: '[图片]截图|/user/files/xxx.webp',
+ *   imageUrl: '/user/files/xxx.webp',
+ *   imageRound: 3,
+ *   description: '截图'
+ * });
  */
-export function addPendingMessage(contactId, content, time) {
+export function addPendingMessage(contactId, message) {
   if (!pendingOperations.messages[contactId]) {
     pendingOperations.messages[contactId] = [];
   }
 
-  pendingOperations.messages[contactId].push({
-    content,
-    time,
-    type: 'text'
-  });
+  // ✅ 直接存储完整对象
+  pendingOperations.messages[contactId].push(message);
 
-  logger.debug('[PendingOps] 添加待发送消息:', contactId, content.substring(0, 20));
+  logger.debug('[PendingOps] 添加待发送消息:', 
+    contactId,
+    'Type:', message.type,
+    'ID:', message.id?.substring(0, 20),
+    'Content:', message.content?.substring(0, 20)
+  );
 }
 
 /**

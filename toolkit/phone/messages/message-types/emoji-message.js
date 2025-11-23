@@ -6,7 +6,7 @@
 import logger from '../../../../logger.js';
 import { findEmojiById } from '../../emojis/emoji-manager-data.js';
 import { getThumbnailUrl } from '../../../../../../../../script.js';
-import { showMessageActions } from '../../utils/message-actions-helper.js';
+import { bindLongPress } from '../../utils/message-actions-helper.js';
 
 /**
  * 渲染表情消息
@@ -58,18 +58,18 @@ export function renderEmojiMessage(message, contact, contactId) {
   img.alt = emoji.name;
   img.className = 'chat-msg-image';
 
-  // 添加点击事件（显示操作菜单）
-  if (contactId) {
-    container.addEventListener('click', (e) => {
-      e.stopPropagation();
-      showMessageActions(container, message, contactId);
-    });
-  }
-
   // 组装（统一DOM顺序：头像在前，气泡在后）
   bubble.appendChild(img);
   container.appendChild(avatar);
   container.appendChild(bubble);
+
+  // ✅ 绑定长按操作菜单（支持删除/转发/收藏/多选，禁用引用）
+  // 注：表情消息禁用引用是因为引用一个表情没有上下文意义
+  if (contactId) {
+    bindLongPress(container, message, contactId, {
+      disableQuote: true  // 表情消息不适合被引用
+    });
+  }
 
   return container;
 }
@@ -108,6 +108,14 @@ function renderFallbackMessage(message, contact, contactId) {
     avatar.src = getThumbnailUrl('avatar', contact?.avatar) || 'img/default-avatar.png';
   }
 
+  // 设置完整的 data- 属性
+  container.dataset.msgId = message.id;
+  container.dataset.messageTime = message.time.toString();
+  container.dataset.time = message.time.toString();
+  container.dataset.sender = message.sender;
+  container.dataset.type = 'emoji';
+  container.dataset.contactId = contactId;
+
   // 创建气泡（优先显示保存的表情包名字，保留语境）
   const bubble = document.createElement('div');
   bubble.className = 'chat-msg-bubble';
@@ -123,17 +131,16 @@ function renderFallbackMessage(message, contact, contactId) {
   bubble.style.color = 'var(--phone-text-secondary)';
   bubble.style.fontStyle = 'italic';
 
-  // 添加点击事件（显示操作菜单）
-  if (contactId) {
-    container.addEventListener('click', (e) => {
-      e.stopPropagation();
-      showMessageActions(container, message, contactId);
-    });
-  }
-
   // 组装
   container.appendChild(avatar);
   container.appendChild(bubble);
+
+  // ✅ 绑定长按操作菜单（支持删除/转发/收藏/多选，禁用引用）
+  if (contactId) {
+    bindLongPress(container, message, contactId, {
+      disableQuote: true  // 表情消息不适合被引用
+    });
+  }
 
   return container;
 }

@@ -1,4 +1,4 @@
-/**
+/**New Cascade
  * 消息操作菜单助手
  * @module phone/utils/message-actions-helper
  * 
@@ -11,6 +11,7 @@ import logger from '../../../logger.js';
 import { loadChatHistory, saveChatHistory, updateMessage } from '../messages/message-chat-data.js';
 import { updateContactItem } from '../messages/message-list-ui.js';
 import { getContactDisplayName } from './contact-display-helper.js';
+import { enterMultiSelectMode } from '../messages/message-multiselect-ui.js';
 
 /**
  * 生成唯一消息ID
@@ -657,15 +658,25 @@ async function handleDelete(message, contactId, messageElement) {
 }
 
 /**
- * 处理多选模式（占位符）
+ * 处理多选模式
  * 
  * @private
- * @param {Object} message - 消息对象
+ * @param {Object} message - 消息对象（未使用，仅为保持接口一致）
+ * 
+ * @description
+ * 进入多选模式，显示所有消息的复选框和底部工具栏
  */
 function handleMultiSelect(message) {
-  logger.info('[MessageActions] 多选模式（占位符）:', message.content?.substring(0, 20));
+  logger.info('[MessageActions] 进入多选模式');
   closeMessageActions();
-  // TODO: 实现多选逻辑
+  
+  // 获取当前显示的聊天页面容器
+  const pageContainer = document.querySelector('.phone-chat-page:not([style*="display: none"])');
+  if (pageContainer) {
+    enterMultiSelectMode(pageContainer);
+  } else {
+    logger.error('[MessageActions] 找不到聊天页面容器');
+  }
 }
 
 /**

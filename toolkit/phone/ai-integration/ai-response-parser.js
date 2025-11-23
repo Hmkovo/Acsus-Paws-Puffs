@@ -82,6 +82,12 @@ export async function parseAIResponse(response, contactId, messageNumberMap) {
           // 添加唯一ID和时间戳（AI消息也需要ID避免误删）
           msg.id = generateMessageId();
           msg.time = Math.floor(Date.now() / 1000);
+          
+          // ✅ 统一添加 sender 字段（如果还没有）
+          if (!msg.sender) {
+            msg.sender = 'contact';
+          }
+          
           messages.push(msg);
         });
       }

@@ -9,6 +9,7 @@
  */
 
 import { getThumbnailUrl } from '../../../../../../../../script.js';
+import { bindLongPress } from '../../utils/message-actions-helper.js';
 import logger from '../../../../logger.js';
 
 /**
@@ -33,13 +34,21 @@ export function renderPokeMessage(message, contact, contactId) {
   logger.debug('[PokeMessage] 开始渲染戳一戳消息:', message.id);
 
   const container = document.createElement('div');
-  container.className = 'chat-msg-poke';
+  // ✅ 添加 .chat-msg 基础类名（让重roll逻辑能识别）
+  container.className = 'chat-msg chat-msg-poke';
 
   // 判断是发送还是接收
   const isSent = message.sender === 'user';
   container.classList.add(isSent ? 'chat-msg-poke-sent' : 'chat-msg-poke-received');
-  container.setAttribute('data-msg-id', message.id);
-  container.setAttribute('data-message-time', message.time.toString());
+  
+  // ✅ 统一data-属性格式（和其他消息类型一致）
+  container.dataset.msgId = message.id;
+  container.dataset.messageTime = message.time.toString();
+  container.dataset.time = message.time.toString();
+  container.dataset.sender = message.sender;
+  container.dataset.type = 'poke';
+  container.dataset.messageId = message.id;
+  container.dataset.contactId = contactId;
 
   // 创建头像
   const avatar = document.createElement('img');
@@ -79,6 +88,11 @@ export function renderPokeMessage(message, contact, contactId) {
   // CSS的 flex-direction 会控制视觉顺序
   container.appendChild(avatar);
   container.appendChild(content);
+
+  // ✅ 绑定长按操作菜单（支持删除/转发/收藏等，不支持引用）
+  bindLongPress(container, message, contactId, {
+    disableQuote: true  // 戳一戳消息不支持引用
+  });
 
   logger.info('[PokeMessage] ✅ 戳一戳消息渲染完成:', message.id, isSent ? '(我发的)' : '(对方发的)');
 

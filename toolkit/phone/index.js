@@ -35,6 +35,9 @@ export async function initPhone() {
     // 初始化 PhoneSystem（完全照搬日记）
     const system = await initPhoneSystem();
 
+    // ✅ 在APP_READY事件时，根据功能启用状态决定是否注册宏
+    registerMacrosOnReady(system.enabled);
+
     // 如果功能启用，注册扩展菜单
     if (system.enabled) {
       registerMenuEntry();
@@ -46,6 +49,32 @@ export async function initPhone() {
     logger.error('[Phone] 手机系统初始化失败:', error);
     throw error;
   }
+}
+
+/**
+ * 在 APP_READY 事件时注册宏
+ * 
+ * @description
+ * ✅ 关键：宏必须在 APP_READY 事件时注册（SillyTavern规范）
+ * ✅ 只在功能启用时注册宏（避免无用的宏污染）
+ * 
+ * @param {boolean} shouldRegister - 是否应该注册宏
+ */
+function registerMacrosOnReady(shouldRegister) {
+  eventSource.on(event_types.APP_READY, async () => {
+    try {
+      if (shouldRegister) {
+        logger.debug('[Phone] APP_READY事件触发，开始注册酒馆宏');
+        const { registerPhoneMacros } = await import('./utils/tavern-macros.js');
+        await registerPhoneMacros();
+        logger.info('[Phone] ✅ 酒馆宏注册完成（时机：APP_READY）');
+      } else {
+        logger.debug('[Phone] 功能未启用，跳过宏注册');
+      }
+    } catch (error) {
+      logger.error('[Phone] 宏注册失败:', error);
+    }
+  });
 }
 
 /**
@@ -161,6 +190,15 @@ export async function enablePhone() {
   extension_settings[EXT_ID].phone.enabled = true;
   saveSettingsDebounced();
 
+  // ✅ 启用功能时：注册宏
+  try {
+    const { registerPhoneMacros } = await import('./utils/tavern-macros.js');
+    await registerPhoneMacros();
+    logger.info('[Phone] ✅ 宏已注册（功能启用）');
+  } catch (error) {
+    logger.error('[Phone] 宏注册失败:', error);
+  }
+
   showMenuEntry();
   logger.info('[Phone] 手机系统已启用');
 }
@@ -178,6 +216,16 @@ export function disablePhone() {
   system.enabled = false;
   extension_settings[EXT_ID].phone.enabled = false;
   saveSettingsDebounced();
+
+  // ✅ 禁用功能时：注销宏
+  try {
+    import('./utils/tavern-macros.js').then(({ unregisterPhoneMacros }) => {
+      unregisterPhoneMacros();
+      logger.info('[Phone] ✅ 宏已注销（功能禁用）');
+    });
+  } catch (error) {
+    logger.error('[Phone] 宏注销失败:', error);
+  }
 
   // 关闭手机界面（如果已打开）
   const existingOverlay = document.querySelector('.phone-overlay');

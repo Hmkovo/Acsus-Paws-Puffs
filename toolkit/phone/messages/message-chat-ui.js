@@ -9,6 +9,7 @@ import { getContactDisplayName } from '../utils/contact-display-helper.js';
 import { getEmojis } from '../emojis/emoji-manager-data.js';
 import { bindLongPress } from '../utils/message-actions-helper.js';
 import { createPageListenerManager } from '../utils/listener-manager.js';
+import { bindMultiSelectToolbar } from './message-multiselect-ui.js';
 
 /**
  * 渲染聊天界面（完整DOM结构）
@@ -59,6 +60,10 @@ export async function renderChatView(contactId) {
   const inputArea = createInputArea();
   page.appendChild(inputArea);
 
+  // 创建多选工具栏（初始隐藏）
+  const multiSelectToolbar = createMultiSelectToolbar();
+  page.appendChild(multiSelectToolbar);
+
   // 创建表情面板
   const emojiPanel = createEmojiPanel();
   page.appendChild(emojiPanel);
@@ -78,8 +83,11 @@ export async function renderChatView(contactId) {
     bindInputEvents(page, contactId, contact);
     bindEmojiPanel(page);
     bindPlusPanel(page);
+    bindCameraButton(page, contactId);
+    bindTakePhotoInput(page, contactId);
     bindReturnButton(page);
     bindSettingsButton(page, contactId);
+    bindMultiSelectToolbar(page, contactId);
 
     // 恢复草稿
     restoreDraft(page, contactId);
@@ -147,14 +155,52 @@ function createInputArea() {
         <!-- 第二行：6个功能按钮 -->
         <div class="chat-input-row-bottom">
             <button class="chat-voice-btn"><i class="fa-solid fa-microphone"></i></button>
-            <button class="chat-placeholder-btn-1"><i class="fa-solid fa-circle"></i></button>
+            <button class="chat-camera-btn" title="拍照"><i class="fa-solid fa-camera"></i></button>
             <button class="chat-plan-list-btn" title="约定计划列表"><i class="fa-solid fa-clipboard-list"></i></button>
             <button class="chat-debug-btn" title="AI消息调试"><i class="fa-solid fa-robot"></i></button>
             <button class="chat-emoji-btn"><i class="fa-solid fa-face-smile"></i></button>
             <button class="chat-plus-btn"><i class="fa-solid fa-circle-plus"></i></button>
         </div>
+
+        <!-- 隐藏的文件选择器（仅用于拍摄） -->
+        <input type="file" 
+               id="phone-take-photo" 
+               accept="image/*" 
+               capture="environment"
+               style="display: none;">
     `;
   return inputArea;
+}
+
+/**
+ * 创建多选工具栏
+ * @private
+ * @returns {HTMLElement} 工具栏元素
+ */
+function createMultiSelectToolbar() {
+  const toolbar = document.createElement('div');
+  toolbar.className = 'chat-multiselect-toolbar';
+  toolbar.style.display = 'none'; // 初始隐藏
+  
+  toolbar.innerHTML = `
+    <button class="multiselect-forward-btn">
+      <i class="fa-solid fa-share"></i>
+      <span>转发</span>
+    </button>
+    <button class="multiselect-favorite-btn">
+      <i class="fa-solid fa-star"></i>
+      <span>收藏</span>
+    </button>
+    <button class="multiselect-delete-btn">
+      <i class="fa-solid fa-trash"></i>
+      <span>删除</span>
+    </button>
+    <button class="multiselect-cancel-btn">
+      <span>取消</span>
+    </button>
+  `;
+  
+  return toolbar;
 }
 
 /**
@@ -420,7 +466,7 @@ function createPlusPanel() {
                             <i class="fa-solid fa-image"></i>
                             <span>照片</span>
                         </div>
-                        <div class="chat-plus-item">
+                        <div class="chat-plus-item" data-action="take-photo">
                             <i class="fa-solid fa-camera"></i>
                             <span>拍摄</span>
                         </div>
@@ -692,9 +738,19 @@ function bindPlusPanel(page) {
   plusPanel.addEventListener('click', async (e) => {
     const item = e.target.closest('.chat-plus-item');
     if (item) {
+      const action = item.dataset.action;
       const text = item.querySelector('span')?.textContent;
 
-      // 识别照片按钮
+      // 拍摄功能：打开摄像头拍照
+      if (action === 'take-photo') {
+        logger.info('[ChatView] 点击拍摄照片');
+        closePanels(page);
+        const photoInput = page.querySelector('#phone-take-photo');
+        if (photoInput) /** @type {HTMLInputElement} */ (photoInput).click();
+        return;
+      }
+
+      // 识别照片按钮（原有逻辑）
       if (text === '照片') {
         logger.info('[ChatView] 点击照片按钮');
         closePanels(page);
@@ -1030,13 +1086,30 @@ async function handleSendText(page, contactId, contact, inputField) {
 
   // 暂存到队列（等待纸飞机发送）
   if (hasQuote) {
-    // 引用消息：构建特殊格式
+    // 引用消息：传入完整对象
     const quotedText = formatQuotePreviewText(message.quotedMessage);
-    addPendingMessage(contactId, `[引用]${quotedText}[回复]${content}`, message.time);
+    addPendingMessage(contactId, {
+      id: message.id,
+      sender: 'user',
+      type: 'quote',
+      time: message.time,
+      content: `[引用]${quotedText}[回复]${content}`,
+      quotedMessage: message.quotedMessage,
+      replyContent: content
+    });
   } else {
-    // 普通文字消息
-    addPendingMessage(contactId, content, message.time);
+    // 普通文字消息：传入完整对象
+    addPendingMessage(contactId, {
+      id: message.id,
+      sender: 'user',
+      type: 'text',
+      time: message.time,
+      content: content
+    });
   }
+
+  // ❌ 移除轮次递增：轮次应该在AI回复完成后递增，而不是用户发送时
+  // 轮次递增已移至 handleSendToAI 的 onComplete 回调中
 
   // 显示用户气泡
   // @ts-ignore - message可能是引用消息或普通消息，appendMessageToChat接受所有类型
@@ -1098,8 +1171,15 @@ async function handleSendEmoji(page, contactId, emojiId) {
   // 保存到数据库
   await saveChatMessage(contactId, message);
 
-  // 暂存到队列（等待纸飞机发送，传入表情包名称）
-  addPendingMessage(contactId, `[表情]${emoji.name}`, message.time);
+  // 暂存到队列（等待纸飞机发送）
+  addPendingMessage(contactId, {
+    id: message.id,
+    sender: 'user',
+    type: 'emoji',
+    time: message.time,
+    content: emojiId,
+    emojiName: emoji.name
+  });
 
   // 显示用户气泡
   const chatContent = page.querySelector('.chat-content');
@@ -1190,35 +1270,69 @@ async function handleSendImage(page, contactId) {
   const contacts = await loadContacts();
   const contact = contacts.find(c => c.id === contactId);
 
+  // 获取当前轮次（用于图片识别）
+  const { getCurrentRound } = await import('./message-chat-data.js');
+  const currentRound = await getCurrentRound(contactId);
+
+  // ✅ 区分真实图片和假装图片
+  const isRealImage = !!result.imageUrl;
+  
   // 创建消息对象（添加唯一ID避免误删）
   const message = {
     id: generateMessageId(),
     sender: 'user',
-    content: result.imageUrl
-      ? `${result.description}|${result.imageUrl}`
-      : result.description,  // content存储格式化后的内容（兼容字段）
     description: result.description,  // 单独保存描述（用于渲染）
-    type: 'image',
+    type: isRealImage ? 'image-real' : 'image-fake',  // ✅ 区分类型
     time: Math.floor(Date.now() / 1000)
   };
 
-  // 如果有URL，添加到消息对象
-  if (result.imageUrl) {
+  // ✅ 真实图片：添加 imageUrl 和 imageRound
+  if (isRealImage) {
     message.imageUrl = result.imageUrl;
+    message.imageRound = currentRound;  // 标记所属轮次（用于AI图片识别）
+    message.content = `${result.description}|${result.imageUrl}`;  // 兼容字段
+  } else {
+    // ✅ 假装图片：不需要 imageRound
+    message.content = result.description;  // 兼容字段
   }
 
   // 保存到数据库
   await saveChatMessage(contactId, message);
 
-  // 暂存到队列（格式：[图片]描述 或 [图片]描述|链接）
-  const pendingContent = result.imageUrl
-    ? `[图片]${result.description}|${result.imageUrl}`
-    : `[图片]${result.description}`;
-  addPendingMessage(contactId, pendingContent, message.time);
+  // 暂存到队列（传入完整对象）
+  const pendingMsg = {
+    id: message.id,
+    sender: 'user',
+    type: message.type,  // ✅ 使用新类型
+    time: message.time,
+    description: result.description
+  };
+  
+  // ✅ 真实图片：添加额外字段
+  if (isRealImage) {
+    pendingMsg.content = `[图片]${result.description}|${result.imageUrl}`;  // 兼容字段
+    pendingMsg.imageUrl = result.imageUrl;
+    pendingMsg.imageRound = currentRound;
+  } else {
+    // ✅ 假装图片：只有描述
+    pendingMsg.content = `[图片]${result.description}`;  // 兼容字段
+  }
+  
+  addPendingMessage(contactId, pendingMsg);
 
   // 显示用户气泡
   const chatContent = page.querySelector('.chat-content');
-  const bubble = renderImageMessage(message, contact, contactId);
+  
+  // ✅ 根据类型调用不同的渲染器
+  let bubble;
+  if (isRealImage) {
+    const { renderImageRealMessage } = await import('./message-types/image-real-message.js');
+    bubble = renderImageRealMessage(message, contact, contactId);
+  } else {
+    const { renderImageFakeMessage } = await import('./message-types/image-fake-message.js');
+    bubble = renderImageFakeMessage(message, contact, contactId);
+  }
+  
   chatContent.appendChild(bubble);
   scrollToBottom(chatContent);
 
@@ -1327,12 +1441,8 @@ async function handleSendToAI(page, contactId, contact, sendBtn) {
       // 2. 检查是否需要显示通知（页面不可见时显示）
       const isCurrentChatVisible = isChatPageVisible(contactId);
 
-      // 3. 增加未读计数（仅当页面不可见时）
-      if (!isCurrentChatVisible) {
-        const { incrementUnreadCount } = await import('../messages/message-chat-data.js');
-        incrementUnreadCount(contactId);
-        logger.debug('[ChatView] 未读计数+1:', contactId);
-      }
+      // 注意：未读计数的增加已由 message-chat-data.js 的 saveChatMessage() 统一处理
+      // 不再需要在这里触发事件
 
       // 检查通知设置
       if (!isCurrentChatVisible && shouldShowNotification(contact, message)) {
@@ -1355,6 +1465,11 @@ async function handleSendToAI(page, contactId, contact, sendBtn) {
     // onComplete: 完成时的回调
     async () => {
       logger.info('[ChatView] AI回复完成');
+
+      // ✅ 递增轮次（AI回复完成后，本轮对话结束）
+      const { incrementRound } = await import('../messages/message-chat-data.js');
+      await incrementRound(contactId);
+      logger.debug('[ChatView] 本轮对话结束，轮次已递增');
 
       // ✅ 按钮状态由事件监听器自动更新（bindAIGenerationEvents）
 
@@ -1505,6 +1620,8 @@ export async function appendMessageToChat(page, message, contact, contactId) {
       break;
 
     case 'image':
+    case 'image-real':  // ✅ 新增：真实图片类型
+    case 'image-fake':  // ✅ 新增：假装图片类型
       logger.debug('[ChatView.appendMessageToChat] 渲染图片消息');
       bubble = renderImageMessage(message, contact, contactId);
       break;
@@ -1562,6 +1679,13 @@ export async function appendMessageToChat(page, message, contact, contactId) {
       // 戳一戳消息
       logger.debug('[ChatView.appendMessageToChat] 渲染戳一戳消息');
       bubble = renderPokeMessage(message, contact, contactId);
+      break;
+
+    case 'forwarded':
+      // 转发消息
+      logger.debug('[ChatView.appendMessageToChat] 渲染转发消息');
+      const { renderForwardedMessage } = await import('./message-types/forwarded-message.js');
+      bubble = renderForwardedMessage(message, contact, contactId);
       break;
 
     // TODO 第二期：实现专门的渲染器
@@ -1628,6 +1752,50 @@ export async function appendMessageToChat(page, message, contact, contactId) {
     bubble.dataset.msgId = message.id;
     logger.debug('[ChatView.appendMessageToChat] 已设置data-msg-id:', message.id);
   }
+
+  // 添加消息数据到DOM（用于多选功能）
+  bubble.dataset.time = message.time || '';
+  bubble.dataset.sender = message.sender || '';
+  bubble.dataset.type = message.type || 'text';
+  if (message.content) {
+    bubble.dataset.content = message.content;
+  }
+  // 添加消息ID和联系人ID（用于批量收藏）
+  if (message.id) {
+    bubble.dataset.messageId = message.id;
+  }
+  bubble.dataset.contactId = contactId;
+  
+  // 保存特殊消息类型的额外数据（用于批量收藏）
+  if (message.type === 'quote' && message.quotedMessage) {
+    const extraData = {
+      quotedMessage: message.quotedMessage,
+      replyContent: message.replyContent
+    };
+    bubble.dataset.extraData = JSON.stringify(extraData);
+  } else if (message.type === 'emoji' && message.emojiName) {
+    const extraData = { emojiName: message.emojiName };
+    bubble.dataset.extraData = JSON.stringify(extraData);
+  } else if (message.type === 'image') {
+    const extraData = {
+      description: message.description,
+      imageUrl: message.imageUrl
+    };
+    bubble.dataset.extraData = JSON.stringify(extraData);
+  } else if (message.type === 'transfer') {
+    const extraData = {
+      amount: message.amount,
+      message: message.message
+    };
+    bubble.dataset.extraData = JSON.stringify(extraData);
+  }
+
+  // 创建复选框（初始隐藏，用于多选模式）
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.className = 'chat-multiselect-checkbox';
+  checkbox.style.display = 'none';
+  bubble.insertBefore(checkbox, bubble.firstChild);
 
   logger.debug('[ChatView.appendMessageToChat] 准备appendChild到chatContent');
   chatContent.appendChild(bubble);
@@ -1881,6 +2049,8 @@ async function renderSingleBubble(message, contact, contactId, phoneAPI, rendere
       }
       break;
     case 'image':
+    case 'image-real':  // ✅ 新增：真实图片类型
+    case 'image-fake':  // ✅ 新增：假装图片类型
       bubble = renderImageMessage(message, contact, contactId);
       break;
     case 'quote':
@@ -1922,6 +2092,13 @@ async function renderSingleBubble(message, contact, contactId, phoneAPI, rendere
       // 戳一戳消息
       bubble = renderers.renderPokeMessage ? renderers.renderPokeMessage(message, contact, contactId) : renderTextMessage({ ...message, content: '[戳一戳]', type: 'text' }, contact, contactId);
       break;
+    case 'forwarded':
+      // 转发消息
+      {
+        const { renderForwardedMessage: renderForwarded } = await import('./message-types/forwarded-message.js');
+        bubble = renderForwarded(message, contact, contactId);
+      }
+      break;
     case 'redpacket':
       bubble = renderTextMessage({ ...message, content: `[红包] ¥${message.amount}`, type: 'text' }, contact, contactId);
       break;
@@ -1947,6 +2124,50 @@ async function renderSingleBubble(message, contact, contactId, phoneAPI, rendere
     bubble.dataset.msgId = message.id;
     phoneAPI.markMessageRendered(contactId, message.id);
   }
+
+  // 添加消息数据到DOM（用于多选功能）
+  bubble.dataset.time = message.time || '';
+  bubble.dataset.sender = message.sender || '';
+  bubble.dataset.type = message.type || 'text';
+  if (message.content) {
+    bubble.dataset.content = message.content;
+  }
+  // 添加消息ID和联系人ID（用于批量收藏）
+  if (message.id) {
+    bubble.dataset.messageId = message.id;
+  }
+  bubble.dataset.contactId = contactId;
+  
+  // 保存特殊消息类型的额外数据（用于批量收藏）
+  if (message.type === 'quote' && message.quotedMessage) {
+    const extraData = {
+      quotedMessage: message.quotedMessage,
+      replyContent: message.replyContent
+    };
+    bubble.dataset.extraData = JSON.stringify(extraData);
+  } else if (message.type === 'emoji' && message.emojiName) {
+    const extraData = { emojiName: message.emojiName };
+    bubble.dataset.extraData = JSON.stringify(extraData);
+  } else if (message.type === 'image') {
+    const extraData = {
+      description: message.description,
+      imageUrl: message.imageUrl
+    };
+    bubble.dataset.extraData = JSON.stringify(extraData);
+  } else if (message.type === 'transfer') {
+    const extraData = {
+      amount: message.amount,
+      message: message.message
+    };
+    bubble.dataset.extraData = JSON.stringify(extraData);
+  }
+
+  // 创建复选框（初始隐藏，用于多选模式）
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.className = 'chat-multiselect-checkbox';
+  checkbox.style.display = 'none';
+  bubble.insertBefore(checkbox, bubble.firstChild);
 
   // 绑定长按操作菜单
   bindLongPress(bubble, message, contactId);
@@ -2501,7 +2722,13 @@ async function handleSendPoke(contactId) {
   await saveChatMessage(contactId, message);
 
   // 暂存到队列（等待纸飞机发送）
-  addPendingMessage(contactId, '[戳一戳]', message.time);
+  addPendingMessage(contactId, {
+    id: message.id,
+    sender: 'user',
+    type: 'poke',
+    time: message.time,
+    content: '[戳一戳]'
+  });
 
   // 渲染到聊天界面
   const page = document.querySelector(`#page-chat-${contactId.replace(/[^a-zA-Z0-9_-]/g, '_')}`);
@@ -2607,6 +2834,146 @@ function setupChatListeners(page, contactId, contact) {
   ]);
 
   logger.info('[ChatView] 监听器已注册，共7个事件');
+}
+
+/**
+ * 绑定相机按钮事件
+ * @private
+ * @param {HTMLElement} page - 聊天页面
+ * @param {string} contactId - 联系人ID
+ */
+function bindCameraButton(page, contactId) {
+  const cameraBtn = page.querySelector('.chat-camera-btn');
+  const photoInput = page.querySelector('#phone-take-photo');
+
+  if (!cameraBtn || !photoInput) return;
+
+  cameraBtn.addEventListener('click', () => {
+    logger.info('[ChatView] 点击相机按钮（快捷拍照）');
+    /** @type {HTMLInputElement} */ (photoInput).click();
+  });
+}
+
+/**
+ * 绑定拍照输入框事件
+ * @private
+ * @param {HTMLElement} page - 聊天页面
+ * @param {string} contactId - 联系人ID
+ */
+function bindTakePhotoInput(page, contactId) {
+  const takePhotoInput = page.querySelector('#phone-take-photo');
+
+  if (!takePhotoInput) return;
+
+  // 拍照输入框
+  takePhotoInput.addEventListener('change', async (e) => {
+    const input = /** @type {HTMLInputElement} */ (e.target);
+    const file = input.files?.[0];
+    if (file) {
+      await handleTakePhotoUpload(page, contactId, file);
+      input.value = ''; // 清空，允许重复拍照
+    }
+  });
+}
+
+/**
+ * 处理拍照上传（直接上传，不经过弹窗）
+ * @private
+ * @param {HTMLElement} page - 聊天页面
+ * @param {string} contactId - 联系人ID
+ * @param {File} file - 拍摄的图片文件
+ */
+async function handleTakePhotoUpload(page, contactId, file) {
+  logger.info('[ChatView] 开始处理拍照上传:', file.name);
+
+  try {
+    // 导入工具函数
+    const { compressImage, uploadImage } = await import('../utils/image-helper.js');
+
+    // 压缩图片（200KB以内）
+    const compressed = await compressImage(file, 200);
+    logger.debug('[ChatView] 图片压缩完成:', `${(compressed.size / 1024).toFixed(2)}KB`);
+
+    // 上传到服务器（传完整的base64 data URL）
+    const imageUrl = await uploadImage(compressed.base64, file.name);
+    logger.info('[ChatView] 图片上传成功:', imageUrl);
+
+    // 发送图片消息（拍照直接发送，无需描述）
+    await sendPhotoMessage(page, contactId, imageUrl);
+
+  } catch (error) {
+    logger.error('[ChatView] 拍照上传失败:', error);
+  }
+}
+
+/**
+ * 发送拍照消息（直接发送图片，无描述）
+ * @private
+ * @param {HTMLElement} page - 聊天页面
+ * @param {string} contactId - 联系人ID
+ * @param {string} imageUrl - 图片URL
+ */
+async function sendPhotoMessage(page, contactId, imageUrl) {
+  const { saveChatMessage, getCurrentRound } = await import('./message-chat-data.js');
+  const { renderImageMessage } = await import('./message-types/image-message.js');
+  const { loadContacts } = await import('../contacts/contact-list-data.js');
+
+  // 获取联系人信息
+  const contacts = await loadContacts();
+  const contact = contacts.find(c => c.id === contactId);
+  if (!contact) {
+    logger.error('[ChatView] 联系人不存在:', contactId);
+    return;
+  }
+
+  // 获取当前轮次
+  const currentRound = await getCurrentRound(contactId);
+
+  // 创建图片消息（拍照消息：真实图片，无描述）
+  const message = {
+    id: `photo_${Date.now()}`,
+    sender: 'user',
+    type: 'image-real',  // ✅ 使用真实图片类型
+    imageUrl: imageUrl,
+    imageRound: currentRound, // 标记所属轮次
+    description: '',  // 拍照无描述
+    time: Math.floor(Date.now() / 1000),
+  };
+
+  // 保存到聊天记录
+  await saveChatMessage(contactId, message);
+
+  // ✅ 暂存到队列（等待纸飞机发送）
+  const { addPendingMessage } = await import('../ai-integration/pending-operations.js');
+  addPendingMessage(contactId, {
+    id: message.id,
+    sender: 'user',
+    type: 'image-real',  // ✅ 使用真实图片类型
+    time: message.time,
+    content: `[图片]|${imageUrl}`,  // 兼容字段，无描述
+    imageUrl: imageUrl,
+    imageRound: currentRound,
+    description: ''  // 拍照无描述
+  });
+
+  // ❌ 移除轮次递增：拍照不应该递增轮次，保持与"发送照片"功能一致
+  // 轮次由其他逻辑控制（通常在AI回复后）
+
+  // 渲染到聊天框
+  const chatContent = page.querySelector('.chat-content');
+  if (chatContent) {
+    // ✅ 使用真实图片渲染器
+    const { renderImageRealMessage } = await import('./message-types/image-real-message.js');
+    const messageBubble = renderImageRealMessage(message, contact, contactId);
+    chatContent.appendChild(messageBubble);
+
+    // 滚动到底部
+    setTimeout(() => {
+      chatContent.scrollTop = chatContent.scrollHeight;
+    }, 100);
+  }
+
+  logger.info('[ChatView] 拍照消息已发送:', message.id);
 }
 
 // ============================================================================

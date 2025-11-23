@@ -1269,6 +1269,7 @@
   display: flex;
   margin-bottom: 1em;
   align-items: flex-start;
+  position: relative;
 }
 
 .chat-msg-received {
@@ -1277,6 +1278,155 @@
 
 .chat-msg-sent {
   flex-direction: row-reverse;
+}
+
+/* === 图片识别模式设置页样式 === */
+
+.image-mode-settings-page {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--phone-bg-main);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+}
+
+.image-mode-settings-topbar {
+  display: flex;
+  align-items: center;
+  height: 3.125em;
+  background: var(--phone-bg-white);
+  padding: 0 0.5em;
+  box-shadow: 0 1px 0 var(--phone-border);
+}
+
+.image-mode-settings-back-btn {
+  background: none;
+  border: none;
+  color: var(--phone-text-primary);
+  font-size: 1.25em;
+  cursor: pointer;
+  padding: 0.5em;
+  margin-right: 0.5em;
+}
+
+.image-mode-settings-back-btn:hover {
+  opacity: 0.7;
+}
+
+.image-mode-settings-title {
+  flex: 1;
+  font-size: 1.0625em;
+  font-weight: 500;
+  color: var(--phone-text-primary);
+}
+
+.image-mode-settings-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1em;
+}
+
+.image-mode-settings-desc {
+  background: var(--phone-bg-white);
+  border-radius: 0.5em;
+  padding: 1em;
+  margin-bottom: 1em;
+  font-size: 0.875em;
+  line-height: 1.6;
+  color: var(--phone-text-secondary);
+}
+
+.image-mode-settings-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75em;
+}
+
+.image-mode-option {
+  background: var(--phone-bg-white);
+  border-radius: 0.5em;
+  padding: 1em;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.image-mode-option:hover {
+  background: var(--phone-hover);
+}
+
+.image-mode-option-icon {
+  font-size: 1.25em;
+  color: var(--phone-border);
+  transition: color 0.2s;
+}
+
+.image-mode-option.active .image-mode-option-icon {
+  color: var(--phone-primary);
+}
+
+.image-mode-option-content {
+  flex: 1;
+}
+
+.image-mode-option-title {
+  font-size: 1em;
+  font-weight: 500;
+  color: var(--phone-text-primary);
+  margin-bottom: 0.25em;
+}
+
+.image-mode-option-badge {
+  display: inline-block;
+  background: var(--phone-primary);
+  color: white;
+  font-size: 0.75em;
+  padding: 0.125em 0.5em;
+  border-radius: 1em;
+  margin-left: 0.5em;
+  font-weight: normal;
+}
+
+.image-mode-option-desc {
+  font-size: 0.875em;
+  line-height: 1.5;
+  color: var(--phone-text-secondary);
+}
+
+.image-mode-settings-hint {
+  background: var(--phone-bg-white);
+  border-radius: 0.5em;
+  padding: 0.75em 1em;
+  margin-top: 1em;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 0.8125em;
+  color: var(--phone-text-secondary);
+}
+
+.image-mode-settings-hint i {
+  color: var(--phone-primary);
+  font-size: 1.125em;
+}
+
+/* 用户设置页的图片模式显示项 */
+.settings-item-content {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings-item-extra {
+  font-size: 0.875em;
+  color: var(--phone-text-secondary);
 }
 
 /* 头像 */
@@ -1393,6 +1543,158 @@
   border-radius: 0.5em;
 }
 
+/* 拍照图片消息气泡（直接拍照上传的图片） */
+.chat-msg-bubble-image {
+  background: transparent;
+  padding: 0;
+  max-width: 200px;
+}
+
+.chat-msg-bubble-image .chat-msg-image {
+  max-width: 200px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.chat-msg-bubble-image .chat-msg-image:hover {
+  opacity: 0.9;
+}
+
+/* ✅ 真实图片消息的描述文本（显示在图片下方，2025-11-17新增） */
+.chat-msg-image-description {
+  font-size: 0.875em;
+  color: var(--phone-text-secondary);
+  margin-top: 0.5em;
+  padding: 0 0.25em;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* ✅ 假文字图片消息气泡（AI过家家，固定正方形+文字居中，2025-11-23修复） */
+.chat-msg-bubble-fake-image {
+  background: var(--phone-bubble-received);
+  border-radius: 8px;
+  padding: 1em;
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow-y: auto;
+}
+
+.chat-msg-sent .chat-msg-bubble-fake-image {
+  background: var(--phone-bubble-sent);
+}
+
+/* 假文字图片内的文本 */
+.chat-msg-bubble-fake-image span {
+  font-size: 0.875em;
+  color: var(--phone-text-secondary);
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+/* 链接图片消息气泡（原有照片功能：有URL的图片） */
+.chat-msg-bubble-image-with-url {
+  background: transparent;
+  padding: 0;
+  max-width: 200px;
+}
+
+.chat-msg-bubble-image-with-url .chat-msg-image {
+  max-width: 200px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.chat-msg-bubble-image-with-url .chat-msg-image:hover {
+  opacity: 0.9;
+}
+
+/* 链接图片消息描述文字（如果有的话） */
+.chat-msg-image-desc {
+  font-size: 0.875em;
+  color: var(--phone-text-secondary);
+  margin-top: 0.5em;
+  padding: 0 0.5em;
+}
+
+/* 无链接图片气泡（原有设计：纯描述的正方形气泡） */
+.chat-msg-bubble-image-no-url {
+  background: var(--phone-bubble-received);
+  border-radius: 8px;
+  padding: 1em;
+  min-width: 120px;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.chat-msg-sent .chat-msg-bubble-image-no-url {
+  background: var(--phone-bubble-sent);
+}
+
+.chat-msg-image-placeholder-text {
+  font-size: 0.875em;
+  color: var(--phone-text-secondary);
+  word-break: break-word;
+}
+
+/* 图片预览遮罩层 */
+.phone-image-preview-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+.phone-image-preview-container {
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
+}
+
+.phone-image-preview-img {
+  max-width: 100%;
+  max-height: 90vh;
+  border-radius: 8px;
+}
+
+.phone-image-preview-close {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.phone-image-preview-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
 /* 卡片消息 */
 .chat-msg-card {
   background: var(--phone-bg-white);
@@ -1420,6 +1722,116 @@
   padding-top: 0.5em;
   /* border-top: 1px solid var(--phone-border); */
   /* 移除边框 */
+}
+
+/* 转发消息卡片 */
+.chat-msg-forwarded-card {
+  background: var(--phone-bg-white);
+  border-radius: 0.5em;
+  padding: 0.75em;
+  max-width: 15em;
+  box-shadow: 0 0 0 1px var(--phone-border);
+}
+
+.forwarded-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 0.875em;
+  color: var(--phone-text-primary);
+  font-weight: 500;
+  margin-bottom: 0.5em;
+  padding-bottom: 0.5em;
+  border-bottom: 1px solid var(--phone-bg-main);
+}
+
+.forwarded-header i {
+  color: var(--phone-text-secondary);
+  font-size: 0.9em;
+}
+
+.forwarded-content {
+  font-size: 0.75em;
+  color: var(--phone-text-secondary);
+  line-height: 1.5;
+}
+
+.forwarded-msg-line {
+  margin-bottom: 0.25em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.forwarded-msg-line:last-child {
+  margin-bottom: 0;
+}
+
+.forwarded-summary {
+  font-size: 0.7em;
+  color: var(--phone-text-tertiary);
+  text-align: center;
+  margin-top: 0.5em;
+  padding-top: 0.5em;
+  border-top: 1px solid var(--phone-bg-main);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.forwarded-summary:hover {
+  color: var(--phone-text-primary);
+}
+
+/* 转发消息预览弹窗 */
+.forwarded-preview-container {
+  width: 100%;
+}
+
+.forwarded-preview-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 0.9375em;
+  color: var(--phone-text-primary);
+  font-weight: 500;
+  margin-bottom: 0.75em;
+  padding-bottom: 0.75em;
+  border-bottom: 1px solid var(--phone-bg-main);
+}
+
+.forwarded-preview-title i {
+  color: var(--phone-text-secondary);
+}
+
+.forwarded-preview-list {
+  max-height: 20em;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.forwarded-preview-item {
+  margin-bottom: 0.75em;
+  padding: 0.75em;
+  background: var(--phone-bg-main);
+  border-radius: 0.5em;
+}
+
+.forwarded-preview-item:last-child {
+  margin-bottom: 0;
+}
+
+.forwarded-preview-sender {
+  font-size: 0.8125em;
+  color: var(--phone-text-secondary);
+  font-weight: 500;
+  margin-bottom: 0.375em;
+}
+
+.forwarded-preview-content {
+  font-size: 0.875em;
+  color: var(--phone-text-primary);
+  line-height: 1.5;
+  word-break: break-word;
 }
 
 /* 底部输入区（需要和面板一起移动） */
@@ -1522,6 +1934,7 @@
 
 /* 第二行按钮通用样式 */
 .chat-voice-btn,
+.chat-camera-btn,
 .chat-debug-btn,
 .chat-emoji-btn,
 .chat-plus-btn,
@@ -1542,6 +1955,7 @@
 }
 
 .chat-voice-btn:hover,
+.chat-camera-btn:hover,
 .chat-debug-btn:hover,
 .chat-emoji-btn:hover,
 .chat-plus-btn:hover,
@@ -1674,6 +2088,118 @@
   font-size: 0.65em;
   /* 缩小：0.75em → 0.7em */
   white-space: nowrap;
+}
+
+/* ================================
+   多选模式样式
+   ================================ */
+
+/* 多选复选框（初始隐藏，左侧显示） */
+.chat-multiselect-checkbox {
+  position: absolute;
+  left: 0.1em;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.2em;
+  height: 0.2em;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: var(--phone-bg-white);
+  border: 2px solid #ccc;
+  border-radius: 3px;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* 悬停效果：边框变蓝 */
+.chat-multiselect-checkbox:hover {
+  border-color: var(--phone-primary);
+}
+
+/* 勾选后：蓝色背景 */
+.chat-multiselect-checkbox:checked {
+  background: var(--phone-primary);
+  border-color: var(--phone-primary);
+}
+
+/* 自定义√符号（白色，在蓝色背景上清晰可见） */
+.chat-multiselect-checkbox:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 0.9em;
+  font-weight: bold;
+}
+
+/* 多选模式时，消息容器向右移，留出复选框空间 */
+.multiselect-mode .chat-msg {
+  padding-left: 2.5em;
+  position: relative;
+}
+
+/* 多选工具栏（底部固定，初始隐藏） */
+.chat-multiselect-toolbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--phone-bg-white);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  padding: 0.75em 1em;
+  display: none;
+  gap: 0.75em;
+  z-index: 100;
+}
+
+/* 工具栏按钮 */
+.chat-multiselect-toolbar button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25em;
+  padding: 0.5em;
+  background: transparent;
+  border: none;
+  border-radius: 0.5em;
+  color: var(--phone-text-primary);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.chat-multiselect-toolbar button:hover {
+  background: var(--phone-bg-main);
+}
+
+.chat-multiselect-toolbar button:active {
+  transform: scale(0.95);
+}
+
+/* 工具栏按钮图标 */
+.chat-multiselect-toolbar button i {
+  font-size: 1.2em;
+}
+
+/* 工具栏按钮文字 */
+.chat-multiselect-toolbar button span {
+  font-size: 0.75em;
+}
+
+/* 取消按钮（灰色） */
+.multiselect-cancel-btn {
+  color: var(--phone-text-secondary) !important;
+}
+
+/* 多选模式时隐藏输入区域 */
+.multiselect-mode .chat-input-area {
+  display: none !important;
 }
 
 /* ================================
@@ -2106,14 +2632,7 @@
   /* 屏幕宽度的三分之一，高度自适应 */
 }
 
-.chat-msg-image {
-  width: 100%;
-  height: auto;
-  /* 高度自适应 */
-  border-radius: 0.375em;
-  /* 图片本身的圆角稍小 */
-  display: block;
-}
+/* .chat-msg-image 已在前面定义（1525行），此处删除重复定义以避免CSS冲突 */
 
 .chat-msg-image-desc {
   font-size: 0.875em;
@@ -7556,7 +8075,7 @@
 .preset-settings-action-btn {
   background: none;
   border: none;
-  color: var(--phone-primary);
+  color: var(--phone-text-primary);
   font-size: 1.1em;
   cursor: pointer;
   padding: 0.3em;
@@ -7590,7 +8109,7 @@
 }
 
 .preset-settings-hint i {
-  color: var(--phone-primary);
+  color: var(--phone-text-secondary);
 }
 
 /* 添加按钮 */
@@ -7604,7 +8123,7 @@
   background: var(--phone-bg-white);
   border: 1px dashed var(--phone-border-light);
   border-radius: 0.5em;
-  color: var(--phone-primary);
+  color: var(--phone-text-secondary);
   font-size: 0.95em;
   cursor: pointer;
   margin-bottom: 0.5em;
@@ -7612,7 +8131,7 @@
 
 .preset-settings-add-btn:hover {
   background: var(--phone-bg-hover);
-  border-color: var(--phone-primary);
+  border-color: var(--phone-text-primary);
 }
 
 /* 条目列表 */
@@ -7703,7 +8222,7 @@
 
 /* 编辑按钮 */
 .preset-item-edit {
-  color: var(--phone-primary);
+  color: var(--phone-text-primary);
 }
 
 .preset-item-edit:hover {
@@ -7712,7 +8231,7 @@
 
 /* 删除按钮 */
 .preset-item-delete {
-  color: #ff4d4f;
+  color: var(--phone-text-primary);
 }
 
 .preset-item-delete:hover {
@@ -10352,6 +10871,171 @@
 }
 
 /* ========================================
+   联系人选择器样式 (contact-selector-*)
+   ======================================== */
+
+.contact-selector-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 25em;
+}
+
+/* 搜索栏 */
+.contact-selector-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--phone-bg-main);
+  border-radius: 0.5em;
+  margin-bottom: 0.75em;
+  flex-shrink: 0;
+}
+
+.contact-selector-search i {
+  position: absolute;
+  left: 0.75em;
+  color: var(--phone-text-tertiary);
+  font-size: 0.9em;
+}
+
+.contact-selector-search-input {
+  flex: 1;
+  background: var(--phone-bg-main);
+  border: none;
+  padding: 0.625em 2.5em 0.625em 2.25em;
+  font-size: 0.9375em;
+  color: var(--phone-text-primary);
+  outline: none;
+}
+
+.contact-selector-search-input::placeholder {
+  color: var(--phone-text-tertiary);
+}
+
+.contact-selector-search-clear {
+  position: absolute;
+  right: 0.5em;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.5em;
+  height: 1.5em;
+  border-radius: 50%;
+  background: var(--phone-text-tertiary);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.contact-selector-search-clear i {
+  position: static;
+  color: #fff;
+  font-size: 0.75em;
+}
+
+/* 列表 */
+.contact-selector-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -1em;
+}
+
+/* 联系人项 */
+.contact-selector-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75em 1em;
+  gap: 0.75em;
+  cursor: pointer;
+  transition: background 0.2s;
+  position: relative;
+}
+
+.contact-selector-item:hover {
+  background: var(--phone-bg-main);
+}
+
+.contact-selector-item.selected {
+  background: rgba(0, 122, 255, 0.1);
+}
+
+.contact-selector-item.selected .contact-selector-item-check {
+  display: flex;
+}
+
+.contact-selector-item-avatar {
+  width: 2.5em;
+  height: 2.5em;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--phone-bg-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.contact-selector-item-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.contact-selector-item-avatar i {
+  font-size: 1.5em;
+  color: var(--phone-text-tertiary);
+}
+
+.contact-selector-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.contact-selector-item-name {
+  font-size: 0.9375em;
+  color: var(--phone-text-primary);
+  margin-bottom: 0.125em;
+}
+
+.contact-selector-item-subtitle {
+  font-size: 0.75em;
+  color: var(--phone-text-tertiary);
+  display: block;
+}
+
+.contact-selector-item-check {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  color: #007aff;
+  font-size: 1.25em;
+}
+
+/* 空状态 */
+.contact-selector-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3em 1em;
+  color: var(--phone-text-tertiary);
+}
+
+.contact-selector-empty i {
+  font-size: 3em;
+  margin-bottom: 0.5em;
+  opacity: 0.5;
+}
+
+.contact-selector-empty p {
+  font-size: 0.9375em;
+  margin: 0;
+}
+
+/* ========================================
    [END] 收藏选择器样式
    ======================================== */
 
@@ -11449,4 +12133,382 @@
 
 .system-hint-text {
   color: var(--phone-text-secondary);
+}
+
+/* ================================
+   存储空间页样式（storage-space-*）
+   ================================ */
+
+.storage-space-wrapper {
+  background: var(--phone-bg-main);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.storage-space-topbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75em;
+  padding: 0;
+  background: var(--phone-bg-white);
+  border-bottom: 1px solid var(--phone-border);
+  flex-shrink: 0;
+}
+
+.storage-space-back-btn {
+  position: absolute;
+  left: 0.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--phone-text-primary);
+  font-size: 1.1em;
+  cursor: pointer;
+  padding: 0;
+  min-width: 2.5em;
+}
+
+.storage-space-back-btn:hover {
+  opacity: 0.7;
+}
+
+.storage-space-title {
+  flex: 1;
+  text-align: center;
+  font-size: 1.0625em;
+  font-weight: 500;
+  color: var(--phone-text-primary);
+}
+
+.storage-space-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1em;
+  background: var(--phone-bg-main);
+}
+
+.storage-item {
+  display: flex;
+  align-items: center;
+  padding: 1em;
+  background: var(--phone-bg-white);
+  border-radius: 0.5em;
+  margin-bottom: 0.75em;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.storage-item:active {
+  background: var(--phone-bg-main);
+}
+
+.storage-item-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.storage-item-disabled:active {
+  background: var(--phone-bg-white);
+}
+
+.storage-item-icon {
+  width: 2.5em;
+  height: 2.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5em;
+  color: var(--phone-primary);
+  margin-right: 1em;
+  flex-shrink: 0;
+}
+
+.storage-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.storage-item-text {
+  font-size: 1em;
+  color: var(--phone-text-primary);
+  display: block;
+  margin-bottom: 0.25em;
+}
+
+.storage-item-desc {
+  font-size: 0.875em;
+  color: var(--phone-text-secondary);
+  display: block;
+}
+
+.storage-item-arrow {
+  font-size: 0.875em;
+  color: var(--phone-text-secondary);
+  margin-left: 0.5em;
+}
+
+/* ================================
+   图片管理页样式（image-storage-*）
+   ================================ */
+
+.image-storage-wrapper {
+  background: var(--phone-bg-main);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.image-storage-topbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75em;
+  padding: 0;
+  background: var(--phone-bg-white);
+  border-bottom: 1px solid var(--phone-border);
+  flex-shrink: 0;
+}
+
+.image-storage-back-btn {
+  position: absolute;
+  left: 0.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--phone-text-primary);
+  font-size: 1.1em;
+  cursor: pointer;
+  padding: 0;
+  min-width: 2.5em;
+}
+
+.image-storage-back-btn:hover {
+  opacity: 0.7;
+}
+
+.image-storage-title {
+  flex: 1;
+  text-align: center;
+  font-size: 1.0625em;
+  font-weight: 500;
+  color: var(--phone-text-primary);
+}
+
+.image-storage-actions {
+  position: absolute;
+  right: 0.5em;
+  display: flex;
+  gap: 0.5em;
+}
+
+.image-storage-sort-btn,
+.image-storage-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--phone-text-primary);
+  font-size: 1.1em;
+  cursor: pointer;
+  padding: 0;
+  min-width: 2.5em;
+}
+
+.image-storage-sort-btn:hover,
+.image-storage-delete-btn:hover {
+  opacity: 0.7;
+}
+
+.image-storage-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75em 1em;
+  background: var(--phone-bg-white);
+  border-bottom: 1px solid var(--phone-border);
+  flex-shrink: 0;
+}
+
+.image-storage-info {
+  flex: 1;
+}
+
+.image-storage-count {
+  font-size: 0.875em;
+  color: var(--phone-text-secondary);
+}
+
+.image-storage-select-all-btn {
+  background: none;
+  border: none;
+  color: var(--phone-primary);
+  font-size: 0.9375em;
+  cursor: pointer;
+  padding: 0.25em 0.5em;
+}
+
+.image-storage-select-all-btn:active {
+  opacity: 0.7;
+}
+
+.image-storage-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--phone-bg-main);
+  padding: 0.75em;
+}
+
+.image-storage-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3em 1em;
+  color: var(--phone-text-secondary);
+}
+
+.image-storage-loading i {
+  font-size: 2em;
+  margin-bottom: 0.5em;
+}
+
+.image-storage-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3em 1em;
+  color: var(--phone-text-secondary);
+}
+
+.image-storage-error i {
+  font-size: 3em;
+  margin-bottom: 0.5em;
+  color: var(--phone-text-tertiary);
+}
+
+.image-storage-retry-btn {
+  margin-top: 1em;
+  padding: 0.5em 1em;
+  background: var(--phone-primary);
+  color: white;
+  border: none;
+  border-radius: 0.25em;
+  cursor: pointer;
+}
+
+.image-storage-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3em 1em;
+  color: var(--phone-text-secondary);
+}
+
+.image-storage-empty i {
+  font-size: 4em;
+  margin-bottom: 0.5em;
+  color: var(--phone-text-tertiary);
+}
+
+.image-storage-empty p {
+  font-size: 0.875em;
+  margin-top: 0.5em;
+  color: var(--phone-text-tertiary);
+}
+
+.image-storage-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5em;
+}
+
+.image-storage-item {
+  position: relative;
+  background: var(--phone-bg-white);
+  border-radius: 0.5em;
+  overflow: hidden;
+  aspect-ratio: 1;
+  cursor: pointer;
+}
+
+.image-storage-item.selected {
+  outline: 2px solid var(--phone-primary);
+}
+
+.image-storage-item-checkbox {
+  position: absolute;
+  top: 0.25em;
+  left: 0.25em;
+  width: 1.5em;
+  height: 1.5em;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 0.25em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1em;
+  z-index: 2;
+  cursor: pointer;
+}
+
+.image-storage-item-checkbox .fa-square {
+  display: block;
+}
+
+.image-storage-item-checkbox .fa-square-check {
+  display: none;
+}
+
+.image-storage-item.selected .image-storage-item-checkbox .fa-square {
+  display: none;
+}
+
+.image-storage-item.selected .image-storage-item-checkbox .fa-square-check {
+  display: block;
+}
+
+.image-storage-item-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.image-storage-item-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+  padding: 0.5em 0.5em 0.25em;
+  color: white;
+  font-size: 0.75em;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.image-storage-item-time,
+.image-storage-item-size {
+  line-height: 1.2;
+}
+
+.image-storage-item-size {
+  text-align: right;
 }

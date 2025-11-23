@@ -86,10 +86,7 @@ export class PhoneSystem {
 
       await this.api.init();
 
-      // 注册酒馆宏（使手机数据可在酒馆提示词中使用）
-      const { registerPhoneMacros } = await import('./utils/tavern-macros.js');
-      await registerPhoneMacros();
-      logger.info('[PhoneSystem] 已注册酒馆宏');
+      // ⚠️ 宏注册已移到index.js的APP_READY事件（确保时机正确）
 
       // 注册回退处理器（用于重roll时自动回退各模块数据）
       const { initPlanRollbackHandler } = await import('./plans/plan-rollback-handler.js');

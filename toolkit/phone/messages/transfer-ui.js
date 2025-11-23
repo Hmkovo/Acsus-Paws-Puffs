@@ -294,8 +294,8 @@ async function handleTransfer(amountInput, messageInput, contactId, contact, sub
 
         // 2. 保存转账消息到pending（格式：[转账]金额|留言）
         const pendingContent = message ? `[转账]${amount}|${message}` : `[转账]${amount}`;
-        addPendingMessage(contactId, pendingContent, transferMessage.time);
-
+        addPendingMessage(contactId, pendingContent, transferMessage.time, transferMessage.id);
+        
         // 3. 在聊天页显示用户转账气泡（如果聊天页存在）
         logger.debug('[TransferUI] ========== 步骤3：在聊天页显示转账消息 ==========');
         logger.debug('[TransferUI] contactId:', contactId);

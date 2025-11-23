@@ -14,6 +14,7 @@
 
 import logger from '../../../logger.js';
 import { hidePage } from '../phone-main-ui.js';
+import { extension_settings } from '../../../../../../extensions.js';
 
 /**
  * 渲染用户设置页面
@@ -64,9 +65,12 @@ export async function renderUserSettings() {
             <div class="settings-section">
                 <div class="settings-section-title">功能</div>
                 <div class="settings-section-content">
-                    <div class="settings-item">
-                        <i class="fa-solid fa-bell"></i>
-                        <span class="settings-item-text">消息通知</span>
+                    <div class="settings-item" id="phone-image-mode-setting-link">
+                        <i class="fa-solid fa-image"></i>
+                        <div class="settings-item-content">
+                            <span class="settings-item-text">图片识别模式</span>
+                            <span class="settings-item-extra" id="phone-image-mode-display">仅本轮</span>
+                        </div>
                         <i class="fa-solid fa-chevron-right settings-item-arrow"></i>
                     </div>
                     <div class="settings-item">
@@ -82,9 +86,9 @@ export async function renderUserSettings() {
                         <span class="settings-item-text">个性装扮与特权外显</span>
                         <i class="fa-solid fa-chevron-right settings-item-arrow"></i>
                     </div>
-                    <div class="settings-item">
-                        <i class="fa-solid fa-wrench"></i>
-                        <span class="settings-item-text">通用</span>
+                    <div class="settings-item" id="phone-storage-space-link">
+                        <i class="fa-solid fa-database"></i>
+                        <span class="settings-item-text">存储空间</span>
                         <i class="fa-solid fa-chevron-right settings-item-arrow"></i>
                     </div>
                 </div>
@@ -143,6 +147,9 @@ export async function renderUserSettings() {
   // 绑定返回按钮事件
   bindBackButton(container);
 
+  // 绑定设置项点击事件
+  bindSettingItems(container);
+
   fragment.appendChild(container);
 
   logger.info('[UserSettings] 设置页渲染完成');
@@ -168,5 +175,65 @@ function bindBackButton(pageElement) {
       hidePage(overlayElement, 'user-settings');
     }
   });
+}
+
+/**
+ * 绑定设置项点击事件
+ * 
+ * @param {HTMLElement} pageElement - 页面元素
+ */
+function bindSettingItems(pageElement) {
+  // 图片识别模式
+  const imageModeLink = pageElement.querySelector('#phone-image-mode-setting-link');
+  if (imageModeLink) {
+    imageModeLink.addEventListener('click', async () => {
+      logger.info('[UserSettings] 打开图片识别模式设置');
+      const overlayElement = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
+      if (overlayElement) {
+        const { showPage } = await import('../phone-main-ui.js');
+        showPage(overlayElement, 'image-mode-settings', {});
+      }
+    });
+  }
+
+  // 存储空间
+  const storageSpaceLink = pageElement.querySelector('#phone-storage-space-link');
+  if (storageSpaceLink) {
+    storageSpaceLink.addEventListener('click', async () => {
+      logger.info('[UserSettings] 打开存储空间');
+      const overlayElement = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
+      if (overlayElement) {
+        const { showPage } = await import('../phone-main-ui.js');
+        showPage(overlayElement, 'storage-space', {});
+      }
+    });
+  }
+
+  // 更新图片模式显示文本
+  updateImageModeDisplay(pageElement);
+
+  // 监听图片模式变化
+  document.addEventListener('phone-image-mode-changed', () => {
+    updateImageModeDisplay(pageElement);
+  });
+}
+
+/**
+ * 更新图片模式显示文本
+ * @private
+ */
+function updateImageModeDisplay(pageElement) {
+  const mode = extension_settings.acsusPawsPuffs?.phone?.imageMode || 'once';
+  
+  const modeText = {
+    once: '仅本轮',
+    always: '每轮都识别',
+    never: '永不识别'
+  };
+
+  const displayEl = pageElement.querySelector('#phone-image-mode-display');
+  if (displayEl) {
+    displayEl.textContent = modeText[mode] || '仅本轮';
+  }
 }
 
