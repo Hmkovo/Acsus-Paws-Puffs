@@ -1,25 +1,20 @@
-# 开发文档（不上传到GitHub）
-【*】*.md
+【*.md
 *DEMO*.md
 CLASSNAME-MAP.md
+【代码修改记录】.md
 
-# 演示文件
 *-demo.html
 
-# 日志文件
 *.log
 
-# 临时文件
 *.tmp
 *.bak
 *~
 
-# 操作系统文件
 .DS_Store
-Thumbs.db
-desktop.ini
+.Thumbs.db
+.desktop.ini
 
-# 编辑器文件
 .vscode/
 .idea/
 *.swp
