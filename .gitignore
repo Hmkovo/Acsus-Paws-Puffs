@@ -5,6 +5,8 @@ CLASSNAME-MAP.md
 
 *-demo.html
 
+phone-preset-*.json
+
 *.log
 
 *.tmp
