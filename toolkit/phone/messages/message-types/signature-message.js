@@ -8,7 +8,6 @@
  */
 
 import logger from '../../../../logger.js';
-import { bindLongPress } from '../../utils/message-actions-helper.js';
 import { updateContactSignature } from '../../profile/signature-data.js';
 import { getThumbnailUrl } from '../../../../../../../../script.js';
 
@@ -101,12 +100,7 @@ export function renderSignatureMessage(message, contactId, contact = null) {
     handleSaveSignature(contactId, signatureData.newSignature, message.id, card);
   }
 
-  // 绑定长按删除功能
-  bindLongPress(card, message, contactId, {
-    disableQuote: true  // 禁用引用功能（个签消息不适合引用）
-  });
-
-  logger.info('[SignatureMessage] ✅ 个签更新消息渲染完成');
+  logger.info('[SignatureMessage] ✅ 个签更新消息渲染完成:', message.id);
   return container;
 }
 

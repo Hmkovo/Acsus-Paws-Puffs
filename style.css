@@ -1,6 +1,6 @@
 ﻿/**
  * Acsus-Paws-Puffs 扩展样式
- * 
+ *
  * 这个文件定义扩展的所有样式（颜色、大小、布局等）
  * 所有类名都加 paws-puffs- 前缀，避免跟ST的样式冲突
  */
@@ -24,6 +24,13 @@
    导入手机系统CSS
    ======================================== */
 @import url('toolkit/phone/assets/phone.css');
+
+/* ========================================
+   导入美化系统CSS
+   ======================================== */
+@import url('beautify/beautify.css');
+@import url('beautify/beautify-popup.css');
+@import url('beautify/beautify.css');
 
 /* ========================================
    预设管理器优化（全局）
@@ -301,7 +308,7 @@
   border-radius: 0;
   background: var(--SmartThemeBlurTintColor);
   color: var(--SmartThemeBodyColor);
-  font-size: 15px;
+  font-size: 0.95em;
   user-select: none;
   opacity: 0.7;
   flex-shrink: 0;
@@ -994,7 +1001,7 @@ select.compact {
   border-radius: 50%;
   background: rgba(var(--SmartThemeQuoteColor-rgb), 0.2);
   border: 1px solid var(--SmartThemeQuoteColor);
-  font-size: 10px;
+  font-size: 0.65em;
   transition: all 0.3s;
 }
 
@@ -1066,7 +1073,7 @@ select.compact {
 }
 
 .pagination-btn i {
-  font-size: 12px;
+  font-size: 0.75em;
 }
 
 /* 批量删除功能样式 */
@@ -1706,12 +1713,48 @@ select.compact {
 
 .category-name {
   font-size: 0.85em;
-  color: var(--SmartThemeBodyColor);
+  white-space: nowrap;
 }
 
-.category-count {
-  font-size: 0.8em;
+/* 功能详情 */
+.feature-details {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(var(--SmartThemeBorderColor-rgb, 255, 255, 255), 0.1);
+}
+
+.feature-detail-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feature-detail-list li {
+  font-size: 0.9em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.9;
+}
+
+.feature-detail-list li i {
   color: var(--SmartThemeQuoteColor);
+  font-size: 0.9em;
+}
+
+/* 底部提示 */
+.beautify-hint {
+  margin-top: 20px;
+  padding: 10px 15px;
+  background: rgba(var(--SmartThemeBodyColor-rgb, 220, 220, 210), 0.05);
+  border-radius: 4px;
+  font-size: 0.85em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   opacity: 0.8;
 }
 
@@ -1757,7 +1800,7 @@ select.compact {
   list-style-type: decimal;
 }
 
-/* 
+/*
  * 这部分是在自定义CSS下方显示的内嵌编辑器面板样式
  * 包含元素选择器、属性编辑器、预设管理等功能
  * 移除了全局的 width: 100%，让输入框保持自然宽度
@@ -1768,20 +1811,20 @@ select.compact {
  * 2025-09-10: 修复滚动问题和条件显示功能
  * 2025-01-10: 修复toggle控件勾选框显示问题
  * 2025-01-10: 修复滚动高度问题 - 完整的flex布局链
- * 
+ *
  * ========== 重要：Flex布局滚动设计要点 ==========
  * 1. 完整的flex容器链：每一级都必须正确设置
  *    - .paws-puffs-ve-properties-panel (flex: 1) → 横向占满剩余空间
  *    - .paws-puffs-ve-element-panel (height: 100%, display: flex) → 纵向占满并成为flex容器
  *    - .paws-puffs-ve-panel-header (flex-shrink: 0) → 固定高度不压缩
  *    - .paws-puffs-ve-panel-body (flex: 1, height: 0) → 占满剩余高度并可滚动
- * 
+ *
  * 2. 关键技巧：height: 0 + flex: 1
  *    - 这是让flex子元素可滚动的经典模式
  *    - height: 0 强制元素不占用最小内容高度
  *    - flex: 1 让它扩展填充剩余空间
  *    - overflow-y: auto 在内容超出时显示滚动条
- * 
+ *
  * 3. 注意事项（不要随意修改）：
  *    - 不要在.paws-puffs-ve-panel-body上设置固定的max-height（除了calc计算）
  *    - 不要删除.paws-puffs-ve-element-panel的height: 100%
@@ -1965,7 +2008,7 @@ select.compact {
   padding: 6px 10px;
   border: 1px solid var(--SmartThemeBorderColor);
   border-radius: 4px;
-  font-size: 13px;
+  font-size: 0.85em;
   background: var(--SmartThemeBlurTintColor);
   color: var(--SmartThemeBodyColor);
 }
@@ -3017,4 +3060,1162 @@ select.compact {
   .simulated-life-actions button {
     width: 100%;
   }
+}
+
+/* ========================================
+   美化模块样式
+   ======================================== */
+
+/* ========== 美化说明区域 ========== */
+.beautify-terms-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 15px;
+  margin-bottom: 15px;
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 15%, transparent 85%);
+  border-left: 3px solid var(--SmartThemeQuoteColor);
+  border-radius: 4px;
+}
+
+.beautify-terms-text {
+  display: flex;
+  align-items: center;
+  font-size: 0.9em;
+  opacity: 0.9;
+}
+
+/* ========== 美化手风琴容器 ========== */
+.beautify-accordion-container {
+  display: flex;
+  gap: 0;
+  height: 320px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 50%, transparent 50%);
+}
+
+/* ========== 美化手风琴卡片 ========== */
+.beautify-accordion-card {
+  flex: 0 0 35px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  border-right: 1px solid color-mix(in srgb, var(--SmartThemeBorderColor) 30%, transparent 70%);
+  overflow: hidden;
+}
+
+.beautify-accordion-card:last-child {
+  border-right: none;
+}
+
+/* 展开的卡片 */
+.beautify-accordion-card.active {
+  flex: 1;
+}
+
+/* ========== 卡片标题（垂直标签） ========== */
+.beautify-accordion-header {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 35px;
+  height: 100%;
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 40%, var(--SmartThemeBlurTintColor) 60%);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s ease;
+}
+
+.beautify-accordion-header:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 60%, var(--SmartThemeBlurTintColor) 40%);
+}
+
+/* 垂直标签内容 */
+.beautify-accordion-tab {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--SmartThemeBodyColor);
+  user-select: none;
+}
+
+.beautify-accordion-tab i {
+  transform: rotate(90deg);
+  font-size: 1.1em;
+}
+
+.beautify-accordion-tab strong {
+  font-size: 0.95em;
+}
+
+/* 展开的卡片：隐藏垂直标签 */
+.beautify-accordion-card.active .beautify-accordion-header {
+  display: none;
+}
+
+/* ========== 卡片内容 ========== */
+.beautify-accordion-body {
+  margin-left: 35px;
+  padding: 10px 12px;
+  height: 100%;
+  overflow-y: auto;
+  opacity: 0;
+  transition: opacity 0.3s ease 0.1s;
+}
+
+/* 展开的卡片：显示内容 */
+.beautify-accordion-card.active .beautify-accordion-body {
+  margin-left: 0;
+  opacity: 1;
+}
+
+/* 美化滚动条 */
+.beautify-accordion-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.beautify-accordion-body::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--SmartThemeBorderColor) 30%, transparent 70%);
+  border-radius: 3px;
+}
+
+.beautify-accordion-body::-webkit-scrollbar-thumb {
+  background: var(--SmartThemeQuoteColor);
+  border-radius: 3px;
+}
+
+/* ========== 设置项样式 ========== */
+.beautify-setting-item {
+  margin-bottom: 8px;
+}
+
+.beautify-setting-item:last-child {
+  margin-bottom: 0;
+}
+
+.beautify-setting-item .checkbox_label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.beautify-setting-item .checkbox_label span {
+  font-weight: 500;
+  font-size: 0.82em;
+}
+
+.beautify-hint {
+  display: block;
+  margin-top: 2px;
+  padding-left: 20px;
+  font-size: 0.75em;
+  opacity: 0.65;
+  line-height: 1.3;
+}
+
+.beautify-divider {
+  margin: 8px 0;
+  border: none;
+  border-top: 1px solid color-mix(in srgb, var(--SmartThemeBorderColor) 30%, transparent 70%);
+}
+
+/* 全宽模式宽度滑块（默认隐藏，JS 控制显示） */
+.beautify-fullwidth-width-setting {
+  margin-left: 20px;
+  padding-left: 10px;
+  border-left: 2px solid color-mix(in srgb, var(--SmartThemeQuoteColor) 30%, transparent 70%);
+}
+
+/* ========== 便捷小功能搜索框 ========== */
+.beautify-misc-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 40%, transparent 60%);
+  border-radius: 6px;
+}
+
+.beautify-misc-search i {
+  color: var(--SmartThemeQuoteColor);
+  opacity: 0.6;
+  font-size: 0.85em;
+}
+
+.beautify-misc-search input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--SmartThemeBodyColor);
+  font-size: 0.82em;
+  outline: none;
+}
+
+.beautify-misc-search input::placeholder {
+  opacity: 0.5;
+}
+
+/* ========== 便捷小功能列表 ========== */
+.beautify-misc-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.beautify-misc-list .beautify-setting-item.hidden {
+  display: none;
+}
+
+/* ========== 便捷小功能滑块样式 ========== */
+.beautify-slider-item {
+  padding: 6px 0;
+}
+
+.beautify-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.beautify-slider-row label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 130px;
+  font-size: 0.82em;
+  font-weight: 500;
+}
+
+.beautify-slider-row label i {
+  color: var(--SmartThemeQuoteColor);
+  width: 14px;
+  text-align: center;
+}
+
+.beautify-slider-row input[type="range"] {
+  flex: 1;
+  height: 4px;
+  cursor: pointer;
+}
+
+.beautify-slider-value {
+  min-width: 30px;
+  font-size: 0.75em;
+  opacity: 0.7;
+  text-align: right;
+}
+
+/* ========== 便捷小功能翻页 ========== */
+.beautify-misc-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--SmartThemeBorderColor) 20%, transparent 80%);
+}
+
+.beautify-misc-page-btn {
+  padding: 4px 8px;
+  border: none;
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 50%, transparent 50%);
+  color: var(--SmartThemeBodyColor);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8em;
+}
+
+.beautify-misc-page-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 70%, transparent 30%);
+}
+
+.beautify-misc-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.beautify-misc-page-info {
+  font-size: 0.75em;
+  opacity: 0.7;
+}
+
+/* ========== 便捷小功能 CSS 效果 ========== */
+
+/* 滑块变亮：去掉默认的 brightness(0.75) */
+body.beautify-slider-bright input[type="range"],
+body.beautify-slider-bright .neo-range-slider {
+  filter: brightness(1) !important;
+}
+
+/* 隐藏状态栏复制键 */
+body.beautify-hide-copy-btn i.fa-solid.fa-copy.code-copy {
+  display: none !important;
+}
+
+/* 隐藏ID名称 */
+body.beautify-hide-name .name_text {
+  display: none !important;
+}
+
+/* 代理警告隐藏 */
+body.beautify-hide-proxy-warn .reverse_proxy_warning {
+  display: none !important;
+}
+
+/* 快捷回复隐藏 @Dough */
+body.beautify-hide-qr #qr--bar {
+  height: 0.1px;
+  transition: all 0.5s ease;
+}
+body.beautify-hide-qr #send_form:hover #qr--bar:not(:empty) {
+  height: 30px;
+}
+body.beautify-hide-qr #qr--bar:empty {
+  display: none !important;
+}
+
+/* 隐藏编辑按钮阴影 */
+body.beautify-hide-edit-shadow .mes_button,
+body.beautify-hide-edit-shadow .extraMesButtons > div,
+body.beautify-hide-edit-shadow .mes_edit_buttons {
+  filter: none !important;
+}
+
+/* 抽屉页面位置调整 - 使用 CSS 变量控制所有导航栏展开页面的上下偏移 */
+:root {
+  --beautify-drawer-offset: 0px;
+}
+
+#left-nav-panel.drawer-content,
+#rm_api_block.drawer-content,
+#AdvancedFormatting.drawer-content,
+#WorldInfo.drawer-content,
+#user-settings-block.drawer-content,
+#Backgrounds.drawer-content,
+#rm_extensions_block.drawer-content,
+#PersonaManagement.drawer-content,
+#right-nav-panel.drawer-content {
+  transform: translateY(var(--beautify-drawer-offset, 0px));
+}
+
+/* ========== 悬浮按钮设置样式 ========== */
+.floating-btn-settings {
+  margin-top: 10px;
+  padding: 10px;
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 30%, transparent 70%);
+  border-radius: 6px;
+}
+
+.floating-btn-setting-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.floating-btn-setting-row:last-child {
+  margin-bottom: 0;
+}
+
+.floating-btn-setting-row label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 90px;
+  font-size: 0.8em;
+}
+
+.floating-btn-setting-row label i {
+  color: var(--SmartThemeQuoteColor);
+  width: 14px;
+  text-align: center;
+}
+
+.floating-btn-setting-row input[type="range"] {
+  flex: 1;
+  height: 4px;
+  cursor: pointer;
+}
+
+.floating-btn-value {
+  min-width: 40px;
+  font-size: 0.75em;
+  opacity: 0.7;
+  text-align: right;
+}
+
+/* 颜色选择器包装器 */
+.floating-btn-color-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.floating-btn-reset-color {
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  color: var(--SmartThemeBodyColor);
+  cursor: pointer;
+  font-size: 0.75em;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.floating-btn-reset-color:hover {
+  opacity: 1;
+}
+
+/* 自定义图片区域 */
+.floating-btn-image-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--SmartThemeBorderColor) 30%, transparent 70%);
+}
+
+.floating-btn-image-preview {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 50%, transparent 50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.floating-btn-image-preview i {
+  font-size: 18px;
+  opacity: 0.4;
+}
+
+.floating-btn-image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.floating-btn-image-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.floating-btn-image-actions .menu_button {
+  padding: 4px 10px;
+  font-size: 0.75em;
+  white-space: nowrap;
+}
+
+.floating-btn-image-actions .menu_button i {
+  margin-right: 4px;
+}
+
+/* ========== 悬浮按钮图片弹窗样式 ========== */
+.floating-btn-image-popup {
+  min-width: 320px;
+  max-width: 400px;
+}
+
+.floating-btn-image-popup h3 {
+  margin: 0 0 15px 0;
+  font-size: 1.1em;
+  color: var(--SmartThemeQuoteColor);
+}
+
+.floating-btn-image-popup h3 i {
+  margin-right: 8px;
+}
+
+/* 预览区域 */
+.popup-image-preview-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 15px;
+  padding: 12px;
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 30%, transparent 70%);
+  border-radius: 8px;
+}
+
+.popup-image-preview {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 50%, transparent 50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.popup-image-preview i {
+  font-size: 24px;
+  opacity: 0.4;
+}
+
+.popup-image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.popup-image-opacity {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.popup-image-opacity label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85em;
+}
+
+.popup-image-opacity label i {
+  color: var(--SmartThemeQuoteColor);
+}
+
+.popup-image-opacity input[type="range"] {
+  width: 100%;
+}
+
+#popup-image-opacity-value {
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+
+/* 图片来源按钮 */
+.popup-image-sources {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.popup-image-sources .menu_button {
+  flex: 1;
+  padding: 8px 10px;
+  font-size: 0.8em;
+  white-space: nowrap;
+  justify-content: center;
+}
+
+.popup-image-sources .menu_button i {
+  margin-right: 4px;
+}
+
+/* 存档区域 */
+.popup-saved-images h4 {
+  margin: 0 0 10px 0;
+  font-size: 0.9em;
+  opacity: 0.8;
+}
+
+.popup-saved-images h4 i {
+  margin-right: 6px;
+  color: var(--SmartThemeQuoteColor);
+}
+
+.popup-saved-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.popup-saved-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 20px;
+  opacity: 0.5;
+  font-size: 0.85em;
+}
+
+.popup-saved-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.popup-saved-item:hover {
+  transform: scale(1.05);
+}
+
+.popup-saved-item.active {
+  border-color: var(--SmartThemeQuoteColor);
+}
+
+.popup-saved-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.popup-saved-name {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 2px 4px;
+  background: rgba(0, 0, 0, 0.7);
+  font-size: 0.65em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.popup-saved-delete {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.7);
+  color: #ff6b6b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  font-size: 10px;
+}
+
+.popup-saved-item:hover .popup-saved-delete {
+  opacity: 1;
+}
+
+/* 文件选择弹窗 */
+.file-select-popup h4 {
+  margin: 0 0 10px 0;
+}
+
+.file-select-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.file-select-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.file-select-item:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 20%, transparent 80%);
+}
+
+.file-select-item img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 4px;
+}
+
+.file-select-item span {
+  font-size: 0.7em;
+  text-align: center;
+  word-break: break-all;
+  max-width: 70px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ========== 悬浮按钮图片弹窗样式（复用 beautify-popup 风格） ========== */
+.floating-btn-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.floating-btn-popup-overlay.show {
+  opacity: 1;
+}
+
+.floating-btn-popup {
+  background: var(--SmartThemeBlurTintColor, #1a1a2e);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transform: scale(0.9);
+  transition: transform 0.3s ease;
+}
+
+.floating-btn-popup-overlay.show .floating-btn-popup {
+  transform: scale(1);
+}
+
+.floating-btn-popup .beautify-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.floating-btn-popup .beautify-popup-header h3 {
+  margin: 0;
+  font-size: 1em;
+  color: var(--SmartThemeQuoteColor);
+}
+
+.floating-btn-popup .beautify-popup-header h3 i {
+  margin-right: 8px;
+}
+
+.floating-btn-popup .beautify-popup-close {
+  background: transparent;
+  border: none;
+  color: var(--SmartThemeBodyColor);
+  cursor: pointer;
+  padding: 4px 8px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.floating-btn-popup .beautify-popup-close:hover {
+  opacity: 1;
+}
+
+.floating-btn-popup-content {
+  padding: 16px;
+  overflow-y: auto;
+}
+
+/* 预览区域 */
+.floating-btn-preview-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.floating-btn-preview {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.floating-btn-preview i {
+  font-size: 24px;
+  opacity: 0.4;
+}
+
+.floating-btn-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.floating-btn-opacity-control {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.floating-btn-opacity-control label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85em;
+}
+
+.floating-btn-opacity-control label i {
+  color: var(--SmartThemeQuoteColor);
+}
+
+/* 来源按钮 */
+.floating-btn-sources {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.floating-btn-sources .beautify-popup-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: var(--SmartThemeBodyColor);
+  cursor: pointer;
+  font-size: 0.8em;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.floating-btn-sources .beautify-popup-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--SmartThemeQuoteColor);
+}
+
+.floating-btn-sources .beautify-popup-btn i {
+  color: var(--SmartThemeQuoteColor);
+}
+
+/* 提示信息 */
+.floating-btn-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%);
+  border-radius: 6px;
+  font-size: 0.8em;
+  opacity: 0.8;
+}
+
+.floating-btn-hint i {
+  color: var(--SmartThemeQuoteColor);
+  flex-shrink: 0;
+}
+
+/* 存档区域 */
+.floating-btn-saved-section h4 {
+  margin: 0 0 10px 0;
+  font-size: 0.9em;
+  opacity: 0.8;
+}
+
+.floating-btn-saved-section h4 i {
+  margin-right: 6px;
+  color: var(--SmartThemeQuoteColor);
+}
+
+.floating-btn-saved-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.floating-btn-saved-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 20px;
+  opacity: 0.5;
+  font-size: 0.85em;
+}
+
+.floating-btn-saved-item {
+  position: relative;
+  width: 100%;
+  padding-bottom: 100%;  /* 1:1 正方形比例 */
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  background: color-mix(in srgb, var(--SmartThemeBodyColor) 10%, transparent 90%);
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.floating-btn-saved-item:hover {
+  transform: scale(1.05);
+}
+
+.floating-btn-saved-item.active {
+  border-color: var(--SmartThemeQuoteColor);
+}
+
+.floating-btn-saved-item img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;  /* contain 保持图片完整不裁剪 */
+}
+
+.floating-btn-saved-name {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 2px 4px;
+  background: rgba(0, 0, 0, 0.7);
+  font-size: 0.6em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.floating-btn-saved-delete {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.7);
+  color: #ff6b6b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  font-size: 9px;
+}
+
+.floating-btn-saved-item:hover .floating-btn-saved-delete {
+  opacity: 1;
+}
+
+/* 文件选择子弹窗 */
+.floating-btn-file-select-popup {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.floating-btn-file-select-content {
+  background: var(--SmartThemeBlurTintColor, #1a1a2e);
+  border-radius: 8px;
+  padding: 16px;
+  width: 90%;
+  max-width: 350px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.floating-btn-file-select-content h4 {
+  margin: 0 0 12px 0;
+  font-size: 0.95em;
+}
+
+.floating-btn-file-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.floating-btn-file-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.floating-btn-file-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.floating-btn-file-item img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.floating-btn-file-item span {
+  font-size: 0.65em;
+  text-align: center;
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.floating-btn-file-cancel {
+  width: 100%;
+  padding: 8px;
+  margin-top: 8px;
+}
+
+/* 功能预览提示 */
+.beautify-feature-preview {
+  margin-top: 8px;
+  padding: 6px 8px;
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75em;
+  opacity: 0.75;
+}
+
+.beautify-feature-preview i {
+  color: var(--SmartThemeQuoteColor);
+  font-size: 0.9em;
+}
+
+/* 开发中提示 */
+.beautify-coming-soon {
+  margin-top: 10px;
+  padding: 6px 8px;
+  background: color-mix(in srgb, var(--SmartThemeBorderColor) 20%, transparent 80%);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75em;
+  opacity: 0.55;
+  font-style: italic;
+}
+
+.beautify-coming-soon i {
+  color: var(--SmartThemeQuoteColor);
+  font-size: 0.9em;
+}
+
+/* ========== 旧样式保留 ========== */
+
+/* 美化功能区域 */
+.beautify-section {
+  padding: 15px;
+}
+
+/* 功能说明 */
+.beautify-intro {
+  padding: 10px 15px;
+  background: rgba(225, 138, 36, 0.1);
+  border-left: 3px solid var(--SmartThemeQuoteColor);
+  border-radius: 4px;
+  margin-bottom: 20px;
+  font-size: 0.9em;
+  display: flex;
+  align-items: center;
+}
+
+/* 功能列表 */
+.beautify-features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* 单个功能项 */
+.beautify-feature-item {
+  padding: 15px;
+  background: rgba(220, 220, 210, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.beautify-feature-item:hover {
+  background: rgba(220, 220, 210, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 禁用的功能项 */
+.beautify-feature-item.feature-disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.beautify-feature-item.feature-disabled:hover {
+  background: rgba(220, 220, 210, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* 功能头部 */
+.feature-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.feature-info {
+  flex: 1;
+}
+
+.feature-info h4 {
+  margin: 0 0 8px 0;
+  font-size: 1.1em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.feature-description {
+  margin: 0;
+  font-size: 0.9em;
+  opacity: 0.8;
+  line-height: 1.4;
+}
+
+/* 功能状态标签 */
+.feature-status {
+  padding: 4px 12px;
+  background: rgba(220, 220, 210, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  font-size: 0.85em;
+  white-space: nowrap;
 }

@@ -12,7 +12,6 @@
 
 import logger from '../../../../logger.js';
 import { getThumbnailUrl } from '../../../../../../../../script.js';
-import { bindLongPress } from '../../utils/message-actions-helper.js';
 
 /**
  * 解析计划消息格式
@@ -192,12 +191,8 @@ export async function renderPlanMessage(message, contact, contactId) {
   container.appendChild(avatar);
   container.appendChild(bubble);
 
-  // 绑定长按删除功能（所有计划消息都支持删除）
-  bindLongPress(bubble, message, contactId, {
-    disableQuote: true  // 禁用引用功能（计划消息不适合引用）
-  });
+  // 长按操作菜单由 message-chat-ui.js 统一绑定
 
-  logger.info('[PlanMessage] ✅ 计划消息渲染完成:', planData.title || '响应消息');
+  logger.info('[PlanMessage] ✅ 约定计划消息渲染完成:', message.id);
   return container;
 }
-

@@ -1,11 +1,11 @@
 /**
  * 手机主界面框架
- * 
+ *
  * 职责：
  * - 渲染手机容器（顶部栏、内容区、底部导航）
  * - 管理标签页切换
  * - 处理全局手势（关闭、返回）
- * 
+ *
  * 依赖：
  * - templates/phone-frame-template.js
  * - ../../logger.js
@@ -26,11 +26,11 @@ import { getUserDisplayName } from './utils/contact-display-helper.js';
 
 /**
  * 渲染手机框架
- * 
+ *
  * @description
  * 创建手机遮罩层和容器元素，包含完整的界面结构（顶部栏、三个标签页、底部导航）
  * 并绑定所有必要的事件监听器
- * 
+ *
  * @returns {HTMLElement} 手机遮罩层元素（.phone-overlay）
  */
 export function renderPhoneFrame() {
@@ -64,6 +64,13 @@ export function renderPhoneFrame() {
     logger.error('[PhoneUI] 初始化消息列表失败:', error);
   });
 
+  // 初始化装扮系统（异步，不阻塞）
+  import('./customization/customization-apply.js').then(({ initializeCustomization }) => {
+    initializeCustomization().catch(error => {
+      logger.error('[PhoneUI] 初始化装扮系统失败:', error);
+    });
+  });
+
   logger.info('[PhoneUI.renderPhoneFrame] 手机框架渲染完成');
 
   return phoneOverlay;
@@ -71,7 +78,7 @@ export function renderPhoneFrame() {
 
 /**
  * 绑定手机框架的所有事件
- * 
+ *
  * @param {HTMLElement} overlayElement - 手机遮罩层元素（.phone-overlay）
  */
 function bindFrameEvents(overlayElement) {
@@ -122,13 +129,13 @@ function bindFrameEvents(overlayElement) {
 
 /**
  * 处理底部导航点击
- * 
+ *
  * @description
  * 点击底部导航时的统一处理：
  * 1. 如果不在主页面，先返回主布局（清空页面栈）
  * 2. 再切换到目标标签页
  * 3. 清空栈并更新当前主页面
- * 
+ *
  * @param {HTMLElement} overlayElement - 手机遮罩层元素
  * @param {string} tabName - 标签页名称（messages/contacts/moments）
  */
@@ -163,7 +170,7 @@ async function handleBottomNavClick(overlayElement, tabName) {
 
 /**
  * 切换标签页
- * 
+ *
  * @param {HTMLElement} overlayElement - 手机遮罩层元素
  * @param {string} tabName - 标签页名称（messages/contacts/moments）
  */
@@ -212,12 +219,12 @@ async function switchTab(overlayElement, tabName) {
 
 /**
  * 更新用户信息（头像、名字、状态）
- * 
+ *
  * @description
  * 从 SillyTavern 获取当前用户头像和名字，并更新顶部栏显示
  * 显示格式：用户名（上） + 在线状态（下）
  * 注意：只修改子元素内容，不覆盖整个结构
- * 
+ *
  * @param {HTMLElement} overlayElement - 手机遮罩层元素
  */
 function updateUserInfo(overlayElement) {
@@ -246,12 +253,12 @@ function updateUserInfo(overlayElement) {
 
 /**
  * 更新顶部栏标题
- * 
+ *
  * @description
  * 根据当前标签页更新顶部栏标题
  * - 消息页：显示"用户名 + 在线"
  * - 其他页：显示"标签页名称"（单行）
- * 
+ *
  * @param {HTMLElement} overlayElement - 手机遮罩层元素
  * @param {string} tabName - 标签页名称（messages/contacts/moments）
  */
@@ -284,7 +291,7 @@ function updateHeaderTitle(overlayElement, tabName) {
 
 /**
  * 关闭手机界面
- * 
+ *
  * @description
  * 从 DOM 中移除手机遮罩层（包含整个手机界面）
  */
@@ -304,7 +311,7 @@ function closePhoneUI() {
 
 /**
  * 显示主布局（三个标签页）
- * 
+ *
  * @param {HTMLElement} overlayElement - 手机遮罩层元素
  */
 function showMainLayout(overlayElement) {
@@ -317,7 +324,7 @@ function showMainLayout(overlayElement) {
 
 /**
  * 隐藏主布局（三个标签页）
- * 
+ *
  * @param {HTMLElement} overlayElement - 手机遮罩层元素
  */
 function hideMainLayout(overlayElement) {
@@ -330,7 +337,7 @@ function hideMainLayout(overlayElement) {
 
 /**
  * 显示底部导航
- * 
+ *
  * @param {HTMLElement} overlayElement - 手机遮罩层元素
  */
 function showBottomNav(overlayElement) {
@@ -343,7 +350,7 @@ function showBottomNav(overlayElement) {
 
 /**
  * 隐藏底部导航
- * 
+ *
  * @param {HTMLElement} overlayElement - 手机遮罩层元素
  */
 function hideBottomNav(overlayElement) {
@@ -356,7 +363,7 @@ function hideBottomNav(overlayElement) {
 
 /**
  * 获取当前激活的标签页
- * 
+ *
  * @param {HTMLElement} overlayElement - 手机遮罩层元素
  * @returns {string} 当前标签页名称（messages/contacts/moments）
  */
@@ -370,13 +377,13 @@ function getCurrentActiveTab(overlayElement) {
 
 /**
  * 检查页面参数是否变化
- * 
+ *
  * @description
  * 判断页面关键参数（如contactId）是否与上次不同
  * 如果变化了，需要刷新页面内容；否则可以直接显示
- * 
+ *
  * 注意：聊天页使用独立ID（page-chat-{contactId}），不需要检查参数
- * 
+ *
  * @param {HTMLElement} pageElement - 页面元素
  * @param {Object} newParams - 新参数
  * @param {string} pageName - 页面名称
@@ -432,10 +439,10 @@ function checkIfParamsChanged(pageElement, newParams, pageName) {
 
 /**
  * 渲染消息列表标签页
- * 
+ *
  * @description
  * 调用 message-list-ui.js 的 renderMessageList() 渲染消息列表
- * 
+ *
  * @async
  * @param {HTMLElement} overlayElement - 手机遮罩层元素
  */
@@ -474,10 +481,10 @@ async function renderMessageListTab(overlayElement) {
 
 /**
  * 渲染联系人标签页
- * 
+ *
  * @description
  * 调用 contact-list-ui.js 的 renderContactList() 渲染联系人列表
- * 
+ *
  * @async
  * @param {HTMLElement} overlayElement - 手机遮罩层元素
  */
@@ -513,10 +520,10 @@ async function renderContactListTab(overlayElement) {
 
 /**
  * 处理加号菜单项点击
- * 
+ *
  * @description
  * 根据不同的菜单项执行不同的操作
- * 
+ *
  * @async
  * @param {string} action - 菜单项的 action 值
  */
@@ -557,6 +564,11 @@ async function handlePlusMenuAction(action) {
       await handleClearPhoneData(/** @type {HTMLElement} */(phoneOverlay));
       break;
 
+    case 'clear-membership-data':
+      // 清空会员数据（测试功能）
+      await handleClearMembershipData(/** @type {HTMLElement} */(phoneOverlay));
+      break;
+
     case 'create-group':
     case 'add-friend':
     case 'send-file':
@@ -571,12 +583,12 @@ async function handlePlusMenuAction(action) {
 
 /**
  * 处理同步酒馆角色
- * 
+ *
  * @description
  * 从酒馆获取角色列表，增量合并到待处理列表
  * 只添加新角色，不删除已有的（保持历史累积）
  * 不会自动添加联系人，需要用户在"新朋友"页面手动同意
- * 
+ *
  * @async
  * @param {HTMLElement} overlayElement - 手机遮罩层元素
  */
@@ -611,11 +623,11 @@ async function handleSyncTavernCharacters(overlayElement) {
 
 /**
  * 处理打开分组管理页面
- * 
+ *
  * @description
  * 打开分组管理独立页面，允许用户添加、编辑、删除、排序分组
  * 使用统一的 showPage 系统
- * 
+ *
  * @async
  * @param {HTMLElement} overlayElement - 手机遮罩层元素
  */
@@ -635,11 +647,11 @@ async function handleOpenGroupManage(overlayElement) {
 
 /**
  * 处理清空手机数据（临时功能）
- * 
+ *
  * @description
  * 清空 extension_settings.acsusPawsPuffs.phone 中的所有数据
  * 用于调试和测试，清空后会重新初始化为默认值
- * 
+ *
  * @async
  * @param {HTMLElement} overlayElement - 手机遮罩层元素
  */
@@ -692,17 +704,50 @@ async function handleClearPhoneData(overlayElement) {
 }
 
 /**
+ * 处理清空会员数据（测试功能）
+ *
+ * @description
+ * 清空所有用户和角色的会员数据，用于测试
+ * 不需要确认，点击立即清空
+ *
+ * @async
+ * @param {HTMLElement} overlayElement - 手机遮罩层元素
+ */
+async function handleClearMembershipData(overlayElement) {
+  logger.warn('[PhoneUI] 清空会员数据');
+
+  try {
+    // 导入会员存储模块
+    const { clearAllMemberships } = await import('./data-storage/storage-membership.js');
+
+    // 清空所有会员数据
+    await clearAllMemberships();
+
+    logger.info('[PhoneUI] 会员数据已清空');
+
+    // 导入Toast模块
+    const { showSuccessToast } = await import('./ui-components/toast-notification.js');
+    showSuccessToast('会员数据已清空！');
+
+    logger.info('[PhoneUI] 清空会员数据完成');
+  } catch (error) {
+    logger.error('[PhoneUI] 清空会员数据失败:', error);
+    alert('清空失败，请查看控制台：' + error.message);
+  }
+}
+
+/**
  * 显示独立页面（带滑动动画）
- * 
+ *
  * @description
  * 隐藏主布局（三个标签页），显示指定的独立页面
  * 页面只创建一次，后续显示时只刷新内容（不删除DOM）
  * 自动管理页面栈和底部导航显隐
- * 
+ *
  * 动画效果：
  * - 新页面从右向左滑入（iOS push风格）
  * - 背景页面变暗（如果有上一页面）
- * 
+ *
  * @param {HTMLElement} overlayElement - 手机遮罩层元素
  * @param {string} pageName - 页面名称（如 'new-friends', 'chat', 'contact-profile'）
  * @param {Object} [params] - 页面参数（可选，如 {contactId: 'xxx'}）
@@ -878,7 +923,27 @@ export async function showPage(overlayElement, pageName, params = {}) {
       } else {
         // 参数未变化，直接显示
         logger.debug('[PhoneUI.showPage] 页面已存在，直接显示（参数未变）');
-        
+
+        // ✅ 用户个人主页：每次显示时刷新动态内容（会员徽章）
+        if (pageName === 'user-profile') {
+          const nameElement = targetPage.querySelector('.user-profile-name');
+          if (nameElement) {
+            // 移除旧徽章
+            const oldBadge = nameElement.querySelector('.membership-badge');
+            if (oldBadge) oldBadge.remove();
+            nameElement.classList.remove('membership-vip', 'membership-svip', 'membership-annual-svip');
+
+            // 重新读取会员数据并添加徽章
+            const { getUserMembership } = await import('./data-storage/storage-membership.js');
+            const { addMembershipBadgeToName } = await import('./utils/membership-badge-helper.js');
+            const membership = await getUserMembership();
+            if (membership && membership.type && membership.type !== 'none') {
+              addMembershipBadgeToName(nameElement, membership.type);
+            }
+            logger.debug('[PhoneUI.showPage] 用户会员徽章已刷新');
+          }
+        }
+
         // 好友申请详情页需要重新绑定监听器（因为hidePage时被清理了）
         if (pageName === 'friend-request-detail') {
           const { bindEventListeners } = await import('./contacts/friend-request-detail-ui.js');
@@ -1080,10 +1145,10 @@ export async function showPage(overlayElement, pageName, params = {}) {
 
 /**
  * 刷新页面内容
- * 
+ *
  * @description
  * 根据页面类型刷新对应的内容，不删除DOM
- * 
+ *
  * @async
  * @param {string} pageName - 页面名称
  * @param {Object} [params] - 页面参数
@@ -1153,6 +1218,20 @@ async function refreshPageContent(pageName, params = {}) {
           charPromptElement.appendChild(newContent);  // appendChild fragment，自动提取内容
           charPromptElement.dataset.contactId = params.contactId;  // 更新contactId
           logger.debug('[PhoneUI] 角色提示词设置页内容已刷新:', params.contactId);
+        }
+      }
+      break;
+
+    case 'contact-regex-settings':
+      // 刷新正则配置页内容
+      if (params.contactId) {
+        const regexElement = /** @type {HTMLElement} */ (document.querySelector('#page-contact-regex-settings'));
+        if (regexElement) {
+          const { renderContactRegexSettings } = await import('./settings/contact-regex-settings-ui.js');
+          const newContent = await renderContactRegexSettings(params);
+          regexElement.innerHTML = '';
+          regexElement.appendChild(newContent);
+          logger.debug('[PhoneUI] 正则配置页内容已刷新:', params.contactId);
         }
       }
       break;
@@ -1229,17 +1308,17 @@ async function refreshPageContent(pageName, params = {}) {
 
 /**
  * 隐藏独立页面，层级式返回（带滑动动画）
- * 
+ *
  * @description
  * 智能返回逻辑：
  * 1. 出栈当前页面
  * 2. 检查栈顶：如果有上一页面，返回上一页面
  * 3. 如果栈空了，返回主布局
- * 
+ *
  * 动画效果：
  * - 当前页面向右滑出（iOS pop风格）
  * - 上一页面从变暗恢复正常
- * 
+ *
  * @param {HTMLElement} overlayElement - 手机遮罩层元素
  * @param {string} pageName - 当前页面名称
  */
@@ -1420,10 +1499,10 @@ export async function hidePage(overlayElement, pageName) {
 
 /**
  * 创建独立页面
- * 
+ *
  * @description
  * 根据页面名称动态创建页面内容
- * 
+ *
  * @async
  * @param {string} pageName - 页面名称
  * @param {Object} [params] - 页面参数
@@ -1545,6 +1624,24 @@ async function createPage(pageName, params = {}) {
       notificationSettingsPage.appendChild(notificationSettingsContent);
 
       return notificationSettingsPage;
+
+    case 'character-customization':
+      // 动态导入角色专属装扮页渲染函数
+      if (!params.contactId) {
+        logger.warn('[PhoneUI.createPage] 角色专属装扮页缺少contactId参数');
+        return null;
+      }
+      const { renderCharacterCustomizationPage } = await import('./customization/character-customization-ui.js');
+      const charCustomContent = await renderCharacterCustomizationPage(params);
+
+      // 创建页面容器
+      const charCustomPage = document.createElement('div');
+      charCustomPage.id = 'page-character-customization';
+      charCustomPage.className = 'phone-page phone-page-scrollable';  // 标准布局：整页滚动
+      charCustomPage.dataset.contactId = params.contactId;  // 保存contactId
+      charCustomPage.appendChild(charCustomContent);
+
+      return charCustomPage;
 
     case 'chat-background-settings':
       // 动态导入聊天背景设置页渲染函数
@@ -1755,6 +1852,24 @@ async function createPage(pageName, params = {}) {
 
       return charPromptPage;
 
+    case 'contact-regex-settings':
+      // 动态导入联系人正则配置页渲染函数
+      if (!params.contactId) {
+        logger.warn('[PhoneUI.createPage] 正则配置页缺少contactId参数');
+        return null;
+      }
+      const { renderContactRegexSettings } = await import('./settings/contact-regex-settings-ui.js');
+      const regexContent = await renderContactRegexSettings(params);
+
+      // 创建页面容器
+      const regexPage = document.createElement('div');
+      regexPage.id = 'page-contact-regex-settings';
+      regexPage.className = 'phone-page phone-page-scrollable';
+      regexPage.dataset.contactId = params.contactId;
+      regexPage.appendChild(regexContent);
+
+      return regexPage;
+
     case 'emoji-manager':
       // 动态导入表情包管理页渲染函数
       const { renderEmojiManager } = await import('./emojis/emoji-manager-ui.js');
@@ -1767,6 +1882,33 @@ async function createPage(pageName, params = {}) {
       emojiManagerPage.appendChild(emojiManagerContent);
 
       return emojiManagerPage;
+
+    case 'membership-center':
+      // 动态导入会员中心页渲染函数
+      const { renderMembershipCenter } = await import('./membership/membership-center-ui.js');
+
+      // 创建页面容器
+      const membershipCenterPage = document.createElement('div');
+      membershipCenterPage.id = 'page-membership-center';
+      membershipCenterPage.className = 'phone-page phone-page-fixed';  // 固定布局：固定顶部+滚动内容+固定底部
+
+      // 渲染页面内容
+      await renderMembershipCenter(membershipCenterPage);
+
+      return membershipCenterPage;
+
+    case 'customization':
+      // 动态导入个性装扮页渲染函数
+      const { renderCustomizationPage } = await import('./customization/customization-ui.js');
+      const customizationContent = await renderCustomizationPage();
+
+      // 创建页面容器
+      const customizationPage = document.createElement('div');
+      customizationPage.id = 'page-customization';
+      customizationPage.className = 'phone-page phone-page-scrollable';  // 标准布局：固定topbar + 内容区滚动
+      customizationPage.appendChild(customizationContent);
+
+      return customizationPage;
 
     case 'help-center':
       // 动态导入帮助中心页渲染函数
@@ -1902,8 +2044,39 @@ async function createPage(pageName, params = {}) {
         outerHTML前200字符: transferPage.outerHTML.substring(0, 200) + '...',
         innerHTML前200字符: transferPage.innerHTML.substring(0, 200) + '...'
       });
+      transferPage.dataset.pageId = pageName;
 
       return transferPage;
+
+    case 'gift-membership':
+      // 动态导入会员送礼页面渲染函数
+      logger.debug('[PhoneUI.createPage] 开始创建会员送礼页，params:', params);
+
+      if (!params.contactId) {
+        logger.warn('[PhoneUI.createPage] 会员送礼页面缺少contactId参数');
+        return null;
+      }
+
+      const { renderGiftMembershipPage } = await import('./messages/gift-membership-ui.js');
+      logger.debug('[PhoneUI.createPage] 已导入renderGiftMembershipPage函数');
+
+      const giftMembershipContent = await renderGiftMembershipPage(params);
+      logger.debug('[PhoneUI.createPage] 渲染函数已返回');
+
+      // 创建外层页面容器（每个联系人独立DOM）
+      const giftMembershipPage = document.createElement('div');
+      const safeGiftId = params.contactId.replace(/[^a-zA-Z0-9_-]/g, '_');
+      giftMembershipPage.id = `page-gift-membership-${safeGiftId}`;
+      giftMembershipPage.className = 'phone-page phone-page-fixed';  // 固定布局：固定顶部+滚动内容+固定底部
+      giftMembershipPage.dataset.contactId = params.contactId;
+      giftMembershipPage.dataset.pageId = pageName;
+
+      // 添加内容
+      giftMembershipPage.appendChild(giftMembershipContent);
+
+      logger.info('[PhoneUI.createPage] 会员送礼页创建完成');
+
+      return giftMembershipPage;
 
     default:
       logger.warn('[PhoneUI.createPage] 未知的页面:', pageName);

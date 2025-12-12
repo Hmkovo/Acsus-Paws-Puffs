@@ -262,6 +262,11 @@ function createMessageItem(contact, chatItem) {
     </div>
   `;
 
+  // 读取角色会员数据并添加徽章
+  addCharacterMembershipBadge(item, contact).catch(err => {
+    logger.error('[MessageList] 添加角色会员徽章失败:', err);
+  });
+
   // 绑定点击事件
   item.addEventListener('click', async () => {
     logger.info('[MessageList] 点击聊天项，跳转到聊天页面:', contact.id);
@@ -507,5 +512,41 @@ function bindMessageReceivedListener(listContainer) {
     description: '消息接收后刷新列表项'
   });
   logger.debug('[MessageList] 已绑定全局消息接收事件监听器');
+}
+
+/**
+ * 为消息项中的角色名添加会员徽章
+ * 
+ * @description
+ * 读取角色会员数据，如果有会员则添加徽章和名字颜色
+ * 
+ * @async
+ * @param {HTMLElement} itemElement - 消息项元素
+ * @param {Object} contact - 联系人对象
+ */
+async function addCharacterMembershipBadge(itemElement, contact) {
+  try {
+    // 角色会员数据存储在contact.membership中
+    if (!contact.membership || !contact.membership.type || contact.membership.type === 'none') {
+      return;
+    }
+    
+    const { addMembershipBadgeToName, bindMembershipBadgeClick } = await import('../utils/membership-badge-helper.js');
+    
+    const nameElement = itemElement.querySelector('.msg-item-name');
+    if (nameElement) {
+      addMembershipBadgeToName(nameElement, contact.membership.type);
+      logger.debug('[MessageList] 已添加角色会员徽章:', contact.name, contact.membership.type);
+      
+      // 绑定徽章点击事件
+      const badgeElement = nameElement.querySelector('.membership-badge');
+      if (badgeElement) {
+        await bindMembershipBadgeClick(badgeElement, contact.id, contact.name);
+        logger.debug('[MessageList] 已绑定徽章点击事件:', contact.name);
+      }
+    }
+  } catch (error) {
+    logger.error('[MessageList] 读取角色会员数据失败:', error);
+  }
 }
 

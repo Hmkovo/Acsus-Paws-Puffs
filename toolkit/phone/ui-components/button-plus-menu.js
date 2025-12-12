@@ -76,6 +76,13 @@ export function createPlusMenu() {
       action: 'clear-phone-data',
       enabled: true,
       style: 'color: #ff4d4f;' // 红色警告
+    },
+    {
+      icon: 'fa-crown',
+      text: '清空会员数据（测试）',
+      action: 'clear-membership-data',
+      enabled: true,
+      style: 'color: #ff4d4f;' // 红色警告
     }
   ];
 

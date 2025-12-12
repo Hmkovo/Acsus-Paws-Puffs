@@ -6,7 +6,6 @@
 import logger from '../../../../logger.js';
 import { getThumbnailUrl } from '../../../../../../../../script.js';
 import { getContactDisplayName } from '../../utils/contact-display-helper.js';
-import { bindLongPress } from '../../utils/message-actions-helper.js';
 
 /**
  * 渲染撤回消息气泡
@@ -112,13 +111,7 @@ export function renderRecalledMessage(message, contact, contactId) {
   container.appendChild(avatar);
   container.appendChild(bubble);
 
-  // ✅ 绑定长按操作菜单（支持删除/转发/收藏/多选，禁用引用）
-  // 注：撤回消息禁用引用是因为引用撤回消息没有上下文意义
-  if (contactId) {
-    bindLongPress(container, message, contactId, {
-      disableQuote: true  // 撤回消息不适合被引用
-    });
-  }
+  // 长按操作菜单由 message-chat-ui.js 统一绑定
 
   return container;
 }
@@ -166,13 +159,33 @@ async function showPeekPopup(message, contact) {
         <div style="color: #888; font-size: 13px; margin-bottom: 5px;">引用了一条消息</div>
         <div>${escapeHtml(message.replyContent || message.originalContent)}</div>
       </div>`;
-      break;
-
     case 'transfer':
       content = `<div class="recalled-peek-content">
         <div>[转账]</div>
         <div>金额：¥${message.amount || 0}</div>
-        ${message.transferNote ? `<div>留言：${escapeHtml(message.transferNote)}</div>` : ''}
+      </div>`;
+      break;
+
+    case 'gift-membership':
+      const typeText = message.membershipType === 'vip' ? 'VIP' : 'SVIP';
+      content = `<div class="recalled-peek-content">
+        <div>[送会员]</div>
+        <div>${message.months}个月${typeText}会员</div>
+      </div>`;
+      break;
+
+    case 'buy-membership':
+      const buyTypeText = message.membershipType === 'vip' ? 'VIP' : 'SVIP';
+      content = `<div class="recalled-peek-content">
+        <div>[开会员]</div>
+        <div>${message.months}个月${buyTypeText}会员</div>
+      </div>`;
+      break;
+
+    case 'quote':
+      content = `<div class="recalled-peek-content">
+        <div style="color: #888; font-size: 13px; margin-bottom: 5px;">引用了一条消息</div>
+        <div>${escapeHtml(message.replyContent || message.originalContent)}</div>
       </div>`;
       break;
 

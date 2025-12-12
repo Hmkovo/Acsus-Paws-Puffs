@@ -79,15 +79,22 @@ function createCharPromptHTML() {
             </div>
 
             <!-- 添加按钮组 -->
-            <button class="char-prompt-add-btn" id="char-prompt-add-custom">
-                <i class="fa-solid fa-plus"></i>
-                添加自定义条目
-            </button>
+            <div class="char-prompt-add-buttons">
+                <button class="char-prompt-add-btn" id="char-prompt-add-custom">
+                    <i class="fa-solid fa-plus"></i>
+                    添加自定义条目
+                </button>
 
-            <button class="char-prompt-add-btn char-prompt-add-worldbook" id="char-prompt-add-worldbook">
-                <i class="fa-solid fa-book"></i>
-                从世界书选择条目
-            </button>
+                <button class="char-prompt-add-btn char-prompt-add-worldbook" id="char-prompt-add-worldbook">
+                    <i class="fa-solid fa-book"></i>
+                    从世界书选择条目
+                </button>
+
+                <button class="char-prompt-add-btn char-prompt-add-regex" id="char-prompt-add-regex">
+                    <i class="fa-solid fa-wrench"></i>
+                    配置酒馆正则
+                </button>
+            </div>
 
             <!-- 条目列表（可拖拽） -->
             <div class="char-prompt-list" id="char-prompt-list">
@@ -122,6 +129,10 @@ function bindCharPromptEvents(page, contactId) {
   // 从世界书选择
   const addWorldbookBtn = page.querySelector('#char-prompt-add-worldbook');
   addWorldbookBtn?.addEventListener('click', () => handleAddFromWorldbook(page, contactId));
+
+  // 配置酒馆正则
+  const addRegexBtn = page.querySelector('#char-prompt-add-regex');
+  addRegexBtn?.addEventListener('click', () => handleOpenRegexSettings(contactId));
 
   // 重置按钮
   const resetBtn = page.querySelector('#char-prompt-reset-btn');
@@ -836,6 +847,17 @@ function createDefaultCharacterPrompt() {
         order: 3
       },
       {
+        id: 'membership-status',
+        type: 'auto',
+        label: '[会员状态]',
+        role: 'system',
+        content: '__AUTO_MEMBERSHIP_STATUS__',
+        enabled: true,
+        editable: true,
+        deletable: false,
+        order: 4
+      },
+      {
         id: 'history-chat',
         type: 'history-chat',
         label: '[历史聊天记录]',
@@ -844,10 +866,30 @@ function createDefaultCharacterPrompt() {
         enabled: true,
         editable: false,  // 不可编辑，自动从设置获取
         deletable: false,
-        order: 4
+        order: 5
       }
     ]
   };
+}
+
+/**
+ * 处理打开正则配置页
+ * 
+ * @param {string} contactId - 联系人ID
+ */
+async function handleOpenRegexSettings(contactId) {
+  logger.debug('[CharPromptUI] 打开正则配置页');
+  
+  // 获取手机遮罩层元素
+  const overlay = document.querySelector('.phone-overlay');
+  if (!overlay) {
+    logger.error('[CharPromptUI] 找不到手机遮罩层');
+    return;
+  }
+  
+  // 动态导入页面
+  const { showPage } = await import('../phone-main-ui.js');
+  await showPage(overlay, 'contact-regex-settings', { contactId });
 }
 
 /**

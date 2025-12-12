@@ -1,7 +1,7 @@
 /**
  * 约定计划剧情消息渲染器
  * @module phone/messages/message-types/plan-story-message
- * 
+ *
  * @description
  * 渲染约定计划的剧情输出消息
  * 支持三种类型：
@@ -11,13 +11,14 @@
  */
 
 import logger from '../../../../logger.js';
-import { bindLongPress } from '../../utils/message-actions-helper.js';
 import { getCompletedPlans, savePlanNote, deletePlanNote } from '../../plans/plan-data.js';
 import { showSuccessToast, showErrorToast } from '../../ui-components/toast-notification.js';
+import { stateManager } from '../../utils/state-manager.js';
+import { extension_settings } from '../../../../../../../extensions.js';
 
 /**
  * 解析计划剧情消息格式
- * 
+ *
  * @param {string} content - 消息内容
  * @returns {Object|null} 解析结果 { type, title, storyContent }
  */
@@ -77,7 +78,7 @@ export function isPlanStoryMessage(message) {
 
 /**
  * 渲染约定计划剧情消息
- * 
+ *
  * @param {Object} message - 消息对象
  * @param {string} contactId - 联系人ID
  * @param {Object} [cachedPlan] - 缓存的计划对象（可选，避免重复查找）
@@ -189,18 +190,17 @@ export function renderPlanStoryMessage(message, contactId, cachedPlan = null) {
       logger.info('[PlanStoryMessage] 记录要点:', storyData.title);
     }
 
-    // 触发事件，通知列表页更新
-    window.dispatchEvent(new CustomEvent('phone-plan-notes-changed', {
-      detail: { contactId, planId: plan.id }
-    }));
+    // 🔥 通过状态管理器通知订阅者
+    stateManager.set('plans', extension_settings.acsusPawsPuffs.phone.plans, {
+      contactId,
+      planId: plan.id,
+      action: 'update-notes'
+    });
   });
 
   container.appendChild(card);
 
-  // 绑定长按删除功能
-  bindLongPress(card, message, contactId, {
-    disableQuote: true  // 禁用引用功能（剧情消息不适合引用）
-  });
+  // 长按操作菜单由 message-chat-ui.js 统一绑定
 
   logger.info('[PlanStoryMessage] ✅ 计划剧情消息渲染完成:', storyData.title);
   return container;

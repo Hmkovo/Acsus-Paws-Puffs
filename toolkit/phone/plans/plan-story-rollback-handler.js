@@ -1,11 +1,11 @@
 /**
  * 约定计划剧情要点回退处理器
  * @module phone/plans/plan-story-rollback-handler
- * 
+ *
  * @description
  * 注册约定计划剧情消息的回退逻辑到统一回退管理器
  * 当重roll时，自动删除被回退的计划剧情消息对应的要点记录
- * 
+ *
  * 回退逻辑：
  * - 查找被删除消息中的计划剧情消息（[约定计划过程/内心印象/过程记录]）
  * - 删除对应的要点记录
@@ -16,6 +16,8 @@ import logger from '../../../logger.js';
 import { registerRollbackHandler } from '../messages/message-rollback-manager.js';
 import { getCompletedPlans, deletePlanNote } from './plan-data.js';
 import { parsePlanStoryMessage } from '../messages/message-types/plan-story-message.js';
+import { stateManager } from '../utils/state-manager.js';
+import { extension_settings } from '../../../../../../extensions.js';
 
 /**
  * 根据剧情类型获取要点类型
@@ -33,9 +35,13 @@ function getNoteType(storyType) {
 
 /**
  * 初始化约定计划剧情要点回退处理器
- * 
+ *
  * @description
  * 在扩展初始化时调用，注册回退逻辑
+ * 当重roll删除AI消息时，自动删除对应的计划剧情要点记录
+ * 通过状态管理器（stateManager）通知所有订阅者数据变化，自动刷新UI
+ *
+ * @async
  */
 export function initPlanStoryRollbackHandler() {
     registerRollbackHandler({
@@ -102,31 +108,16 @@ export function initPlanStoryRollbackHandler() {
 
             if (deletedCount > 0) {
                 logger.info('[PlanStoryRollback] 共回退', deletedCount, '条计划要点');
-                logger.debug('[PlanStoryRollback] 删除的要点:', deletedNotes.map(n => 
+                logger.debug('[PlanStoryRollback] 删除的要点:', deletedNotes.map(n =>
                     `${n.planTitle}-${n.noteType}`
                 ).join(', '));
 
-                // 触发计划数据变化事件
-                window.dispatchEvent(new CustomEvent('phone-plan-notes-changed', {
-                    detail: { 
-                        contactId,
-                        action: 'rollback-notes',
-                        count: deletedCount
-                    }
-                }));
-
-                // 刷新计划列表UI（如果当前正在查看）
-                try {
-                    const planListPage = document.querySelector('.plan-list-page');
-                    if (planListPage && planListPage.closest('.phone-popup')) {
-                        logger.debug('[PlanStoryRollback] 检测到计划列表页面打开，刷新UI');
-                        const { renderPlanList } = await import('./plan-list-ui.js');
-                        const newContent = await renderPlanList(contactId);
-                        planListPage.replaceWith(newContent);
-                    }
-                } catch (uiError) {
-                    logger.warn('[PlanStoryRollback] UI刷新失败（不影响数据回退）:', uiError);
-                }
+                // 🔥 通过状态管理器通知订阅者（自动刷新UI）
+                await stateManager.set('plans', extension_settings.acsusPawsPuffs.phone.plans, {
+                    contactId,
+                    action: 'rollback-notes',
+                    count: deletedCount
+                });
             } else {
                 logger.debug('[PlanStoryRollback] 没有需要回退的计划要点');
             }

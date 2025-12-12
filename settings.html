@@ -16,6 +16,7 @@
         <div class="paws-tab" data-tab="preset-manager">预设管理</div>
         <div class="paws-tab" data-tab="visual-editor">可视化</div>
         <div class="paws-tab" data-tab="toolbox">工具包</div>
+        <div class="paws-tab" data-tab="beautify">美化</div>
         <div class="paws-tab" data-tab="about">关于</div>
       </div>
 
@@ -117,6 +118,283 @@
         <div id="paws-puffs-preset-panel"></div>
       </div>
 
+      <div class="paws-tab-content" id="tab-beautify">
+        <!-- 美化设置面板 -->
+        <div id="paws-puffs-beautify-panel">
+
+          <!-- 使用说明区域 -->
+          <div class="beautify-terms-intro">
+            <div class="beautify-terms-text">
+              <i class="fa-solid fa-cat" style="color: var(--SmartThemeQuoteColor); margin-right: 8px;"></i>
+              猫玩具！不确保适配所有美化主题，可能存在兼容问题
+            </div>
+            <button id="beautify-info-popup-btn" class="menu_button compact icon-only interactable" title="查看说明" tabindex="0">
+              <i class="fa fa-question-circle"></i>
+            </button>
+          </div>
+
+          <!-- 美化手风琴容器 -->
+          <div class="beautify-accordion-container">
+
+            <!-- 卡片1：头像布局 -->
+            <div class="beautify-accordion-card active" data-card="avatar-layout">
+              <div class="beautify-accordion-header" data-card="avatar-layout">
+                <div class="beautify-accordion-tab">
+                  <i class="fa-solid fa-image-portrait"></i>
+                  <strong>头像布局</strong>
+                </div>
+              </div>
+              <div class="beautify-accordion-body">
+                <!-- 头像布局开关 -->
+                <div class="beautify-setting-item">
+                  <label class="checkbox_label">
+                    <input type="checkbox" id="beautify-avatar-layout-enabled">
+                    <span>启用头像布局</span>
+                  </label>
+                  <span class="beautify-hint">调整酒馆的头像显示布局，点击悬浮栏的user或char头像来打开详细设置</span>
+                </div>
+
+                <hr class="beautify-divider">
+
+                <!-- 全宽文字模式 -->
+                <div class="beautify-setting-item">
+                  <label class="checkbox_label">
+                    <input type="checkbox" id="beautify-fullwidth-enabled">
+                    <span>全宽文字模式</span>
+                  </label>
+                  <span class="beautify-hint">隐藏消息头像/名字栏，文字左右占满，翻页按钮移到底部</span>
+                </div>
+
+                <!-- 全宽模式宽度调节（仅在全宽模式启用时显示） -->
+                <div class="beautify-setting-item beautify-slider-item beautify-fullwidth-width-setting" id="beautify-fullwidth-width-setting">
+                  <div class="beautify-slider-row">
+                    <label>
+                      <i class="fa-solid fa-left-right"></i>
+                      <span>文字宽度</span>
+                    </label>
+                    <input type="range" id="beautify-fullwidth-width" min="0" max="100" step="5" value="0">
+                    <span class="beautify-slider-value" id="beautify-fullwidth-width-value">0%</span>
+                  </div>
+                  <span class="beautify-hint">0% = 占满屏幕，100% = 最窄（约50%屏幕宽度）</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 卡片2：顶栏隐藏按钮 -->
+            <div class="beautify-accordion-card" data-card="floating-btn">
+              <div class="beautify-accordion-header" data-card="floating-btn">
+                <div class="beautify-accordion-tab">
+                  <i class="fa-solid fa-circle-dot"></i>
+                  <strong>悬浮按钮</strong>
+                </div>
+              </div>
+              <div class="beautify-accordion-body">
+                <div class="beautify-setting-item">
+                  <label class="checkbox_label">
+                    <input type="checkbox" id="beautify-floating-btn-enabled">
+                    <span>顶栏隐藏按钮</span>
+                  </label>
+                  <span class="beautify-hint">显示可拖动的悬浮按钮，用于隐藏/显示顶部工具栏</span>
+                </div>
+
+                <!-- 悬浮按钮外观设置 -->
+                <div class="floating-btn-settings">
+                  <!-- 大小滑块 -->
+                  <div class="floating-btn-setting-row">
+                    <label>
+                      <i class="fa-solid fa-expand"></i>
+                      <span>大小</span>
+                    </label>
+                    <input type="range" id="floating-btn-size" min="0" max="300" value="38">
+                    <span class="floating-btn-value" id="floating-btn-size-value">38px</span>
+                  </div>
+
+                  <!-- 颜色选择器（使用官方 RGBA 颜色选择器） -->
+                  <div class="floating-btn-setting-row">
+                    <label>
+                      <i class="fa-solid fa-palette"></i>
+                      <span>图标颜色</span>
+                    </label>
+                    <div class="floating-btn-color-wrapper">
+                      <toolcool-color-picker id="floating-btn-color" color="rgba(255, 255, 255, 1)"></toolcool-color-picker>
+                      <button class="floating-btn-reset-color" id="floating-btn-reset-color" title="重置为主题色">
+                        <i class="fa-solid fa-rotate-left"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- 自定义图片 -->
+                  <div class="floating-btn-image-section">
+                    <div class="floating-btn-image-preview" id="floating-btn-image-preview">
+                      <i class="fa-solid fa-image"></i>
+                    </div>
+                    <div class="floating-btn-image-actions">
+                      <button class="beautify-popup-btn" id="floating-btn-set-image">
+                        <i class="fa-solid fa-image"></i>
+                        <span>设置图片</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="beautify-feature-preview">
+                  <i class="fa-solid fa-hand-pointer"></i>
+                  <span>点击切换沉浸模式，拖动可调整位置</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 卡片3：其他小功能 -->
+            <div class="beautify-accordion-card" data-card="misc">
+              <div class="beautify-accordion-header" data-card="misc">
+                <div class="beautify-accordion-tab">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i>
+                  <strong>其他功能</strong>
+                </div>
+              </div>
+              <div class="beautify-accordion-body">
+                <!-- 搜索框 -->
+                <div class="beautify-misc-search">
+                  <i class="fa-solid fa-search"></i>
+                  <input type="text" id="beautify-misc-search-input" placeholder="搜索功能...">
+                </div>
+
+                <!-- 功能列表容器 -->
+                <div class="beautify-misc-list" id="beautify-misc-list">
+                  <!-- 隐藏滚动条 -->
+                  <div class="beautify-setting-item" data-keywords="隐藏 滚动条 手机">
+                    <label class="checkbox_label">
+                      <input type="checkbox" id="beautify-hide-scrollbar-enabled">
+                      <span>隐藏滚动条</span>
+                    </label>
+                    <span class="beautify-hint">隐藏页面滚动条，适合手机端使用</span>
+                  </div>
+
+                  <!-- 滑块一键变亮 -->
+                  <div class="beautify-setting-item" data-keywords="滑块 变亮 亮度 滑轨">
+                    <label class="checkbox_label">
+                      <input type="checkbox" id="beautify-slider-bright-enabled">
+                      <span>滑块一键变亮</span>
+                    </label>
+                    <span class="beautify-hint">用户设置这里左右滑轨变亮，去掉默认变暗效果</span>
+                  </div>
+
+                  <!-- 隐藏状态栏复制键 -->
+                  <div class="beautify-setting-item" data-keywords="隐藏 复制 复制键 状态栏">
+                    <label class="checkbox_label">
+                      <input type="checkbox" id="beautify-hide-copy-btn-enabled">
+                      <span>隐藏状态栏复制键</span>
+                    </label>
+                    <span class="beautify-hint">隐藏消息状态栏的复制按钮</span>
+                  </div>
+
+                  <!-- 隐藏ID名称 -->
+                  <div class="beautify-setting-item" data-keywords="隐藏 ID 名称 名字 气泡">
+                    <label class="checkbox_label">
+                      <input type="checkbox" id="beautify-hide-name-enabled">
+                      <span>隐藏ID名称</span>
+                    </label>
+                    <span class="beautify-hint">隐藏气泡左上角的角色/用户名称</span>
+                  </div>
+
+                  <!-- 代理警告隐藏 -->
+                  <div class="beautify-setting-item" data-keywords="代理 警告 API 插头">
+                    <label class="checkbox_label">
+                      <input type="checkbox" id="beautify-hide-proxy-warn-enabled">
+                      <span>代理警告隐藏</span>
+                    </label>
+                    <span class="beautify-hint">隐藏API连接(插头)处的代理警告</span>
+                  </div>
+
+                  <!-- 快捷回复隐藏 -->
+                  <div class="beautify-setting-item" data-keywords="快捷 回复 QR Dough">
+                    <label class="checkbox_label">
+                      <input type="checkbox" id="beautify-hide-qr-enabled">
+                      <span>快捷回复隐藏</span>
+                    </label>
+                    <span class="beautify-hint">@Dough 悬停时才显示快捷回复栏</span>
+                  </div>
+
+                  <!-- 隐藏编辑按钮阴影 -->
+                  <div class="beautify-setting-item" data-keywords="编辑 按钮 阴影 shadow">
+                    <label class="checkbox_label">
+                      <input type="checkbox" id="beautify-hide-edit-shadow-enabled">
+                      <span>隐藏编辑按钮阴影</span>
+                    </label>
+                    <span class="beautify-hint">去掉消息编辑按钮的 drop-shadow 阴影效果</span>
+                  </div>
+
+                  <!-- 修复旧版美化类名 -->
+                  <div class="beautify-setting-item" data-keywords="修复 旧版 美化 logo_block backgrounds">
+                    <label class="checkbox_label">
+                      <input type="checkbox" id="beautify-fix-old-css-enabled">
+                      <span>修复旧版美化类名</span>
+                    </label>
+                    <span class="beautify-hint">自动将 #logo_block 替换为 #backgrounds-drawer-toggle（兼容更新前美化）</span>
+                  </div>
+
+                  <!-- 分隔线 -->
+                  <hr class="beautify-divider">
+
+                  <!-- 导航栏图标透明度 -->
+                  <div class="beautify-setting-item beautify-slider-item" data-keywords="导航 图标 透明度 顶部">
+                    <div class="beautify-slider-row">
+                      <label>
+                        <i class="fa-solid fa-eye"></i>
+                        <span>导航栏图标透明度</span>
+                      </label>
+                      <input type="range" id="beautify-nav-icon-opacity" min="0" max="1" step="0.1" value="0.3">
+                      <span class="beautify-slider-value" id="beautify-nav-icon-opacity-value">0.3</span>
+                    </div>
+                    <span class="beautify-hint">调整顶部导航栏图标的透明度（官方默认0.3）</span>
+                  </div>
+
+                  <!-- 编辑按钮透明度 -->
+                  <div class="beautify-setting-item beautify-slider-item" data-keywords="编辑 按钮 透明度 消息">
+                    <div class="beautify-slider-row">
+                      <label>
+                        <i class="fa-solid fa-pen"></i>
+                        <span>编辑按钮透明度</span>
+                      </label>
+                      <input type="range" id="beautify-edit-btn-opacity" min="0" max="1" step="0.1" value="0.3">
+                      <span class="beautify-slider-value" id="beautify-edit-btn-opacity-value">0.3</span>
+                    </div>
+                    <span class="beautify-hint">调整消息编辑按钮的透明度（官方默认0.3）</span>
+                  </div>
+
+                  <!-- 抽屉页面位置调整 -->
+                  <div class="beautify-setting-item beautify-slider-item" data-keywords="抽屉 页面 位置 导航 偏移 上下">
+                    <div class="beautify-slider-row">
+                      <label>
+                        <i class="fa-solid fa-arrows-up-down"></i>
+                        <span>抽屉页面位置</span>
+                      </label>
+                      <input type="range" id="beautify-drawer-offset" min="-50" max="50" step="1" value="0">
+                      <span class="beautify-slider-value" id="beautify-drawer-offset-value">0px</span>
+                    </div>
+                    <span class="beautify-hint">调整导航栏展开页面的上下位置（负数上移，正数下移）</span>
+                  </div>
+                </div>
+
+                <!-- 翻页控制（超过6个时显示） -->
+                <div class="beautify-misc-pagination" id="beautify-misc-pagination" style="display: none;">
+                  <button class="beautify-misc-page-btn" id="beautify-misc-prev" disabled>
+                    <i class="fa-solid fa-chevron-left"></i>
+                  </button>
+                  <span class="beautify-misc-page-info" id="beautify-misc-page-info">1 / 1</span>
+                  <button class="beautify-misc-page-btn" id="beautify-misc-next">
+                    <i class="fa-solid fa-chevron-right"></i>
+                  </button>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
       <div class="paws-tab-content" id="tab-about">
         <!-- 使用条款介绍区域 -->
         <div class="about-terms-intro">
@@ -161,6 +439,10 @@
                 <label class="tab-visibility-item">
                   <input type="checkbox" data-tab="toolbox" checked>
                   <span>工具包</span>
+                </label>
+                <label class="tab-visibility-item">
+                  <input type="checkbox" data-tab="beautify" checked>
+                  <span>美化</span>
                 </label>
               </div>
 
@@ -236,7 +518,7 @@
               <div class="about-thanks-content">
                 <pre
                   style="font-size: 0.85em; text-align: center; margin-bottom: 10px; line-height: 1.2; font-family: monospace;">
- ___  _  _  ___ 
+ ___  _  _  ___
 / __>| || |/ __>
 \_  \| \/ |\_  \
 <___/`____/<___/

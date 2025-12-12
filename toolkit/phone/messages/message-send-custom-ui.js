@@ -23,6 +23,8 @@ import { renderEmojiMessage } from './message-types/emoji-message.js';
 import { renderImageMessage } from './message-types/image-message.js';
 import { renderQuoteMessage } from './message-types/quote-message.js';
 import { renderTransferMessage } from './message-types/transfer-message.js';
+import { renderGiftMembershipMessage } from './message-types/gift-membership-message.js';
+import { renderBuyMembershipMessage } from './message-types/buy-membership-message.js';
 import { renderRecalledMessage } from './message-types/recalled-message.js';
 import { renderPlanMessage } from './message-types/plan-message.js';
 import { renderPlanStoryMessage } from './message-types/plan-story-message.js';
@@ -446,6 +448,14 @@ async function createMessageBubble(message, contact, contactId) {
 
     case 'transfer':
       innerBubble = renderTransferMessage(message, contact, contactId);
+      break;
+
+    case 'gift-membership':
+      innerBubble = renderGiftMembershipMessage(message, contact, contactId);
+      break;
+
+    case 'buy-membership':
+      innerBubble = renderBuyMembershipMessage(message, contact, contactId);
       break;
 
     case 'recalled':

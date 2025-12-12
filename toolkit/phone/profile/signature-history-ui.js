@@ -11,7 +11,7 @@
  */
 
 import logger from '../../../logger.js';
-import { registerListener, destroyPageListeners } from '../utils/listener-manager.js';
+import { stateManager } from '../utils/state-manager.js';
 import {
   loadUserSignature,
   loadContactSignature,
@@ -669,21 +669,22 @@ function setupAutoRefresh(container, targetType, contactId) {
   // 保存当前页面参数
   currentPageParams = { targetType, contactId };
 
-  // 移除旧的监听器（如果有）
-  if (refreshHandler) {
-    document.removeEventListener('signature-data-changed', refreshHandler);
-  }
+  const pageId = 'signature-history';
 
-  // 创建新的监听器
-  refreshHandler = async (event) => {
-    const { targetType: changedType, contactId: changedContactId } = event.detail;
-
+  // 订阅个签数据变化
+  stateManager.subscribe(pageId, 'signature', async (meta) => {
     // 检查是否匹配当前页面
     const isMatch =
-      (targetType === 'user' && changedType === 'user') ||
-      (targetType === 'contact' && changedType === 'contact' && contactId === changedContactId);
+      (targetType === 'user' && meta.targetType === 'user') ||
+      (targetType === 'contact' && meta.targetType === 'contact' && contactId === meta.contactId);
 
     if (!isMatch) {
+      return;
+    }
+
+    // 检查页面是否还存在
+    if (!document.contains(container)) {
+      logger.debug('[SignatureHistory] 页面已关闭，跳过刷新');
       return;
     }
 
@@ -728,37 +729,26 @@ function setupAutoRefresh(container, targetType, contactId) {
     } catch (error) {
       logger.error('[SignatureHistory] 刷新失败:', error);
     }
-  };
-
-  // 添加监听器
-  registerListener('signature-history', 'signature-data-changed', refreshHandler, {
-    description: '签名数据变化后刷新历史列表'
   });
 
-  // 监听父容器的子节点变化（用于页面销毁时清理）
-  const parentObserver = () => {
-    const parent = container.parentElement;
-    if (parent) {
-      const observer = new MutationObserver((mutations) => {
-        for (const mutation of mutations) {
-          for (const node of mutation.removedNodes) {
-            if (node === container || node.contains?.(container)) {
-              logger.debug('[SignatureHistory] 页面已关闭，清理监听器');
-              destroyPageListeners('signature-history');
-              refreshHandler = null;
-              currentPageParams = null;
-              observer.disconnect();
-              return;
-            }
-          }
+  // 监听页面移除，自动清理订阅
+  const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      for (const node of mutation.removedNodes) {
+        if (node === container || node.contains?.(container)) {
+          stateManager.unsubscribeAll(pageId);
+          observer.disconnect();
+          logger.debug('[SignatureHistory] 页面已关闭，已清理订阅');
+          return;
         }
-      });
-      observer.observe(parent, { childList: true, subtree: true });
-    } else {
-      // 如果还没添加到DOM，延迟观察
-      setTimeout(parentObserver, 100);
+      }
     }
-  };
-  parentObserver();
-}
+  });
 
+  const parent = container.parentElement;
+  if (parent) {
+    observer.observe(parent, { childList: true, subtree: true });
+  }
+
+  logger.debug('[SignatureHistory] 已订阅个签数据变化');
+}

@@ -13,6 +13,7 @@
 
 import { getTransactions, calculateTotals } from '../data-storage/storage-wallet.js';
 import { formatTimestamp } from '../utils/time-helper.js';
+import { stateManager } from '../utils/state-manager.js';
 import logger from '../../../logger.js';
 
 // 当前筛选状态
@@ -238,7 +239,7 @@ async function renderRecordsList(container, contactId, filter) {
  * @returns {string} HTML字符串
  */
 function createRecordItem(transaction) {
-  const { id, direction, amount, message, time, type } = transaction;
+  const { id, direction, amount, message, time, type, itemName } = transaction;
 
   // 类型文字
   const typeText = getTypeText(type);
@@ -249,6 +250,16 @@ function createRecordItem(transaction) {
   // 时间格式化
   const timeText = formatTimestamp(time);
 
+  // ✅ 金额显示：礼物显示物品名称，转账/红包显示金额
+  let amountDisplay;
+  if (type === 'gift' && itemName) {
+    // 礼物：显示物品名称（如"SVIP会员 30天"）
+    amountDisplay = itemName;
+  } else {
+    // 转账/红包：显示金额
+    amountDisplay = `${direction === 'received' ? '+' : '-'}¥ ${amount.toFixed(2)}`;
+  }
+
   return `
         <div class="transactions-record-item" data-transaction-id="${id}">
             <div class="transactions-record-header">
@@ -256,8 +267,8 @@ function createRecordItem(transaction) {
                     <div class="transactions-record-type">${typeText}</div>
                     <div class="transactions-record-direction">${directionText}</div>
                 </div>
-                <div class="transactions-record-amount">
-                    ${direction === 'received' ? '+' : '-'}¥ ${amount.toFixed(2)}
+                <div class="transactions-record-amount ${type === 'gift' ? 'transactions-record-item-name' : ''}">
+                    ${amountDisplay}
                 </div>
             </div>
             ${message ? `<div class="transactions-record-note">${message}</div>` : ''}
@@ -314,45 +325,61 @@ async function handleFilterChange(container, contactId, filter) {
 }
 
 /**
- * 监听钱包数据变化事件
+ * 监听钱包数据变化
+ * 
  * @param {HTMLElement} container - 页面容器
  * @param {string} contactId - 联系人ID
+ * 
+ * @description
+ * 使用状态管理器订阅钱包数据变化，页面关闭时自动清理
  */
 function bindWalletChangeListener(container, contactId) {
-  const handler = async (event) => {
-    const { contactId: changedContactId } = event.detail;
-
+  const pageId = `contact-transactions-${contactId}`;
+  
+  // 订阅钱包数据变化
+  stateManager.subscribe(pageId, 'wallet', async (meta) => {
     // 只处理与当前联系人相关的变化
-    if (changedContactId !== contactId) {
+    if (meta.contactId && meta.contactId !== contactId) {
       return;
     }
-
-    logger.debug('[TransactionsUI] 收到钱包变化事件，联系人:', contactId);
-
+    
+    logger.debug('[TransactionsUI] 收到钱包数据变化通知', meta);
+    
+    // 检查页面是否还存在
+    if (!document.contains(container)) {
+      logger.debug('[TransactionsUI] 页面已关闭，跳过刷新');
+      return;
+    }
+    
     // 重新计算收支统计
     const { income, expense } = await calculateTotals({ contactId });
     updateStatistics(container, income, expense);
-
+    
     // 重新渲染列表
     await renderRecordsList(container, contactId, currentFilter);
-  };
-
-  document.addEventListener('wallet-data-changed', handler);
-
-  // 页面销毁时自动移除监听器
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      mutation.removedNodes.forEach((node) => {
-        if (node === container || node.contains(container)) {
-          document.removeEventListener('wallet-data-changed', handler);
-          observer.disconnect();
-          logger.debug('[TransactionsUI] 已移除钱包变化监听器');
-        }
-      });
-    });
+    
+    logger.debug('[TransactionsUI] 往来记录已自动更新');
   });
-
-  observer.observe(document.body, { childList: true, subtree: true });
+  
+  // 监听页面移除，自动清理订阅
+  const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      for (const node of mutation.removedNodes) {
+        if (node === container) {
+          stateManager.unsubscribeAll(pageId);
+          observer.disconnect();
+          logger.debug('[TransactionsUI] 页面已关闭，已清理订阅');
+          return;
+        }
+      }
+    }
+  });
+  
+  if (container.parentNode) {
+    observer.observe(container.parentNode, { childList: true });
+  }
+  
+  logger.debug('[TransactionsUI] 已订阅钱包数据变化');
 }
 
 /**

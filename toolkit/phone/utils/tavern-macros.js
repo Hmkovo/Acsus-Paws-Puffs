@@ -22,6 +22,7 @@
 
 import logger from '../../../logger.js';
 import { extension_settings } from '../../../../../../extensions.js';
+import { getUserDisplayName } from './contact-display-helper.js';
 
 // 延迟导入，避免循环依赖
 let loadContacts, buildChatHistoryInfo, buildHistoryChatInfo, loadChatHistory, getChatSendSettings;
@@ -264,7 +265,7 @@ function getContactMessages(type, contactId, contact) {
     const STORAGE_KEY = 'acsusPawsPuffs';
     const chatKey = `chat_${contactId}`;
     const allMessages = extension_settings[STORAGE_KEY]?.phone?.chats?.[chatKey] || [];
-    const sendSettings = extension_settings[STORAGE_KEY]?.phone?.chatSettings?.[contactId] || {
+    const sendSettings = extension_settings[STORAGE_KEY]?.phone?.chatSendSettings?.[contactId] || {
       recentCount: 20,
       historyCount: 99
     };
@@ -315,9 +316,8 @@ function getContactMessages(type, contactId, contact) {
  * @returns {string} 格式化的消息文本
  */
 function formatMessagesForMacro(messages, contact) {
-  // 获取真实用户名（而不是硬编码"我"）
-  const STORAGE_KEY = 'acsusPawsPuffs';
-  const userName = extension_settings[STORAGE_KEY]?.phone?.userProfile?.displayName || '我';
+  // 获取真实用户名（从 SillyTavern 的 {{user}} 宏，和其他函数保持一致）
+  const userName = getUserDisplayName();
   
   const lines = [];
 

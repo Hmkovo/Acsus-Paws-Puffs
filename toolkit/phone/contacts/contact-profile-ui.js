@@ -9,6 +9,7 @@ import { getThumbnailUrl } from '../../../../../../../script.js';
 import { getSystemBackgrounds, showBackgroundPicker } from '../utils/background-picker.js';
 import { showInputPopup } from '../utils/popup-helper.js';
 import { syncContactDisplayName } from '../utils/contact-display-helper.js';
+import { stateManager } from '../utils/state-manager.js';
 
 /**
  * 渲染角色个人页
@@ -51,6 +52,9 @@ export async function renderContactProfile(contactId) {
 
     // 3. 设置个签更新事件监听器
     setupSignatureUpdateListener(contactId);
+
+    // 4. 为会员徽章绑定点击事件
+    await bindMembershipBadgeClickEvent(container, contact);
 
     logger.info('[ContactProfile] 角色个人页渲染完成:', contact.name);
     return fragment;
@@ -194,15 +198,54 @@ function createBadges(contact) {
   const badgesDiv = document.createElement('div');
   badgesDiv.className = 'contact-profile-badges';
 
-  // TODO: 暂时显示一颗星（1级），后期对接VIP系统
-  badgesDiv.innerHTML = `
-        <div class="contact-profile-badge-item">⭐</div>
-        <i class="fa-solid fa-chevron-right contact-profile-badges-arrow"></i>
-    `;
-
-  // 暂时不可点击
-  badgesDiv.style.opacity = '0.6';
-  badgesDiv.style.cursor = 'default';
+  // 创建徽章容器
+  const badgeItem = document.createElement('div');
+  badgeItem.className = 'contact-profile-badge-item';
+  
+  // 添加会员徽章（如果有）
+  if (contact.membership && contact.membership.type && contact.membership.type !== 'none') {
+    // 获取徽章文本
+    let badgeText = '';
+    switch (contact.membership.type) {
+      case 'vip':
+        badgeText = 'VIP';
+        break;
+      case 'svip':
+        badgeText = 'SVIP';
+        break;
+      case 'annual-svip':
+        badgeText = '年SVIP';
+        break;
+    }
+    
+    if (badgeText) {
+      const membershipBadge = document.createElement('span');
+      membershipBadge.className = 'membership-badge';
+      membershipBadge.style.marginRight = '0.5em';
+      membershipBadge.textContent = badgeText;
+      badgeItem.appendChild(membershipBadge);
+    }
+    
+    // 可点击
+    badgesDiv.style.opacity = '1';
+    badgesDiv.style.cursor = 'pointer';
+  } else {
+    // 暂时不可点击
+    badgesDiv.style.opacity = '0.6';
+    badgesDiv.style.cursor = 'default';
+  }
+  
+  // 添加等级星标（TODO: 后期对接等级系统）
+  const levelStar = document.createElement('span');
+  levelStar.textContent = '⭐';
+  badgeItem.appendChild(levelStar);
+  
+  badgesDiv.appendChild(badgeItem);
+  
+  // 添加箭头
+  const arrow = document.createElement('i');
+  arrow.className = 'fa-solid fa-chevron-right contact-profile-badges-arrow';
+  badgesDiv.appendChild(arrow);
 
   return badgesDiv;
 }
@@ -691,33 +734,25 @@ function createErrorView() {
   return fragment;
 }
 
-// 存储事件监听器（用于清理）
-let signatureUpdateHandler = null;
-
 /**
  * 设置个签更新事件监听器
  * 
  * @description
- * 监听 signature-data-changed 事件，当角色改签时自动更新显示
+ * 订阅 signature 状态变化，当角色改签时自动更新显示
  * 
  * @param {string} contactId - 联系人ID
  */
 function setupSignatureUpdateListener(contactId) {
-  // 移除旧的监听器（如果有）
-  if (signatureUpdateHandler) {
-    document.removeEventListener('signature-data-changed', signatureUpdateHandler);
-  }
+  const pageId = `contact-profile-${contactId}`;
 
-  // 创建新的监听器
-  signatureUpdateHandler = async (event) => {
-    const { targetType, contactId: changedContactId, signature } = event.detail;
-
+  // 订阅个签数据变化
+  stateManager.subscribe(pageId, 'signature', async (meta) => {
     // 检查是否匹配当前页面
-    if (targetType !== 'contact' || changedContactId !== contactId) {
+    if (meta.targetType !== 'contact' || meta.contactId !== contactId) {
       return;
     }
 
-    logger.debug('[ContactProfile] 检测到个签更新，刷新显示:', signature?.substring(0, 20));
+    logger.debug('[ContactProfile] 检测到个签更新，刷新显示');
 
     // 查找个签行元素
     const signatureRow = document.querySelector(`.contact-profile-signature-row[data-contact-id="${contactId}"]`);
@@ -726,28 +761,33 @@ function setupSignatureUpdateListener(contactId) {
       return;
     }
 
+    // 检查元素是否还在DOM中
+    if (!document.contains(signatureRow)) {
+      logger.debug('[ContactProfile] 页面已关闭，跳过刷新');
+      return;
+    }
+
     // 更新显示
     const signatureText = signatureRow.querySelector('.contact-profile-signature-text');
     if (signatureText) {
-      signatureText.textContent = signature || '';
+      // 获取最新个签数据
+      const data = await stateManager.get('signature');
+      const signature = data?.signature || '';
+      signatureText.textContent = signature;
       logger.info('[ContactProfile] 个签显示已更新');
     }
-  };
+  });
 
-  // 添加监听器
-  document.addEventListener('signature-data-changed', signatureUpdateHandler);
-
-  // 清理逻辑：使用 MutationObserver 监听页面被移除
+  // 监听页面移除，自动清理订阅
   const profilePage = document.querySelector('#page-contact-profile');
   if (profilePage) {
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         for (const node of mutation.removedNodes) {
           if (node === profilePage || node.contains?.(profilePage)) {
-            logger.debug('[ContactProfile] 页面已关闭，移除事件监听器');
-            document.removeEventListener('signature-data-changed', signatureUpdateHandler);
-            signatureUpdateHandler = null;
+            stateManager.unsubscribeAll(pageId);
             observer.disconnect();
+            logger.debug('[ContactProfile] 页面已关闭，已清理订阅');
             return;
           }
         }
@@ -759,6 +799,37 @@ function setupSignatureUpdateListener(contactId) {
     if (parent) {
       observer.observe(parent, { childList: true, subtree: true });
     }
+  }
+
+  logger.debug('[ContactProfile] 已订阅个签数据变化');
+}
+
+/**
+ * 为会员徽章绑定点击事件
+ * 
+ * @async
+ * @param {HTMLElement} container - 页面容器
+ * @param {Object} contact - 联系人对象
+ */
+async function bindMembershipBadgeClickEvent(container, contact) {
+  // 只有角色有会员时才绑定
+  if (!contact.membership || !contact.membership.type || contact.membership.type === 'none') {
+    return;
+  }
+
+  // 查找徽章元素
+  const badgeElement = container.querySelector('.membership-badge');
+  if (!badgeElement) {
+    logger.warn('[ContactProfile] 未找到会员徽章元素');
+    return;
+  }
+
+  try {
+    const { bindMembershipBadgeClick } = await import('../utils/membership-badge-helper.js');
+    await bindMembershipBadgeClick(badgeElement, contact.id, contact.name);
+    logger.debug('[ContactProfile] 已绑定会员徽章点击事件:', contact.name);
+  } catch (error) {
+    logger.error('[ContactProfile] 绑定会员徽章点击事件失败:', error);
   }
 }
 

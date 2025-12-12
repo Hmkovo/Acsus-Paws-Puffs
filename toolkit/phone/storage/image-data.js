@@ -6,12 +6,13 @@
 import { extension_settings } from '../../../../../../extensions.js';
 import { saveSettingsDebounced as saveSetting, getRequestHeaders } from '../../../../../../../script.js';
 import logger from '../../../logger.js';
+import { stateManager } from '../utils/state-manager.js';
 
 /**
  * 获取上传图片列表
- * 
+ *
  * @returns {Array<Object>} 图片数组
- * 
+ *
  * @description
  * 返回格式：
  * [
@@ -31,7 +32,7 @@ export function getUploadedImages() {
     if (!extension_settings.acsusPawsPuffs.phone) {
         extension_settings.acsusPawsPuffs.phone = {};
     }
-    
+
     // 数据迁移：兼容旧版本数组格式
     if (!extension_settings.acsusPawsPuffs.phone.uploadedImages) {
         extension_settings.acsusPawsPuffs.phone.uploadedImages = { items: [] };
@@ -41,18 +42,18 @@ export function getUploadedImages() {
         const oldData = extension_settings.acsusPawsPuffs.phone.uploadedImages;
         extension_settings.acsusPawsPuffs.phone.uploadedImages = { items: oldData };
         logger.info('[ImageData] 数据迁移完成，共', oldData.length, '条记录');
-        
+
         // 【关键修复】立即保存迁移后的数据，避免下次刷新又触发迁移
         saveSetting();
         logger.info('[ImageData] 已保存迁移后的数据到配置文件');
     }
-    
+
     return extension_settings.acsusPawsPuffs.phone.uploadedImages.items;
 }
 
 /**
  * 保存图片记录
- * 
+ *
  * @async
  * @param {Object} image - 图片对象
  * @param {string} image.id - 图片ID
@@ -79,22 +80,22 @@ export async function saveImage(image) {
 
     await saveSetting();
 
-    // 触发数据变化事件，通知其他页面刷新
-    const event = new CustomEvent('phone-image-data-changed', {
-        detail: { action: index !== -1 ? 'update' : 'add', image: image }
+    // 通知订阅者数据已变化
+    await stateManager.set('images', getUploadedImages(), {
+        action: index !== -1 ? 'update' : 'add',
+        image: image
     });
-    document.dispatchEvent(event);
 
     return true;
 }
 
 /**
  * 删除图片（批量）
- * 
+ *
  * @async
  * @param {Array<string>} filenames - 要删除的文件名列表
  * @returns {Promise<{deletedCount: number, successCount: number, failCount: number}>} 删除结果
- * 
+ *
  * @description
  * 删除图片数据并删除服务器上的图片文件
  * 使用 /api/files/delete 端点删除实际文件
@@ -140,12 +141,14 @@ export async function deleteImages(filenames) {
 
     await saveSetting();
 
-    // 触发数据变化事件，通知其他页面刷新
+    // 通知订阅者数据已变化
     if (deletedCount > 0) {
-        const event = new CustomEvent('phone-image-data-changed', {
-            detail: { action: 'delete', count: deletedCount, successCount, failCount }
+        await stateManager.set('images', getUploadedImages(), {
+            action: 'delete',
+            count: deletedCount,
+            successCount,
+            failCount
         });
-        document.dispatchEvent(event);
     }
 
     return { deletedCount, successCount, failCount };
@@ -153,7 +156,7 @@ export async function deleteImages(filenames) {
 
 /**
  * 根据文件名查找图片
- * 
+ *
  * @param {string} filename - 文件名
  * @returns {Object|null} 图片对象
  */
@@ -164,7 +167,7 @@ export function findImageByFilename(filename) {
 
 /**
  * 根据ID查找图片
- * 
+ *
  * @param {string} id - 图片ID
  * @returns {Object|null} 图片对象
  */
@@ -175,7 +178,7 @@ export function findImageById(id) {
 
 /**
  * 清空所有图片记录（不删除文件）
- * 
+ *
  * @async
  * @description
  * 用于数据重置或迁移，只清空记录，不删除实际文件
@@ -184,12 +187,12 @@ export async function clearAllImages() {
     const count = getUploadedImages().length;
     extension_settings.acsusPawsPuffs.phone.uploadedImages.items = [];
     await saveSetting();
-    
+
     logger.info('[ImageData] 已清空所有图片记录，数量:', count);
-    
-    // 触发数据变化事件
-    const event = new CustomEvent('phone-image-data-changed', {
-        detail: { action: 'clear', count }
+
+    // 通知订阅者数据已变化
+    await stateManager.set('images', [], {
+        action: 'clear',
+        count
     });
-    document.dispatchEvent(event);
 }

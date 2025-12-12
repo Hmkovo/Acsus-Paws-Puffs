@@ -11,15 +11,17 @@ import { showInputPopup, showCustomPopup } from '../utils/popup-helper.js';
 import { showSuccessToast, showWarningToast, showErrorToast, showInfoToast } from '../ui-components/toast-notification.js';
 import { getUserAvatar as getSTUserAvatar, user_avatar } from '../../../../../../../scripts/personas.js';
 import { getUserDisplayName } from '../utils/contact-display-helper.js';
+import { stateManager } from '../utils/state-manager.js';
+import { toggleTheme, getTheme, getThemeIcon, getThemeText } from '../utils/theme-manager.js';
 
 /**
  * 渲染用户个人主页
- * 
+ *
  * @description
  * 显示用户自己的个人主页，包括头像、名字、个性签名、
  * 功能菜单列表（相册、收藏、钱包等）、底部按钮（设置、夜间、天气）。
  * 顶部背景图可点击更换。
- * 
+ *
  * @async
  * @returns {Promise<DocumentFragment>} 用户个人主页内容片段
  */
@@ -45,6 +47,9 @@ export async function renderUserProfile() {
     // 3. 底部固定按钮组
     container.appendChild(await createFooterButtons(userConfig));
 
+    // ✅ 注册监听器：会员数据变化时自动刷新会员徽章
+    setupUserMembershipChangeListener(container);
+
     fragment.appendChild(container);
 
     logger.info('[UserProfile] 用户个人主页渲染完成');
@@ -57,7 +62,7 @@ export async function renderUserProfile() {
 
 /**
  * 创建顶部背景区
- * 
+ *
  * @param {Object} userConfig - 用户配置对象
  * @returns {HTMLElement} 顶部背景容器
  */
@@ -99,7 +104,7 @@ function createHeaderBackground(userConfig) {
 
 /**
  * 创建用户信息卡片
- * 
+ *
  * @param {Object} userConfig - 用户配置对象
  * @returns {HTMLElement} 用户信息卡片
  */
@@ -120,7 +125,16 @@ function createUserInfoCard(userConfig) {
   // 用户名（使用统一工具函数）
   const name = document.createElement('div');
   name.className = 'user-profile-name';
-  name.textContent = getUserDisplayName();
+
+  // 名字文本
+  const nameText = document.createElement('span');
+  nameText.textContent = getUserDisplayName();
+  name.appendChild(nameText);
+
+  // 读取用户会员数据并添加徽章（异步）
+  addUserMembershipBadge(name).catch(err => {
+    logger.error('[UserProfile] 添加用户会员徽章失败:', err);
+  });
 
   // 个性签名（可点击编辑）
   const signature = document.createElement('div');
@@ -145,7 +159,7 @@ function createUserInfoCard(userConfig) {
 
 /**
  * 创建功能菜单列表
- * 
+ *
  * @returns {HTMLElement} 功能菜单容器
  */
 function createMenuList() {
@@ -161,7 +175,8 @@ function createMenuList() {
     { icon: 'fa-bookmark', label: '收藏', handler: () => handleOpenFavorites() },  // 已实现
     { icon: 'fa-file', label: '文件', handler: null },  // 占位
     { icon: 'fa-wallet', label: '钱包', handler: () => handleOpenWallet() },  // 已实现
-    { icon: 'fa-palette', label: '个性装扮', handler: null },  // 占位
+    { icon: 'fa-crown', label: '会员中心', handler: () => handleOpenMembershipCenter() },  // 已实现
+    { icon: 'fa-palette', label: '个性装扮', handler: () => handleOpenCustomization() },  // 已实现
     { icon: 'fa-pen', label: '历史个签', handler: () => handleOpenSignatureHistory() },  // 已实现
     { icon: 'fa-circle-info', label: '甜品指南', handler: () => handleOpenHelpCenter() }  // 已实现
   ];
@@ -190,7 +205,7 @@ function createMenuList() {
 
 /**
  * 创建底部固定按钮组
- * 
+ *
  * @async
  * @param {Object} userConfig - 用户配置对象
  * @returns {Promise<HTMLElement>} 底部按钮组容器
@@ -210,13 +225,40 @@ async function createFooterButtons(userConfig) {
     handleOpenSettings();
   });
 
-  // 夜间按钮（占位）
+  // 夜间模式按钮
   const nightBtn = document.createElement('button');
   nightBtn.className = 'user-footer-btn';
+
+  // 读取当前主题，设置按钮显示
+  const currentTheme = await getTheme();
+  const icon = getThemeIcon(currentTheme);
+  const text = getThemeText(currentTheme);
+
   nightBtn.innerHTML = `
-        <i class="fa-solid fa-moon"></i>
-        <span>夜间</span>
+        <i class="fa-solid ${icon}"></i>
+        <span>${text}</span>
     `;
+
+  // 添加点击事件
+  nightBtn.addEventListener('click', async () => {
+    logger.debug('[UserProfile] 点击夜间模式按钮');
+
+    // 切换主题
+    const newTheme = await toggleTheme();
+
+    // 更新按钮显示
+    const newIcon = getThemeIcon(newTheme);
+    const newText = getThemeText(newTheme);
+    nightBtn.innerHTML = `
+        <i class="fa-solid ${newIcon}"></i>
+        <span>${newText}</span>
+    `;
+
+    // Toast提示当前模式（不是按钮文字）
+    const currentModeText = newTheme === 'dark' ? '夜间' : '日间';
+    logger.info(`[UserProfile] 主题已切换为: ${newTheme}`);
+    showSuccessToast(`已切换到${currentModeText}模式`);
+  });
 
   // 天气按钮
   const weatherBtn = document.createElement('button');
@@ -246,7 +288,7 @@ async function createFooterButtons(userConfig) {
 
 /**
  * 处理关闭按钮点击
- * 
+ *
  * @async
  */
 async function handleClose() {
@@ -264,7 +306,7 @@ async function handleClose() {
 
 /**
  * 处理编辑个性签名
- * 
+ *
  * @async
  */
 async function handleEditSignature() {
@@ -333,7 +375,7 @@ async function handleEditSignature() {
 
 /**
  * 局部更新签名显示
- * 
+ *
  * @param {string} newSignature - 新签名
  */
 function updateSignatureDisplay(newSignature) {
@@ -346,7 +388,7 @@ function updateSignatureDisplay(newSignature) {
 
 /**
  * 处理更换背景图
- * 
+ *
  * @async
  */
 async function handleChangeBackground() {
@@ -384,7 +426,7 @@ async function handleChangeBackground() {
 
 /**
  * 局部更新背景图显示
- * 
+ *
  * @param {string} bgUrl - 背景图URL
  */
 function updateBackgroundDisplay(bgUrl) {
@@ -397,10 +439,10 @@ function updateBackgroundDisplay(bgUrl) {
 
 /**
  * 打开设置页
- * 
+ *
  * @description
  * 直接调用 showPage 显示用户设置页（不用自定义事件，避免重复触发）
- * 
+ *
  * @async
  */
 async function handleOpenSettings() {
@@ -418,10 +460,10 @@ async function handleOpenSettings() {
 
 /**
  * 处理打开钱包页面
- * 
+ *
  * @description
  * 直接调用 showPage 显示钱包页面（不用自定义事件）
- * 
+ *
  * @async
  */
 async function handleOpenWallet() {
@@ -439,12 +481,12 @@ async function handleOpenWallet() {
 
 /**
  * 处理天气按钮点击
- * 
+ *
  * @description
  * 显示天气设置弹窗，支持两种模式：
  * 1. 自定义模式（默认）- 手动输入城市、温度、选择图标
  * 2. 在线获取模式 - 输入城市名，调用API获取天气
- * 
+ *
  * @async
  */
 async function handleWeatherClick() {
@@ -484,14 +526,14 @@ async function handleWeatherClick() {
 
 /**
  * 显示天气设置弹窗
- * 
+ *
  * @description
  * 自定义弹窗，支持两种模式：
  * - 自定义模式（默认）：手动输入城市、温度、选择图标
  * - 在线获取模式：调用wttr.in API获取真实天气
- * 
+ *
  * 点击"保存"时会自动等待正在进行的获取请求，无需手动等待。
- * 
+ *
  * @async
  * @param {Object} userConfig - 用户配置对象
  * @returns {Promise<Object|null>} 天气数据 {city, temp, icon} 或null（取消）
@@ -532,12 +574,12 @@ async function showWeatherSettingsPopup(userConfig) {
       <div id="weather-custom-mode" class="weather-mode-panel">
         <div class="weather-input-group">
           <label>城市名：</label>
-          <input type="text" id="weather-custom-city" class="phone-input" 
+          <input type="text" id="weather-custom-city" class="phone-input"
                  placeholder="例如：北京" value="${currentCity}" maxlength="20">
         </div>
         <div class="weather-input-group">
           <label>温度：</label>
-          <input type="number" id="weather-custom-temp" class="phone-input" 
+          <input type="number" id="weather-custom-temp" class="phone-input"
                  placeholder="29" value="${currentTemp}" min="-50" max="60">
           <span class="weather-unit">°C</span>
         </div>
@@ -545,7 +587,7 @@ async function showWeatherSettingsPopup(userConfig) {
           <label>天气图标：</label>
           <div class="weather-icon-grid" id="weather-icon-grid">
             ${weatherIcons.map((item) => `
-              <div class="weather-icon-item ${item.name === currentIcon ? 'selected' : ''}" 
+              <div class="weather-icon-item ${item.name === currentIcon ? 'selected' : ''}"
                    data-icon="${item.name}" title="${item.label}">
                 <span class="weather-icon-emoji">${item.icon}</span>
                 <i class="fa-solid fa-${item.name}"></i>
@@ -559,7 +601,7 @@ async function showWeatherSettingsPopup(userConfig) {
       <div id="weather-online-mode" class="weather-mode-panel" style="display: none;">
         <div class="weather-input-group">
           <label>城市名：</label>
-          <input type="text" id="weather-online-city" class="phone-input" 
+          <input type="text" id="weather-online-city" class="phone-input"
                  placeholder="例如：北京、上海、广州" value="${currentCity}" maxlength="20">
         </div>
         <button id="weather-fetch-btn" class="phone-btn-primary">
@@ -567,7 +609,7 @@ async function showWeatherSettingsPopup(userConfig) {
         </button>
         <div id="weather-fetch-result" class="weather-fetch-result"></div>
         <p class="weather-hint">
-          <i class="fa-solid fa-circle-info"></i> 
+          <i class="fa-solid fa-circle-info"></i>
           提示：获取不稳定，如失败请过一会重试
         </p>
       </div>
@@ -732,7 +774,7 @@ async function showWeatherSettingsPopup(userConfig) {
 
 /**
  * 局部更新天气按钮显示
- * 
+ *
  * @param {Object} weather - 天气数据
  * @param {string} weather.temp - 温度
  * @param {string} weather.city - 城市名
@@ -750,7 +792,7 @@ function updateWeatherDisplay(weather) {
 
 /**
  * 创建错误视图
- * 
+ *
  * @returns {DocumentFragment} 错误视图片段
  */
 function createErrorView() {
@@ -764,7 +806,7 @@ function createErrorView() {
 
 /**
  * 加载用户配置
- * 
+ *
  * @async
  * @returns {Promise<Object>} 用户配置对象
  */
@@ -794,7 +836,7 @@ async function loadUserConfig() {
 
 /**
  * 保存用户配置
- * 
+ *
  * @async
  * @param {Object} config - 用户配置对象
  */
@@ -810,10 +852,10 @@ async function saveUserConfig(config) {
 
 /**
  * 获取用户头像
- * 
+ *
  * @description
  * 从 SillyTavern 的 personas.js 获取当前用户头像路径
- * 
+ *
  * @returns {string} 用户头像URL
  */
 function getUserAvatar() {
@@ -822,7 +864,7 @@ function getUserAvatar() {
 
 /**
  * 处理打开收藏列表
- * 
+ *
  * @async
  */
 async function handleOpenFavorites() {
@@ -836,8 +878,23 @@ async function handleOpenFavorites() {
 }
 
 /**
+ * 处理打开会员中心
+ *
+ * @async
+ */
+async function handleOpenMembershipCenter() {
+  logger.info('[UserProfile] 打开会员中心');
+
+  const overlayElement = document.querySelector('.phone-overlay');
+  if (overlayElement) {
+    const { showPage } = await import('../phone-main-ui.js');
+    await showPage(overlayElement, 'membership-center');
+  }
+}
+
+/**
  * 处理打开帮助中心
- * 
+ *
  * @async
  */
 async function handleOpenHelpCenter() {
@@ -852,7 +909,7 @@ async function handleOpenHelpCenter() {
 
 /**
  * 处理打开个签历史页面
- * 
+ *
  * @async
  */
 async function handleOpenSignatureHistory() {
@@ -863,5 +920,118 @@ async function handleOpenSignatureHistory() {
     const { showPage } = await import('../phone-main-ui.js');
     await showPage(overlayElement, 'signature-history', { targetType: 'user' });
   }
+}
+
+/**
+ * 为用户名元素添加会员徽章
+ *
+ * @description
+ * 读取用户会员数据，如果有会员则添加徽章和名字颜色
+ *
+ * @async
+ * @param {HTMLElement} nameElement - 用户名元素
+ */
+async function addUserMembershipBadge(nameElement) {
+  try {
+    const { getUserMembership } = await import('../data-storage/storage-membership.js');
+    const { addMembershipBadgeToName } = await import('../utils/membership-badge-helper.js');
+
+    const membership = await getUserMembership();
+
+    if (membership && membership.type && membership.type !== 'none') {
+      addMembershipBadgeToName(nameElement, membership.type);
+      logger.debug('[UserProfile] 已添加用户会员徽章:', membership.type);
+    }
+  } catch (error) {
+    logger.error('[UserProfile] 读取用户会员数据失败:', error);
+  }
+}
+
+/**
+ * 设置用户会员变化监听器
+ *
+ * @description
+ * 订阅 userMembership 状态变化，自动刷新用户名称上的会员徽章
+ * 当角色送用户会员时，自动更新UI显示
+ *
+ * @param {HTMLElement} container - 页面容器
+ */
+function setupUserMembershipChangeListener(container) {
+  const pageId = 'user-profile';
+
+  // 订阅用户会员数据变化
+  // 🔥 修复：键名必须与 stateManager.set 保持一致（都用 'userMembership'）
+  stateManager.subscribe(pageId, 'userMembership', async (meta) => {
+    logger.info('[UserProfile] 收到会员数据变化通知', meta);
+
+    // 检查页面是否还存在
+    if (!document.contains(container)) {
+      logger.debug('[UserProfile] 页面已关闭，跳过刷新');
+      return;
+    }
+
+    // 查找用户名称元素
+    const nameElement = container.querySelector('.user-profile-name');
+    if (!nameElement) {
+      logger.warn('[UserProfile] 未找到用户名称元素');
+      return;
+    }
+
+    // 移除旧徽章
+    const oldBadge = nameElement.querySelector('.membership-badge');
+    if (oldBadge) {
+      oldBadge.remove();
+    }
+
+    // 移除旧颜色class
+    nameElement.classList.remove('membership-vip', 'membership-svip', 'membership-annual-svip');
+
+    // 重新添加会员徽章
+    await addUserMembershipBadge(nameElement);
+
+    logger.debug('[UserProfile] 会员徽章已自动更新');
+  });
+
+  // 监听页面移除，自动清理订阅
+  const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      for (const node of mutation.removedNodes) {
+        if (node === container || node.contains?.(container)) {
+          stateManager.unsubscribeAll(pageId);
+          observer.disconnect();
+          logger.debug('[UserProfile] 页面已关闭，已清理订阅');
+          return;
+        }
+      }
+    }
+  });
+
+  const parent = container.parentElement;
+  if (parent) {
+    observer.observe(parent, { childList: true, subtree: true });
+  }
+
+  logger.debug('[UserProfile] 已订阅用户会员数据变化');
+}
+
+/**
+ * 打开个性装扮页面
+ *
+ * @description
+ * 打开装扮商店，用户可以购买和应用气泡、头像框、主题等装扮
+ *
+ * **价格更新机制（被动触发）**：
+ * - 每次点击菜单打开页面时，都会重新渲染整个装扮页面
+ * - 渲染时自动调用 calculatePrice() 获取最新会员状态
+ * - 不使用全局监听器，避免内存占用
+ * - 即使用户在其他页面购买/升级会员，下次打开装扮页面时价格会自动更新
+ */
+function handleOpenCustomization() {
+  logger.info('[UserProfile] 打开个性装扮页面');
+
+  const overlay = document.querySelector('.phone-overlay');
+  import('../phone-main-ui.js').then(({ showPage }) => {
+    showPage(overlay, 'customization');
+  });
 }
 

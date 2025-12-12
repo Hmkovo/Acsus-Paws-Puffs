@@ -726,6 +726,17 @@ export class PhoneAPI {
             message.amount = msg.amount;    // 转账金额
             message.message = msg.message;  // 转账留言
             break;
+          case 'gift-membership':
+            message.membershipType = msg.membershipType;  // 会员类型（vip/svip）
+            message.months = msg.months;                  // 月数
+            message.duration = msg.duration;              // 时长标识（monthly/annual）
+            message.content = msg.content;                // 显示文本
+            break;
+          case 'buy-membership':
+            message.membershipType = msg.membershipType;  // 会员类型（vip/svip）
+            message.months = msg.months;                  // 月数
+            message.content = msg.content;                // 显示文本
+            break;
           case 'image':
             message.description = msg.description;  // 图片描述
             message.imageUrl = msg.imageUrl;        // 图片链接（可选）
@@ -775,17 +786,10 @@ export class PhoneAPI {
         // ✅ 保存到目标联系人的聊天记录（不是当前界面的contactId）
         await saveChatMessage(matchedContactId, messageToSave);
 
-        // ✅ 转账消息自动到账（数据层处理，不依赖UI）
-        if (message.type === 'transfer' && message.sender === 'contact') {
-          const { receiveTransfer } = await import('../data-storage/storage-wallet.js');
-          try {
-            // ✅ 传递消息ID，建立转账记录和聊天消息的关联
-            await receiveTransfer(matchedContactId, message.amount, message.message || '', message.id);
-            logger.info('[PhoneAPI] AI转账已自动到账:', message.amount, '(数据层处理)');
-          } catch (error) {
-            logger.error('[PhoneAPI] AI转账到账失败:', error.message);
-          }
-        }
+        // ❌ 已删除：转账消息自动到账逻辑
+        // 理由：业务逻辑已统一到 transfer-message.js 渲染器中处理
+        // 现在无论是重roll、重新应用还是手动添加，都会在渲染时自动保存转账记录
+        // 这样架构更统一，避免"重新应用"绕过此处导致转账不生效的问题
 
         // 如果不是第一条消息，先延迟（模拟打字时间）
         if (i > 0) {

@@ -36,6 +36,9 @@ let longPressTimer = null;
 let isDragging = false;
 let touchStartPos = { x: 0, y: 0 };
 
+// 🔑 触发菜单的气泡元素（用于防止触发源的点击关闭菜单）
+let triggerElement = null;
+
 /**
  * 显示消息操作菜单
  * 
@@ -61,14 +64,17 @@ export function showMessageActions(messageElement, message, contactId, options =
   const menu = createActionsMenu(message, contactId, messageElement, options);
   document.body.appendChild(menu);
   currentMenu = menu;
+  triggerElement = messageElement; // 🔑 记录触发源
 
   // 计算位置（自适应上/下）
   positionMenu(menu, messageElement);
 
-  // 点击空白处关闭
+  // 点击空白处关闭（延迟500ms，避免捕获松手的click事件）
+  // ✅ 从300ms增加到500ms，给PC端和移动端足够的事件处理缓冲时间
   setTimeout(() => {
     document.addEventListener('click', handleOutsideClick);
-  }, 0);
+    triggerElement = null; // 清除触发源标记（500ms后允许气泡点击关闭菜单）
+  }, 500);
 
   logger.debug('[MessageActions] 显示操作菜单', options.disableQuote ? '（禁用引用）' : '');
 }
@@ -176,6 +182,7 @@ export function closeMessageActions() {
   if (currentMenu) {
     currentMenu.remove();
     currentMenu = null;
+    triggerElement = null; // 清除触发源标记
     document.removeEventListener('click', handleOutsideClick);
     logger.debug('[MessageActions] 关闭操作菜单');
   }
@@ -344,11 +351,24 @@ function positionMenu(menu, messageElement) {
  * 
  * @private
  * @param {MouseEvent} e - 点击事件
+ * 
+ * @description
+ * ✅ 优化：防止触发菜单的气泡点击关闭菜单
+ * - 忽略菜单内部的点击
+ * - 忽略触发源气泡的点击（在500ms缓冲期内）
+ * - 点击其他区域关闭菜单
  */
 function handleOutsideClick(e) {
-  if (currentMenu && !currentMenu.contains(e.target)) {
-    closeMessageActions();
-  }
+  if (!currentMenu) return;
+
+  // 🔑 点击菜单内部 → 不关闭
+  if (currentMenu.contains(e.target)) return;
+
+  // 🔑 点击触发源气泡 → 不关闭（防止松手的click事件关闭菜单）
+  if (triggerElement && triggerElement.contains(e.target)) return;
+
+  // ✅ 点击其他区域 → 关闭菜单
+  closeMessageActions();
 }
 
 /**

@@ -1,0 +1,510 @@
+/**
+ * 聊天界面美化 - 头像布局样式
+ * @module beautify/beautify.css
+ */
+
+/* ==========================================
+   CSS 变量（继承酒馆主题）
+   ========================================== */
+
+:root {
+    --beautify-header-height: 220px;
+    --beautify-bg-height: 160px;
+    --beautify-avatar-size: 70px;
+    --beautify-transition-duration: 0.3s;
+    --beautify-msg-bottom-padding: 80px;
+}
+
+/* ==========================================
+   悬浮头像栏容器
+   ========================================== */
+
+.beautify-sticky-header {
+    display: none;
+    /* 默认隐藏，启用后由 JS 设置为 flex */
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    /* 确保占满宽度 */
+    width: 100%;
+    z-index: 100;
+    /* 添加回背景色 */
+    background: var(--SmartThemeBlurTintColor, rgba(0, 0, 0, 0.5));
+    backdrop-filter: blur(10px);
+    border-radius: 0px;
+    overflow: visible;
+    /* 允许头像下半部分溢出 */
+    /* 过渡动画 */
+    transition: top var(--beautify-transition-duration) ease;
+}
+
+/* 悬浮栏启用时，最后一条消息添加底部间距 */
+/* 使用 :has() 检测悬浮栏是否显示（display: flex） */
+body:has(.beautify-sticky-header[style*="display: flex"]) #chat .mes.last_mes {
+    margin-bottom: var(--beautify-msg-bottom-padding, 80px) !important;
+}
+
+/* ==========================================
+   沉浸模式：整体布局调整
+   ========================================== */
+
+/* 沉浸模式时，#sheld 往上移动填补导航栏空隙 */
+body:has(#top-bar.beautify-hidden) #sheld {
+    top: 0 !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    transition: top var(--beautify-transition-duration) ease,
+        height var(--beautify-transition-duration) ease;
+}
+
+/* 沉浸模式时，输入框用绝对定位固定在底部，不跟着移动 */
+body:has(#top-bar.beautify-hidden) #form_sheld {
+    position: absolute !important;
+    bottom: 10px !important;
+    left: 10px !important;
+    right: 10px !important;
+    width: auto !important;
+    z-index: 3100 !important;
+    margin: 0 !important;
+}
+
+/* 沉浸模式时，#chat 撑满 + 底部留白给输入框空间 */
+body:has(#top-bar.beautify-hidden) #chat {
+    max-height: none !important;
+    height: 100% !important;
+    padding-bottom: calc(var(--bottomFormBlockSize) + 35px) !important;
+}
+
+/* 为 #sheld 添加过渡动画（非沉浸模式也需要） */
+#sheld {
+    transition: top var(--beautify-transition-duration) ease,
+        height var(--beautify-transition-duration) ease;
+}
+
+/* ==========================================
+   背景图区域（包含操作按钮和消息信息）
+   ========================================== */
+
+.beautify-bg-container {
+    position: relative;
+    width: 100%;
+    height: var(--beautify-bg-height);
+    border-radius: var(--beautify-bg-radius, 0 0 12px 12px);
+    overflow: visible;
+    /* 允许头像溢出 */
+}
+
+.beautify-bg {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--SmartThemeBotMesBlurTintColor, #3a3a3a);
+    cursor: pointer;
+    transition: filter var(--beautify-transition-duration), border-radius 0.2s ease;
+    border-radius: var(--beautify-bg-radius, 0 0 12px 12px);
+}
+
+.beautify-bg:hover {
+    filter: brightness(0.9);
+}
+
+/* 右上角锁定按钮 - 低调设计 */
+.beautify-lock-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--SmartThemeBodyColor, #fff);
+    opacity: 0.3;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity var(--beautify-transition-duration), color var(--beautify-transition-duration);
+    z-index: 10;
+}
+
+.beautify-lock-btn:hover {
+    opacity: 0.7;
+}
+
+.beautify-lock-btn i {
+    font-size: 12px;
+}
+
+/* 锁定状态：透明度变高 */
+.beautify-sticky-header.is-locked .beautify-lock-btn {
+    color: #fbbf24;
+    opacity: 0.8;
+}
+
+/* ==========================================
+   头像信息区域（在背景图底部，透明背景）
+   ========================================== */
+
+.beautify-info-row {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: flex-end;
+    padding: 8px 16px;
+    gap: 12px;
+    /* 底部渐变遮罩已移除，使用纯净背景 */
+    /* background: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent); */
+    border-radius: var(--beautify-bg-radius, 0 0 12px 12px);
+    /* z-index: 5 确保在装饰条之上 */
+    z-index: 5;
+}
+
+/* 头像容器 - 头像下半部分露出悬浮栏 */
+.beautify-avatar-wrapper {
+    flex-shrink: 0;
+    position: relative;
+    /* 头像一半在悬浮栏内，一半露出 */
+    margin-bottom: calc(var(--beautify-avatar-size) / -2);
+}
+
+.beautify-avatar {
+    width: var(--beautify-avatar-size);
+    height: var(--beautify-avatar-size);
+    border-radius: var(--beautify-avatar-radius, 50%);
+    object-fit: cover;
+    /* 边框：使用 CSS 变量控制 */
+    border: var(--beautify-avatar-border-width, 3px) solid var(--beautify-avatar-border-color, var(--SmartThemeBodyColor, #fff));
+    /* 阴影：使用 CSS 变量控制 */
+    box-shadow: 0 2px 8px var(--beautify-avatar-shadow-color, rgba(0, 0, 0, 0.3));
+    cursor: pointer;
+    /* 头像切换过渡 */
+    transition: transform 0.2s ease, opacity 0.4s ease-in-out, border 0.2s ease, box-shadow 0.2s ease, border-radius 0.2s ease;
+}
+
+.beautify-avatar:hover {
+    transform: scale(1.05);
+}
+
+/* 头像切换动画：淡出状态（不缩放，只淡化） */
+.beautify-avatar.switching {
+    opacity: 0;
+}
+
+/* 头像框叠加层 */
+.beautify-avatar-frame {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: calc(var(--beautify-avatar-size) * 1.3);
+    height: calc(var(--beautify-avatar-size) * 1.3);
+    transform: translate(-50%, -50%);
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* 头像旋转动画（唱片效果） */
+@keyframes beautify-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.beautify-sticky-header.avatar-spin .beautify-avatar {
+    animation: beautify-spin 8s linear infinite;
+}
+
+.beautify-sticky-header.avatar-spin .beautify-avatar:hover {
+    animation-play-state: paused;
+    transform: scale(1.05);
+}
+
+/* 消息信息 */
+.beautify-message-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    /* 允许文本截断 */
+}
+
+.beautify-name {
+    font-size: calc(1.1em * var(--beautify-info-size, 1));
+    font-weight: 600;
+    color: var(--beautify-info-color, var(--SmartThemeBodyColor, #fff));
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: font-size 0.2s ease, color 0.2s ease;
+}
+
+.beautify-meta {
+    display: flex;
+    gap: 8px;
+    font-size: calc(0.85em * var(--beautify-info-size, 1));
+    color: var(--beautify-info-color, var(--SmartThemeBodyColor, rgba(255, 255, 255, 0.7)));
+    flex-wrap: wrap;
+    transition: font-size 0.2s ease, color 0.2s ease;
+}
+
+.beautify-meta span {
+    white-space: nowrap;
+}
+
+/* ==========================================
+   头像位置动态切换（Char左/User右）
+   ========================================== */
+
+/* User 消息：头像在右边 */
+.beautify-sticky-header.is-user .beautify-info-row {
+    flex-direction: row-reverse;
+}
+
+.beautify-sticky-header.is-user .beautify-message-info {
+    text-align: right;
+    align-items: flex-end;
+}
+
+/* Char 消息：头像在左边（默认） */
+.beautify-sticky-header.is-char .beautify-info-row {
+    flex-direction: row;
+}
+
+.beautify-sticky-header.is-char .beautify-message-info {
+    text-align: left;
+    align-items: flex-start;
+}
+
+/* ==========================================
+   翻页按钮（仅最新 char 消息显示）
+   ========================================== */
+
+.beautify-swipe-controls {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 8px 0 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.beautify-swipe-left,
+.beautify-swipe-right {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--SmartThemeBlurTintColor, rgba(255, 255, 255, 0.1));
+    color: var(--SmartThemeBodyColor, #fff);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--beautify-transition-duration);
+}
+
+.beautify-swipe-left:hover,
+.beautify-swipe-right:hover {
+    background: var(--SmartThemeQuoteColor, rgba(255, 255, 255, 0.2));
+    transform: scale(1.1);
+}
+
+.beautify-swipe-counter {
+    font-size: 0.9em;
+    color: var(--SmartThemeBodyColor, rgba(255, 255, 255, 0.8));
+    min-width: 40px;
+    text-align: center;
+}
+
+/* ==========================================
+   沉浸模式：隐藏顶部导航栏
+   ========================================== */
+
+#top-bar,
+#top-settings-holder {
+    transition: transform var(--beautify-transition-duration) ease,
+        opacity var(--beautify-transition-duration) ease;
+}
+
+#top-bar.beautify-hidden,
+#top-settings-holder.beautify-hidden {
+    transform: translateY(calc(-100% - 10px));
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* ==========================================
+   响应式：已移除，由用户自定义控制
+   ========================================== */
+
+/* ==========================================
+   全宽文字模式
+   隐藏头像/名字栏，文字可调宽度，翻页按钮移到底部
+
+   宽度控制原理：
+   - --beautify-fullwidth-padding 控制左右留白
+   - 0% = padding 10px（最宽，几乎占满）
+   - 100% = padding 25%（最窄，约50%屏幕宽度）
+   - 计算公式：padding = 10px + (滑块值% * 0.25 * 屏幕宽度)
+   - 简化为：padding = calc(10px + var(--beautify-fullwidth-padding))
+   ========================================== */
+
+/* CSS 变量默认值 */
+:root {
+    --beautify-fullwidth-padding: 0%;
+}
+
+/* 隐藏头像区域（包含头像、楼层号、计时器、token计数） */
+body.beautify-fullwidth-mode #chat .mes .mesAvatarWrapper {
+    display: none !important;
+}
+
+/* 隐藏名字和时间戳，但保留操作按钮 */
+body.beautify-fullwidth-mode #chat .mes .mes_block .ch_name .name_text,
+body.beautify-fullwidth-mode #chat .mes .mes_block .ch_name .timestamp,
+body.beautify-fullwidth-mode #chat .mes .mes_block .ch_name .timestamp-icon,
+body.beautify-fullwidth-mode #chat .mes .mes_block .ch_name .mes_ghost {
+    display: none !important;
+}
+
+/* 名字栏只保留操作按钮，调整布局 */
+body.beautify-fullwidth-mode #chat .mes .mes_block .ch_name {
+    justify-content: flex-end !important;
+    min-height: unset !important;
+}
+
+/* 消息容器：通过 CSS 变量控制左右留白 */
+body.beautify-fullwidth-mode #chat .mes {
+    padding-left: calc(10px + var(--beautify-fullwidth-padding)) !important;
+    padding-right: calc(10px + var(--beautify-fullwidth-padding)) !important;
+}
+
+/* 消息块占满宽度，去掉padding */
+body.beautify-fullwidth-mode #chat .mes .mes_block {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    max-width: 100% !important;
+}
+
+/* 消息文字占满宽度，去掉官方的右边30px padding */
+body.beautify-fullwidth-mode #chat .mes .mes_text {
+    max-width: 100% !important;
+    padding-right: 0 !important;
+    padding-left: 0 !important;
+}
+
+/* 最后一条消息：预留底部空间给翻页栏 */
+body.beautify-fullwidth-mode #chat .mes.last_mes {
+    position: relative;
+    padding-bottom: 40px;
+}
+
+/* 右侧区块设为static，让子元素能相对于.mes定位 */
+body.beautify-fullwidth-mode #chat .mes.last_mes .swipeRightBlock {
+    position: static;
+}
+
+/* 左箭头移到底部左侧 */
+body.beautify-fullwidth-mode #chat .mes.last_mes .swipe_left {
+    position: absolute;
+    bottom: -15px;
+    left: 10px;
+    top: auto;
+    transform: none;
+    background: transparent;
+}
+
+/* 右箭头移到底部右侧 */
+body.beautify-fullwidth-mode #chat .mes.last_mes .swipe_right {
+    position: absolute;
+    bottom: -15px;
+    right: 10px;
+    top: auto;
+    background: transparent;
+}
+
+/* 页数移到底部居中 */
+body.beautify-fullwidth-mode #chat .mes.last_mes .swipes-counter {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: -12px;
+}
+
+/* 非最后一条消息：隐藏翻页按钮 */
+body.beautify-fullwidth-mode #chat .mes:not(.last_mes) .swipe_left,
+body.beautify-fullwidth-mode #chat .mes:not(.last_mes) .swipeRightBlock {
+    display: none !important;
+}
+
+
+/* ==========================================
+   悬浮按钮（顶栏隐藏按钮）
+   ========================================== */
+
+.beautify-floating-btn {
+    position: fixed;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: transparent;
+    /* 背景透明，只显示图标 */
+    color: var(--SmartThemeBodyColor, #fff);
+    /* 使用主题色 */
+    display: none;
+    /* 默认隐藏 */
+    align-items: center;
+    justify-content: center;
+    cursor: move;
+    z-index: 2999;
+    /* 最高层级 */
+    user-select: none;
+    touch-action: none;
+    /* 硬件加速 */
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
+}
+
+.beautify-floating-btn:active {
+    cursor: grabbing;
+}
+
+.beautify-floating-btn.dragging {
+    cursor: grabbing;
+}
+
+.beautify-floating-btn i {
+    font-size: 18px;
+    pointer-events: none;
+}
+
+/* 手机端优化：已移除悬浮按钮的单独大小，由用户自定义控制 */
+
+
+/* ==========================================
+   隐藏滚动条（手机端使用）
+   ========================================== */
+
+/* Webkit浏览器（Chrome、Edge、Safari） */
+body.beautify-hide-scrollbar *::-webkit-scrollbar {
+    display: none;
+}
+
+/* Firefox */
+body.beautify-hide-scrollbar * {
+    scrollbar-width: none;
+}
+
+/* IE和旧版Edge */
+body.beautify-hide-scrollbar * {
+    -ms-overflow-style: none;
+}

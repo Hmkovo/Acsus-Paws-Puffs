@@ -11,11 +11,11 @@ import { getChatSendSettings } from './message-chat-data.js';
 
 /**
  * 渲染聊天设置页
- * 
+ *
  * @description
  * 显示聊天的设置选项，包括查找记录、置顶、免打扰等。
  * 所有功能都是占位符，开关状态不存储，只做视觉切换。
- * 
+ *
  * @async
  * @param {Object} params - 参数对象
  * @param {string} params.contactId - 联系人ID
@@ -163,10 +163,10 @@ function createSettingsList(contact) {
         <!-- 最新消息条数 -->
         <div class="chat-settings-item chat-settings-item-number">
             <span class="chat-settings-item-label">最新消息条数</span>
-            <input type="number" 
-                   class="chat-settings-number-input" 
-                   value="${sendSettings.recentCount}" 
-                   min="1" 
+            <input type="number"
+                   class="chat-settings-number-input"
+                   value="${sendSettings.recentCount}"
+                   min="1"
                    placeholder="发送到 [QQ聊天记录]"
                    data-key="recentCount">
         </div>
@@ -174,13 +174,14 @@ function createSettingsList(contact) {
         <!-- 历史消息条数 -->
         <div class="chat-settings-item chat-settings-item-number">
             <span class="chat-settings-item-label">历史消息条数</span>
-            <input type="number" 
-                   class="chat-settings-number-input" 
-                   value="${sendSettings.historyCount}" 
-                   min="1" 
+            <input type="number"
+                   class="chat-settings-number-input"
+                   value="${sendSettings.historyCount}"
+                   min="1"
                    placeholder="发送到 [历史聊天记录]"
                    data-key="historyCount">
         </div>
+        <div class="chat-settings-item-desc">影响手机发送给AI的消息条数,也影响酒馆{{最新消息}}、{{历史消息}}宏获取的条数</div>
 
         <!-- 聊天设置 -->
         <div class="chat-settings-section-title">聊天设置</div>
@@ -188,10 +189,10 @@ function createSettingsList(contact) {
         <!-- 初始加载消息条数 -->
         <div class="chat-settings-item chat-settings-item-number">
             <span class="chat-settings-item-label">初始加载消息条数</span>
-            <input type="number" 
-                   class="chat-settings-number-input" 
-                   value="${sendSettings.initialLoadCount || 100}" 
-                   min="1" 
+            <input type="number"
+                   class="chat-settings-number-input"
+                   value="${sendSettings.initialLoadCount || 100}"
+                   min="1"
                    placeholder="仅影响聊天页面显示"
                    data-key="initialLoadCount">
         </div>
@@ -238,6 +239,14 @@ function createSettingsList(contact) {
                     <span class="chat-settings-item-text">通知预览、提示音等</span>
                     <i class="fa-solid fa-chevron-right"></i>
                 </div>
+            </div>
+        </div>
+
+        <!-- 个性装扮 -->
+        <div class="chat-settings-item" data-action="character-customization">
+            <span class="chat-settings-item-label">个性装扮</span>
+            <div class="chat-settings-item-right">
+                <i class="fa-solid fa-chevron-right"></i>
             </div>
         </div>
 
@@ -328,6 +337,11 @@ function bindSettingsEvents(list, contact) {
   // 消息通知设置（链接）
   list.querySelector('[data-action="notification-settings"]').addEventListener('click', () => {
     handleNotificationSettings(contact);
+  });
+
+  // 个性装扮（链接）
+  list.querySelector('[data-action="character-customization"]').addEventListener('click', () => {
+    handleCharacterCustomization(contact);
   });
 
   // 设置当前聊天背景（链接）
@@ -421,11 +435,11 @@ function handleSearchChat(contact) {
 
 /**
  * 设为置顶
- * 
+ *
  * @async
  * @param {Object} contact - 联系人对象
  * @param {boolean} checked - 是否置顶
- * 
+ *
  * @description
  * 修改联系人的置顶状态，保存到数据库，并调用局部更新函数移动消息列表中的位置。
  */
@@ -485,10 +499,10 @@ function handleMute(contact, checked) {
 
 /**
  * 消息通知设置
- * 
+ *
  * @description
  * 跳转到消息通知设置页面，配置通知开关和预览显示
- * 
+ *
  * @async
  * @param {Object} contact - 联系人对象
  */
@@ -505,11 +519,32 @@ async function handleNotificationSettings(contact) {
 }
 
 /**
+ * 打开角色专属装扮页面
+ *
+ * @description
+ * 跳转到角色专属装扮页面，配置用户气泡、角色气泡
+ *
+ * @async
+ * @param {Object} contact - 联系人对象
+ */
+async function handleCharacterCustomization(contact) {
+  logger.info('[ChatSettings] 打开角色专属装扮:', contact.name);
+
+  const { showPage } = await import('../phone-main-ui.js');
+  const overlay = document.querySelector('.phone-overlay');
+  if (overlay) {
+    showPage(/** @type {HTMLElement} */(overlay), 'character-customization', {
+      contactId: contact.id
+    });
+  }
+}
+
+/**
  * 设置聊天背景
- * 
+ *
  * @description
  * 跳转到聊天背景设置页面，配置背景图片、遮罩透明度、遮罩颜色
- * 
+ *
  * @async
  * @param {Object} contact - 联系人对象
  */
@@ -527,11 +562,11 @@ async function handleSetBackground(contact) {
 
 /**
  * 删除聊天记录
- * 
+ *
  * @description
  * 弹出确认弹窗，用户确认后删除该联系人的所有聊天记录。
  * 删除后关闭设置页和聊天页，返回消息列表，并从列表移除该项。
- * 
+ *
  * @async
  * @param {Object} contact - 联系人对象
  */

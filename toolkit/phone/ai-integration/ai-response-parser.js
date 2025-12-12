@@ -490,7 +490,59 @@ function parseMessageBubble(bubble, roleName) {
     };
   }
 
-  // 2. 撤回消息：[撤回]原消息内容
+  // 3. 送会员消息：[送会员]VIP/1个月 或 [送会员]VIP|1个月（兼容两种分隔符）
+  const giftMembershipMatch = bubble.match(/^\[送会员\](VIP|SVIP)[/|](\d+)个月$/);
+  if (giftMembershipMatch) {
+    const membershipType = giftMembershipMatch[1].toLowerCase();  // vip 或 svip
+    const months = parseInt(giftMembershipMatch[2]);
+    const duration = months === 1 ? 30 : 365;  // 转换为天数（1个月=30天，12个月=365天）
+    
+    // 计算价格（年付9折）
+    const price = membershipType === 'vip'
+      ? (months === 1 ? 10 : 108)   // VIP: 月付10，年付108
+      : (months === 1 ? 20 : 216);  // SVIP: 月付20，年付216
+    
+    logger.debug('[ResponseParser] 送会员消息:', { membershipType, months, duration, price });
+    
+    return {
+      role: roleName,
+      sender: 'contact',
+      type: 'gift-membership',
+      membershipType,
+      months,
+      duration,  // 天数（与用户发送时保持一致）
+      price,     // 价格（用于交易记录）
+      content: `送你${months}个月${membershipType.toUpperCase()}会员`
+    };
+  }
+
+  // 4. 开会员消息：[开会员]VIP/1个月 或 [开会员]VIP|1个月
+  const buyMembershipMatch = bubble.match(/^\[开会员\](VIP|SVIP)[/|](\d+)个月$/);
+  if (buyMembershipMatch) {
+    const membershipType = buyMembershipMatch[1].toLowerCase();
+    const months = parseInt(buyMembershipMatch[2]);
+    const duration = months === 1 ? 30 : 365;  // 转换为天数
+    
+    // 计算价格（年付9折）
+    const price = membershipType === 'vip'
+      ? (months === 1 ? 10 : 108)   // VIP: 月付10，年付108
+      : (months === 1 ? 20 : 216);  // SVIP: 月付20，年付216
+    
+    logger.debug('[ResponseParser] 开会员消息:', { membershipType, months, duration, price });
+    
+    return {
+      role: roleName,
+      sender: 'contact',
+      type: 'buy-membership',
+      membershipType,
+      months,
+      duration,  // 天数
+      price,     // 价格（用于交易记录）
+      content: `开通了${months}个月${membershipType.toUpperCase()}会员`
+    };
+  }
+
+  // 5. 撤回消息：[撤回]原消息内容
   const recallMatch = bubble.match(/^\[撤回\](.+)$/);
   if (recallMatch) {
     const originalContent = recallMatch[1].trim();

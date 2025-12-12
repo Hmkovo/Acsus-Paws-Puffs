@@ -13,10 +13,10 @@ import { bindMultiSelectToolbar } from './message-multiselect-ui.js';
 
 /**
  * 渲染聊天界面（完整DOM结构）
- * 
+ *
  * @description
  * 创建完整的聊天页面，包括顶部栏、聊天内容区、底部输入区、表情面板、+号面板
- * 
+ *
  * @async
  * @param {string} contactId - 联系人ID
  * @returns {Promise<HTMLElement>} 聊天页面容器
@@ -55,6 +55,10 @@ export async function renderChatView(contactId) {
 
   // 应用聊天背景配置（如果有）
   applyChatBackgroundOnRender(chatContent, contact);
+
+  // 应用角色专属装扮（气泡样式）
+  const { applyBubbleThemeForCharacter } = await import('../customization/customization-apply.js');
+  await applyBubbleThemeForCharacter(contactId);
 
   // 创建底部输入区
   const inputArea = createInputArea();
@@ -162,11 +166,10 @@ function createInputArea() {
             <button class="chat-plus-btn"><i class="fa-solid fa-circle-plus"></i></button>
         </div>
 
-        <!-- 隐藏的文件选择器（仅用于拍摄） -->
-        <input type="file" 
-               id="phone-take-photo" 
-               accept="image/*" 
-               capture="environment"
+        <!-- 隐藏的文件选择器（支持拍照和相册） -->
+        <input type="file"
+               id="phone-take-photo"
+               accept="image/*"
                style="display: none;">
     `;
   return inputArea;
@@ -181,7 +184,7 @@ function createMultiSelectToolbar() {
   const toolbar = document.createElement('div');
   toolbar.className = 'chat-multiselect-toolbar';
   toolbar.style.display = 'none'; // 初始隐藏
-  
+
   toolbar.innerHTML = `
     <button class="multiselect-forward-btn">
       <i class="fa-solid fa-share"></i>
@@ -199,7 +202,7 @@ function createMultiSelectToolbar() {
       <span>取消</span>
     </button>
   `;
-  
+
   return toolbar;
 }
 
@@ -246,13 +249,13 @@ function createEmojiPanel() {
 
 /**
  * 初始化表情包懒加载
- * 
+ *
  * @private
- * 
+ *
  * @description
  * 使用 Intersection Observer API 实现图片懒加载
  * 只有当表情包图片进入可视区域时才加载真实图片，节省流量和内存
- * 
+ *
  * 工作原理：
  * 1. 监听所有带 .lazy-emoji 类的图片元素
  * 2. 当图片即将进入可视区域（提前50px）时触发加载
@@ -295,7 +298,7 @@ function initEmojiLazyLoad() {
 
 /**
  * 刷新表情选择器（局部更新）
- * 
+ *
  * @description
  * 当表情包数据变化时（添加/删除），刷新聊天页面的表情选择器
  * 不需要刷新整个页面，只更新表情选择器的内容
@@ -357,7 +360,7 @@ function refreshEmojiPanel() {
 
 /**
  * 显示引用预览框
- * 
+ *
  * @private
  * @param {HTMLElement} page - 聊天页面容器
  * @param {Object} message - 被引用的消息
@@ -411,7 +414,7 @@ function showQuotePreview(page, message, contact) {
 
 /**
  * 隐藏引用预览框
- * 
+ *
  * @private
  * @param {HTMLElement} page - 聊天页面容器
  */
@@ -427,7 +430,7 @@ function hideQuotePreview(page) {
 
 /**
  * 格式化引用预览文本
- * 
+ *
  * @private
  * @param {Object} message - 消息对象
  * @returns {string} 格式化后的文本
@@ -507,6 +510,10 @@ function createPlusPanel() {
                         <div class="chat-plus-item">
                             <i class="fa-solid fa-dollar-sign"></i>
                             <span>转账</span>
+                        </div>
+                        <div class="chat-plus-item">
+                            <i class="fa-solid fa-crown"></i>
+                            <span>送会员</span>
                         </div>
                         <div class="chat-plus-item">
                             <i class="fa-solid fa-share-from-square"></i>
@@ -765,6 +772,15 @@ function bindPlusPanel(page) {
         closePanels(page);
         const contactId = page.dataset.contactId;
         await handleOpenTransfer(contactId);
+        return;
+      }
+
+      // 识别送会员按钮
+      if (text === '送会员') {
+        logger.info('[ChatView] 点击送会员按钮');
+        closePanels(page);
+        const contactId = page.dataset.contactId;
+        await handleOpenGiftMembership(contactId);
         return;
       }
 
@@ -1129,7 +1145,7 @@ async function handleSendText(page, contactId, contact, inputField) {
 
 /**
  * 处理发送表情：显示用户气泡 + 暂存消息
- * 
+ *
  * @async
  * @private
  * @param {HTMLElement} page - 聊天页面元素
@@ -1193,12 +1209,12 @@ async function handleSendEmoji(page, contactId, emojiId) {
 
 /**
  * 处理发送图片
- * 
+ *
  * @private
  * @param {HTMLElement} page - 聊天页面元素
  * @param {string} contactId - 联系人ID
  * @returns {Promise<void>}
- * 
+ *
  * @description
  * 弹窗让用户输入图片描述和可选链接，然后发送图片消息
  */
@@ -1218,16 +1234,16 @@ async function handleSendImage(page, contactId) {
     <div style="padding: 1em;">
       <div style="margin-bottom: 1em;">
         <label style="display: block; margin-bottom: 0.5em; font-weight: bold;">图片描述（必填）</label>
-        <textarea id="image-description" 
-                  placeholder="请描述图片内容..." 
+        <textarea id="image-description"
+                  placeholder="请描述图片内容..."
                   style="width: 100%; min-height: 5em; padding: 0.5em; border: 1px solid var(--phone-border); border-radius: 0.25em; resize: vertical;"
                   maxlength="200"></textarea>
       </div>
       <div>
         <label style="display: block; margin-bottom: 0.5em; font-weight: bold;">图片链接（可选）</label>
-        <input type="text" 
-               id="image-url" 
-               placeholder="https://example.com/image.jpg" 
+        <input type="text"
+               id="image-url"
+               placeholder="https://example.com/image.jpg"
                style="width: 100%; padding: 0.5em; border: 1px solid var(--phone-border); border-radius: 0.25em;">
       </div>
     </div>
@@ -1276,7 +1292,7 @@ async function handleSendImage(page, contactId) {
 
   // ✅ 区分真实图片和假装图片
   const isRealImage = !!result.imageUrl;
-  
+
   // 创建消息对象（添加唯一ID避免误删）
   const message = {
     id: generateMessageId(),
@@ -1307,7 +1323,7 @@ async function handleSendImage(page, contactId) {
     time: message.time,
     description: result.description
   };
-  
+
   // ✅ 真实图片：添加额外字段
   if (isRealImage) {
     pendingMsg.content = `[图片]${result.description}|${result.imageUrl}`;  // 兼容字段
@@ -1317,12 +1333,12 @@ async function handleSendImage(page, contactId) {
     // ✅ 假装图片：只有描述
     pendingMsg.content = `[图片]${result.description}`;  // 兼容字段
   }
-  
+
   addPendingMessage(contactId, pendingMsg);
 
   // 显示用户气泡
   const chatContent = page.querySelector('.chat-content');
-  
+
   // ✅ 根据类型调用不同的渲染器
   let bubble;
   if (isRealImage) {
@@ -1332,7 +1348,7 @@ async function handleSendImage(page, contactId) {
     const { renderImageFakeMessage } = await import('./message-types/image-fake-message.js');
     bubble = renderImageFakeMessage(message, contact, contactId);
   }
-  
+
   chatContent.appendChild(bubble);
   scrollToBottom(chatContent);
 
@@ -1353,11 +1369,31 @@ async function handleOpenTransfer(contactId) {
 
   // 动态导入
   const { showPage } = await import('../phone-main-ui.js');
-
   // 打开转账页面
   const overlay = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
   if (overlay) {
     await showPage(overlay, 'transfer', { contactId });
+  } else {
+    logger.error('[ChatView] 找不到.phone-overlay容器！');
+  }
+}
+
+/**
+ * 处理打开会员送礼页面
+ * @private
+ * @async
+ * @param {string} contactId - 联系人ID
+ */
+async function handleOpenGiftMembership(contactId) {
+  logger.info('[ChatView] 打开会员送礼页面，联系人:', contactId);
+
+  // 动态导入
+  const { showPage } = await import('../phone-main-ui.js');
+
+  // 打开会员送礼页面
+  const overlay = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
+  if (overlay) {
+    await showPage(overlay, 'gift-membership', { contactId });
   } else {
     logger.error('[ChatView] 找不到.phone-overlay容器！');
   }
@@ -1497,7 +1533,7 @@ async function handleSendToAI(page, contactId, contact, sendBtn) {
 
 /**
  * 追加消息到聊天区域
- * 
+ *
  * @async
  * @param {HTMLElement} page - 页面元素
  * @param {Object} message - 消息对象
@@ -1576,6 +1612,7 @@ export async function appendMessageToChat(page, message, contact, contactId) {
   const { renderImageMessage } = await import('./message-types/image-message.js');
   const { renderQuoteMessage } = await import('./message-types/quote-message.js');
   const { renderTransferMessage } = await import('./message-types/transfer-message.js');
+  const { renderGiftMembershipMessage } = await import('./message-types/gift-membership-message.js');
   const { renderRecalledMessage } = await import('./message-types/recalled-message.js');
   const { renderPlanMessage } = await import('./message-types/plan-message.js');
   const { renderPlanStoryMessage } = await import('./message-types/plan-story-message.js');
@@ -1635,6 +1672,18 @@ export async function appendMessageToChat(page, message, contact, contactId) {
       });
       bubble = renderTransferMessage(message, contact, contactId);
       logger.debug('[ChatView.appendMessageToChat] 转账气泡已生成');
+      break;
+
+    case 'gift-membership':
+      logger.debug('[ChatView.appendMessageToChat] 渲染会员送礼消息');
+      bubble = renderGiftMembershipMessage(message, contact, contactId);
+      logger.debug('[ChatView.appendMessageToChat] 会员送礼气泡已生成');
+      break;
+
+    case 'buy-membership':
+      logger.debug('[ChatView.appendMessageToChat] 渲染角色买会员消息');
+      bubble = renderBuyMembershipMessage(message, contact, contactId);
+      logger.debug('[ChatView.appendMessageToChat] 角色买会员气泡已生成');
       break;
 
     case 'quote':
@@ -1765,7 +1814,7 @@ export async function appendMessageToChat(page, message, contact, contactId) {
     bubble.dataset.messageId = message.id;
   }
   bubble.dataset.contactId = contactId;
-  
+
   // 保存特殊消息类型的额外数据（用于批量收藏）
   if (message.type === 'quote' && message.quotedMessage) {
     const extraData = {
@@ -1805,10 +1854,12 @@ export async function appendMessageToChat(page, message, contact, contactId) {
   const verifyAdded = chatContent.querySelector(`[data-msg-id="${message.id}"]`);
   logger.debug('[ChatView.appendMessageToChat] 验证添加结果:', !!verifyAdded);
 
-  // ✅ 绑定长按操作菜单
+  // ✅ 绑定长按操作菜单（根据消息类型决定是否禁用引用）
   logger.debug('[ChatView.appendMessageToChat] 准备绑定长按事件');
-  bindLongPress(bubble, message, contactId);
-  logger.debug('[ChatView.appendMessageToChat] 长按事件已绑定');
+  const disableQuoteTypes = ['emoji', 'image', 'image-real', 'image-fake', 'poke', 'transfer', 'gift-membership', 'buy-membership', 'recalled', 'plan-story', 'plan-message', 'signature', 'forwarded'];
+  const options = disableQuoteTypes.includes(message.type) ? { disableQuote: true } : {};
+  bindLongPress(bubble, message, contactId, options);
+  logger.debug('[ChatView.appendMessageToChat] 长按事件已绑定, 配置:', options);
 
   // ✅ 标记消息已渲染（通知PhoneAPI）
   if (message.id) {
@@ -1923,6 +1974,8 @@ async function renderMessagesToBottom(chatContent, messages, contact, contactId,
   const { renderImageMessage } = await import('./message-types/image-message.js');
   const { renderQuoteMessage } = await import('./message-types/quote-message.js');
   const { renderTransferMessage } = await import('./message-types/transfer-message.js');
+  const { renderGiftMembershipMessage } = await import('./message-types/gift-membership-message.js');
+  const { renderBuyMembershipMessage } = await import('./message-types/buy-membership-message.js');
   const { renderRecalledMessage } = await import('./message-types/recalled-message.js');
   const { renderPlanMessage } = await import('./message-types/plan-message.js');
   const { renderPlanStoryMessage } = await import('./message-types/plan-story-message.js');
@@ -1946,6 +1999,8 @@ async function renderMessagesToBottom(chatContent, messages, contact, contactId,
       renderImageMessage,
       renderQuoteMessage,
       renderTransferMessage,
+      renderGiftMembershipMessage,
+      renderBuyMembershipMessage,
       renderRecalledMessage,
       renderPlanMessage,
       renderPlanStoryMessage,
@@ -1966,6 +2021,8 @@ async function renderMessagesToTop(chatContent, messages, contact, contactId, ph
   const { renderImageMessage } = await import('./message-types/image-message.js');
   const { renderQuoteMessage } = await import('./message-types/quote-message.js');
   const { renderTransferMessage } = await import('./message-types/transfer-message.js');
+  const { renderGiftMembershipMessage } = await import('./message-types/gift-membership-message.js');
+  const { renderBuyMembershipMessage } = await import('./message-types/buy-membership-message.js');
   const { renderRecalledMessage } = await import('./message-types/recalled-message.js');
   const { renderPlanMessage } = await import('./message-types/plan-message.js');
   const { renderPlanStoryMessage } = await import('./message-types/plan-story-message.js');
@@ -1993,6 +2050,8 @@ async function renderMessagesToTop(chatContent, messages, contact, contactId, ph
       renderImageMessage,
       renderQuoteMessage,
       renderTransferMessage,
+      renderGiftMembershipMessage,
+      renderBuyMembershipMessage,
       renderRecalledMessage,
       renderPlanMessage,
       renderPlanStoryMessage,
@@ -2019,7 +2078,7 @@ async function renderMessagesToTop(chatContent, messages, contact, contactId, ph
  * @private
  */
 async function renderSingleBubble(message, contact, contactId, phoneAPI, renderers) {
-  const { renderTextMessage, renderEmojiMessage, renderImageMessage, renderQuoteMessage, renderTransferMessage, renderRecalledMessage, renderPlanMessage, renderPlanStoryMessage, renderSignatureMessage } = renderers;
+  const { renderTextMessage, renderEmojiMessage, renderImageMessage, renderQuoteMessage, renderTransferMessage, renderGiftMembershipMessage, renderRecalledMessage, renderPlanMessage, renderPlanStoryMessage, renderSignatureMessage } = renderers;
 
   let bubble;
 
@@ -2058,6 +2117,12 @@ async function renderSingleBubble(message, contact, contactId, phoneAPI, rendere
       break;
     case 'transfer':
       bubble = renderTransferMessage(message, contact, contactId);
+      break;
+    case 'gift-membership':
+      bubble = renderGiftMembershipMessage ? renderGiftMembershipMessage(message, contact, contactId) : renderTextMessage({ ...message, content: '[会员送礼]', type: 'text' }, contact, contactId);
+      break;
+    case 'buy-membership':
+      bubble = renderBuyMembershipMessage ? renderBuyMembershipMessage(message, contact, contactId) : renderTextMessage({ ...message, content: '[开会员]', type: 'text' }, contact, contactId);
       break;
     case 'recalled':
       // 已撤回消息（直接显示撤回提示）
@@ -2137,7 +2202,7 @@ async function renderSingleBubble(message, contact, contactId, phoneAPI, rendere
     bubble.dataset.messageId = message.id;
   }
   bubble.dataset.contactId = contactId;
-  
+
   // 保存特殊消息类型的额外数据（用于批量收藏）
   if (message.type === 'quote' && message.quotedMessage) {
     const extraData = {
@@ -2169,15 +2234,17 @@ async function renderSingleBubble(message, contact, contactId, phoneAPI, rendere
   checkbox.style.display = 'none';
   bubble.insertBefore(checkbox, bubble.firstChild);
 
-  // 绑定长按操作菜单
-  bindLongPress(bubble, message, contactId);
+  // 绑定长按操作菜单（根据消息类型决定是否禁用引用）
+  const disableQuoteTypes = ['emoji', 'image', 'image-real', 'image-fake', 'poke', 'transfer', 'gift-membership', 'buy-membership', 'recalled', 'plan-story', 'plan-message', 'signature', 'forwarded'];
+  const options = disableQuoteTypes.includes(message.type) ? { disableQuote: true } : {};
+  bindLongPress(bubble, message, contactId, options);
 
   return bubble;
 }
 
 /**
  * 处理待撤回消息（先显示原消息，延迟后变撤回提示）
- * 
+ *
  * @private
  * @param {Object} message - 待撤回消息对象
  * @param {Object} contact - 联系人对象
@@ -2185,13 +2252,13 @@ async function renderSingleBubble(message, contact, contactId, phoneAPI, rendere
  * @param {Function} renderTextMessage - 文字消息渲染器
  * @param {Function} renderRecalledMessage - 撤回消息渲染器
  * @returns {HTMLElement} 消息气泡（会在延迟后被替换）
- * 
+ *
  * @description
  * 撤回动画流程：
  * 1. 先渲染原消息（文字类型）
  * 2. 随机延迟3-8秒（模拟人思考要不要撤回）
  * 3. 替换为撤回提示气泡
- * 
+ *
  * ⚠️ 注意：存储里已经保存为 recalled 类型，这里只做视觉动画，不更新存储
  */
 function handleRecalledPending(message, contact, contactId, renderTextMessage, renderRecalledMessage) {
@@ -2281,9 +2348,9 @@ function updateLoadMoreButton(page, hasMore, remainingCount, contactId, contact)
 
 /**
  * 更新消息列表中的联系人项（后台更新）
- * 
+ *
  * @private
- * 
+ *
  * @description
  * 接收到新消息后调用，更新消息列表中的内容和位置。
  * - 更新预览文本、时间、未读徽章（内容更新）
@@ -2310,11 +2377,11 @@ async function updateMessageListItem(contactId) {
 
 /**
  * 检查聊天页是否可见
- * 
+ *
  * @description
  * 用于判断是否需要显示通知。
  * 页面可见时不显示通知，页面不可见时显示通知。
- * 
+ *
  * @param {string} contactId - 联系人ID
  * @returns {boolean} 是否可见
  */
@@ -2326,10 +2393,10 @@ function isChatPageVisible(contactId) {
 
 /**
  * 格式化消息内容用于通知显示
- * 
+ *
  * @description
  * 根据消息类型返回适合在通知中显示的文本。
- * 
+ *
  * @param {Object} message - 消息对象
  * @returns {string} 格式化后的文本
  */
@@ -2356,10 +2423,10 @@ function formatMessageContentForNotification(message) {
 
 /**
  * 从通知点击打开聊天页面
- * 
+ *
  * @description
  * 处理通知点击事件，自动打开手机界面并跳转到对应聊天页。
- * 
+ *
  * @async
  * @param {string} contactId - 联系人ID
  */
@@ -2448,14 +2515,14 @@ function getNotificationContent(contact, message) {
 
 /**
  * 动态查找当前活跃的聊天页面
- * 
+ *
  * @description
  * 根据contactId查找当前正在显示的聊天页面DOM元素。
  * 解决闭包持有旧DOM引用的问题：当页面销毁重建时，总是返回最新的DOM。
- * 
+ *
  * @param {string} contactId - 联系人ID
  * @returns {HTMLElement|null} 当前活跃的聊天页面元素，不存在则返回null
- * 
+ *
  * @example
  * // 在消息回调中使用
  * const currentPage = findActiveChatPage('tavern_Wade Wilson');
@@ -2486,11 +2553,11 @@ function findActiveChatPage(contactId) {
 
 /**
  * 应用聊天背景配置（渲染时）
- * 
+ *
  * @description
  * 在渲染聊天页时，读取联系人的背景配置并应用到 .chat-content 元素
  * 使用 CSS 变量实现，支持背景图片 + 遮罩层
- * 
+ *
  * @param {HTMLElement} chatContent - 聊天内容区元素
  * @param {Object} contact - 联系人对象
  */
@@ -2521,11 +2588,11 @@ function applyChatBackgroundOnRender(chatContent, contact) {
 
 /**
  * 保存输入框草稿（使用localStorage，参考SillyTavern官方实现）
- * 
+ *
  * @description
  * 参考官方 RossAscends-mods.js 中的 saveUserInput 实现
  * 使用 localStorage 存储，刷新页面后仍能恢复
- * 
+ *
  * @param {string} contactId - 联系人ID
  * @param {string} text - 输入框文本
  */
@@ -2542,7 +2609,7 @@ function saveDraft(contactId, text) {
 
 /**
  * 清空输入框草稿
- * 
+ *
  * @param {string} contactId - 联系人ID
  */
 function clearDraft(contactId) {
@@ -2553,10 +2620,10 @@ function clearDraft(contactId) {
 
 /**
  * 恢复输入框草稿
- * 
+ *
  * @description
  * 页面加载时调用，从localStorage恢复上次未发送的文字
- * 
+ *
  * @param {HTMLElement} page - 聊天页面元素
  * @param {string} contactId - 联系人ID
  */
@@ -2577,11 +2644,11 @@ function restoreDraft(page, contactId) {
 
 /**
  * 处理发送收藏
- * 
+ *
  * @async
  * @param {HTMLElement} page - 聊天页面元素
  * @param {string} contactId - 联系人ID
- * 
+ *
  * @description
  * 弹出收藏选择器，选择后将收藏内容作为新消息发送
  * 支持文本、表情包、图片、转账、引用等类型
@@ -2746,10 +2813,10 @@ async function handleSendPoke(contactId) {
 
 /**
  * 统一注册聊天页面的所有监听器
- * 
+ *
  * @description
  * 使用监听器中心统一管理所有事件监听，页面关闭时自动清理
- * 
+ *
  * @param {HTMLElement} page - 聊天页面容器
  * @param {string} contactId - 联系人ID
  * @param {Object} contact - 联系人对象

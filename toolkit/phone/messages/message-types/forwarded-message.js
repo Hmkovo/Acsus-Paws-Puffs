@@ -10,7 +10,6 @@
 import logger from '../../../../logger.js';
 import { getUserDisplayName } from '../../utils/contact-display-helper.js';
 import { getThumbnailUrl } from '../../../../../../../../../script.js';
-import { bindLongPress } from '../../utils/message-actions-helper.js';
 import { showCustomPopup } from '../../utils/popup-helper.js';
 
 /**
@@ -136,15 +135,9 @@ export function renderForwardedMessage(message, contact, contactId) {
   container.appendChild(avatar);
   container.appendChild(bubble);
 
-  // ✅ 绑定长按操作菜单（支持删除/转发/收藏/多选，禁用引用）
-  // 注：转发消息禁用引用是为了避免引用嵌套（引用一个转发消息会导致结构复杂）
-  if (contactId) {
-    bindLongPress(container, message, contactId, {
-      disableQuote: true  // 转发消息不适合被引用（避免嵌套）
-    });
-  }
+  // 长按操作菜单由 message-chat-ui.js 统一绑定
 
-  return container;
+  logger.info('[ForwardedMessage] 转发消息渲染完成:', message.id);
 }
 
 /**
@@ -172,6 +165,14 @@ function getMessagePreviewText(msg) {
     
     case 'transfer':
       return `[转账] ¥${msg.amount || '0'}`;
+    
+    case 'gift-membership':
+      const typeText1 = msg.membershipType === 'vip' ? 'VIP' : 'SVIP';
+      return `[送会员] ${msg.months}个月${typeText1}`;
+    
+    case 'buy-membership':
+      const typeTextBuy1 = msg.membershipType === 'vip' ? 'VIP' : 'SVIP';
+      return `[开会员] ${msg.months}个月${typeTextBuy1}`;
     
     case 'redpacket':
       return `[红包] ¥${msg.amount || '0'}`;
@@ -273,6 +274,14 @@ function getFullMessageContent(msg) {
     
     case 'transfer':
       return `[转账] ¥${msg.amount || '0'}`;
+    
+    case 'gift-membership':
+      const typeText2 = msg.membershipType === 'vip' ? 'VIP' : 'SVIP';
+      return `[送会员] ${msg.months}个月${typeText2}`;
+    
+    case 'buy-membership':
+      const typeTextBuy2 = msg.membershipType === 'vip' ? 'VIP' : 'SVIP';
+      return `[开会员] ${msg.months}个月${typeTextBuy2}`;
     
     case 'redpacket':
       return `[红包] ¥${msg.amount || '0'}`;

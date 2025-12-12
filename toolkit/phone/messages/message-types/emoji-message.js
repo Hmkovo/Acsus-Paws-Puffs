@@ -6,18 +6,24 @@
 import logger from '../../../../logger.js';
 import { findEmojiById } from '../../emojis/emoji-manager-data.js';
 import { getThumbnailUrl } from '../../../../../../../../script.js';
-import { bindLongPress } from '../../utils/message-actions-helper.js';
 
 /**
  * 渲染表情消息
  * 
  * @param {Object} message - 消息对象
+ * @param {string} message.id - 消息ID
  * @param {string} message.sender - 发送者（'user' 或 'contact'）
  * @param {string} message.content - 表情包ID（改用ID存储，支持改名）
  * @param {string} [message.emojiName] - 表情包名字（冗余存储，表情包删除后保留语境）
+ * @param {number} message.time - 消息时间戳（秒）
  * @param {Object} contact - 联系人对象（用于获取头像）
  * @param {string} [contactId] - 联系人ID（用于删除等操作）
  * @returns {HTMLElement} 消息气泡元素
+ * 
+ * @description
+ * 渲染表情消息气泡
+ * - data- 属性由 renderSingleBubble 统一补充
+ * - 长按操作菜单由 message-chat-ui.js 统一绑定
  */
 export function renderEmojiMessage(message, contact, contactId) {
   const emoji = findEmojiById(message.content);  // ← 改用ID查找
@@ -63,13 +69,7 @@ export function renderEmojiMessage(message, contact, contactId) {
   container.appendChild(avatar);
   container.appendChild(bubble);
 
-  // ✅ 绑定长按操作菜单（支持删除/转发/收藏/多选，禁用引用）
-  // 注：表情消息禁用引用是因为引用一个表情没有上下文意义
-  if (contactId) {
-    bindLongPress(container, message, contactId, {
-      disableQuote: true  // 表情消息不适合被引用
-    });
-  }
+  // 长按操作菜单由 message-chat-ui.js 统一绑定
 
   return container;
 }
@@ -135,12 +135,7 @@ function renderFallbackMessage(message, contact, contactId) {
   container.appendChild(avatar);
   container.appendChild(bubble);
 
-  // ✅ 绑定长按操作菜单（支持删除/转发/收藏/多选，禁用引用）
-  if (contactId) {
-    bindLongPress(container, message, contactId, {
-      disableQuote: true  // 表情消息不适合被引用
-    });
-  }
+  // 长按操作菜单由 message-chat-ui.js 统一绑定
 
   return container;
 }

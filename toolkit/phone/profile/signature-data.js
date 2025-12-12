@@ -11,6 +11,7 @@ import { loadData, saveData } from '../data-storage/storage-api.js';
 import { loadContacts, saveContact as saveContactData } from '../contacts/contact-list-data.js';
 import { saveSettingsDebounced } from '../../../../../../../script.js';
 import { extension_settings } from '../../../../../../extensions.js';
+import { stateManager } from '../utils/state-manager.js';
 
 // 存储键
 const USER_SIGNATURE_KEY = 'userSignature';
@@ -152,15 +153,20 @@ export async function updateUserSignature(newSignature) {
     // 添加到历史记录（最新的在最前面）
     data.history.unshift(historyItem);
 
-    // 保存
+    // 保存用户数据
     await saveUserSignature(data);
 
-    // 触发事件通知其他页面刷新
-    document.dispatchEvent(new CustomEvent('signature-data-changed', {
-      detail: { targetType: 'user', signature: newSignature }
-    }));
-
     logger.info('[SignatureData] 用户个签已更新:', newSignature.substring(0, 20));
+
+    // 触发通知（存储最近变化的用户个签信息）
+    await stateManager.set('signature', {
+      targetType: 'user',
+      signature: newSignature,
+      historyItem
+    }, {
+      action: 'update',
+      targetType: 'user'
+    });
     return historyItem;
   } catch (error) {
     logger.error('[SignatureData] 更新用户个签失败:', error);
@@ -362,15 +368,22 @@ export async function updateContactSignature(contactId, newSignature, msgId = nu
     // 添加到历史记录（最新的在最前面）
     data.history.unshift(historyItem);
 
-    // 保存
+    // 保存联系人数据
     await saveContactSignature(contactId, data);
 
-    // 触发事件通知其他页面刷新
-    document.dispatchEvent(new CustomEvent('signature-data-changed', {
-      detail: { targetType: 'contact', contactId, signature: newSignature }
-    }));
-
     logger.info('[SignatureData] 角色个签已更新:', newSignature.substring(0, 20));
+
+    // 触发通知（存储最近变化的角色个签信息）
+    await stateManager.set('signature', {
+      targetType: 'contact',
+      contactId,
+      signature: newSignature,
+      historyItem
+    }, {
+      action: 'update',
+      targetType: 'contact',
+      contactId
+    });
     return historyItem;
   } catch (error) {
     logger.error('[SignatureData] 更新角色个签失败:', error);
@@ -582,6 +595,18 @@ export async function rollbackSignatureHistory(contactId, deletedMessageIds) {
 
       await saveContactSignature(contactId, data);
       logger.info('[SignatureData.rollback] 已回退', deletedCount, '条个签记录');
+
+      // 触发通知（回退个签）
+      await stateManager.set('signature', {
+        targetType: 'contact',
+        contactId,
+        signature: data.current || ''
+      }, {
+        action: 'rollback',
+        targetType: 'contact',
+        contactId,
+        count: deletedCount
+      });
     } else {
       logger.debug('[SignatureData.rollback] 没有需要回退的个签');
     }

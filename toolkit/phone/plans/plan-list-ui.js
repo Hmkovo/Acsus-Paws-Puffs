@@ -1,7 +1,7 @@
 /**
  * 约定计划列表页面
  * @module phone/plans/plan-list-ui
- * 
+ *
  * @description
  * 显示和管理约定计划列表
  * 职责：
@@ -16,10 +16,11 @@ import { loadContacts } from '../contacts/contact-list-data.js';
 import { getContactDisplayName } from '../utils/contact-display-helper.js';
 import { showSuccessToast, showWarningToast } from '../ui-components/toast-notification.js';
 import { formatTimeForMessageList } from '../utils/time-helper.js';
+import { stateManager } from '../utils/state-manager.js';
 
 /**
  * 渲染计划列表页面
- * 
+ *
  * @param {Object} params - 参数对象
  * @param {string} params.contactId - 联系人ID
  * @returns {Promise<DocumentFragment>} 页面内容片段
@@ -190,11 +191,11 @@ function createPlanItem(plan, contactId, type) {
     item.dataset.planId = plan.id;
 
     const timeStr = formatTimeForMessageList(plan.timestamp);
-    
+
     // 使用FontAwesome图标代替emoji
-    const statusIconClass = plan.status === 'completed' ? 'fa-circle-check' : 
+    const statusIconClass = plan.status === 'completed' ? 'fa-circle-check' :
                            plan.status === 'accepted' ? 'fa-clock' : 'fa-file-lines';
-    const statusIconColor = plan.status === 'completed' ? '#4caf50' : 
+    const statusIconColor = plan.status === 'completed' ? '#4caf50' :
                            plan.status === 'accepted' ? '#ff9800' : '#999999';
 
     // 检查是否有记录的要点
@@ -280,30 +281,34 @@ function handleBack() {
 /**
  * 设置计划数据变化监听器
  * @param {string} contactId - 联系人ID
- * 
+ *
  * @description
- * 监听计划数据变化事件，自动刷新列表
+ * 使用状态管理器订阅计划数据变化，自动刷新列表
  * 支持场景：
  * - AI接受/拒绝计划后自动更新
  * - 快照回滚后自动刷新
  * - 手动删除计划后刷新
  */
 function setupPlanDataListener(contactId) {
-    // 定义监听器函数（需要保存引用以便后续移除）
-    const handlePlanDataChange = async (event) => {
-        const { contactId: changedContactId } = event.detail;
-        
+    // 🔥 使用状态管理器订阅
+    stateManager.subscribe('plan-list', 'plans', async (meta) => {
         // 只处理当前联系人的数据变化
-        if (changedContactId !== contactId) {
+        if (meta.contactId !== contactId) {
             return;
         }
 
-        logger.debug('[PlanListUI] 检测到计划数据变化，刷新列表');
+        logger.debug('[PlanListUI] 检测到计划数据变化，刷新列表', meta);
 
         // 查找列表容器
         const container = document.querySelector('.plan-list-page');
         if (!container) {
             logger.warn('[PlanListUI] 未找到列表容器，跳过刷新');
+            return;
+        }
+
+        // 检查页面是否还在DOM中
+        if (!document.contains(container)) {
+            logger.debug('[PlanListUI] 页面已关闭，跳过刷新');
             return;
         }
 
@@ -314,32 +319,20 @@ function setupPlanDataListener(contactId) {
             oldListContainer.replaceWith(newListContainer);
             logger.info('[PlanListUI] 列表已刷新');
         }
-    };
+    });
 
-    // 添加监听器
-    window.addEventListener('phone-plan-data-changed', handlePlanDataChange);
-
-    // 保存监听器引用到容器（用于清理）
-    const container = document.querySelector('.plan-list-page');
-    if (container) {
-        container._planDataListener = handlePlanDataChange;
-    }
-
-    logger.debug('[PlanListUI] 已设置计划数据监听器');
+    logger.debug('[PlanListUI] 已设置计划数据监听器（状态管理器）');
 }
 
 /**
  * 清理计划数据监听器
- * 
+ *
  * @description
- * 页面卸载时调用，移除事件监听器防止内存泄漏
+ * 页面卸载时调用，清理状态管理器的订阅
  */
 export function cleanupPlanListUI() {
-    const container = document.querySelector('.plan-list-page');
-    if (container && container._planDataListener) {
-        window.removeEventListener('phone-plan-data-changed', container._planDataListener);
-        delete container._planDataListener;
-        logger.debug('[PlanListUI] 已清理计划数据监听器');
-    }
+    // 🔥 使用状态管理器清理
+    stateManager.unsubscribeAll('plan-list');
+    logger.debug('[PlanListUI] 已清理计划数据监听器（状态管理器）');
 }
 

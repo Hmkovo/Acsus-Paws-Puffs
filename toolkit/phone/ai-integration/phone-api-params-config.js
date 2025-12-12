@@ -1,7 +1,7 @@
 /**
  * AI API参数配置（基于酒馆的data-source规则）
  * @module phone/ai-integration/phone-api-params-config
- * 
+ *
  * @description
  * 定义每种API格式支持的参数及其范围、默认值
  * 用于动态生成参数配置UI和保存/读取配置
@@ -11,7 +11,7 @@ import logger from '../../../logger.js';
 
 /**
  * 参数定义表（参数名 -> 配置）
- * 
+ *
  * @const {Object.<string, Object>}
  */
 export const PARAMS_DEFINITIONS = {
@@ -21,7 +21,7 @@ export const PARAMS_DEFINITIONS = {
     step: 0.01,
     default: 0.8,
     label: '温度',
-    hint: '控制输出的随机性，值越大越随机'
+    hint: '控制输出的随机性，值越大越随机。(Gemini 3 官方推荐使用默认值 1.0)'
   },
   frequency_penalty: {
     min: -2,
@@ -91,10 +91,10 @@ export const PARAMS_DEFINITIONS = {
 
 /**
  * API格式参数映射表（格式 -> 支持的参数列表）
- * 
+ *
  * @description
  * 基于酒馆的data-source规则，定义每种API格式支持哪些参数
- * 
+ *
  * @const {Object.<string, string[]>}
  */
 export const FORMAT_PARAMS_MAP = {
@@ -149,7 +149,7 @@ export const FORMAT_PARAMS_MAP = {
 
 /**
  * 获取指定格式支持的参数列表
- * 
+ *
  * @param {string} format - API格式（openai/claude/google等）
  * @returns {string[]} 参数名列表
  */
@@ -161,28 +161,28 @@ export function getSupportedParams(format) {
 
 /**
  * 获取参数的默认值配置对象
- * 
+ *
  * @param {string} format - API格式
  * @returns {Object.<string, number>} 参数名 -> 默认值的映射
  */
 export function getDefaultParams(format) {
   const supportedParams = getSupportedParams(format);
   const defaults = {};
-  
+
   for (const paramName of supportedParams) {
     const definition = PARAMS_DEFINITIONS[paramName];
     if (definition) {
       defaults[paramName] = definition.default;
     }
   }
-  
+
   logger.debug('[PhoneAPIParams.getDefaultParams] 格式:', format, '→ 默认值:', defaults);
   return defaults;
 }
 
 /**
  * 验证参数值是否在有效范围内
- * 
+ *
  * @param {string} paramName - 参数名
  * @param {number} value - 参数值
  * @returns {boolean} 是否有效
@@ -193,10 +193,10 @@ export function validateParamValue(paramName, value) {
     logger.warn('[PhoneAPIParams.validateParamValue] 未知参数:', paramName);
     return false;
   }
-  
+
   if (typeof value !== 'number' || isNaN(value)) {
     return false;
   }
-  
+
   return value >= definition.min && value <= definition.max;
 }

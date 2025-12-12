@@ -14,6 +14,7 @@
 
 import { saveData, loadData } from './storage-api.js';
 import logger from '../../../logger.js';
+import { stateManager } from '../utils/state-manager.js';
 
 /**
  * 获取钱包数据
@@ -39,12 +40,17 @@ export async function getWalletData() {
 }
 
 /**
- * 保存钱包数据
+ * 保存钱包数据并通知订阅者
+ * 
  * @param {Object} walletData - 钱包数据对象
+ * @param {Object} [meta={}] - 元数据（传递给订阅者）
  * @returns {Promise<void>}
+ * 
+ * @description
+ * 使用状态管理器保存数据，自动通知所有订阅者
  */
-async function saveWalletData(walletData) {
-  await saveData('wallet', walletData);
+async function saveWalletData(walletData, meta = {}) {
+  await stateManager.set('wallet', walletData, meta);
 }
 
 /**
@@ -134,17 +140,19 @@ function generateTransactionId() {
  * 添加转账记录
  * @param {Object} transaction - 转账记录对象
  * @param {string} transaction.contactId - 联系人ID
- * @param {'transfer'} transaction.type - 转账类型
+ * @param {'transfer'|'gift'|'redpacket'} transaction.type - 转账类型
  * @param {'sent'|'received'} transaction.direction - 方向（sent=user转出，received=char转入）
  * @param {number} transaction.amount - 金额
  * @param {string} [transaction.message] - 转账留言
+ * @param {string} [transaction.itemName] - 礼物名称（如"SVIP会员 1个月"）
  * @param {string} [transaction.messageId] - 关联的聊天消息ID（用于删除时同步删除）
+ * @param {string} [transaction.relatedMsgId] - 兼容旧字段名
  * @param {number} [transaction.time] - 时间戳（可选，默认当前时间）
  * @returns {Promise<Object>} 添加后的转账记录（包含生成的ID）
  */
 export async function addTransaction(transaction) {
   // 验证必需字段
-  if (!transaction.contactId || !transaction.type || !transaction.direction || !transaction.amount) {
+  if (!transaction.contactId || !transaction.type || !transaction.direction) {
     logger.error('[WalletStorage] 转账记录缺少必需字段:', transaction);
     throw new Error('转账记录缺少必需字段');
   }
@@ -154,9 +162,19 @@ export async function addTransaction(transaction) {
     throw new Error('转账方向无效');
   }
 
-  if (typeof transaction.amount !== 'number' || transaction.amount <= 0) {
-    logger.error('[WalletStorage] 转账金额必须是正数:', transaction.amount);
-    throw new Error('转账金额无效');
+  // ✅ 根据交易类型验证金额
+  // 转账和红包必须有金额，礼物可以没有（如送会员、送表情）
+  if (transaction.type === 'transfer' || transaction.type === 'redpacket') {
+    if (typeof transaction.amount !== 'number' || transaction.amount <= 0) {
+      logger.error('[WalletStorage] 转账/红包金额必须是正数:', transaction.amount);
+      throw new Error('金额无效');
+    }
+  } else if (transaction.type === 'gift') {
+    // 礼物类型：金额可选，默认为 0
+    transaction.amount = typeof transaction.amount === 'number' ? transaction.amount : 0;
+  } else {
+    logger.error('[WalletStorage] 不支持的交易类型:', transaction.type);
+    throw new Error('不支持的交易类型');
   }
 
   const wallet = await getWalletData();
@@ -169,23 +187,23 @@ export async function addTransaction(transaction) {
     direction: transaction.direction,
     amount: transaction.amount,
     message: transaction.message || '',
+    itemName: transaction.itemName || '',  // ✅ 礼物名称（如“SVIP会员 1个月”）
     messageId: transaction.messageId || null,  // 保存关联的消息ID
+    relatedMsgId: transaction.relatedMsgId || null,  // ✅ 兼容旧字段名
     time: transaction.time || Math.floor(Date.now() / 1000), // 秒级时间戳
     status: 'completed'  // 预留字段
   };
 
   // 添加到记录列表
   wallet.transactions.push(fullTransaction);
-  await saveWalletData(wallet);
-
-  logger.info('[WalletStorage] 已添加转账记录:', fullTransaction.id, '方向:', fullTransaction.direction, '金额:', fullTransaction.amount);
-
-  // 触发事件通知
-  triggerWalletChangedEvent({
+  await saveWalletData(wallet, {
+    action: 'addTransaction',
     balance: wallet.balance,
     transaction: fullTransaction,
     contactId: transaction.contactId
   });
+
+  logger.info('[WalletStorage] 已添加转账记录:', fullTransaction.id, '方向:', fullTransaction.direction, '金额:', fullTransaction.amount);
 
   return fullTransaction;
 }
@@ -236,6 +254,17 @@ export async function findTransactionById(transactionId) {
 }
 
 /**
+ * 根据消息ID查找转账记录（用于防重复保存）
+ * @param {string} messageId - 关联的聊天消息ID
+ * @returns {Promise<Object|null>} 转账记录对象或null
+ */
+export async function findTransactionByMessageId(messageId) {
+  if (!messageId) return null;
+  const wallet = await getWalletData();
+  return wallet.transactions.find(t => t.messageId === messageId) || null;
+}
+
+/**
  * 删除转账记录（同时恢复余额）
  * @param {string} transactionId - 转账记录ID
  * @returns {Promise<boolean>} 是否删除成功
@@ -266,16 +295,14 @@ export async function deleteTransaction(transactionId) {
     logger.info('[WalletStorage] 恢复余额（删除支出）：+', deleted.amount, '新余额:', wallet.balance);
   }
 
-  await saveWalletData(wallet);
-
-  logger.info('[WalletStorage] 已删除转账记录:', transactionId);
-
-  // 触发事件通知
-  triggerWalletChangedEvent({
+  await saveWalletData(wallet, {
+    action: 'deleteTransaction',
     balance: wallet.balance,
     transaction: null,
     contactId: deleted.contactId
   });
+
+  logger.info('[WalletStorage] 已删除转账记录:', transactionId);
 
   return true;
 }
@@ -305,17 +332,14 @@ export async function calculateTotals(options = {}) {
 }
 
 /**
- * 触发钱包数据变化事件
- * @param {Object} detail - 事件详情
- * @param {number} detail.balance - 当前余额
- * @param {Object|null} detail.transaction - 最新的转账记录（删除时为null）
- * @param {string} detail.contactId - 涉及的联系人ID
+ * @deprecated 已迁移到状态管理器，不再需要此函数
+ * 保留此注释以便理解历史代码
  */
-function triggerWalletChangedEvent(detail) {
-  const event = new CustomEvent('wallet-data-changed', { detail });
-  document.dispatchEvent(event);
-  logger.debug('[WalletStorage] 已触发钱包数据变化事件:', detail);
-}
+// function triggerWalletChangedEvent(detail) {
+//   const event = new CustomEvent('wallet-data-changed', { detail });
+//   document.dispatchEvent(event);
+//   logger.debug('[WalletStorage] 已触发钱包数据变化事件:', detail);
+// }
 
 /**
  * 执行转账操作（user转给char）
@@ -331,7 +355,7 @@ export async function executeTransfer(contactId, amount, message = '') {
     // 减少余额（自动检查余额是否足够）
     const newBalance = await subtractBalance(amount);
 
-    // 添加转账记录
+    // 添加转账记录（会自动触发状态管理器通知）
     const transaction = await addTransaction({
       contactId,
       type: 'transfer',
@@ -339,19 +363,6 @@ export async function executeTransfer(contactId, amount, message = '') {
       amount,
       message
     });
-
-    // 触发钱包数据变化事件（通知钱包页和往来记录页刷新）
-    const event = new CustomEvent('wallet-data-changed', {
-      detail: {
-        action: 'send-transfer',
-        contactId,
-        amount,
-        balance: newBalance,
-        transaction
-      }
-    });
-    document.dispatchEvent(event);
-    logger.info('[WalletStorage] 已触发钱包数据变化事件');
 
     return {
       success: true,
@@ -366,19 +377,39 @@ export async function executeTransfer(contactId, amount, message = '') {
 
 /**
  * 接收转账（char转给user）
+ * 
+ * @description
+ * 接收转账并保存记录，使用messageId防止重复保存
+ * 如果messageId已存在，跳过保存并返回已有记录
+ * 
  * @async
  * @param {string} contactId - 联系人ID
  * @param {number} amount - 转账金额
  * @param {string} [message] - 转账留言
- * @param {string} [messageId] - 关联的聊天消息ID
- * @returns {Promise<Object>} { success: boolean, balance: number, transaction: Object }
+ * @param {string} [messageId] - 关联的聊天消息ID（用于去重）
+ * @returns {Promise<Object>} { success: boolean, balance: number, transaction: Object, skipped: boolean }
  */
 export async function receiveTransfer(contactId, amount, message = '', messageId = null) {
   try {
+    // ✅ 防重复：检查messageId是否已存在
+    if (messageId) {
+      const existing = await findTransactionByMessageId(messageId);
+      if (existing) {
+        logger.info('[WalletStorage] ⏭️  转账记录已存在，跳过保存 msgId:', messageId);
+        const currentBalance = await getBalance();
+        return {
+          success: true,
+          balance: currentBalance,
+          transaction: existing,
+          skipped: true  // 标记为跳过
+        };
+      }
+    }
+
     // 增加余额
     const newBalance = await addBalance(amount);
 
-    // 添加转账记录
+    // 添加转账记录（会自动触发状态管理器通知）
     const transaction = await addTransaction({
       contactId,
       type: 'transfer',
@@ -388,23 +419,11 @@ export async function receiveTransfer(contactId, amount, message = '', messageId
       messageId
     });
 
-    // 触发钱包数据变化事件（通知钱包页和往来记录页刷新）
-    const event = new CustomEvent('wallet-data-changed', {
-      detail: {
-        action: 'receive-transfer',
-        contactId,
-        amount,
-        balance: newBalance,
-        transaction
-      }
-    });
-    document.dispatchEvent(event);
-    logger.info('[WalletStorage] 已触发钱包数据变化事件');
-
     return {
       success: true,
       balance: newBalance,
-      transaction
+      transaction,
+      skipped: false  // 标记为新保存
     };
   } catch (error) {
     logger.error('[WalletStorage] 接收转账失败:', error.message);

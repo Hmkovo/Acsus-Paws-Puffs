@@ -1,0 +1,1528 @@
+/**
+ * 悬浮栏设置弹窗样式
+ * @module beautify/beautify-popup.css
+ *
+ * @description
+ * 使用 beautify-popup-* 前缀，与手机模块 phone-popup-* 分离
+ * 使用酒馆原生 CSS 变量，自动适配主题
+ */
+
+/* ==========================================
+   CSS 变量（映射到酒馆原生变量）
+   ========================================== */
+
+:root {
+    /* 弹窗颜色 - 使用酒馆原生变量 */
+    --beautify-popup-bg: var(--SmartThemeBlurTintColor);
+    --beautify-popup-text: var(--SmartThemeBodyColor);
+    --beautify-popup-text-muted: var(--SmartThemeEmColor);
+    --beautify-popup-border: var(--SmartThemeBorderColor);
+    --beautify-popup-primary: var(--SmartThemeQuoteColor);
+    --beautify-popup-primary-hover: var(--SmartThemeUnderlineColor);
+    --beautify-popup-hover: var(--SmartThemeBotMesBlurTintColor);
+}
+
+
+/* ==========================================
+   遮罩层
+   ========================================== */
+
+.beautify-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;  /* 动态视口高度，移动端关键 */
+    background: rgba(0, 0, 0, 0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    transition: background 0.3s ease, opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.beautify-popup-overlay.show {
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+
+/* ==========================================
+   弹窗主体
+   ========================================== */
+
+.beautify-popup {
+    width: 90%;
+    max-width: 400px;
+    max-height: 80vh;
+    background: var(--beautify-popup-bg);
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: scale(0.9);
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+}
+
+.beautify-popup-overlay.show .beautify-popup {
+    transform: scale(1);
+    opacity: 1;
+}
+
+
+/* ==========================================
+   头部
+   ========================================== */
+
+.beautify-popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2px 10px;
+    border-bottom: 1px solid var(--beautify-popup-border);
+}
+
+.beautify-popup-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--beautify-popup-text);
+}
+
+.beautify-popup-close {
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 50%;
+    background: var(--beautify-popup-hover);
+    color: var(--beautify-popup-text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s;
+    font-size: 15px;
+}
+
+.beautify-popup-close:hover {
+    background: rgba(255, 0, 0, 0.1);
+    color: #ff4444;
+}
+
+
+/* ==========================================
+   标签页导航
+   ========================================== */
+
+.beautify-popup-tabs {
+    display: flex;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--beautify-popup-border);
+    gap: 4px;
+}
+
+.beautify-popup-tab {
+    flex: 1;
+    padding: 12px 8px;
+    border: none;
+    background: transparent;
+    color: var(--beautify-popup-text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s;
+}
+
+.beautify-popup-tab:hover {
+    color: var(--beautify-popup-text);
+}
+
+.beautify-popup-tab.active {
+    color: var(--beautify-popup-primary);
+    font-weight: 500;
+}
+
+/* 激活状态下划线 */
+.beautify-popup-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 20%;
+    right: 20%;
+    height: 2px;
+    background: var(--beautify-popup-primary);
+    border-radius: 2px;
+}
+
+
+/* ==========================================
+   内容区
+   ========================================== */
+
+.beautify-popup-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2px 10px;
+}
+
+.beautify-popup-panel {
+    display: none;
+}
+
+.beautify-popup-panel.active {
+    display: block;
+}
+
+.beautify-popup-section {
+    margin-bottom: 5px;
+}
+
+.beautify-popup-section:last-child {
+    margin-bottom: 0;
+}
+
+
+/* ==========================================
+   提示文字
+   ========================================== */
+
+.beautify-popup-hint {
+    font-size: 13px;
+    color: var(--beautify-popup-text-muted);
+    margin-bottom: 12px;
+    padding: 0px 10px;
+    background: var(--beautify-popup-hover);
+    border-radius: 8px;
+}
+
+
+/* ==========================================
+   开关样式
+   ==================== ====================== */
+
+.beautify-popup-switch {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2px 0px;
+    border-bottom: 1px solid var(--beautify-popup-border);
+    cursor: pointer;
+}
+
+.beautify-popup-switch:last-child {
+    border-bottom: none;
+}
+
+.beautify-popup-switch-label {
+    font-size: 15px;
+    color: var(--beautify-popup-text);
+}
+
+.beautify-popup-switch input[type="checkbox"] {
+    width: 44px;
+    height: 24px;
+    appearance: none;
+    -webkit-appearance: none;
+    background: var(--beautify-popup-border);
+    border-radius: 12px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.beautify-popup-switch input[type="checkbox"]::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.beautify-popup-switch input[type="checkbox"]:checked {
+    background: var(--beautify-popup-primary);
+}
+
+.beautify-popup-switch input[type="checkbox"]:checked::before {
+    transform: translateX(20px);
+}
+
+
+/* ==========================================
+   占位内容
+   ========================================== */
+
+.beautify-popup-placeholder {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--beautify-popup-text-muted);
+}
+
+.beautify-popup-placeholder i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.beautify-popup-placeholder p {
+    margin: 0;
+    font-size: 14px;
+}
+
+
+/* ==========================================
+   区块标题
+   ========================================== */
+
+.beautify-popup-section-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--beautify-popup-text);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.beautify-popup-value {
+    font-weight: 400;
+    color: var(--beautify-popup-primary);
+}
+
+.beautify-popup-hint-small {
+    font-size: 12px;
+    color: var(--beautify-popup-text-muted);
+    margin-top: 4px;
+}
+
+
+/* ==========================================
+   单选按钮组
+   ========================================== */
+
+.beautify-popup-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.beautify-popup-radio {
+    display: flex;
+    align-items: flex-start;
+    padding: 12px;
+    background: var(--beautify-popup-hover);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.beautify-popup-radio:hover {
+    background: rgba(74, 158, 255, 0.1);
+}
+
+.beautify-popup-radio input[type="radio"] {
+    display: none;
+}
+
+.beautify-popup-radio-mark {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--beautify-popup-border);
+    border-radius: 50%;
+    margin-right: 12px;
+    flex-shrink: 0;
+    position: relative;
+    transition: border-color 0.2s;
+}
+
+.beautify-popup-radio-mark::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    background: var(--beautify-popup-primary);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform 0.2s;
+}
+
+.beautify-popup-radio input[type="radio"]:checked + .beautify-popup-radio-mark {
+    border-color: var(--beautify-popup-primary);
+}
+
+.beautify-popup-radio input[type="radio"]:checked + .beautify-popup-radio-mark::after {
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.beautify-popup-radio-label {
+    font-size: 15px;
+    color: var(--beautify-popup-text);
+    flex: 1;
+}
+
+.beautify-popup-radio-hint {
+    font-size: 12px;
+    color: var(--beautify-popup-text-muted);
+    margin-left: auto;
+}
+
+
+/* ==========================================
+   滑块样式
+   ========================================== */
+
+.beautify-popup-slider {
+    width: 100%;
+    height: 6px;
+    appearance: none;
+    -webkit-appearance: none;
+    background: var(--beautify-popup-border);
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+}
+
+.beautify-popup-slider::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: var(--beautify-popup-primary);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s;
+}
+
+.beautify-popup-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+}
+
+.beautify-popup-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: var(--beautify-popup-primary);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.beautify-popup-slider-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--beautify-popup-text-muted);
+}
+
+
+/* ==========================================
+   悬浮栏信息显示/隐藏控制
+   ========================================== */
+
+/* 隐藏名字 */
+.beautify-sticky-header.hide-name #beautify-name {
+    display: none;
+}
+
+/* 隐藏时间 */
+.beautify-sticky-header.hide-time #beautify-time {
+    display: none;
+}
+
+/* 隐藏 Token 数 */
+.beautify-sticky-header.hide-tokens #beautify-tokens {
+    display: none;
+}
+
+/* 隐藏楼层号 */
+.beautify-sticky-header.hide-mesid #beautify-mesid {
+    display: none;
+}
+
+/* 隐藏头像 */
+.beautify-sticky-header.hide-avatar .beautify-avatar-wrapper {
+    display: none;
+}
+
+
+/* ==========================================
+   悬浮栏布局设置控制
+   ========================================== */
+
+/* CSS 变量默认值 */
+.beautify-sticky-header {
+    /* 1. 头像位置 */
+    --beautify-header-height: 160px;
+    /* 1.5 背景圆角 */
+    --beautify-bg-radius: 0 0 12px 12px;
+    /* 2. 头像边框 */
+    --beautify-avatar-border-width: 3px;
+    --beautify-avatar-border-color: rgba(255, 255, 255, 1);
+    /* 3. 头像阴影 */
+    --beautify-avatar-shadow-color: rgba(0, 0, 0, 0.3);
+    /* 4. 头像偏移 */
+    --beautify-avatar-offset-x: 0px;
+    --beautify-avatar-offset-y: 0px;
+    --beautify-avatar-size: 70px;
+    --beautify-avatar-radius: 50%;
+    /* 5. 信息偏移 */
+    --beautify-info-offset-x: 0px;
+    --beautify-info-offset-y: 0px;
+    --beautify-info-size: 1;
+}
+
+/* 悬浮栏高度 */
+.beautify-sticky-header .beautify-bg-container {
+    height: var(--beautify-header-height);
+}
+
+/* 头像居中模式 */
+.beautify-sticky-header.avatar-center .beautify-info-row {
+    flex-direction: column !important;
+    align-items: center;
+}
+
+.beautify-sticky-header.avatar-center .beautify-message-info {
+    text-align: center !important;
+    align-items: center !important;
+}
+
+/* 居中模式下头像也露出一半 */
+.beautify-sticky-header.avatar-center .beautify-avatar-wrapper {
+    margin-bottom: calc(var(--beautify-avatar-size, 70px) / -2);
+}
+
+/* 头像无边框 */
+.beautify-sticky-header.avatar-no-border .beautify-avatar {
+    border: none !important;
+}
+
+/* 头像无阴影 */
+.beautify-sticky-header.avatar-no-shadow .beautify-avatar {
+    box-shadow: none !important;
+}
+
+/* 头像偏移 + 大小 */
+.beautify-sticky-header .beautify-avatar-wrapper {
+    transform: translate(var(--beautify-avatar-offset-x), var(--beautify-avatar-offset-y));
+}
+
+.beautify-sticky-header .beautify-avatar {
+    width: var(--beautify-avatar-size) !important;
+    height: var(--beautify-avatar-size) !important;
+}
+
+/* 信息偏移（允许超出悬浮栏） */
+.beautify-sticky-header .beautify-message-info {
+    transform: translate(var(--beautify-info-offset-x), var(--beautify-info-offset-y));
+}
+
+
+/* ==========================================
+   下拉框选择器
+   ========================================== */
+
+.beautify-popup-select-wrapper {
+    margin-bottom: 1em;
+}
+
+.beautify-popup-select {
+    width: 100%;
+    padding: 0.6em 0.8em;
+    font-size: 0.9em;
+    border: 1px solid var(--beautify-popup-border);
+    border-radius: 0.5em;
+    background: var(--beautify-popup-hover);
+    color: var(--beautify-popup-text);
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.beautify-popup-select:focus {
+    border-color: var(--beautify-popup-primary);
+}
+
+.beautify-popup-select option {
+    background: var(--beautify-popup-bg);
+    color: var(--beautify-popup-text);
+}
+
+/* 布局子面板（下拉框切换显示） */
+.beautify-layout-panel {
+    display: none;
+}
+
+.beautify-layout-panel.active {
+    display: block;
+}
+
+
+/* ==========================================
+   紧凑布局样式（布局标签页专用）
+   ========================================== */
+
+.beautify-popup-row {
+    display: flex;
+    gap: 0.75em;
+    margin-bottom: 0.75em;
+}
+
+.beautify-popup-col {
+    flex: 1;
+    min-width: 0;
+}
+
+.beautify-popup-label {
+    font-size: 0.8em;
+    color: var(--beautify-popup-text-muted);
+    margin-bottom: 0.4em;
+}
+
+/* 按钮组（左右/居中切换） */
+.beautify-popup-btn-group {
+    display: flex;
+    gap: 0.25em;
+}
+
+.beautify-popup-btn {
+    flex: 1;
+    padding: 0.4em 0.5em;
+    border: 1px solid var(--beautify-popup-border);
+    border-radius: 0.4em;
+    background: var(--beautify-popup-hover);
+    color: var(--beautify-popup-text-muted);
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.beautify-popup-btn:hover {
+    border-color: var(--beautify-popup-primary);
+    color: var(--beautify-popup-text);
+}
+
+.beautify-popup-btn.active {
+    background: var(--beautify-popup-primary);
+    border-color: var(--beautify-popup-primary);
+    color: white;
+}
+
+/* 紧凑开关 */
+.beautify-popup-switch-compact {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-size: 0.85em;
+    color: var(--beautify-popup-text);
+    cursor: pointer;
+    padding: 0.5em 0;
+}
+
+.beautify-popup-switch-compact input[type="checkbox"] {
+    width: 2.2em;
+    height: 1.2em;
+    appearance: none;
+    -webkit-appearance: none;
+    background: var(--beautify-popup-border);
+    border-radius: 0.6em;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.beautify-popup-switch-compact input[type="checkbox"]::before {
+    content: '';
+    position: absolute;
+    top: 0.1em;
+    left: 0.1em;
+    width: 1em;
+    height: 1em;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.beautify-popup-switch-compact input[type="checkbox"]:checked {
+    background: var(--beautify-popup-primary);
+}
+
+.beautify-popup-switch-compact input[type="checkbox"]:checked::before {
+    transform: translateX(1em);
+}
+
+
+/* ==========================================
+   方向键控制器（D-Pad）
+   ========================================== */
+
+.beautify-popup-dpad {
+    display: grid;
+    grid-template-columns: 1.8em 1.8em 1.8em;
+    grid-template-rows: 1.8em 1.8em 1.8em;
+    gap: 0.15em;
+    justify-content: center;
+}
+
+.dpad-btn {
+    width: 1.8em;
+    height: 1.8em;
+    border: none;
+    border-radius: 0.3em;
+    background: var(--beautify-popup-hover);
+    color: var(--beautify-popup-text-muted);
+    font-size: 0.9em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+}
+
+.dpad-btn:hover {
+    background: var(--beautify-popup-primary);
+    color: white;
+}
+
+.dpad-btn:active {
+    transform: scale(0.9);
+}
+
+/* 方向键位置 */
+.dpad-up { grid-column: 2; grid-row: 1; }
+.dpad-left { grid-column: 1; grid-row: 2; }
+.dpad-right { grid-column: 3; grid-row: 2; }
+.dpad-down { grid-column: 2; grid-row: 3; }
+.dpad-reset { grid-column: 3; grid-row: 3; font-size: 0.7em; }
+
+/* 中间数值显示 */
+.dpad-value {
+    grid-column: 2;
+    grid-row: 2;
+    font-size: 0.65em;
+    color: var(--beautify-popup-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--beautify-popup-bg);
+    border-radius: 0.3em;
+}
+
+
+/* ==========================================
+   紧凑滑块
+   ========================================== */
+
+.beautify-popup-section-compact {
+    margin-bottom: 0.5em;
+}
+
+.beautify-popup-slider-compact {
+    width: 100%;
+    height: 0.3em;
+    appearance: none;
+    -webkit-appearance: none;
+    background: var(--beautify-popup-border);
+    border-radius: 0.15em;
+    outline: none;
+    cursor: pointer;
+}
+
+.beautify-popup-slider-compact::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 1em;
+    height: 1em;
+    background: var(--beautify-popup-primary);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.beautify-popup-slider-compact::-moz-range-thumb {
+    width: 1em;
+    height: 1em;
+    background: var(--beautify-popup-primary);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+}
+
+
+/* ==========================================
+   颜色选择器包装
+   ========================================== */
+
+.beautify-popup-color-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+}
+
+.beautify-popup-color-wrapper toolcool-color-picker {
+    --tool-cool-color-picker-btn-bg: var(--beautify-popup-hover);
+}
+
+/* 小按钮（重置等） */
+.beautify-popup-btn-small {
+    width: 1.8em;
+    height: 1.8em;
+    border: none;
+    border-radius: 0.3em;
+    background: var(--beautify-popup-hover);
+    color: var(--beautify-popup-text-muted);
+    font-size: 0.8em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+}
+
+.beautify-popup-btn-small:hover {
+    background: var(--beautify-popup-primary);
+    color: white;
+}
+
+
+/* ==========================================
+   背景设置面板
+   ========================================== */
+
+/* 背景子面板切换 */
+.beautify-bg-panel {
+    display: none;
+}
+
+.beautify-bg-panel.active {
+    display: block;
+}
+
+/* 背景/装饰条头部行（启用开关 + 预览同一行） */
+.beautify-bg-header-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75em;
+    margin-bottom: 0.5em;
+}
+
+.beautify-bg-header-row .beautify-popup-switch-compact {
+    padding: 0;
+    flex-shrink: 0;
+}
+
+/* 内联预览（紧凑版） */
+.beautify-bg-preview-inline {
+    flex: 1;
+    height: 36px;
+    border-radius: 0.35em;
+    overflow: hidden;
+    background: var(--beautify-popup-hover);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.beautify-bg-preview-inline img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.beautify-bg-preview-placeholder {
+    color: var(--beautify-popup-text-muted);
+    font-size: 0.75em;
+}
+
+/* 装饰条预览稍窄 */
+.beautify-deco-preview-inline {
+    height: 28px;
+}
+
+.beautify-deco-preview-inline img {
+    object-fit: contain;
+}
+
+/* 清除按钮 */
+.beautify-bg-clear-btn {
+    position: absolute;
+    top: 0.15em;
+    right: 0.15em;
+    width: 1.1em;
+    height: 1.1em;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    font-size: 0.6em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.beautify-bg-clear-btn:hover {
+    background: rgba(255, 0, 0, 0.8);
+}
+
+/* 来源标签页 */
+.beautify-bg-source-tabs {
+    display: flex;
+    gap: 0.25em;
+    margin-bottom: 0.5em;
+}
+
+.beautify-bg-source-tab {
+    flex: 1;
+    padding: 0.4em 0.3em;
+    border: 1px solid var(--beautify-popup-border);
+    border-radius: 0.3em;
+    background: transparent;
+    color: var(--beautify-popup-text-muted);
+    font-size: 0.75em;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.beautify-bg-source-tab:hover {
+    border-color: var(--beautify-popup-primary);
+    color: var(--beautify-popup-text);
+}
+
+.beautify-bg-source-tab.active {
+    background: var(--beautify-popup-primary);
+    border-color: var(--beautify-popup-primary);
+    color: white;
+}
+
+/* 来源面板 */
+.beautify-bg-source-panel,
+.beautify-deco-source-panel {
+    display: none;
+}
+
+.beautify-bg-source-panel.active,
+.beautify-deco-source-panel.active {
+    display: block;
+}
+
+/* 存档面板提示文字 */
+.beautify-bg-saved-hint {
+    font-size: 0.7em;
+    color: var(--beautify-popup-text-muted);
+    margin-bottom: 0.5em;
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+}
+
+.beautify-bg-saved-hint i {
+    color: var(--beautify-popup-primary);
+}
+
+/* 背景图网格（3列，参考手机端样式） */
+.beautify-bg-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.35em;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 0.2em;
+    align-content: start;
+}
+
+/* 单个背景项（使用 padding-bottom 保持 16:9 比例） */
+.beautify-bg-item {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%; /* 16:9 = 9/16 = 56.25% */
+    border-radius: 0.35em;
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--beautify-popup-hover);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.beautify-bg-item:hover {
+    transform: scale(1.03);
+    box-shadow: 0 0.15em 0.5em rgba(0, 0, 0, 0.2);
+}
+
+.beautify-bg-item img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 存档图片删除按钮 */
+.beautify-bg-item-delete {
+    position: absolute;
+    top: 0.15em;
+    right: 0.15em;
+    width: 1.2em;
+    height: 1.2em;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    font-size: 0.55em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s, background 0.2s;
+    z-index: 1;
+}
+
+.beautify-bg-item:hover .beautify-bg-item-delete {
+    opacity: 1;
+}
+
+.beautify-bg-item-delete:hover {
+    background: rgba(255, 0, 0, 0.8);
+}
+
+/* 上传区域 */
+.beautify-bg-upload-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3em;
+    padding: 1em;
+    border: 2px dashed var(--beautify-popup-border);
+    border-radius: 0.5em;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--beautify-popup-text-muted);
+    font-size: 0.85em;
+}
+
+.beautify-bg-upload-area:hover {
+    border-color: var(--beautify-popup-primary);
+    background: rgba(74, 158, 255, 0.05);
+}
+
+.beautify-bg-upload-area i {
+    font-size: 1.5em;
+    color: var(--beautify-popup-primary);
+}
+
+.beautify-bg-upload-area small {
+    font-size: 0.75em;
+    opacity: 0.7;
+}
+
+/* URL 输入 */
+.beautify-bg-url-input-wrapper {
+    display: flex;
+    gap: 0.3em;
+}
+
+.beautify-bg-url-input {
+    flex: 1;
+    padding: 0.5em 0.6em;
+    border: 1px solid var(--beautify-popup-border);
+    border-radius: 0.4em;
+    background: var(--beautify-popup-hover);
+    color: var(--beautify-popup-text);
+    font-size: 0.85em;
+    outline: none;
+}
+
+.beautify-bg-url-input:focus {
+    border-color: var(--beautify-popup-primary);
+}
+
+.beautify-bg-url-btn {
+    padding: 0.5em 0.8em;
+    border: none;
+    border-radius: 0.4em;
+    background: var(--beautify-popup-primary);
+    color: white;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.beautify-bg-url-btn:hover {
+    opacity: 0.9;
+}
+
+/* 空状态和加载状态 */
+.beautify-bg-empty,
+.beautify-bg-loading,
+.beautify-bg-error {
+    text-align: center;
+    padding: 1em;
+    color: var(--beautify-popup-text-muted);
+    font-size: 0.85em;
+}
+
+.beautify-bg-error {
+    color: #ff6b6b;
+}
+
+/*
+ * 装饰条层级说明：
+ * - .beautify-bg: 背景图 (无z-index，最底层)
+ * - .beautify-border-decoration: CSS边框 (z-index: 1)
+ * - .beautify-decoration: 图片装饰条 (z-index: 2)
+ * - .beautify-info-row: 头像和信息 (z-index: 5，在beautify.css中设置)
+ */
+
+/* 图片装饰条 - z-index: 2 */
+.beautify-decoration {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 0;
+    width: 100%;
+    background-size: contain;
+    background-repeat: repeat-x;
+    background-position: center;
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* CSS边框装饰条 - z-index: 1，在图片装饰条之下 */
+.beautify-border-decoration {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* ==========================================
+   轮播设置样式
+   ========================================== */
+
+.beautify-carousel-section {
+    margin: 0.5em 0;
+    padding: 0.5em;
+    background: var(--beautify-popup-hover);
+    border-radius: 0.4em;
+}
+
+.beautify-carousel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.4em;
+}
+
+.beautify-carousel-options {
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+}
+
+.beautify-carousel-select {
+    padding: 0.25em 0.4em;
+    border: 1px solid var(--beautify-popup-border);
+    border-radius: 0.3em;
+    background: var(--beautify-popup-bg);
+    color: var(--beautify-popup-text);
+    font-size: 0.7em;
+    cursor: pointer;
+    outline: none;
+}
+
+.beautify-carousel-select:focus {
+    border-color: var(--beautify-popup-primary);
+}
+
+.beautify-carousel-images {
+    display: flex;
+    gap: 0.3em;
+    min-height: 50px;
+}
+
+.beautify-carousel-empty {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--beautify-popup-text-muted);
+    font-size: 0.75em;
+    border: 1px dashed var(--beautify-popup-border);
+    border-radius: 0.3em;
+}
+
+.beautify-carousel-item {
+    position: relative;
+    width: 60px;
+    height: 50px;
+    border-radius: 0.3em;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid var(--beautify-popup-primary);
+}
+
+.beautify-carousel-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.beautify-carousel-index {
+    position: absolute;
+    top: 0.15em;
+    left: 0.15em;
+    width: 1.2em;
+    height: 1.2em;
+    background: var(--beautify-popup-primary);
+    color: white;
+    font-size: 0.6em;
+    font-weight: bold;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.beautify-carousel-remove {
+    position: absolute;
+    top: 0.15em;
+    right: 0.15em;
+    width: 1.1em;
+    height: 1.1em;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    font-size: 0.55em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s, background 0.2s;
+}
+
+.beautify-carousel-item:hover .beautify-carousel-remove {
+    opacity: 1;
+}
+
+.beautify-carousel-remove:hover {
+    background: rgba(255, 0, 0, 0.8);
+}
+
+
+/* ==========================================
+   响应式：手机适配
+   ========================================== */
+
+@media (max-width: 480px) {
+    .beautify-popup {
+        width: 95%;
+        max-height: 85vh;
+        border-radius: 12px;
+    }
+
+    .beautify-popup-header {
+        padding: 14px 16px;
+    }
+
+    .beautify-popup-header h3 {
+        font-size: 16px;
+    }
+
+    .beautify-popup-tabs {
+        padding: 0 12px;
+    }
+
+    .beautify-popup-tab {
+        padding: 10px 6px;
+        font-size: 13px;
+    }
+
+    .beautify-popup-content {
+        padding: 14px 16px;
+    }
+
+    .beautify-popup-switch-label {
+        font-size: 14px;
+    }
+
+    /* 背景网格在手机上也是3列 */
+    .beautify-bg-grid {
+        max-height: 150px;
+    }
+
+    .beautify-bg-source-tab {
+        font-size: 0.7em;
+        padding: 0.35em 0.2em;
+    }
+}
+
+
+/* ==========================================
+   头像框设置样式
+   ========================================== */
+
+/* 头像框预览 */
+.beautify-frame-preview {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--beautify-popup-hover);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    border: 2px solid var(--beautify-popup-border);
+}
+
+.beautify-frame-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.beautify-frame-preview .beautify-bg-preview-placeholder {
+    font-size: 1.2em;
+    color: var(--beautify-popup-text-muted);
+}
+
+.beautify-frame-preview .beautify-bg-clear-btn {
+    position: absolute;
+    top: -0.3em;
+    right: -0.3em;
+    width: 1.2em;
+    height: 1.2em;
+    font-size: 0.7em;
+}
+
+/* 头像框来源面板 */
+.beautify-frame-source-panel {
+    display: none;
+    margin-top: 0.5em;
+}
+
+.beautify-frame-source-panel.active {
+    display: block;
+}
+
+
+/* ==========================================
+   预设管理样式
+   ========================================== */
+
+/* 预设头部：搜索框 + 保存按钮 */
+.beautify-preset-header {
+    display: flex;
+    gap: 0.5em;
+    margin-bottom: 0.75em;
+}
+
+.beautify-preset-search {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    padding: 0.4em 0.6em;
+    background: var(--beautify-popup-hover);
+    border: 1px solid var(--beautify-popup-border);
+    border-radius: 0.4em;
+}
+
+.beautify-preset-search i {
+    color: var(--beautify-popup-text-muted);
+    font-size: 0.8em;
+}
+
+.beautify-preset-search input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--beautify-popup-text);
+    font-size: 0.85em;
+    outline: none;
+}
+
+.beautify-preset-search input::placeholder {
+    color: var(--beautify-popup-text-muted);
+}
+
+.beautify-preset-save-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+    padding: 0.4em 0.8em;
+    background: var(--beautify-popup-primary);
+    color: white;
+    border: none;
+    border-radius: 0.4em;
+    font-size: 0.8em;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+
+.beautify-preset-save-btn:hover {
+    background: var(--beautify-popup-primary-hover, #5a9fd4);
+}
+
+/* 预设列表 */
+.beautify-preset-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4em;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.beautify-preset-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+    padding: 2em;
+    color: var(--beautify-popup-text-muted);
+    font-size: 0.85em;
+}
+
+.beautify-preset-empty i {
+    font-size: 1.5em;
+}
+
+/* 预设项 */
+.beautify-preset-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5em 0.6em;
+    background: var(--beautify-popup-hover);
+    border: 1px solid var(--beautify-popup-border);
+    border-radius: 0.4em;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.beautify-preset-item:hover {
+    background: var(--beautify-popup-bg);
+    border-color: var(--beautify-popup-primary);
+}
+
+.beautify-preset-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15em;
+    min-width: 0;
+}
+
+.beautify-preset-name {
+    font-size: 0.9em;
+    font-weight: 500;
+    color: var(--beautify-popup-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.beautify-preset-time {
+    font-size: 0.7em;
+    color: var(--beautify-popup-text-muted);
+}
+
+.beautify-preset-actions {
+    display: flex;
+    gap: 0.3em;
+}
+
+.beautify-preset-load,
+.beautify-preset-delete {
+    width: 1.8em;
+    height: 1.8em;
+    border: none;
+    border-radius: 0.3em;
+    background: transparent;
+    color: var(--beautify-popup-text-muted);
+    font-size: 0.75em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s;
+}
+
+.beautify-preset-load:hover {
+    background: var(--beautify-popup-primary);
+    color: white;
+}
+
+.beautify-preset-delete:hover {
+    background: #e74c3c;
+    color: white;
+}
+
+/* 翻页控制 */
+.beautify-preset-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+    margin-top: 0.75em;
+    padding-top: 0.5em;
+    border-top: 1px solid var(--beautify-popup-border);
+}
+
+.beautify-preset-page-btn {
+    width: 2em;
+    height: 2em;
+    border: 1px solid var(--beautify-popup-border);
+    border-radius: 0.3em;
+    background: var(--beautify-popup-hover);
+    color: var(--beautify-popup-text);
+    font-size: 0.8em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.beautify-preset-page-btn:hover:not(:disabled) {
+    background: var(--beautify-popup-primary);
+    border-color: var(--beautify-popup-primary);
+    color: white;
+}
+
+.beautify-preset-page-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.beautify-preset-page-info {
+    font-size: 0.8em;
+    color: var(--beautify-popup-text-muted);
+    min-width: 3em;
+    text-align: center;
+}

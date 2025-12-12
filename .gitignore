@@ -10,6 +10,12 @@ RELEASE-CHECKLIST.md
 
 phone-preset-*.json
 
+# 聊天记录和临时文档
+*聊天界面*.md
+*Gemini*.md
+*聊天记录*/
+*【手机AI协作】*/
+
 *.log
 
 *.tmp

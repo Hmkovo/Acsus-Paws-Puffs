@@ -276,6 +276,14 @@ function createForwardedMessage(messages, originalContactName) {
       case 'transfer':
         messageText = `[转账] ¥${msg.amount || '0'}`;
         break;
+      case 'gift-membership':
+        const giftTypeText = msg.membershipType === 'vip' ? 'VIP' : 'SVIP';
+        messageText = `[送会员] ${msg.months}个月${giftTypeText}`;
+        break;
+      case 'buy-membership':
+        const buyTypeText = msg.membershipType === 'vip' ? 'VIP' : 'SVIP';
+        messageText = `[开会员] ${msg.months}个月${buyTypeText}`;
+        break;
       case 'redpacket':
         messageText = `[红包] ¥${msg.amount || '0'}`;
         break;

@@ -16,6 +16,7 @@ import { getWalletData, getTransactions, calculateTotals } from '../data-storage
 import { loadContacts } from '../contacts/contact-list-data.js';
 import { getContactDisplayName } from '../utils/contact-display-helper.js';
 import { formatTimestamp } from '../utils/time-helper.js';
+import { stateManager } from '../utils/state-manager.js';
 import logger from '../../../logger.js';
 
 // 当前筛选状态
@@ -348,40 +349,63 @@ async function handleFilterChange(container, filter) {
 
 /**
  * 监听钱包数据变化事件
- * @param {HTMLElement} container - 页面容器
+ * 当钱包数据变化时，自动刷新余额、统计和列表
+ * 
+ * @description
+ * 使用状态管理器订阅钱包数据变化，页面关闭时自动清理
  */
 function bindWalletChangeListener(container) {
-  const handler = async (event) => {
-    const { balance } = event.detail;
-    logger.debug('[WalletUI] 收到钱包变化事件，余额:', balance);
-
+  const pageId = 'user-wallet';
+  
+  // 订阅钱包数据变化
+  stateManager.subscribe(pageId, 'wallet', async (meta) => {
+    logger.debug('[WalletUI] 收到钱包数据变化通知', meta);
+    
+    // 检查页面是否还存在
+    if (!document.contains(container)) {
+      logger.debug('[WalletUI] 页面已关闭，跳过刷新');
+      return;
+    }
+    
+    // 读取最新数据
+    const walletData = await stateManager.get('wallet');
+    if (!walletData) {
+      logger.warn('[WalletUI] 钱包数据为空，跳过刷新');
+      return;
+    }
+    
     // 局部更新余额
-    updateBalance(container, balance);
-
+    updateBalance(container, walletData.balance);
+    
     // 重新计算收支统计
     const { income, expense } = await calculateTotals();
     updateStatistics(container, income, expense);
-
+    
     // 重新渲染列表
     await renderTransactionsList(container, currentFilter);
-  };
-
-  document.addEventListener('wallet-data-changed', handler);
-
-  // 页面销毁时自动移除监听器
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      mutation.removedNodes.forEach((node) => {
-        if (node === container || node.contains(container)) {
-          document.removeEventListener('wallet-data-changed', handler);
-          observer.disconnect();
-          logger.debug('[WalletUI] 已移除钱包变化监听器');
-        }
-      });
-    });
+    
+    logger.debug('[WalletUI] 钱包数据已自动更新');
   });
-
-  observer.observe(document.body, { childList: true, subtree: true });
+  
+  // 监听页面移除，自动清理订阅
+  const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      for (const node of mutation.removedNodes) {
+        if (node === container) {
+          stateManager.unsubscribeAll(pageId);
+          observer.disconnect();
+          logger.debug('[WalletUI] 页面已关闭，已清理订阅');
+          return;
+        }
+      }
+    }
+  });
+  
+  if (container.parentNode) {
+    observer.observe(container.parentNode, { childList: true });
+  }
+  
+  logger.debug('[WalletUI] 已订阅钱包数据变化');
 }
 
 /**

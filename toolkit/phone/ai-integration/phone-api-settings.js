@@ -1,6 +1,6 @@
 /**
  * 手机 - API配置管理模块
- * 
+ *
  * @description
  * 负责管理自定义API配置：
  * - 保存/加载/删除配置
@@ -8,7 +8,7 @@
  * - 从API刷新模型列表
  * - 测试API连接
  * - 绑定API设置事件
- * 
+ *
  * @module PhoneAPIConfig
  */
 
@@ -35,13 +35,13 @@ const MODULE_NAME = 'phone';
 
 /**
  * API配置管理器
- * 
+ *
  * @class PhoneAPIConfig
  */
 export class PhoneAPIConfig {
   /**
    * 创建API配置管理器
-   * 
+   *
    * @param {HTMLElement} pageElement - API设置页面元素
    * @param {Object} options - 配置选项
    * @param {Object} options.api - API管理器
@@ -55,9 +55,13 @@ export class PhoneAPIConfig {
 
   /**
    * 绑定 API 设置事件
-   * 
+   *
    * @description
    * 处理 API 来源切换、配置管理、参数调整等操作
+   *
+   * API 来源切换逻辑：
+   * - 切换到自定义 API：渲染高级参数 UI（加载已有配置或使用默认格式）
+   * - 切换到酒馆 API：显示提示信息（参数由酒馆主界面控制）
    */
   bindApiSettingsEvents() {
     // API 来源选择
@@ -80,6 +84,23 @@ export class PhoneAPIConfig {
         // 显示/隐藏自定义配置区域
         if (customApiSettings) {
           customApiSettings.style.display = source === 'custom' ? 'block' : 'none';
+        }
+
+        // ✅ 根据来源决定是否渲染高级参数
+        const container = this.pageElement.querySelector('#phoneApiParamsContainer');
+        if (source === 'custom') {
+          // 使用自定义API：渲染参数UI
+          if (settings.apiConfig.currentConfigId) {
+            this.loadApiConfig(settings.apiConfig.currentConfigId);
+          } else {
+            const defaultFormat = this.getDefaultFormatFromTavern();
+            this.renderAdvancedParams(defaultFormat);
+          }
+        } else {
+          // 使用酒馆API：显示提示
+          if (container) {
+            container.innerHTML = '<div class="api-settings-hint">使用酒馆API时，参数由酒馆主界面控制</div>';
+          }
         }
 
         logger.info('[PhoneAPIConfig] API来源已切换:', source);
@@ -221,7 +242,7 @@ export class PhoneAPIConfig {
 
   /**
    * 获取手机设置
-   * 
+   *
    * @returns {Object} 手机设置对象
    */
   getSettings() {
@@ -245,7 +266,7 @@ export class PhoneAPIConfig {
 
   /**
    * 更新手机设置
-   * 
+   *
    * @param {Object} updates - 更新内容
    */
   updateSettings(updates) {
@@ -256,7 +277,7 @@ export class PhoneAPIConfig {
 
   /**
    * 加载 API 设置到 UI
-   * 
+   *
    * @description
    * 从 extension_settings 读取设置，填充到设置页面的表单中
    */
@@ -291,9 +312,22 @@ export class PhoneAPIConfig {
     // 加载配置列表到下拉框
     this.refreshApiConfigList();
 
-    // 如果有当前配置，加载到表单
-    if (apiConfig.currentConfigId) {
-      this.loadApiConfig(apiConfig.currentConfigId);
+    // ✅ 根据API来源决定是否渲染高级参数
+    if (apiConfig.source === 'custom') {
+      // 使用自定义API：渲染参数UI
+      if (apiConfig.currentConfigId) {
+        this.loadApiConfig(apiConfig.currentConfigId);
+      } else {
+        // 新建配置时，渲染默认格式的参数
+        const defaultFormat = this.getDefaultFormatFromTavern();
+        this.renderAdvancedParams(defaultFormat);
+      }
+    } else {
+      // 使用酒馆API：显示提示
+      const container = this.pageElement.querySelector('#phoneApiParamsContainer');
+      if (container) {
+        container.innerHTML = '<div class="api-settings-hint">使用酒馆API时，参数由酒馆主界面控制</div>';
+      }
     }
 
     logger.debug('[PhoneAPIConfig] API设置已加载到UI');
@@ -301,7 +335,7 @@ export class PhoneAPIConfig {
 
   /**
    * 刷新 API 配置列表
-   * 
+   *
    * @description
    * 更新配置下拉框的选项列表
    */
@@ -333,7 +367,7 @@ export class PhoneAPIConfig {
 
   /**
    * 根据酒馆当前API源推断默认格式
-   * 
+   *
    * @returns {string} 推断的格式值
    * @description
    * 将酒馆的 chat_completion_source 反向映射到扩展的格式选项
@@ -379,7 +413,7 @@ export class PhoneAPIConfig {
 
   /**
    * 加载 API 配置到表单
-   * 
+   *
    * @param {string} configId - 配置ID（空字符串=新建）
    */
   loadApiConfig(configId) {
@@ -465,7 +499,7 @@ export class PhoneAPIConfig {
 
   /**
    * 保存当前 API 配置
-   * 
+   *
    * @async
    */
   async saveCurrentApiConfig() {
@@ -559,7 +593,7 @@ export class PhoneAPIConfig {
 
   /**
    * 删除 API 配置
-   * 
+   *
    * @async
    */
   async deleteApiConfig() {
@@ -613,7 +647,7 @@ export class PhoneAPIConfig {
 
   /**
    * 从 API 刷新可用模型列表
-   * 
+   *
    * @async
    */
   async refreshModelsFromAPI() {
@@ -711,7 +745,7 @@ export class PhoneAPIConfig {
 
   /**
    * 测试 API 连接
-   * 
+   *
    * @async
    */
   async testApiConnection() {
@@ -790,19 +824,19 @@ export class PhoneAPIConfig {
 
   /**
    * 从临时存储和已保存配置读取参数值
-   * 
+   *
    * @description
    * 合并两个来源的参数：
    * 1. 临时存储（新建配置时的参数）
    * 2. 已保存配置的参数
-   * 
+   *
    * @param {string} format - API格式
    * @returns {Object.<string, number>} 参数名 -> 参数值的映射
    */
   readParamsFromUI(format) {
     const settings = this.getSettings();
     const currentConfigId = settings.apiConfig.currentConfigId;
-    
+
     // ✅ 优先使用临时存储的参数（新建配置时）
     let params = { ...this.tempParams };
 
@@ -810,7 +844,7 @@ export class PhoneAPIConfig {
     if (currentConfigId) {
       const configs = settings.apiConfig.customConfigs || [];
       const config = configs.find(c => c.id === currentConfigId);
-      
+
       if (config && config.params) {
         // 已保存的参数作为基础，临时参数覆盖
         params = { ...config.params, ...this.tempParams };
@@ -823,25 +857,25 @@ export class PhoneAPIConfig {
 
   /**
    * 清理不支持的参数（避免格式切换后残留）
-   * 
+   *
    * @description
    * 当用户切换API格式时（如从Google切换到OpenAI），删除新格式不支持的旧参数
    * 例如：OpenAI不支持top_k，切换到OpenAI时应删除旧的top_k值
-   * 
+   *
    * @param {string} format - 新的API格式
    * @param {string[]} supportedParams - 新格式支持的参数列表
    */
   cleanUnsupportedParams(format, supportedParams) {
     const settings = this.getSettings();
     const currentConfigId = settings.apiConfig.currentConfigId;
-    
+
     if (!currentConfigId) {
       return; // 没有当前配置，无需清理
     }
 
     const configs = settings.apiConfig.customConfigs || [];
     const config = configs.find(c => c.id === currentConfigId);
-    
+
     if (!config || !config.params) {
       return; // 没有参数需要清理
     }
@@ -873,10 +907,10 @@ export class PhoneAPIConfig {
 
   /**
    * 渲染高级参数UI（根据API格式动态生成）
-   * 
+   *
    * @description
    * 根据选择的API格式，动态生成对应的参数配置UI（温度、Top P等）
-   * 
+   *
    * @param {string} format - API格式（openai/claude/google等）
    */
   renderAdvancedParams(format) {
@@ -914,22 +948,22 @@ export class PhoneAPIConfig {
             </span>
           </div>
           <div style="display: flex; gap: 0.5em; align-items: center;">
-            <input 
-              type="range" 
-              class="api-settings-range" 
+            <input
+              type="range"
+              class="api-settings-range"
               id="phoneApiParam_${paramName}"
-              min="${definition.min}" 
-              max="${definition.max}" 
+              min="${definition.min}"
+              max="${definition.max}"
               step="${definition.step}"
               value="${definition.default}"
               style="flex: 1;"
             >
-            <input 
-              type="number" 
-              class="api-settings-input" 
+            <input
+              type="number"
+              class="api-settings-input"
               id="phoneApiParamNumber_${paramName}"
-              min="${definition.min}" 
-              max="${definition.max}" 
+              min="${definition.min}"
+              max="${definition.max}"
               step="${definition.step}"
               value="${definition.default}"
               style="width: 5em; padding: 0.3em 0.5em; text-align: center;"
@@ -970,19 +1004,19 @@ export class PhoneAPIConfig {
 
   /**
    * 保存参数值到配置（实时自动保存）
-   * 
+   *
    * @description
    * 用户调整参数时立即触发，实现实时保存
    * - 如果有当前配置ID：保存到该配置
    * - 如果是新建配置：保存到临时存储，等点击"保存配置"时一起保存
-   * 
+   *
    * @param {string} paramName - 参数名
    * @param {number} value - 参数值
    */
   saveParamValue(paramName, value) {
     const settings = this.getSettings();
     const currentConfigId = settings.apiConfig.currentConfigId;
-    
+
     if (!currentConfigId) {
       // ✅ 新建配置时：保存到临时存储
       this.tempParams[paramName] = value;
@@ -993,7 +1027,7 @@ export class PhoneAPIConfig {
     // ✅ 更新现有配置：直接保存到配置
     const configs = settings.apiConfig.customConfigs || [];
     const config = configs.find(c => c.id === currentConfigId);
-    
+
     if (!config) {
       logger.warn('[PhoneAPIConfig.saveParamValue] 未找到配置:', currentConfigId);
       return;
@@ -1020,13 +1054,13 @@ export class PhoneAPIConfig {
 
   /**
    * 加载参数值到UI
-   * 
+   *
    * @param {string} format - API格式
    */
   loadParamValuesToUI(format) {
     const settings = this.getSettings();
     const currentConfigId = settings.apiConfig.currentConfigId;
-    
+
     if (!currentConfigId) {
       logger.debug('[PhoneAPIConfig.loadParamValuesToUI] 无当前配置ID，使用默认值');
       return;
@@ -1034,7 +1068,7 @@ export class PhoneAPIConfig {
 
     const configs = settings.apiConfig.customConfigs || [];
     const config = configs.find(c => c.id === currentConfigId);
-    
+
     if (!config || !config.params) {
       logger.debug('[PhoneAPIConfig.loadParamValuesToUI] 无保存的参数，使用默认值');
       return;

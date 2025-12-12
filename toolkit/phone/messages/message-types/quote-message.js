@@ -5,7 +5,6 @@
 
 import logger from '../../../../logger.js';
 import { getThumbnailUrl } from '../../../../../../../../script.js';
-import { showMessageActions, bindLongPress } from '../../utils/message-actions-helper.js';
 
 /**
  * 渲染引用消息气泡
@@ -58,8 +57,7 @@ export function renderQuoteMessage(message, contact, contactId) {
   container.appendChild(avatar);
   container.appendChild(bubble);
 
-  // ✅ 绑定长按操作到容器（删除时会删除整个容器，包括头像）
-  bindLongPress(container, message, contactId);
+  // 长按操作菜单由 message-chat-ui.js 统一绑定
 
   return container;
 }

@@ -1,7 +1,7 @@
 /**
  * 约定计划数据管理
  * @module phone/plans/plan-data
- * 
+ *
  * @description
  * 管理约定计划的数据存储和状态
  * 职责：
@@ -13,9 +13,11 @@
 import logger from '../../../logger.js';
 import { extension_settings } from '../../../../../../extensions.js';
 import { saveSettingsDebounced } from '../../../../../../../script.js';
+import { stateManager } from '../utils/state-manager.js';
 
 /**
- * 确保计划数据结构存在
+ * 确保计划相关数据结构存在
+ * @description 初始化 plans（计划列表）和 planHistory（计划历史记录）
  * @private
  */
 function ensurePlansData() {
@@ -27,6 +29,9 @@ function ensurePlansData() {
   }
   if (!extension_settings.acsusPawsPuffs.phone.plans) {
     extension_settings.acsusPawsPuffs.phone.plans = {};
+  }
+  if (!extension_settings.acsusPawsPuffs.phone.planHistory) {
+    extension_settings.acsusPawsPuffs.phone.planHistory = {};
   }
 }
 
@@ -60,7 +65,8 @@ export function getPlanByMessageId(contactId, messageId) {
 
 /**
  * 创建新计划
- * 
+ *
+ * @async
  * @param {string} contactId - 联系人ID
  * @param {Object} planData - 计划数据
  * @param {string} planData.messageId - 关联的消息ID
@@ -68,10 +74,33 @@ export function getPlanByMessageId(contactId, messageId) {
  * @param {string} planData.content - 计划内容
  * @param {string} planData.initiator - 发起者（'user' | 'char'）
  * @param {number} planData.timestamp - 创建时间戳
- * @returns {Object} 创建的计划对象
+ * @returns {Promise<Object>} 创建的计划对象
  */
-export function createPlan(contactId, planData) {
+export async function createPlan(contactId, planData) {
   ensurePlansData();
+
+  // 🔥 持久化去重：检查是否已处理过该消息（支持重新应用）
+  if (planData.messageId) {
+    const history = extension_settings.acsusPawsPuffs.phone.planHistory[contactId] || [];
+    const existingRecord = history.find(h => h.msgId === planData.messageId);
+
+    if (existingRecord) {
+      logger.warn('[PlanData] 该消息已处理过，跳过重复创建 msgId:', planData.messageId);
+
+      // 返回已存在的计划
+      const existingPlan = getPlanByMessageId(contactId, planData.messageId);
+      if (existingPlan) {
+        return existingPlan;
+      }
+
+      // 如果历史记录存在但计划不存在（数据不一致），清理历史记录并继续创建
+      logger.warn('[PlanData] 历史记录存在但计划不存在，清理历史记录');
+      const historyIndex = history.findIndex(h => h.msgId === planData.messageId);
+      if (historyIndex !== -1) {
+        history.splice(historyIndex, 1);
+      }
+    }
+  }
 
   const plans = getPlans(contactId);
 
@@ -101,27 +130,43 @@ export function createPlan(contactId, planData) {
 
   plans.push(plan);
   extension_settings.acsusPawsPuffs.phone.plans[contactId] = plans;
+
+  // 🔥 记录到历史（防止重新应用时重复创建）
+  if (planData.messageId) {
+    if (!extension_settings.acsusPawsPuffs.phone.planHistory[contactId]) {
+      extension_settings.acsusPawsPuffs.phone.planHistory[contactId] = [];
+    }
+    extension_settings.acsusPawsPuffs.phone.planHistory[contactId].push({
+      planId: plan.id,
+      msgId: planData.messageId,
+      timestamp: Date.now()
+    });
+    logger.debug('[PlanData] 已记录到历史:', planData.messageId);
+  }
+
   saveSettingsDebounced();
 
   logger.info('[PlanData] 创建计划:', plan.title, 'ID:', plan.id);
 
-  // 触发事件通知列表刷新
-  window.dispatchEvent(new CustomEvent('phone-plan-data-changed', {
-    detail: { contactId, planId: plan.id, action: 'create' }
-  }));
+  // 🔥 通过状态管理器通知订阅者
+  await stateManager.set('plans', extension_settings.acsusPawsPuffs.phone.plans, {
+    contactId,
+    planId: plan.id,
+    action: 'create'
+  });
 
   return plan;
 }
 
 /**
  * 更新计划状态
- * 
+ *
  * @param {string} contactId - 联系人ID
  * @param {string} planId - 计划ID
  * @param {string} status - 新状态（'pending' | 'accepted' | 'rejected' | 'completed'）
- * @returns {boolean} 是否成功
+ * @returns {Promise<boolean>} 是否成功
  */
-export function updatePlanStatus(contactId, planId, status) {
+export async function updatePlanStatus(contactId, planId, status) {
   const plans = getPlans(contactId);
   const plan = plans.find(p => p.id === planId);
 
@@ -135,17 +180,19 @@ export function updatePlanStatus(contactId, planId, status) {
 
   logger.info('[PlanData] 更新计划状态:', plan.title, '→', status);
 
-  // 触发事件通知列表刷新
-  window.dispatchEvent(new CustomEvent('phone-plan-data-changed', {
-    detail: { contactId, planId, action: 'update' }
-  }));
+  // 🔥 通过状态管理器通知订阅者
+  await stateManager.set('plans', extension_settings.acsusPawsPuffs.phone.plans, {
+    contactId,
+    planId,
+    action: 'update'
+  });
 
   return true;
 }
 
 /**
  * 更新计划执行结果
- * 
+ *
  * @param {string} contactId - 联系人ID
  * @param {string} planId - 计划ID
  * @param {Object} result - 执行结果
@@ -153,9 +200,9 @@ export function updatePlanStatus(contactId, planId, status) {
  * @param {string} result.outcome - 结果类型（'顺利' | '麻烦' | '好事'）
  * @param {string} result.story - 剧情梗概
  * @param {Object} [result.options] - 可选配置
- * @returns {boolean} 是否成功
+ * @returns {Promise<boolean>} 是否成功
  */
-export function updatePlanResult(contactId, planId, result) {
+export async function updatePlanResult(contactId, planId, result) {
   const plans = getPlans(contactId);
   const plan = plans.find(p => p.id === planId);
 
@@ -177,10 +224,12 @@ export function updatePlanResult(contactId, planId, result) {
 
   logger.info('[PlanData] 更新计划结果:', plan.title, '骰子:', plan.diceResult, '结果:', plan.outcome);
 
-  // 触发事件通知列表刷新
-  window.dispatchEvent(new CustomEvent('phone-plan-data-changed', {
-    detail: { contactId, planId, action: 'update' }
-  }));
+  // 🔥 通过状态管理器通知订阅者
+  await stateManager.set('plans', extension_settings.acsusPawsPuffs.phone.plans, {
+    contactId,
+    planId,
+    action: 'update'
+  });
 
   return true;
 }
@@ -189,9 +238,9 @@ export function updatePlanResult(contactId, planId, result) {
  * 删除计划
  * @param {string} contactId - 联系人ID
  * @param {string} planId - 计划ID
- * @returns {boolean} 是否成功
+ * @returns {Promise<boolean>} 是否成功
  */
-export function deletePlan(contactId, planId) {
+export async function deletePlan(contactId, planId) {
   ensurePlansData();
 
   const plans = getPlans(contactId);
@@ -205,14 +254,28 @@ export function deletePlan(contactId, planId) {
   const plan = plans[index];
   plans.splice(index, 1);
   extension_settings.acsusPawsPuffs.phone.plans[contactId] = plans;
+
+  // 🔥 删除历史记录（重要：支持重新应用）
+  if (plan.messageId) {
+    const history = extension_settings.acsusPawsPuffs.phone.planHistory[contactId] || [];
+    const historyIndex = history.findIndex(h => h.msgId === plan.messageId);
+
+    if (historyIndex !== -1) {
+      history.splice(historyIndex, 1);
+      logger.debug('[PlanData] 已删除历史记录:', plan.messageId);
+    }
+  }
+
   saveSettingsDebounced();
 
   logger.info('[PlanData] 删除计划:', plan.title);
 
-  // 触发事件通知列表刷新
-  window.dispatchEvent(new CustomEvent('phone-plan-data-changed', {
-    detail: { contactId, planId, action: 'delete' }
-  }));
+  // 🔥 通过状态管理器通知订阅者
+  await stateManager.set('plans', extension_settings.acsusPawsPuffs.phone.plans, {
+    contactId,
+    planId,
+    action: 'delete'
+  });
 
   return true;
 }
@@ -266,7 +329,7 @@ export function updatePlanStoryGenerated(contactId, planId, generated) {
 
 /**
  * 保存计划要点
- * 
+ *
  * @param {string} contactId - 联系人ID
  * @param {string} planId - 计划ID
  * @param {string} noteType - 要点类型（'process' | 'innerThought' | 'record'）
@@ -313,7 +376,7 @@ export function savePlanNote(contactId, planId, noteType, content) {
 
 /**
  * 删除计划要点
- * 
+ *
  * @param {string} contactId - 联系人ID
  * @param {string} planId - 计划ID
  * @param {string} noteType - 要点类型（'process' | 'innerThought' | 'record'）
@@ -354,7 +417,7 @@ export function deletePlanNote(contactId, planId, noteType) {
 
 /**
  * 检查计划是否有任意记录的要点
- * 
+ *
  * @param {Object} plan - 计划对象
  * @returns {boolean} 是否有记录的要点
  */

@@ -1,10 +1,10 @@
 /**
  * 图片管理页面 UI 渲染
- * 
+ *
  * @description
  * 管理拍照发送的图片（phone_开头的图片）
  * 功能：查看、删除、排序
- * 
+ *
  * @module phone/storage/image-storage-ui
  */
 
@@ -14,11 +14,11 @@ import { showImagePreview } from '../utils/image-helper.js';
 import { getUploadedImages, deleteImages } from './image-data.js';
 import { showConfirmPopup } from '../utils/popup-helper.js';
 import { showSuccessToast, showWarningToast, showErrorToast } from '../ui-components/toast-notification.js';
-import { registerListener } from '../utils/listener-manager.js';
+import { stateManager } from '../utils/state-manager.js';
 
 /**
  * 渲染图片管理页面
- * 
+ *
  * @async
  * @returns {Promise<DocumentFragment>} 页面内容片段
  */
@@ -78,7 +78,7 @@ export async function renderImageStorage() {
 
 /**
  * 绑定事件监听器
- * 
+ *
  * @param {HTMLElement} page - 页面元素
  */
 function bindEvents(page) {
@@ -121,34 +121,38 @@ function bindEvents(page) {
         });
     }
 
-    // 【关键】监听图片数据变化事件（实时更新）
-    registerListener('image-storage', 'phone-image-data-changed', async (event) => {
-        const { action, image, count } = event.detail;
-        logger.info('[ImageStorage] 收到数据变化事件:', action, image?.filename || count);
-        
+    // 【关键】订阅图片数据变化（实时更新）
+    stateManager.subscribe('image-storage', 'images', async (meta) => {
+        // 检查页面是否还在DOM中
+        if (!document.contains(page)) {
+            logger.debug('[ImageStorage] 页面已移除，跳过刷新');
+            return;
+        }
+
+        const { action, image, count } = meta;
+        logger.info('[ImageStorage] 收到数据变化通知:', action, image?.filename || count);
+
         // 最小局部更新：只刷新图片列表，不重新渲染整个页面
         await refreshImageList(page);
-    }, {
-        description: '监听图片数据变化，实时刷新列表'
     });
 }
 
 /**
  * 刷新图片列表（最小局部更新）
- * 
+ *
  * @async
  * @param {HTMLElement} page - 页面元素
- * 
+ *
  * @description
  * 只更新图片列表部分，保持当前排序顺序，不重新渲染整个页面
  */
 async function refreshImageList(page) {
     logger.debug('[ImageStorage] 刷新图片列表（局部更新）');
-    
+
     try {
         // 重新加载数据
         const uploadedImages = getUploadedImages();
-        
+
         const phoneImages = uploadedImages.map(img => ({
             name: img.filename,
             url: img.imagePath,
@@ -158,16 +162,16 @@ async function refreshImageList(page) {
 
         // 获取当前排序顺序
         const currentSortOrder = page.dataset.sortOrder || 'time-desc';
-        
+
         // 应用当前排序
         const sortedImages = sortImages(phoneImages, currentSortOrder);
-        
+
         // 更新数据
         page.dataset.images = JSON.stringify(sortedImages);
-        
+
         // 重新渲染图片网格
         renderImageGrid(page, sortedImages);
-        
+
         logger.info('[ImageStorage] 列表已刷新，共', sortedImages.length, '张图片');
     } catch (error) {
         logger.error('[ImageStorage] 刷新列表失败:', error);
@@ -176,7 +180,7 @@ async function refreshImageList(page) {
 
 /**
  * 加载图片列表
- * 
+ *
  * @async
  * @param {HTMLElement} page - 页面元素
  */
@@ -186,7 +190,7 @@ async function loadImageList(page) {
     try {
         // 从配置中获取已上传的图片列表
         const uploadedImages = getUploadedImages();
-        
+
         logger.info('[ImageStorage] 找到', uploadedImages.length, '张图片');
 
         // 数据格式已经标准化，直接使用
@@ -206,7 +210,7 @@ async function loadImageList(page) {
 
     } catch (error) {
         logger.error('[ImageStorage] 加载图片列表失败:', error);
-        
+
         const content = page.querySelector('.image-storage-content');
         if (content) {
             content.innerHTML = `
@@ -227,7 +231,7 @@ async function loadImageList(page) {
 
 /**
  * 渲染图片网格
- * 
+ *
  * @param {HTMLElement} page - 页面元素
  * @param {Array} images - 图片列表
  */
@@ -318,7 +322,7 @@ function renderImageGrid(page, images) {
 
 /**
  * 排序图片
- * 
+ *
  * @param {Array} images - 图片列表
  * @param {string} order - 排序方式（time-desc/time-asc/size-desc/size-asc）
  * @returns {Array} 排序后的图片列表
@@ -353,12 +357,12 @@ function sortImages(images, order) {
 
 /**
  * 切换排序方式
- * 
+ *
  * @param {HTMLElement} page - 页面元素
  */
 function toggleSortOrder(page) {
     const currentOrder = page.dataset.sortOrder || 'time-desc';
-    
+
     // 排序方式循环：时间降序 → 时间升序 → 大小降序 → 大小升序
     const orders = ['time-desc', 'time-asc', 'size-desc', 'size-asc'];
     const currentIndex = orders.indexOf(currentOrder);
@@ -384,7 +388,7 @@ function toggleSortOrder(page) {
 
 /**
  * 全选/取消全选
- * 
+ *
  * @param {HTMLElement} page - 页面元素
  */
 function toggleSelectAll(page) {
@@ -406,7 +410,7 @@ function toggleSelectAll(page) {
 
 /**
  * 更新全选按钮文本
- * 
+ *
  * @param {HTMLElement} page - 页面元素
  */
 function updateSelectAllButton(page) {
@@ -421,7 +425,7 @@ function updateSelectAllButton(page) {
 
 /**
  * 删除选中的图片
- * 
+ *
  * @async
  * @param {HTMLElement} page - 页面元素
  */
@@ -521,7 +525,7 @@ async function deleteSelectedImages(page) {
 
 /**
  * 从文件名提取时间戳
- * 
+ *
  * @param {string} filename - 文件名（如 phone_1763834869518.jpg）
  * @returns {number} 时间戳（毫秒）
  */
@@ -532,7 +536,7 @@ function extractTimestamp(filename) {
 
 /**
  * 格式化时间
- * 
+ *
  * @param {number} timestamp - 时间戳（毫秒）
  * @returns {string} 格式化后的时间
  */
@@ -560,7 +564,7 @@ function formatTime(timestamp) {
 
 /**
  * 格式化文件大小
- * 
+ *
  * @param {number} bytes - 文件大小（字节）
  * @returns {string} 格式化后的大小
  */

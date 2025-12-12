@@ -46,98 +46,98 @@ export async function renderUserSettings() {
         </div>
 
         <!-- 内容区 -->
-        <div class="settings-content">
+        <div class="phone-settings-content">
             <!-- 搜索框 -->
-            <div class="settings-search-bar">
+            <div class="phone-settings-search-bar">
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input type="text" placeholder="搜索">
             </div>
 
             <!-- 账号与安全 -->
-            <div class="settings-account-card">
-                <i class="fa-solid fa-user-shield settings-account-icon"></i>
-                <span class="settings-account-text">账号与安全</span>
-                <img src="${userAvatar}" alt="头像" class="settings-account-avatar">
-                <i class="fa-solid fa-chevron-right settings-account-arrow"></i>
+            <div class="phone-settings-account-card">
+                <i class="fa-solid fa-user-shield phone-settings-account-icon"></i>
+                <span class="phone-settings-account-text">账号与安全</span>
+                <img src="${userAvatar}" alt="头像" class="phone-settings-account-avatar">
+                <i class="fa-solid fa-chevron-right phone-settings-account-arrow"></i>
             </div>
 
             <!-- 功能分组 -->
-            <div class="settings-section">
-                <div class="settings-section-title">功能</div>
-                <div class="settings-section-content">
-                    <div class="settings-item" id="phone-image-mode-setting-link">
+            <div class="phone-settings-section">
+                <div class="phone-settings-section-title">功能</div>
+                <div class="phone-settings-section-content">
+                    <div class="phone-settings-item" id="phone-image-mode-setting-link">
                         <i class="fa-solid fa-image"></i>
-                        <div class="settings-item-content">
-                            <span class="settings-item-text">图片识别模式</span>
-                            <span class="settings-item-extra" id="phone-image-mode-display">仅本轮</span>
+                        <div class="phone-settings-item-content">
+                            <span class="phone-settings-item-text">图片识别模式</span>
+                            <span class="phone-settings-item-extra" id="phone-image-mode-display">仅本轮</span>
                         </div>
-                        <i class="fa-solid fa-chevron-right settings-item-arrow"></i>
+                        <i class="fa-solid fa-chevron-right phone-settings-item-arrow"></i>
                     </div>
-                    <div class="settings-item">
+                    <div class="phone-settings-item">
                         <i class="fa-solid fa-sliders"></i>
-                        <div class="settings-item-content">
-                            <span class="settings-item-text">模式选择</span>
-                            <span class="settings-item-extra">简洁模式</span>
+                        <div class="phone-settings-item-content">
+                            <span class="phone-settings-item-text">模式选择</span>
+                            <span class="phone-settings-item-extra">简洁模式</span>
                         </div>
-                        <i class="fa-solid fa-chevron-right settings-item-arrow"></i>
+                        <i class="fa-solid fa-chevron-right phone-settings-item-arrow"></i>
                     </div>
-                    <div class="settings-item">
+                    <div class="phone-settings-item">
                         <i class="fa-solid fa-palette"></i>
-                        <span class="settings-item-text">个性装扮与特权外显</span>
-                        <i class="fa-solid fa-chevron-right settings-item-arrow"></i>
+                        <span class="phone-settings-item-text">个性装扮与特权外显</span>
+                        <i class="fa-solid fa-chevron-right phone-settings-item-arrow"></i>
                     </div>
-                    <div class="settings-item" id="phone-storage-space-link">
+                    <div class="phone-settings-item" id="phone-storage-space-link">
                         <i class="fa-solid fa-database"></i>
-                        <span class="settings-item-text">存储空间</span>
-                        <i class="fa-solid fa-chevron-right settings-item-arrow"></i>
+                        <span class="phone-settings-item-text">存储空间</span>
+                        <i class="fa-solid fa-chevron-right phone-settings-item-arrow"></i>
                     </div>
                 </div>
             </div>
 
             <!-- 隐私分组 -->
-            <div class="settings-section">
-                <div class="settings-section-title">隐私</div>
-                <div class="settings-section-content">
-                    <div class="settings-item">
+            <div class="phone-settings-section">
+                <div class="phone-settings-section-title">隐私</div>
+                <div class="phone-settings-section-content">
+                    <div class="phone-settings-item">
                         <i class="fa-solid fa-lock"></i>
-                        <span class="settings-item-text">隐私设置</span>
-                        <i class="fa-solid fa-chevron-right settings-item-arrow"></i>
+                        <span class="phone-settings-item-text">隐私设置</span>
+                        <i class="fa-solid fa-chevron-right phone-settings-item-arrow"></i>
                     </div>
-                    <div class="settings-item">
+                    <div class="phone-settings-item">
                         <i class="fa-solid fa-file-lines"></i>
-                        <span class="settings-item-text">个人信息收集清单</span>
-                        <i class="fa-solid fa-chevron-right settings-item-arrow"></i>
+                        <span class="phone-settings-item-text">个人信息收集清单</span>
+                        <i class="fa-solid fa-chevron-right phone-settings-item-arrow"></i>
                     </div>
-                    <div class="settings-item">
+                    <div class="phone-settings-item">
                         <i class="fa-solid fa-share-nodes"></i>
-                        <span class="settings-item-text">第三方个人信息共享清单</span>
-                        <i class="fa-solid fa-chevron-right settings-item-arrow"></i>
+                        <span class="phone-settings-item-text">第三方个人信息共享清单</span>
+                        <i class="fa-solid fa-chevron-right phone-settings-item-arrow"></i>
                     </div>
-                    <div class="settings-item">
+                    <div class="phone-settings-item">
                         <i class="fa-solid fa-shield-halved"></i>
-                        <span class="settings-item-text">个人信息保护设置</span>
-                        <i class="fa-solid fa-chevron-right settings-item-arrow"></i>
+                        <span class="phone-settings-item-text">个人信息保护设置</span>
+                        <i class="fa-solid fa-chevron-right phone-settings-item-arrow"></i>
                     </div>
                 </div>
             </div>
 
             <!-- 底部项 -->
-            <div class="settings-section">
-                <div class="settings-section-content">
-                    <div class="settings-item">
+            <div class="phone-settings-section">
+                <div class="phone-settings-section-content">
+                    <div class="phone-settings-item">
                         <i class="fa-solid fa-circle-info"></i>
-                        <span class="settings-item-text">关于QQ与帮助</span>
-                        <i class="fa-solid fa-chevron-right settings-item-arrow"></i>
+                        <span class="phone-settings-item-text">关于QQ与帮助</span>
+                        <i class="fa-solid fa-chevron-right phone-settings-item-arrow"></i>
                     </div>
                 </div>
             </div>
 
-            <div class="settings-section">
-                <div class="settings-section-content">
-                    <div class="settings-item">
+            <div class="phone-settings-section">
+                <div class="phone-settings-section-content">
+                    <div class="phone-settings-item">
                         <i class="fa-solid fa-right-from-bracket"></i>
-                        <span class="settings-item-text">退出当前账号</span>
-                        <i class="fa-solid fa-chevron-right settings-item-arrow"></i>
+                        <span class="phone-settings-item-text">退出当前账号</span>
+                        <i class="fa-solid fa-chevron-right phone-settings-item-arrow"></i>
                     </div>
                 </div>
             </div>

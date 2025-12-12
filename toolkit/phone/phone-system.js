@@ -94,12 +94,24 @@ export class PhoneSystem {
       const { initTransferRollbackHandler } = await import('./transfers/transfer-rollback-handler.js');
       const { initPlanStoryRollbackHandler } = await import('./plans/plan-story-rollback-handler.js');
       const { initFriendRequestRollbackHandler } = await import('./messages/friend-request-rollback-handler.js');
+      const { initGiftMembershipRollbackHandler } = await import('./membership/gift-membership-rollback-handler.js');
       initPlanRollbackHandler();
       initSignatureRollbackHandler();
       initTransferRollbackHandler();
       initPlanStoryRollbackHandler();
       initFriendRequestRollbackHandler();
-      logger.info('[PhoneSystem] 已注册回退处理器（约定计划、个签、转账、计划剧情、好友申请）');
+      initGiftMembershipRollbackHandler();
+      logger.info('[PhoneSystem] 已注册回退处理器（约定计划、个签、转账、计划剧情、好友申请、送会员）');
+
+      // 检查会员过期（初始化时统一检查一次）
+      const { checkAllMembershipsExpiry } = await import('./data-storage/storage-membership.js');
+      await checkAllMembershipsExpiry();
+      logger.info('[PhoneSystem] 已检查会员过期状态');
+
+      // 初始化主题管理器（加载保存的主题设置）
+      const { initTheme } = await import('./utils/theme-manager.js');
+      await initTheme();
+      logger.info('[PhoneSystem] 已初始化主题管理器');
 
       this.initialized = true;
       logger.info('[PhoneSystem] 初始化完成');

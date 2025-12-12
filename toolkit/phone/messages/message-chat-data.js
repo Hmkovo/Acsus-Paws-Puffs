@@ -98,6 +98,12 @@ function getMessagePreview(message) {
       return `[红包] ¥${message.amount || '0'}`;
     case 'transfer':
       return `[转账] ¥${message.amount || '0'} ${message.message?.substring(0, 10) || ''}`;
+    case 'gift-membership':
+      const giftType = message.membershipType === 'vip' ? 'VIP' : 'SVIP';
+      return `[送会员] ${message.months}个月${giftType}`;
+    case 'buy-membership':
+      const buyType = message.membershipType === 'vip' ? 'VIP' : 'SVIP';
+      return `[开会员] ${message.months}个月${buyType}`;
     case 'video':
       return `[视频] ${message.description?.substring(0, 20) || '无描述'}`;
     case 'file':

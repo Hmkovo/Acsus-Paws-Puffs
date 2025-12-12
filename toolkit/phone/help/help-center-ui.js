@@ -35,28 +35,28 @@ export async function renderHelpCenter() {
     <!-- 内容区（可滚动） -->
     <div class="help-center-content">
       <!-- 功能教程 -->
-      <div class="settings-section">
-        <div class="settings-section-title">功能教程</div>
-        <div class="settings-section-content">
-          <div class="settings-item" data-action="emoji-guide">
+      <div class="phone-settings-section">
+        <div class="phone-settings-section-title">功能教程</div>
+        <div class="phone-settings-section-content">
+          <div class="phone-settings-item" data-action="emoji-guide">
             <i class="fa-solid fa-face-smile"></i>
-            <span class="settings-item-text">表情包相关说明</span>
-            <i class="fa-solid fa-chevron-right settings-item-arrow"></i>
+            <span class="phone-settings-item-text">表情包相关说明</span>
+            <i class="fa-solid fa-chevron-right phone-settings-item-arrow"></i>
           </div>
-          <div class="settings-item" data-action="faq">
+          <div class="phone-settings-item" data-action="faq">
             <i class="fa-solid fa-circle-question"></i>
-            <span class="settings-item-text">常见问题</span>
-            <i class="fa-solid fa-chevron-right settings-item-arrow"></i>
+            <span class="phone-settings-item-text">常见问题</span>
+            <i class="fa-solid fa-chevron-right phone-settings-item-arrow"></i>
           </div>
-          <div class="settings-item" data-action="macro-guide">
+          <div class="phone-settings-item" data-action="macro-guide">
             <i class="fa-solid fa-code"></i>
-            <span class="settings-item-text">宏变量使用教程</span>
-            <i class="fa-solid fa-chevron-right settings-item-arrow"></i>
+            <span class="phone-settings-item-text">宏变量使用教程</span>
+            <i class="fa-solid fa-chevron-right phone-settings-item-arrow"></i>
           </div>
-          <div class="settings-item" data-action="placeholder-4">
+          <div class="phone-settings-item" data-action="placeholder-4">
             <i class="fa-solid fa-4"></i>
-            <span class="settings-item-text">教程占位符 4</span>
-            <i class="fa-solid fa-chevron-right settings-item-arrow"></i>
+            <span class="phone-settings-item-text">教程占位符 4</span>
+            <i class="fa-solid fa-chevron-right phone-settings-item-arrow"></i>
           </div>
         </div>
       </div>
@@ -86,7 +86,7 @@ function bindEvents(container) {
   backBtn.addEventListener('click', handleBack);
 
   // 所有设置项
-  const settingsItems = container.querySelectorAll('.settings-item');
+  const settingsItems = container.querySelectorAll('.phone-settings-item');
   settingsItems.forEach(item => {
     item.addEventListener('click', (e) => {
       const action = e.currentTarget.dataset.action;

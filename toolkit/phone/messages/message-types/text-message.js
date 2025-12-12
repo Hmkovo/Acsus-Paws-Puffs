@@ -4,7 +4,6 @@
  */
 
 import { getThumbnailUrl } from '../../../../../../../../script.js';
-import { showMessageActions } from '../../utils/message-actions-helper.js';
 
 /**
  * 渲染文字消息气泡
@@ -16,6 +15,11 @@ import { showMessageActions } from '../../utils/message-actions-helper.js';
  * @param {Object} contact - 联系人对象（用于获取头像）
  * @param {string} [contactId] - 联系人ID（用于删除等操作）
  * @returns {HTMLElement} 消息气泡元素
+ * 
+ * @description
+ * 渲染基础文字消息气泡
+ * - 长按操作菜单由 message-chat-ui.js 统一绑定
+ * - data- 属性由 renderSingleBubble 统一补充
  * 
  * @example
  * const bubble = renderTextMessage(
@@ -49,14 +53,6 @@ export function renderTextMessage(message, contact, contactId) {
   const bubble = document.createElement('div');
   bubble.className = 'chat-msg-bubble';
   bubble.textContent = message.content;
-
-  // 添加点击事件（显示操作菜单）
-  if (contactId) {
-    container.addEventListener('click', (e) => {
-      e.stopPropagation();
-      showMessageActions(container, message, contactId);
-    });
-  }
 
   // 组装（统一DOM顺序：头像在前，气泡在后）
   // CSS的flex-direction: row-reverse会控制视觉顺序

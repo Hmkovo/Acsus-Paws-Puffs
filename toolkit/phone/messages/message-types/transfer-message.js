@@ -6,13 +6,19 @@
  * 职责：
  * - 渲染转账气泡（发送/接收样式）
  * - 集成消息操作菜单（支持删除，不支持引用）
+ * - 自动处理转账到账（接收时保存转账记录）
  * 
  * @module transfer-message
  */
 
 import { getThumbnailUrl } from '../../../../../../../../script.js';
-import { bindLongPress } from '../../utils/message-actions-helper.js';
 import logger from '../../../../logger.js';
+
+/**
+ * 已处理的转账消息ID集合（防止重复保存）
+ * @type {Set<string>}
+ */
+const savedTransferMessages = new Set();
 
 /**
  * 渲染转账消息气泡
@@ -129,12 +135,27 @@ export function renderTransferMessage(message, contact, contactId) {
   container.appendChild(bubble);
   logger.debug('[TransferMessage] container组装完成，子元素数量:', container.children.length);
 
-  // 绑定长按操作菜单（支持删除，不支持引用）
-  logger.debug('[TransferMessage] 准备绑定长按菜单');
-  bindLongPress(bubble, message, contactId, {
-    disableQuote: true  // 禁用引用功能
+  // 长按操作菜单由 message-chat-ui.js 统一绑定
+
+  logger.info('[TransferMessage] ✅ 转账消息渲染完成:', message.id);
+  logger.debug('[TransferMessage] 返回的container:', {
+    tagName: container.tagName,
+    className: container.className,
+    childrenCount: container.children.length,
+    msgId: container.getAttribute('data-msg-id')
   });
-  logger.debug('[TransferMessage] 长按菜单已绑定');
+  logger.debug('[TransferMessage] ==================== 渲染转账消息结束 ====================');
+
+  // ✅ 自动处理转账到账（双层去重机制）
+  // 第一层：内存去重（防止同一会话中重复渲染）
+  // 第二层：持久化去重（在receiveTransfer中检查messageId，防止跨会话重复）
+  if (message.sender === 'contact') {
+    if (savedTransferMessages.has(message.id)) {
+      logger.debug('[TransferMessage] 跳过转账处理（内存去重）msgId:', message.id);
+    } else {
+      handleReceiveTransfer(contactId, message);
+    }
+  }
 
   logger.info('[TransferMessage] ✅ 转账消息渲染完成:', message.id, '金额:', message.amount);
   logger.debug('[TransferMessage] 返回的container:', {
@@ -146,4 +167,39 @@ export function renderTransferMessage(message, contact, contactId) {
   logger.debug('[TransferMessage] ==================== 渲染转账消息结束 ====================');
 
   return container;
+}
+
+/**
+ * 处理接收转账（保存转账记录到钱包）
+ * 
+ * @description
+ * 当渲染AI发送的转账消息时，自动调用此函数保存转账记录
+ * 防止重复保存：使用 savedTransferMessages 集合记录已处理的消息ID
+ * 
+ * @async
+ * @param {string} contactId - 联系人ID
+ * @param {Object} message - 转账消息对象
+ * @param {string} message.id - 消息ID
+ * @param {number} message.amount - 转账金额
+ * @param {string} [message.message] - 转账留言
+ */
+async function handleReceiveTransfer(contactId, message) {
+  logger.debug('[TransferMessage] 处理接收转账，msgId:', message.id);
+
+  try {
+    // 标记为正在处理（防止异步期间重复调用）
+    savedTransferMessages.add(message.id);
+
+    // 导入钱包模块
+    const { receiveTransfer } = await import('../../data-storage/storage-wallet.js');
+
+    // 保存转账记录（receiveTransfer 会自动更新余额、保存记录、触发事件）
+    await receiveTransfer(contactId, message.amount, message.message || '', message.id);
+
+    logger.info('[TransferMessage] ✅ 转账已自动到账:', message.amount, 'msgId:', message.id);
+  } catch (error) {
+    logger.error('[TransferMessage] ❌ 转账到账失败:', error);
+    // 保存失败时移除标记，允许下次重试
+    savedTransferMessages.delete(message.id);
+  }
 }

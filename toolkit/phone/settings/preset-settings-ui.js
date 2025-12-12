@@ -713,7 +713,7 @@ export function getDefaultPresets() {
         type: 'custom',
         label: 'QQ聊天行为要求',
         role: 'system',
-        content: '[QQ聊天行为要求]\n在符合角色性格的前提下，每次回复时适当选择执行以下1-2项（避免超过3项）：\n  1. 主动分享：今天遇到的事/看到的东西/突然想起的事\n  2. 主动提问：关心用户状态/询问用户想法/发起新话题\n  3. 情绪表达：发送戳一戳/修改个签/单独发表情包\n  4. 闲聊引子：吐槽天气/无聊找人聊/分享图片或见闻\n  ...\n\n执行方式：\n  - 不要只回答用户问题后结束\n  - 在回答后自然延伸1-2条新内容\n  - 根据角色性格选择合适的行为\n  - 不必每次都执行，简单回复后等待也是正常的\n\n示例：\n用户：\"在吗？\"\n角色回复：\n[消息]\n在呀\n刚吃完饭\n[图片]今天吃的火锅\n你呢，吃了吃了吗？\n\n禁止：\n  - 不要在不符合角色性格时强行主动\n  - 不要每次都追问或每次都主动分享\n[/QQ聊天行为要求]',
+        content: '[QQ聊天行为要求]\n在符合角色性格的前提下，每次回复时适当选择执行以下1-2项（避免超过3项）：\n  1. 主动分享：今天遇到的事/看到的东西/突然想起的事\n  2. 主动提问：关心用户状态/询问用户想法/发起新话题\n  3. 情绪表达：发送戳一戳/修改个签/单独发表情包\n  4. 闲聊引子：吐槽天气/无聊找人聊/分享图片或见闻\n  ...\n\n执行方式：\n  - 不要只回答用户问题后结束\n  - 在回答后自然延伸1-2条新内容\n  - 根据角色性格选择合适的行为\n  - 不必每次都执行，简单回复后等待也是正常的\n\n禁止：\n  - 不要在不符合角色性格时强行主动\n  - 不要每次都追问或每次都主动分享\n[/QQ聊天行为要求]',
         enabled: true,
         editable: true,
         deletable: true,
@@ -754,17 +754,6 @@ export function getDefaultPresets() {
         order: 5
       },
       {
-        id: 'custom-1761820947062',
-        type: 'custom',
-        label: '提示',
-        role: 'system',
-        content: '[酒馆上下文]仅为线下剧情提示，无需遵守[酒馆上下文]的格式',
-        enabled: true,
-        editable: true,
-        deletable: true,
-        order: 6
-      },
-      {
         id: 'phone-records',
         type: 'fixed',
         label: '手机相关记录 - 占位符',
@@ -773,7 +762,7 @@ export function getDefaultPresets() {
         enabled: false,
         editable: true,
         deletable: false,
-        order: 7
+        order: 6
       },
       {
         id: 'emoji-library',
@@ -784,7 +773,7 @@ export function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: false,
-        order: 8
+        order: 7
       },
       {
         id: 'chat-history',
@@ -795,7 +784,7 @@ export function getDefaultPresets() {
         enabled: true,
         editable: false,
         deletable: false,
-        order: 9
+        order: 8
       },
       {
         id: 'custom-1762338335057',
@@ -806,7 +795,7 @@ export function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 10
+        order: 9
       },
       {
         id: 'custom-1762346128860',
@@ -817,7 +806,7 @@ export function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 11
+        order: 10
       },
       {
         id: 'custom-1762601846944',
@@ -828,7 +817,7 @@ export function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 12
+        order: 11
       },
       {
         id: 'custom-1762528914691',
@@ -839,7 +828,7 @@ export function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 13
+        order: 12
       },
       {
         id: 'custom-1762340602847',
@@ -850,7 +839,7 @@ export function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 14
+        order: 13
       },
       {
         id: 'custom-1761727717853',
@@ -861,7 +850,7 @@ export function getDefaultPresets() {
         enabled: true,
         editable: true,
         deletable: true,
-        order: 15
+        order: 14
       },
       {
         id: 'custom-1761743479648',
@@ -869,6 +858,17 @@ export function getDefaultPresets() {
         label: '转账',
         role: 'system',
         content: '[转账]\n角色可以在聊天中向用户转账\n**格式作用：角色给用户转钱（角色付 → 用户收）**\n\n格式：[转账]金额|留言\n示例：[转账]100|生日快乐！\n\n注意：\n  - 当角色发送此格式时，是角色花自己的钱给用户\n  - 如果是\"角色需要用户付钱给自己\"，**不发此格式**\n  - 转账金额根据角色经济情况合理判断\n  - 转账留言可以体现角色性格\n[/转账]',
+        enabled: true,
+        editable: true,
+        deletable: true,
+        order: 15
+      },
+      {
+        id: 'custom-1763985800000',
+        type: 'custom',
+        label: '会员',
+        role: 'system',
+        content: '[会员]\n角色可以给用户送会员，或给自己开会员\n\n送会员（角色花钱给用户开会员）\n格式：[送会员]VIP/1个月 或 [送会员]SVIP/12个月\n说明：\n  - VIP月付18元，年付108元\n  - SVIP月付36元，年付216元\n  - 用 `/` 或 `|` 分隔都可以\n  - 这会花费角色的钱，给用户开通会员\n\n开会员（角色给自己开会员）\n格式：[开会员]VIP/1个月 或 [开会员]SVIP/12个月\n说明：\n  - 角色可以给自己开会员\n  - 会显示在聊天页中\n  ...\n[/会员]',
         enabled: true,
         editable: true,
         deletable: true,

@@ -1,6 +1,5 @@
 import logger from '../../../../logger.js';
 import { getThumbnailUrl } from '../../../../../../../../script.js';
-import { bindLongPress } from '../../utils/message-actions-helper.js';
 
 /**
  * 渲染假装图片消息气泡（AI过家家，不识别）
@@ -99,13 +98,7 @@ export function renderImageFakeMessage(message, contact, contactId) {
   container.appendChild(avatar);
   container.appendChild(bubble);
 
-  // 绑定长按操作菜单（支持删除/转发/收藏/多选，禁用引用）
-  // 注：图片消息禁用引用是因为引用图片会导致界面复杂，且已有转发功能
-  if (contactId) {
-    bindLongPress(container, message, contactId, {
-      disableQuote: true  // 图片消息不适合被引用
-    });
-  }
+  // 长按操作菜单由 message-chat-ui.js 统一绑定
 
   return container;
 }

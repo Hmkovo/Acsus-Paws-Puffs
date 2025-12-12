@@ -1,7 +1,7 @@
 /**
  * AI上下文构建器
  * @module phone/ai-integration/ai-context-builder
- * 
+ *
  * @description
  * 构建完整的AI提示词，包括：
  * - 头部破限
@@ -69,12 +69,15 @@ function getRecentTavernContext(count = 5) {
 
 /**
  * 获取特定角色的线下剧情（酒馆聊天记录，异步版本）
- * 
+ *
  * @async
  * @private
  * @param {Object} character - 酒馆角色对象
  * @param {number} count - 获取条数（默认5）
  * @returns {Promise<string>} 线下剧情聊天记录
+ *
+ * @description
+ * ✅ 2025-11-29 新增：应用角色的正则配置处理文本
  */
 async function getCharacterTavernContext(character, count = 5) {
   if (!character) {
@@ -128,18 +131,49 @@ async function getCharacterTavernContext(character, count = 5) {
 
     // 获取最近N条消息
     const recentMessages = chatMessages.slice(-count);
+    logger.debug(`[ContextBuilder] 获取酒馆上下文: 总消息=${chatMessages.length}条, 请求=${count}条, 实际获取=${recentMessages.length}条`);
+
+    const contactId = `tavern_${character.avatar.replace(/\.[^/.]+$/, '')}`;
     let context = '';
 
-    recentMessages.forEach(msg => {
-      const senderName = msg.is_user ? '你' : (msg.name || character.name);
-      context += `${senderName}: ${msg.mes}\n`;
-    });
+    // ✅ 对每条消息单独应用正则（像酒馆一样），再拼接
+    for (const msg of recentMessages) {
+      if (!msg.mes) continue;  // 跳过无效消息
+
+      const senderName = msg.name || (msg.is_user ? '你' : character.name);
+      const processedText = await applyRegexToContext(msg.mes, contactId);
+      context += `${senderName}: ${processedText}\n`;
+    }
 
     return context;
 
   } catch (error) {
     logger.error('[ContextBuilder] 获取线下剧情失败:', error);
     return '（获取线下剧情失败）\n';
+  }
+}
+
+/**
+ * 应用正则处理到上下文文本
+ *
+ * @private
+ * @async
+ * @param {string} text - 原始文本
+ * @param {string} contactId - 联系人ID
+ * @returns {Promise<string>} 处理后的文本
+ *
+ * @description
+ * 调用 storage-regex.js 的 applyContactRegex 函数
+ * 只处理 only_format_prompt 为 true 的正则
+ */
+async function applyRegexToContext(text, contactId) {
+  try {
+    // 动态导入正则处理模块
+    const { applyContactRegex } = await import('../data-storage/storage-regex.js');
+    return applyContactRegex(text, contactId);
+  } catch (error) {
+    logger.error('[ContextBuilder] 应用正则失败:', error);
+    return text;  // 失败时返回原文本
   }
 }
 
@@ -162,12 +196,12 @@ function formatTimestamp(timestamp) {
 
 /**
  * 提取被触发的联系人ID列表（从待发送消息中提取）
- * 
+ *
  * @async
  * @private
  * @param {Object} allPendingMessages - 所有待发送消息（按联系人ID分组）
  * @returns {Promise<string[]>} 被触发的联系人ID数组（有消息的联系人 + AI感知删除触发的联系人）
- * 
+ *
  * @description
  * 从 allPendingMessages 中提取所有有消息的 contactId
  * 同时检查AI感知删除触发的角色，合并到触发列表中
@@ -207,27 +241,27 @@ async function extractTriggeredContactIds(allPendingMessages) {
 
 /**
  * 构建messages数组（新版，使用预设系统，支持多角色触发）
- * 
+ *
  * @async
  * @param {string} contactId - 主联系人ID（当前打开的聊天页面，如果不存在会从触发列表中找第一个）
  * @param {Object} allPendingMessages - 所有待发送消息（按联系人ID分组）格式：{ contactId: [messages] }
  * @returns {Promise<Object>} { messages: messages数组, messageNumberMap: 编号映射表 }
- * 
+ *
  * @description
  * 根据预设列表构建messages数组，每个预设项对应一条消息。
  * 支持三种角色类型（system/user/assistant）。
  * 自动替换特殊占位符（如__AUTO_CHARACTERS__、__AUTO_CHAT_HISTORY__、user待操作）。
- * 
+ *
  * ✅ 多角色触发机制（2025-11-07新增）：
  * - 从 allPendingMessages 提取所有被触发的联系人ID
  * - 为每个被触发的角色构建角色卡和聊天记录
  * - 最新消息集中在 [{{user}}本轮操作] 中（保证AI注意力）
- * 
+ *
  * ⚠️ 变量替换由 SillyTavern 的 MacrosParser 自动处理（不需要手动替换）：
  * - {{最新消息}}、{{历史消息}}、{{当前时间}} 等手机宏
  * - {{user}}、{{char}} 等官方宏
  * - 在 AI 调用前自动替换
- * 
+ *
  * ✅ 消息编号机制（2025-10-29新增）：
  * - 每次构建时临时生成编号（#1, #2, #3...）
  * - 编号→消息ID映射表随messages一起返回
@@ -273,13 +307,13 @@ export async function buildMessagesArray(contactId, allPendingMessages) {
     } else if (item.id === 'chat-history') {
       // ✅ 构建多个角色的聊天记录（传递触发的联系人ID列表和API配置）
       const chatResult = await buildAllChatHistoryInfo(triggeredContactIds, messageNumberMap, currentNumber, apiSource);
-      
+
       // ✅ 检查返回类型：结构化消息（自定义API）还是纯文本（默认API）
       if (chatResult.structuredMessages && apiSource === 'custom') {
         // 🔥 自定义API：直接插入结构化消息到 messages 数组
         messages.push(...chatResult.structuredMessages);
         logger.info('[ContextBuilder.buildMessagesArray] ✅ 已插入', chatResult.structuredMessages.length, '条结构化消息');
-        
+
         // 🔍 调试：打印每条消息的 role 和是否有签名
         chatResult.structuredMessages.forEach((msg, idx) => {
           const hasSignature = Array.isArray(msg.content) && msg.content.some(part => part.thoughtSignature);
@@ -289,22 +323,22 @@ export async function buildMessagesArray(contactId, allPendingMessages) {
             logger.info(`[ContextBuilder.buildMessagesArray] 🎯 消息[${idx}] 包含 thoughtSignature，长度: ${signaturePart.thoughtSignature.length}`);
           }
         });
-        
+
         content = null;  // ← 标记为已处理，跳过后续的通用添加逻辑
       } else {
         // ✅ 默认API：使用纯文本 content
         content = chatResult.content;
       }
-      
+
       currentNumber = chatResult.nextNumber;
-      
+
       // ✅ 收集历史消息中的图片（imageMode='always'时有值）
       if (chatResult.historyImages && chatResult.historyImages.length > 0) {
         collectedImages.push(...chatResult.historyImages);
         logger.info('[ContextBuilder.buildMessagesArray] 检测到历史图片，数量:', chatResult.historyImages.length);
         logger.debug('[ContextBuilder.buildMessagesArray] 历史图片列表:', chatResult.historyImages.map(img => img.url));
       }
-      
+
       // ✅ 如果是结构化消息，跳过后续的通用添加逻辑
       if (content === null) {
         continue;
@@ -317,10 +351,10 @@ export async function buildMessagesArray(contactId, allPendingMessages) {
       const pendingResult = await buildUserPendingOps(allPendingMessages, messageNumberMap, currentNumber);
       content = pendingResult.content;
       currentNumber = pendingResult.nextNumber;
-      
+
       // ✅ 存储图片列表
       const imagesToAttach = pendingResult.imagesToAttach || [];
-      
+
       // ✅ 关键修复：先添加 user 消息到 messages，再附加图片
       // 即使 content 为空，只要有图片，也要创建 user 消息
       if (imagesToAttach.length > 0) {
@@ -341,19 +375,19 @@ export async function buildMessagesArray(contactId, allPendingMessages) {
         // 无图片且无文本：跳过
         logger.debug('[ContextBuilder.buildMessagesArray] ⏭️ 跳过空的user-pending-ops');
       }
-      
+
       // ✅ 保存待发送消息中的图片信息，稍后在事件中附加
       if (imagesToAttach.length > 0) {
         collectedImages.push(...imagesToAttach);  // ← 追加而不是覆盖，以便合并历史图片
         logger.info('[ContextBuilder.buildMessagesArray] 检测到待发送图片，数量:', imagesToAttach.length);
         logger.debug('[ContextBuilder.buildMessagesArray] 待发送图片列表:', imagesToAttach.map(img => img.url));
       }
-      
+
       // ✅ 输出最终图片总数
       if (collectedImages.length > 0) {
         logger.info('[ContextBuilder.buildMessagesArray] ✅ 图片总数（历史+待发送）:', collectedImages.length, '将在宏替换后通过事件附加');
       }
-      
+
       // ✅ user-pending-ops 已处理完毕，跳过后面的通用添加逻辑
       continue;
     } else if (item.id === 'emoji-library') {
@@ -416,14 +450,14 @@ export async function buildMessagesArray(contactId, allPendingMessages) {
 
 /**
  * 构建所有被触发角色的角色档案（多角色版本）
- * 
+ *
  * @async
  * @private
  * @param {string[]} triggeredContactIds - 被触发的联系人ID列表
  * @param {Map<number, string>} messageNumberMap - 消息编号映射表
  * @param {number} startNumber - 起始编号
  * @returns {Promise<Object>} { content: 所有角色的角色档案内容, nextNumber: 下一个可用编号 }
- * 
+ *
  * @description
  * 为每个被触发的角色构建角色卡（人设、线下剧情等）
  * 格式：
@@ -431,7 +465,7 @@ export async function buildMessagesArray(contactId, allPendingMessages) {
  *   [人设]...
  *   [线下剧情]...
  * [/角色卡-Wade Wilson]
- * 
+ *
  * [角色卡-Jerry Hickfang]
  *   [人设]...
  *   [线下剧情]...
@@ -507,7 +541,7 @@ async function buildAllCharacterInfo(triggeredContactIds, messageNumberMap, star
 
 /**
  * 构建所有被触发角色的QQ聊天记录（多角色版本）
- * 
+ *
  * @async
  * @private
  * @param {string[]} triggeredContactIds - 被触发的联系人id列表
@@ -515,7 +549,7 @@ async function buildAllCharacterInfo(triggeredContactIds, messageNumberMap, star
  * @param {number} startNumber - 起始编号
  * @param {string} apiSource - API配置源（'default'=酒馆API, 'custom'=自定义API）
  * @returns {Promise<Object>} { content: 所有角色的聊天记录内容, nextNumber: 下一个可用编号, historyImages: 历史消息中需要重新发送的图片列表 }
- * 
+ *
  * @description
  * 为每个被触发的角色构建最新的聊天记录
  * 格式：
@@ -525,7 +559,7 @@ async function buildAllCharacterInfo(triggeredContactIds, messageNumberMap, star
  *   [#2] [21:01] 白沉: 嗨
  * [/消息]
  * [/角色-Wade Wilson]
- * 
+ *
  * [角色-Jerry Hickfang]
  * [消息]
  *   [#3] [20:50] Jerry: 在干嘛
@@ -586,7 +620,7 @@ async function buildAllChatHistoryInfo(triggeredContactIds, messageNumberMap, st
       allStructuredMessages.push(...chatResult.structuredMessages);
       currentNumber = chatResult.nextNumber;
       logger.debug('[ContextBuilder.buildAllChatHistoryInfo] 结构化消息已收集:', contact.name, '消息数量:', chatResult.structuredMessages.length);
-      
+
       // ✅ 合并历史图片
       if (chatResult.historyImages && chatResult.historyImages.length > 0) {
         allHistoryImages.push(...chatResult.historyImages);
@@ -598,13 +632,13 @@ async function buildAllChatHistoryInfo(triggeredContactIds, messageNumberMap, st
         .filter(part => part.type === 'text')  // 只提取文本片段
         .map(part => part.text)
         .join('');
-      
+
       if (contentText.trim()) {
         allContent += contentText + '\n\n';
         currentNumber = chatResult.nextNumber;
         logger.debug('[ContextBuilder.buildAllChatHistoryInfo] 聊天记录已添加:', contact.name, '当前编号:', currentNumber);
       }
-      
+
       // ✅ 合并历史图片
       if (chatResult.historyImages && chatResult.historyImages.length > 0) {
         allHistoryImages.push(...chatResult.historyImages);
@@ -617,13 +651,13 @@ async function buildAllChatHistoryInfo(triggeredContactIds, messageNumberMap, st
   allContent = allContent.trim();
 
   logger.info('[ContextBuilder.buildAllChatHistoryInfo] 多角色聊天记录构建完成，共处理', triggeredContactIds.length, '个角色');
-  
+
   // ✅ 根据 API 配置源返回不同格式
   if (apiSource === 'custom' && allStructuredMessages.length > 0) {
     // 🔥 自定义API：返回结构化消息数组
     logger.debug('[ContextBuilder.buildAllChatHistoryInfo] 结构化消息总数:', allStructuredMessages.length);
     logger.debug('[ContextBuilder.buildAllChatHistoryInfo] 历史图片总数:', allHistoryImages.length);
-    
+
     return {
       structuredMessages: allStructuredMessages,  // ← 返回结构化消息数组
       nextNumber: currentNumber,
@@ -633,7 +667,7 @@ async function buildAllChatHistoryInfo(triggeredContactIds, messageNumberMap, st
     // ✅ 默认API：返回纯文本
     logger.debug('[ContextBuilder.buildAllChatHistoryInfo] 内容长度:', allContent.length, '字符');
     logger.debug('[ContextBuilder.buildAllChatHistoryInfo] 历史图片总数:', allHistoryImages.length);
-    
+
     return {
       content: allContent,
       nextNumber: currentNumber,
@@ -644,10 +678,10 @@ async function buildAllChatHistoryInfo(triggeredContactIds, messageNumberMap, st
 
 /**
  * 构建角色总条目内容
- * 
+ *
  * @description
  * 优先使用角色专属配置（characterPrompts），如果不存在则使用默认逻辑（兼容旧版本）
- * 
+ *
  * @private
  * @param {Object} contact - 联系人对象
  * @param {Object|null} character - 酒馆角色数据
@@ -723,7 +757,9 @@ async function buildCharacterInfoFromConfig(contact, character, config, messageN
       case 'tavern-context':
         // 线下剧情（异步获取特定角色的聊天记录）
         const count = item.contextCount || 5;
+        logger.debug(`[ContextBuilder] 酒馆上下文配置: contextCount=${item.contextCount}, 实际使用count=${count}`);
         itemContent = await getCharacterTavernContext(character, count);
+        logger.debug(`[ContextBuilder] 酒馆上下文获取结果长度: ${itemContent.length}字符`);
         break;
 
       case 'history-chat':
@@ -761,7 +797,7 @@ async function buildCharacterInfoFromConfig(contact, character, config, messageN
 
 /**
  * 构建聊天记录（结构化版本，仅用于自定义API）
- * 
+ *
  * @async
  * @private
  * @param {string} contactId - 联系人ID
@@ -772,12 +808,12 @@ async function buildCharacterInfoFromConfig(contact, character, config, messageN
  * @param {Object} sendSettings - 发送设置
  * @param {string} userName - 用户显示名
  * @returns {Promise<Object>} { structuredMessages: 结构化消息数组, nextNumber: 下一个可用编号, historyImages: 历史图片列表 }
- * 
+ *
  * @description
  * 🔥 自定义API专用：将 recentCount 内的消息拆分成独立的 role
  * - 带图片的消息：独立的 user/assistant role，content 为数组 [{type: 'text'}, {type: 'image_url'}]
  * - 纯文字消息：合并到一个 system role，保持连续性
- * 
+ *
  * 返回格式：
  * {
  *   structuredMessages: [
@@ -793,45 +829,45 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
   // 动态导入工具函数
   const { formatTimeForAI } = await import('../utils/time-helper.js');
   const { findEmojiById } = await import('../emojis/emoji-manager-data.js');
-  
+
   const imageMode = extension_settings.acsusPawsPuffs?.phone?.imageMode || 'once';
   logger.debug('[ContextBuilder.buildChatHistoryStructured] imageMode:', imageMode);
-  
+
   // 加载历史记录
   const allHistory = await loadChatHistory(contactId);
   const validHistory = allHistory.filter(msg => !msg.excluded);
   const recentHistory = validHistory.slice(Math.max(0, validHistory.length - sendSettings.recentCount));
-  
+
   let structuredMessages = [];
   let historyImages = [];
   let currentNumber = startNumber;
   let textBuffer = `[角色-${contact.name}]\n[消息]\n`;  // 累积纯文字消息
-  
+
   // ✅ 轮次合并状态（用于累积连续的 contact 消息）
   let turnBuffer = '';              // 当前轮次的消息文本
   let turnSignature = null;         // 当前轮次的签名（只在第一条消息提取）
   let turnStartNumber = currentNumber;  // 轮次起始编号
   let inContactTurn = false;        // 是否在 contact 的轮次中
-  
+
   /**
    * Flush 当前 contact 轮次
    */
   const flushContactTurn = () => {
     if (!inContactTurn || !turnBuffer) return;
-    
+
     if (turnSignature) {
       // ✅ 有签名 → 创建独立的 assistant role
       logger.debug('[ContextBuilder.buildChatHistoryStructured] ✅ Flush 带签名的 contact 轮次，编号范围:', turnStartNumber, '-', currentNumber - 1);
-      
+
       // 🎯 检查当前 API 源：只有 Gemini (makersuite) 才包含签名
       const isGemini = apiSource === 'makersuite';
       logger.debug('[ContextBuilder.buildChatHistoryStructured] 当前 API 源:', apiSource, ', 是否包含签名:', isGemini);
-      
+
       const contentPart = {
         type: 'text',
         text: turnBuffer.trim()
       };
-      
+
       // 只有 Gemini 才附加签名
       if (isGemini && turnSignature) {
         contentPart.thoughtSignature = turnSignature;
@@ -839,7 +875,7 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
       } else if (turnSignature) {
         logger.debug('[ContextBuilder.buildChatHistoryStructured] ⚠️ 跳过附加 thoughtSignature（非 Gemini 模型）');
       }
-      
+
       structuredMessages.push({
         role: 'assistant',
         content: [contentPart]
@@ -849,13 +885,13 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
       logger.debug('[ContextBuilder.buildChatHistoryStructured] Flush 无签名的 contact 轮次到 textBuffer');
       textBuffer += turnBuffer;
     }
-    
+
     // 重置轮次状态
     turnBuffer = '';
     turnSignature = null;
     inContactTurn = false;
   };
-  
+
   if (recentHistory.length === 0) {
     // 没有历史消息
     return {
@@ -864,7 +900,7 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
       historyImages: []
     };
   }
-  
+
   // 遍历历史消息
   for (let index = 0; index < recentHistory.length; index++) {
     const msg = recentHistory[index];
@@ -872,11 +908,11 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
     const prevTime = index > 0 ? recentHistory[index - 1].time : null;
     const isFirst = index === 0;
     const timeStr = formatTimeForAI(msg.time, prevTime, isFirst);
-    
+
     // 格式化消息内容
     let messageContent = msg.content;
     let hasRealImage = false;  // 标记是否有真实图片
-    
+
     if (msg.type === 'poke') {
       messageContent = '[戳一戳]';
     } else if (msg.type === 'emoji') {
@@ -886,7 +922,7 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
       // ✅ 真实图片：需要拆分成独立 role
       hasRealImage = true;
       const description = msg.description || '';
-      
+
       // 检查是否需要附加图片（imageMode 和轮次判断）
       if (imageMode === 'always' && msg.imageUrl && msg.imageRound !== currentRound) {
         historyImages.push({
@@ -904,12 +940,18 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
       messageContent = `[引用]${quotedText}[回复]${msg.replyContent}`;
     } else if (msg.type === 'transfer') {
       messageContent = msg.message ? `[转账]${msg.amount}元 ${msg.message}` : `[转账]${msg.amount}元`;
+    } else if (msg.type === 'gift-membership') {
+      const typeText = msg.membershipType === 'vip' ? 'VIP' : 'SVIP';
+      messageContent = `[送会员]${msg.months}个月${typeText}会员`;
+    } else if (msg.type === 'buy-membership') {
+      const typeText = msg.membershipType === 'vip' ? 'VIP' : 'SVIP';
+      messageContent = `[开会员]${msg.months}个月${typeText}会员`;
     } else if (msg.type === 'recalled') {
       messageContent = msg.sender === 'user' ? `【${userName}撤回了一条消息】` : `[撤回]${msg.originalContent || '(无内容)'}`;
     } else if (msg.type === 'forwarded') {
       messageContent = formatForwardedMessageForAI(msg, userName, formatTimeForAI);
     }
-    
+
     // 🔥 关键逻辑：带真实图片的消息拆分成独立 role
     if (hasRealImage && msg.imageUrl) {
       // ✅ 判断是否应该发送图片给AI（根据 imageMode 和轮次）
@@ -925,28 +967,28 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
       } else if (imageMode === 'never') {
         logger.debug('[ContextBuilder.buildChatHistoryStructured] 📵 imageMode=never，图片不发送给AI，消息ID:', msg.id);
       }
-      
+
       if (shouldIncludeImage) {
         // ✅ 发送图片：创建独立的图片消息 role
         // ✅ 先 flush contact 轮次（图片会打断轮次累积）
         flushContactTurn();
-        
+
         // ✅ 再 flush textBuffer
         if (textBuffer.trim() !== `[角色-${contact.name}]\n[消息]`.trim()) {
           structuredMessages.push({ role: 'system', content: textBuffer });
           textBuffer = '';  // 清空缓冲区
         }
-        
+
         // 创建独立的图片消息 role
         const msgRole = msg.sender === 'user' ? 'user' : 'assistant';
         const description = msg.description || '';
-        
+
         // ✅ 构建消息 content（文本 + 图片）
         const messageParts = [
           { type: 'text', text: `[#${currentNumber}] ${timeStr}${senderName}: ${description}` },
           { type: 'image_url', image_url: { url: msg.imageUrl } }  // 占位符，后续转base64
         ];
-        
+
         // ✅ 检查是否有 API 元数据（仅 assistant 消息，仅 Gemini）
         const isGemini = apiSource === 'makersuite';
         if (msgRole === 'assistant' && msg.metadata?.gemini?.thoughtSignature && isGemini) {
@@ -956,12 +998,12 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
         } else if (msgRole === 'assistant' && msg.metadata?.gemini?.thoughtSignature && !isGemini) {
           logger.debug('[ContextBuilder.buildChatHistoryStructured] ⚠️ 跳过附加 thoughtSignature（非 Gemini 模型），消息ID:', msg.id);
         }
-        
+
         structuredMessages.push({
           role: msgRole,
           content: messageParts
         });
-        
+
         if (msg.id) {
           messageNumberMap.set(currentNumber, msg.id);
         }
@@ -970,7 +1012,7 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
         // ❌ 不发送图片：按文本消息处理，显示为 [图片]描述
         const description = msg.description || '';
         messageContent = `[图片]${description || '无描述'}`;
-        
+
         // 根据 sender 累积到对应 buffer（和普通文本消息一样）
         if (msg.sender === 'contact') {
           // contact 消息 → 累积到轮次 buffer
@@ -983,7 +1025,7 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
             inContactTurn = true;
             turnStartNumber = currentNumber;
           }
-          
+
           // 累积消息文本
           if (msg.id) {
             messageNumberMap.set(currentNumber, msg.id);
@@ -991,18 +1033,18 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
           } else {
             turnBuffer += `${timeStr}${senderName}: ${messageContent}\n`;
           }
-          
+
           // 提取签名（只在第一条消息）
           if (!turnSignature && msg.metadata?.gemini?.thoughtSignature) {
             turnSignature = msg.metadata.gemini.thoughtSignature;
             logger.debug('[ContextBuilder.buildChatHistoryStructured] 🔍 提取轮次签名，消息ID:', msg.id);
           }
-          
+
           currentNumber++;
         } else {
           // user 消息 → 先 flush contact 轮次，再累积到 textBuffer
           flushContactTurn();
-          
+
           // 累积到 textBuffer
           if (msg.id) {
             messageNumberMap.set(currentNumber, msg.id);
@@ -1013,7 +1055,7 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
           }
         }
       }
-      
+
     } else if (msg.sender === 'contact') {
       // 🔥 纯文本 contact 消息 → 累积到轮次 buffer
       if (!inContactTurn) {
@@ -1025,7 +1067,7 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
         inContactTurn = true;
         turnStartNumber = currentNumber;
       }
-      
+
       // 累积消息文本
       if (msg.id) {
         messageNumberMap.set(currentNumber, msg.id);
@@ -1033,19 +1075,19 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
       } else {
         turnBuffer += `${timeStr}${senderName}: ${messageContent}\n`;
       }
-      
+
       // 提取签名（只在第一条消息）
       if (!turnSignature && msg.metadata?.gemini?.thoughtSignature) {
         turnSignature = msg.metadata.gemini.thoughtSignature;
         logger.debug('[ContextBuilder.buildChatHistoryStructured] 🔍 提取轮次签名，消息ID:', msg.id);
       }
-      
+
       currentNumber++;
-      
+
     } else {
       // 🔥 user 消息 → 先 flush contact 轮次，再累积到 textBuffer
       flushContactTurn();
-      
+
       // 累积到 textBuffer
       if (msg.id) {
         messageNumberMap.set(currentNumber, msg.id);
@@ -1056,18 +1098,18 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
       }
     }
   }
-  
+
   // ✅ 循环结束，flush 最后的 contact 轮次
   flushContactTurn();
-  
+
   // ✅ flush 最后的文本块 + 添加结束标记
   textBuffer += `----上方对话user已读-----\n[/消息]\n[/角色-${contact.name}]`;
   structuredMessages.push({ role: 'system', content: textBuffer });
-  
+
   logger.info('[ContextBuilder.buildChatHistoryStructured] 结构化消息构建完成');
   logger.debug('[ContextBuilder.buildChatHistoryStructured] - 消息数量:', structuredMessages.length);
   logger.debug('[ContextBuilder.buildChatHistoryStructured] - 历史图片数量:', historyImages.length);
-  
+
   return {
     structuredMessages,
     nextNumber: currentNumber,
@@ -1077,7 +1119,7 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
 
 /**
  * 构建聊天记录内容（最新消息，用于[QQ聊天记录]）
- * 
+ *
  * @private
  * @param {string} contactId - 联系人ID
  * @param {Object} contact - 联系人对象
@@ -1086,19 +1128,19 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
  * @param {string} [apiSource='default'] - API配置源（'default'=酒馆API只支持纯文本, 'custom'=自定义API支持多模态数组）
  * @param {Array} [imagesToAttach=[]] - 待附加的图片列表（待发送消息中的图片）
  * @returns {Promise<Object>} { parts: 结构化内容数组, nextNumber: 下一个可用编号, historyImages: 历史消息中需要重新发送的图片列表 }
- * 
+ *
  * @description
  * 返回结构化数组，包含文本片段和图片占位符：
  * - { type: 'text', text: '...' } - 文本片段
  * - { type: 'image_placeholder', messageId: 'xxx' } - 图片占位符
- * 
+ *
  * 只包含最新的recentCount条消息（不包括excluded的）
  * 优化规则：
  * 1. 临时编号：每条消息加 [#N] 前缀（用于AI引用）
  * 2. 时间智能分组（跨天显示日期，同天只显示时间）
  * 3. 表情消息添加 [表情] 前缀
  * 4. 用户名使用真实姓名（不用"你"）
- * 
+ *
  * ⚠️ 注意：此函数只返回历史记录，不包含待发送消息（待发送消息由 buildUserPendingOps 处理）
  */
 export async function buildChatHistoryInfo(contactId, contact, messageNumberMap, startNumber = 1, apiSource = 'default', imagesToAttach = []) {
@@ -1172,7 +1214,7 @@ export async function buildChatHistoryInfo(contactId, contact, messageNumberMap,
         // ✅ 真实图片（新类型）：在聊天记录中显示[图片]标记
         const description = msg.description || '';
         messageContent = description ? `[图片]${description}` : '[图片]';
-        
+
         // imageMode = 'always' 时，历史图片也要重新发送给AI
         // ✅ 排除当前轮次的图片（当前轮次的图片由 buildUserPendingOps 处理）
         if (imageMode === 'always' && msg.imageUrl && msg.imageRound !== currentRound) {
@@ -1195,7 +1237,7 @@ export async function buildChatHistoryInfo(contactId, contact, messageNumberMap,
           // 真实图片：在聊天记录中显示[图片]标记
           const description = msg.description || '';
           messageContent = description ? `[图片]${description}` : '[图片]';
-          
+
           // imageMode = 'always' 时，历史图片也要重新发送给AI
           // ✅ 排除当前轮次的图片（当前轮次的图片由 buildUserPendingOps 处理）
           if (imageMode === 'always' && msg.imageRound !== currentRound) {
@@ -1222,6 +1264,14 @@ export async function buildChatHistoryInfo(contactId, contact, messageNumberMap,
         messageContent = msg.message
           ? `[转账]${msg.amount}元 ${msg.message}`
           : `[转账]${msg.amount}元`;
+      } else if (msg.type === 'gift-membership') {
+        // 会员送礼消息：格式化为 [送会员]X个月VIP/SVIP会员
+        const typeText = msg.membershipType === 'vip' ? 'VIP' : 'SVIP';
+        messageContent = `[送会员]${msg.months}个月${typeText}会员`;
+      } else if (msg.type === 'buy-membership') {
+        // 角色买会员消息：格式化为 [开会员]X个月VIP/SVIP会员
+        const typeText = msg.membershipType === 'vip' ? 'VIP' : 'SVIP';
+        messageContent = `[开会员]${msg.months}个月${typeText}会员`;
       } else if (msg.type === 'recalled') {
         // 撤回消息：根据发送者显示不同内容
         if (msg.sender === 'user') {
@@ -1254,11 +1304,11 @@ export async function buildChatHistoryInfo(contactId, contact, messageNumberMap,
           text: `[#${currentNumber}] ${timeStr}${senderName}: ${messagePrefix}${messageContent}`
         });
         currentNumber++;
-        
+
         // ✅ 检查是否有图片需要附加到这条消息（包括历史图片和待发送图片）
         const hasPendingImage = imagesToAttach.find(img => img.messageId === msg.id);
         const hasHistoryImage = historyImages.find(img => img.messageId === msg.id);
-        
+
         if (hasPendingImage || hasHistoryImage) {
           parts.push({
             type: 'image_placeholder',
@@ -1266,7 +1316,7 @@ export async function buildChatHistoryInfo(contactId, contact, messageNumberMap,
           });
           logger.debug('[ContextBuilder.buildChatHistoryInfo] 📍 在消息后插入图片占位符:', msg.id);
         }
-        
+
         parts.push({ type: 'text', text: '\n' });
       } else {
         // 旧数据兼容：没有ID的消息不加编号
@@ -1287,7 +1337,7 @@ export async function buildChatHistoryInfo(contactId, contact, messageNumberMap,
   logger.info('[ContextBuilder.buildChatHistoryInfo] 聊天历史构建完成');
   logger.debug('[ContextBuilder.buildChatHistoryInfo] - parts数量:', parts.length);
   logger.debug('[ContextBuilder.buildChatHistoryInfo] - 历史图片数量:', historyImages.length);
-  
+
   return {
     parts,  // ← 返回结构化数组
     nextNumber: currentNumber,
@@ -1297,7 +1347,7 @@ export async function buildChatHistoryInfo(contactId, contact, messageNumberMap,
 
 /**
  * 格式化引用消息（用于AI上下文）
- * 
+ *
  * @private
  * @param {Object} quotedMessage - 被引用的消息
  * @returns {string} 格式化后的文本
@@ -1322,19 +1372,19 @@ function formatQuotedMessageForAI(quotedMessage) {
 
 /**
  * 格式化转发消息（用于AI上下文）
- * 
+ *
  * @private
  * @param {Object} forwardedMsg - 转发消息对象
  * @param {string} userName - 用户显示名称
  * @param {Function} formatTimeForAI - 时间格式化函数
  * @returns {string} 格式化后的内容
- * 
+ *
  * @description
  * 格式化转发消息，外层只显示 [转发消息]，内层显示完整聊天记录：
  * - 外层：[转发消息]
  * - 内层：带时间戳的消息列表（支持跨天显示日期）
  * - 内层消息不添加临时编号
- * 
+ *
  * @example
  * 输出格式：
  * [转发消息]
@@ -1414,11 +1464,11 @@ function formatForwardedMessageForAI(forwardedMsg, userName, formatTimeForAI) {
 
 /**
  * 构建用户个签历史（用于[个签历史]）
- * 
+ *
  * @async
  * @private
  * @returns {Promise<string>} 个签历史内容
- * 
+ *
  * @description
  * 格式：
  * [用户个签历史]
@@ -1460,13 +1510,13 @@ async function buildSignatureHistory() {
 
 /**
  * 构建用户待操作内容（用于[{{user}}本轮操作]）
- * 
+ *
  * @private
  * @param {Object} pendingMessages - 所有待发送消息（按联系人分组）
  * @param {Map<number, string>} messageNumberMap - 消息编号映射表
  * @param {number} startNumber - 起始编号
  * @returns {Promise<Object>} { content: 用户待操作内容, nextNumber: 下一个可用编号, imagesToAttach: 筛选后要附加的图片列表 }
- * 
+ *
  * @description
  * 格式：
  * #提醒：需关注{{user}}本轮操作
@@ -1475,12 +1525,26 @@ async function buildSignatureHistory() {
  * [#3] [21:43] 白沉: [表情]企鹅震惊
  * [#4] [21:44] 白沉: 你好
  * [#5] [21:45] 白沉: [约定计划]一起去吃卷饼
- * 
+ *
  * [给李四发送消息]
  * [#6] [21:45] 白沉: 在吗
- * 
+ *
  * [/{{user}}本轮操作]
- * 
+ *
+ * ✅ 支持的消息类型：
+ * - text: 普通文本
+ * - poke: 戳一戳
+ * - emoji: 表情包
+ * - image-real: 真实图片（AI识别）
+ * - image-fake: 假装图片（AI过家家）
+ * - transfer: 转账
+ * - gift-membership: 送会员
+ * - buy-membership: 开会员
+ * - quote: 引用消息
+ * - forwarded: 转发消息
+ * - recalled: 撤回消息
+ * - plan: 约定计划（支持 type='plan' 或 type='text' 格式）
+ *
  * ✅ 图片识别机制（2025-11-16新增）：
  * - 根据 imageMode 设置筛选要发送给AI的图片
  * - 'once': 只发送本轮（imageRound = currentRound）的图片
@@ -1537,7 +1601,7 @@ async function buildUserPendingOps(pendingMessages, messageNumberMap, startNumbe
     // 遍历该联系人的所有待发送消息（✅ 改用for循环以支持async/await）
     for (let index = 0; index < messages.length; index++) {
       const msg = messages[index];
-      
+
       // 判断是否需要显示日期分组
       const prevTime = index > 0 ? messages[index - 1].time : null;
       const isFirst = index === 0;
@@ -1568,7 +1632,7 @@ async function buildUserPendingOps(pendingMessages, messageNumberMap, startNumbe
         logger.info('[ContextBuilder.buildUserPendingOps]   - imageMode设置:', imageMode);
 
         const description = msg.description || '';
-        
+
         // 判断是否发送给AI
         if (imageMode === 'never') {
           // 不发送给AI，显示为假装图片
@@ -1622,7 +1686,7 @@ async function buildUserPendingOps(pendingMessages, messageNumberMap, startNumbe
         logger.info('[ContextBuilder.buildUserPendingOps]   - 联系人:', contactId);
         logger.info('[ContextBuilder.buildUserPendingOps]   - 消息ID:', msg.id);
         logger.info('[ContextBuilder.buildUserPendingOps]   - 图片描述:', msg.description);
-        
+
         // 假装图片：显示为文本格式
         messageContent = `[图片]${msg.description || '无描述'}`;
       } else if (msg.type === 'transfer') {
@@ -1630,6 +1694,14 @@ async function buildUserPendingOps(pendingMessages, messageNumberMap, startNumbe
         messageContent = msg.message
           ? `[转账]${msg.amount}元 ${msg.message}`
           : `[转账]${msg.amount}元`;
+      } else if (msg.type === 'gift-membership') {
+        // ✅ 会员送礼消息：格式化为 [送会员]X个月VIP/SVIP会员
+        const typeText = msg.membershipType === 'vip' ? 'VIP' : 'SVIP';
+        messageContent = `[送会员]${msg.months}个月${typeText}会员`;
+      } else if (msg.type === 'buy-membership') {
+        // ✅ 角色买会员消息：格式化为 [开会员]X个月VIP/SVIP会员
+        const typeText = msg.membershipType === 'vip' ? 'VIP' : 'SVIP';
+        messageContent = `[开会员]${msg.months}个月${typeText}会员`;
       } else if (msg.type === 'quote') {
         // ✅ 引用消息：格式化为 [引用]原内容[回复]回复内容
         const quotedText = formatQuotedMessageForAI(msg.quotedMessage);
@@ -1640,8 +1712,9 @@ async function buildUserPendingOps(pendingMessages, messageNumberMap, startNumbe
       } else if (msg.type === 'recalled') {
         // 撤回消息：用户撤回只显示"撤回了一条消息"（AI看不到原内容）
         messageContent = `【${userName}撤回了一条消息】`;
-      } else if (msg.type === 'text' && msg.content?.startsWith('[约定计划')) {
-        // 约定计划消息：保持原格式，AI会识别
+      } else if (msg.type === 'plan' || (msg.type === 'text' && msg.content?.startsWith('[约定计划'))) {
+        // ✅ 约定计划消息：支持 type='plan' 或 type='text' 格式
+        // 保持原格式，AI会识别
         messageContent = msg.content;
       }
 
@@ -1812,13 +1885,13 @@ async function buildUserPendingOps(pendingMessages, messageNumberMap, startNumbe
 
 /**
  * 构建历史聊天记录内容（用于[历史聊天记录]）
- * 
+ *
  * @private
  * @param {string} contactId - 联系人ID
  * @param {Object} contact - 联系人对象
  * @param {Map<number, string>} messageNumberMap - 消息编号映射表（编号→消息ID）
  * @returns {Promise<Object>} { content: 历史聊天记录内容, nextNumber: 下一个可用编号 }
- * 
+ *
  * @description
  * 包含最新recentCount之前的historyCount条消息（不包括excluded的）
  * 每条消息加临时编号 [#N]，保存到映射表
@@ -1918,10 +1991,10 @@ export async function buildHistoryChatInfo(contactId, contact, messageNumberMap)
 
 /**
  * 获取预设数据（从extension_settings读取）
- * 
+ *
  * @private
  * @returns {Object} 预设数据
- * 
+ *
  * @description
  * ✅ 重构：统一使用 preset-settings-ui.js 的默认预设定义
  * 删除了本地的默认预设和迁移逻辑，实现单一数据源
@@ -1948,12 +2021,12 @@ function getPresetData() {
 
 /**
  * 构建表情包库内容
- * 
+ *
  * @async
  * @private
  * @param {string} userPrompt - 用户自定义的提示词（在[/表情包库]后面）
  * @returns {Promise<string>} 完整的表情包库内容
- * 
+ *
  * @description
  * 动态生成表情包库标签 + 表情包列表 + 用户提示词
  */
@@ -1985,11 +2058,11 @@ async function buildEmojiLibrary(userPrompt) {
 
 /**
  * 检查并触发AI感知删除的好友申请（概率触发机制）
- * 
+ *
  * @async
  * @private
  * @returns {Promise<Array>} 触发的好友申请列表（为空数组表示未触发）
- * 
+ *
  * @description
  * 当用户发送消息时，检查所有AI感知删除的角色：
  * 1. 获取所有AI感知删除的申请列表

@@ -18,6 +18,7 @@ import { addPendingMessage } from '../ai-integration/pending-operations.js';
 import { showPhoneToast } from '../ui-components/toast-notification.js';
 import { getContactDisplayName } from '../utils/contact-display-helper.js';
 import { loadContacts } from '../contacts/contact-list-data.js';
+import { stateManager } from '../utils/state-manager.js';
 import logger from '../../../logger.js';
 
 /**
@@ -75,7 +76,7 @@ export async function renderTransferPage(params) {
     logger.debug('[TransferUI] 事件已绑定');
 
     // 监听钱包数据变化事件（实时更新余额显示）
-    bindWalletChangeListener(container);
+    bindWalletChangeListener(container, contactId);
     logger.debug('[TransferUI] 钱包监听器已绑定');
 
     fragment.appendChild(container);
@@ -383,33 +384,45 @@ async function handleTransfer(amountInput, messageInput, contactId, contact, sub
 /**
  * 监听钱包数据变化事件（实时更新余额显示）
  * @param {HTMLElement} container - 转账页面内容容器
+ * @param {string} contactId - 联系人ID
  */
-function bindWalletChangeListener(container) {
-    const handler = async (event) => {
-        const { balance } = event.detail;
-        logger.debug('[TransferUI] 收到钱包变化事件，余额:', balance);
-
+function bindWalletChangeListener(container, contactId) {
+    const pageId = `transfer-${contactId}`;
+    
+    // 订阅钱包数据变化
+    stateManager.subscribe(pageId, 'wallet', async (meta) => {
+        logger.debug('[TransferUI] 收到钱包数据变化通知', meta);
+        
+        // 检查页面是否还存在
+        if (!document.contains(container)) {
+            logger.debug('[TransferUI] 页面已关闭，跳过刷新');
+            return;
+        }
+        
+        // 读取最新余额
+        const walletData = await stateManager.get('wallet');
+        if (!walletData) return;
+        
         // 局部更新余额显示
         const balanceElement = container.querySelector('.transfer-balance-amount');
         if (balanceElement) {
-            balanceElement.textContent = `¥ ${balance.toFixed(2)}`;
-            logger.debug('[TransferUI] 余额显示已更新:', balance);
+            balanceElement.textContent = `￥ ${walletData.balance.toFixed(2)}`;
+            logger.debug('[TransferUI] 余额显示已更新:', walletData.balance);
         }
-    };
+    });
 
-    document.addEventListener('wallet-data-changed', handler);
-
-    // 页面销毁时自动移除监听器
+    // 监听页面移除，自动清理订阅
     const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            mutation.removedNodes.forEach((node) => {
+        for (const mutation of mutations) {
+            for (const node of mutation.removedNodes) {
                 if (node === container || node.contains(container)) {
-                    document.removeEventListener('wallet-data-changed', handler);
+                    stateManager.unsubscribeAll(pageId);
                     observer.disconnect();
-                    logger.debug('[TransferUI] 已移除钱包变化监听器');
+                    logger.debug('[TransferUI] 页面已关闭，已清理订阅');
+                    return;
                 }
-            });
-        });
+            }
+        }
     });
 
     observer.observe(document.body, { childList: true, subtree: true });

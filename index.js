@@ -1,6 +1,6 @@
 /**
  * Acsus-Paws-Puffs 扩展 - 主入口文件
- * 
+ *
  * 这个文件是扩展的"总管"，负责：
  * 1. 导入官方API
  * 2. 导入各个功能模块
@@ -42,6 +42,14 @@ import { VisualEditor } from "./visual-editor/visual-editor.js";
 import { SimulatedLifeModule } from "./simulated-life/simulated-life.js";
 import { initDiarySystem } from "./toolkit/diary/diary.js";
 import { initPhone, openPhoneUI, closePhoneUI, enablePhone, disablePhone } from "./toolkit/phone/index.js";
+import {
+  initBeautifySystem,
+  bindBeautifyToggle,
+  updateFloatingBtnSize,
+  updateFloatingBtnColor,
+  saveFloatingBtnSettings
+} from "./beautify/beautify.js";
+import { openFloatingBtnImagePopup } from "./beautify/beautify-popup.js";
 
 
 // ========================================
@@ -99,6 +107,7 @@ let visualEditor = null;  // 可视化编辑器实例
 let simulatedLife = null;  // 模拟人生模块实例
 let diarySystem = null;  // 日记系统实例
 let phoneSystem = null;  // 手机系统实例（标记已初始化）
+let beautifySystem = null;  // 美化系统实例
 
 
 // ========================================
@@ -107,15 +116,15 @@ let phoneSystem = null;  // 手机系统实例（标记已初始化）
 
 /**
  * 初始化 Acsus-Paws-Puffs 扩展
- * 
+ *
  * @description
  * 扩展的主入口函数，负责：
  * 1. 检查并初始化设置对象
  * 2. 依次初始化各个功能模块（字体管理、预设管理等）
  * 3. 初始化设置面板UI
- * 
+ *
  * 采用 try-catch 包裹每个模块的初始化，单个模块失败不影响其他模块
- * 
+ *
  * @async
  * @throws {Error} 严重错误时抛出，会在控制台和 toastr 中显示
  */
@@ -181,6 +190,16 @@ async function initPawsPuffs() {
       // 不阻断，继续初始化其他模块
     }
 
+    // 5.7 初始化美化系统
+    try {
+      await initBeautifySystem();
+      beautifySystem = true;  // 标记已初始化
+      logger.debug('[Main] 美化系统初始化成功');
+    } catch (error) {
+      logger.error('[Main] 美化系统初始化失败:', error.message || error);
+      // 不阻断，继续初始化其他模块
+    }
+
     // 5.7 初始化设置面板UI
     await initSettingsPanel();
 
@@ -198,15 +217,15 @@ async function initPawsPuffs() {
 
 /**
  * 初始化设置面板
- * 
+ *
  * @description
  * 负责加载和渲染扩展的设置界面：
  * 1. 等待 ST 的扩展设置容器加载完成
  * 2. 加载 settings.html 并插入到设置容器
  * 3. 绑定设置面板的交互事件
  * 4. 让各个功能模块渲染自己的 UI
- * 
- * 
+ *
+ *
  * @async
  * @throws {Error} 加载 settings.html 失败或找不到设置容器时
  */
@@ -290,17 +309,17 @@ async function initSettingsPanel() {
 
 /**
  * 等待 DOM 元素出现
- * 
+ *
  * @description
  * 辅助函数，用于等待某个 DOM 元素加载完成
  * 如果元素已存在则立即返回，否则每 100ms 检查一次
  * 超时后会 reject Promise
- * 
+ *
  * @param {string} selector - CSS 选择器
  * @param {number} [timeout=10000] - 超时时间（毫秒），默认 10 秒
  * @returns {Promise<HTMLElement>} 找到的 DOM 元素
  * @throws {Error} 超时未找到元素时
- * 
+ *
  * @example
  * const container = await waitForElement("#extensions_settings");
  */
@@ -340,7 +359,7 @@ function waitForElement(selector, timeout = 10000) {
 
 /**
  * 绑定设置面板的交互事件
- * 
+ *
  * @description
  * 统一入口，调用各个子函数绑定具体事件：
  * - 标签页切换
@@ -356,14 +375,26 @@ function bindSettingsEvents() {
   // 绑定关于页面手风琴
   bindAboutAccordion();
 
+  // 绑定美化页面手风琴
+  bindBeautifyAccordion();
+
   // 绑定使用条款弹窗
   bindTermsPopup();
+
+  // 绑定美化说明弹窗
+  bindBeautifyInfoPopup();
 
   // 绑定日记功能开关
   bindDiarySettings();
 
   // 绑定手机功能
   bindPhoneSettings();
+
+  // 绑定美化功能开关
+  bindBeautifyToggle();
+
+  // 绑定悬浮按钮设置
+  bindFloatingBtnSettings();
 
   // 绑定工具包卡片点击事件
   bindToolboxCards();
@@ -377,12 +408,12 @@ function bindSettingsEvents() {
 
 /**
  * 绑定标签页切换逻辑
- * 
+ *
  * @description
  * 监听所有 .paws-tab 元素的点击事件，实现标签页切换：
  * 1. 移除所有标签和内容的 active 类
  * 2. 给点击的标签和对应内容添加 active 类
- * 
+ *
  * 使用 data-tab 属性关联标签和内容
  */
 function bindTabSwitching() {
@@ -405,12 +436,12 @@ function bindTabSwitching() {
 
 /**
  * 绑定关于页面的手风琴切换逻辑
- * 
+ *
  * @description
  * 监听所有 .about-accordion-header 元素的点击事件，实现手风琴效果：
  * 1. 移除所有卡片的 active 类
  * 2. 给点击的卡片添加 active 类
- * 
+ *
  * 使用 data-card 属性关联标题和卡片
  */
 function bindAboutAccordion() {
@@ -434,8 +465,191 @@ function bindAboutAccordion() {
 }
 
 /**
+ * 绑定美化页面的手风琴切换逻辑
+ *
+ * @description
+ * 监听所有 .beautify-accordion-header 元素的点击事件，实现手风琴效果
+ */
+function bindBeautifyAccordion() {
+    const beautifyHeaders = document.querySelectorAll('.beautify-accordion-header');
+
+    beautifyHeaders.forEach(header => {
+        header.addEventListener('click', () => {
+            const clickedCard = /** @type {HTMLElement} */ (header).dataset.card;
+            const allCards = document.querySelectorAll('.beautify-accordion-card');
+
+            // 切换所有卡片的active状态
+            allCards.forEach(card => {
+                if (/** @type {HTMLElement} */ (card).dataset.card === clickedCard) {
+                    card.classList.add('active');
+                } else {
+                    card.classList.remove('active');
+                }
+            });
+        });
+    });
+}
+
+/**
+ * 绑定悬浮按钮设置事件
+ *
+ * @description
+ * 绑定悬浮按钮的外观设置控件：
+ * - 大小滑块：调整按钮尺寸
+ * - 颜色选择器：调整图标颜色
+ * - 设置图片按钮：打开图片选择弹窗
+ */
+function bindFloatingBtnSettings() {
+    // 获取设置
+    const settings = extension_settings.pawsPuffs?.beautify?.floatingBtn || {
+        size: 38,
+        color: '',
+        imageUrl: '',
+        imageOpacity: 1.0
+    };
+
+    // 大小滑块
+    const sizeSlider = document.getElementById('floating-btn-size');
+    const sizeValue = document.getElementById('floating-btn-size-value');
+    if (sizeSlider && sizeValue) {
+        // 初始化值
+        /** @type {HTMLInputElement} */ (sizeSlider).value = String(settings.size);
+        sizeValue.textContent = `${settings.size}px`;
+
+        sizeSlider.addEventListener('input', function() {
+            const size = parseInt(/** @type {HTMLInputElement} */ (this).value);
+            sizeValue.textContent = `${size}px`;
+            updateFloatingBtnSize(size);
+            saveFloatingBtnSettings({ size });
+        });
+    }
+
+    // 颜色选择器（使用官方 toolcool-color-picker）
+    const colorPicker = document.getElementById('floating-btn-color');
+    if (colorPicker) {
+        // 初始化值（如果有保存的颜色）
+        if (settings.color) {
+            colorPicker.setAttribute('color', settings.color);
+        }
+
+        // 监听 change 事件获取 RGBA 颜色
+        colorPicker.addEventListener('change', function(e) {
+            const color = e.detail?.rgba || '';
+            updateFloatingBtnColor(color);
+            saveFloatingBtnSettings({ color });
+        });
+    }
+
+    // 重置颜色按钮
+    const resetColorBtn = document.getElementById('floating-btn-reset-color');
+    if (resetColorBtn && colorPicker) {
+        resetColorBtn.addEventListener('click', function() {
+            // 重置为默认白色
+            colorPicker.setAttribute('color', 'rgba(255, 255, 255, 1)');
+            updateFloatingBtnColor('');
+            saveFloatingBtnSettings({ color: '' });
+            logger.info('[FloatingBtn] 颜色已重置为主题色');
+        });
+    }
+
+    // 图片预览区初始化
+    updateFloatingBtnImagePreview(settings.imageUrl);
+
+    // 设置图片按钮
+    const setImageBtn = document.getElementById('floating-btn-set-image');
+    if (setImageBtn) {
+        setImageBtn.addEventListener('click', function() {
+            openFloatingBtnImagePopup();
+        });
+    }
+
+
+
+    logger.debug('[FloatingBtn] 设置事件已绑定');
+}
+
+/**
+ * 更新悬浮按钮图片预览
+ * @param {string} imageUrl - 图片 URL
+ */
+function updateFloatingBtnImagePreview(imageUrl) {
+    const preview = document.getElementById('floating-btn-image-preview');
+    if (!preview) return;
+
+    if (imageUrl) {
+        preview.innerHTML = `<img src="${imageUrl}" alt="预览">`;
+    } else {
+        preview.innerHTML = '<i class="fa-solid fa-image"></i>';
+    }
+}
+
+
+
+
+
+
+
+
+
+/**
+ * 绑定美化说明弹窗按钮的点击事件
+ *
+ * @description
+ * 显示美化功能的说明和注意事项
+ */
+function bindBeautifyInfoPopup() {
+    const infoBtn = document.getElementById('beautify-info-popup-btn');
+
+    if (infoBtn) {
+        infoBtn.addEventListener('click', async () => {
+            logger.debug('[bindBeautifyInfoPopup] 用户点击查看美化说明');
+
+            try {
+                const infoContent = `
+                    <div style="max-height: 400px; overflow-y: auto; line-height: 1.6; font-size: 0.9em;">
+                        <h3 style="color: var(--SmartThemeQuoteColor); margin-top: 0;">
+                            <i class="fa-solid fa-cat" style="margin-right: 8px;"></i>猫玩具说明
+                        </h3>
+
+                        <p><strong>这是什么？</strong></p>
+                        <p>作者最近测试时总是使用默认美化主题，突然心血来潮想搞点花样，于是就有了这个美化功能。</p>
+
+                        <hr style="border: none; border-top: 1px solid var(--SmartThemeBorderColor); margin: 15px 0; opacity: 0.3;">
+
+                        <p><strong>注意事项</strong></p>
+                        <ul style="padding-left: 20px; margin: 10px 0;">
+                            <li>不确保适配所有美化主题</li>
+                            <li>可能会有各种不兼容问题</li>
+                            <li>如果出现显示异常，请尝试关闭相关功能</li>
+                        </ul>
+
+                        <hr style="border: none; border-top: 1px solid var(--SmartThemeBorderColor); margin: 15px 0; opacity: 0.3;">
+
+                        <p><strong>功能简介</strong></p>
+                        <ul style="padding-left: 20px; margin: 10px 0;">
+                            <li><strong>头像布局</strong> - 在聊天区域顶部显示悬浮头像栏，点击头像可打开详细设置</li>
+                            <li><strong>全宽文字模式</strong> - 隐藏消息头像，让文字占满整行</li>
+                            <li><strong>顶栏隐藏按钮</strong> - 可拖动的悬浮按钮，快速切换沉浸模式</li>
+                            <li><strong>其他功能</strong> - 作者过去写美化经常使用的整合，懒得缝了</li>
+                        </ul>
+                    </div>
+                `;
+
+                await callGenericPopup(infoContent, POPUP_TYPE.TEXT, '', {
+                    okButton: '知道了',
+                    wide: false,
+                    large: false
+                });
+            } catch (error) {
+                logger.error('[bindBeautifyInfoPopup] 弹窗显示失败:', error);
+            }
+        });
+    }
+}
+
+/**
  * 绑定使用条款弹窗按钮的点击事件
- * 
+ *
  * @description
  * 监听条款按钮的点击事件，显示使用条款和免责声明的弹窗
  */
@@ -451,39 +665,39 @@ function bindTermsPopup() {
         const termsContent = `
           <div style="max-height: 500px; overflow-y: auto; line-height: 1.6; font-size: 0.9em;">
             <h3 style="color: var(--SmartThemeQuoteColor); margin-top: 0;">使用须知 & 免责声明</h3>
-            
+
             <p><strong>欢迎使用 毛球点心铺 扩展！使用本扩展即表示您同意以下条款：</strong></p>
-            
+
             <h4 style="color: var(--SmartThemeQuoteColor);">一、禁止内容</h4>
             <p>使用本扩展上传的素材，不得包含以下内容：</p>
-            
+
             <p><strong>【侵权类】</strong><br>
             • 未经授权的版权作品（图片、音效、字体、音乐、视频等）<br>
             • 未经授权使用的商标、品牌或仿制知名作品</p>
-            
+
             <p><strong>【违法类】</strong><br>
             • 涉及毒品、武器、恐怖主义等违法违规内容<br>
             • 用于推广引流、诈骗、钓鱼、恶意攻击等行为</p>
-            
+
             <p><strong>【敏感内容】</strong><br>
             • 涉政、种族歧视、性别歧视、侮辱宗教或群体的内容<br>
             • 涉及血腥暴力、色情、侵犯儿童权益的内容<br>
             • 上传真人照片或未授权的个人肖像</p>
-            
+
             <p><strong>【恶意行为】</strong><br>
             • 制作、上传恶意代码等可能破坏系统性能的内容<br>
             • 请认真辨别代码的效力，系统崩溃风险自负</p>
-            
+
             <h4 style="color: var(--SmartThemeQuoteColor);">二、使用限制</h4>
             <p>可视化编辑器生成的内容允许免费分享，但禁止用于任何收费服务或商业用途。<br>
             特别禁止在API代理群、付费酒馆服务等商业化场景中使用。<br>
             包括但不限于：API代理收费、酒馆搭建收费、主题定制收费等商业行为。</p>
-            
+
             <h4 style="color: var(--SmartThemeQuoteColor);">三、安全风险提示</h4>
             <p>本扩展包含JavaScript代码执行功能，我们无法担保所有代码的安全性。<br>
             建议您确保代码来源可靠，不要运行任何来路不明的代码。<br>
             恶意代码可能造成信息泄露、财产受损等风险，继续使用表示您了解此风险。</p>
-            
+
             <h4 style="color: var(--SmartThemeQuoteColor);">四、免责声明</h4>
             <p>本扩展仅提供技术工具，用户上传的所有内容与扩展开发者无关。<br>
             开发者不对用户行为或使用后果承担法律责任。<br>
@@ -511,7 +725,7 @@ function bindTermsPopup() {
 
 /**
  * 绑定工具包卡片的点击事件
- * 
+ *
  * @description
  * 监听所有工具包卡片的点击事件，显示"敬请期待"弹窗
  * 占位卡片（.toolbox-card-placeholder）已通过 CSS 禁用点击
@@ -532,9 +746,9 @@ function bindToolboxCards() {
             <h3 style="color: var(--SmartThemeQuoteColor); margin: 0 0 12px 0; font-size: 1.1em;">
               ${toolName}
             </h3>
-            <div style="background: color-mix(in srgb, var(--SmartThemeQuoteColor) 8%, transparent 92%); 
-                        padding: 12px; 
-                        border-radius: 4px; 
+            <div style="background: color-mix(in srgb, var(--SmartThemeQuoteColor) 8%, transparent 92%);
+                        padding: 12px;
+                        border-radius: 4px;
                         border-left: 2px solid var(--SmartThemeQuoteColor);">
               <p style="margin: 0; font-size: 0.9em;">
                 <i class="fa-solid fa-info-circle" style="color: var(--SmartThemeQuoteColor); margin-right: 6px;"></i>
@@ -564,12 +778,12 @@ function bindToolboxCards() {
 
 /**
  * 绑定标签页可见性设置的复选框事件
- * 
+ *
  * @description
  * 监听"功能模块"手风琴中的标签页显示设置复选框
  * 勾选 = 显示该标签页，取消勾选 = 隐藏该标签页
  * 设置自动保存到 extension_settings
- * 
+ *
  * 特殊处理：
  * - 初始化时检查默认激活的标签页是否被隐藏，如果是则自动切换到第一个可见标签页
  * - 隐藏当前激活的标签页时，自动切换到下一个可见的标签页
@@ -682,7 +896,7 @@ function removeFromHiddenTabs(tabId) {
 
 /**
  * 切换到第一个可见的标签页
- * 
+ *
  * @description
  * 用于在当前激活的标签页被隐藏后，自动切换到下一个可见的标签页
  * 按照标签页在 DOM 中的顺序查找第一个可见（display 不是 'none'）的标签页
@@ -707,7 +921,7 @@ function switchToFirstVisibleTab() {
 
 /**
  * 绑定日记功能设置
- * 
+ *
  * @description
  * 点击日记卡片时弹出官方弹窗，在弹窗内启用/禁用日记功能
  * 使用 extension_settings 和 saveSettingsDebounced() 存储设置
@@ -738,7 +952,7 @@ function bindDiarySettings() {
 
 /**
  * 绑定手机功能设置
- * 
+ *
  * @description
  * 点击手机卡片时弹出官方弹窗，在弹窗内启用/禁用手机功能
  * 使用 extension_settings 和 saveSettingsDebounced() 存储设置
@@ -769,7 +983,7 @@ function bindPhoneSettings() {
 
 /**
  * 显示日记设置弹窗
- * 
+ *
  * @async
  * @param {Function} updateCardStatus - 更新卡片状态的回调函数
  * @description
@@ -885,21 +1099,27 @@ async function showDiarySettingsPopup(updateCardStatus) {
 
 /**
  * 显示手机设置弹窗
- * 
+ *
  * @async
  * @param {Function} updateCardStatus - 更新卡片状态的回调函数
  * @description
  * 使用官方 callGenericPopup 显示手机功能的启用/禁用开关和使用说明
  * 开关状态立即保存，不依赖弹窗的确认/取消按钮
+ *
+ * 注意：直接从 phoneSystem.enabled 读取状态（和日记一样）
+ * 因为手机模块使用的 EXT_ID 是 'acsusPawsPuffs'，与主入口不同
  */
 async function showPhoneSettingsPopup(updateCardStatus) {
+  // 直接从 phoneSystem 实例读取启用状态（和日记一样的写法）
+  const isEnabled = phoneSystem ? phoneSystem.enabled : false;
+
   // 构建弹窗HTML内容
   const html = `
     <div class="phone-intro-popup" style="padding: 10px; max-height: 500px; overflow-y: auto; text-align: left;">
       <!-- 开关 -->
       <div style="margin-bottom: 15px; padding: 10px; background: var(--black30a); border-radius: 8px;">
         <label class="checkbox_label" style="display: flex; align-items: center; cursor: pointer;">
-          <input type="checkbox" id="phone-popup-enabled" ${phoneSystem.enabled ? 'checked' : ''} />
+          <input type="checkbox" id="phone-popup-enabled" ${isEnabled ? 'checked' : ''} />
           <strong style="margin-left: 10px; font-size: 1.1em;">启用手机功能</strong>
         </label>
       </div>
@@ -932,13 +1152,7 @@ async function showPhoneSettingsPopup(updateCardStatus) {
     checkbox.addEventListener('change', async function () {
       const newState = this.checked;
 
-      // 更新 extension_settings
-      extension_settings[EXT_ID].phone.enabled = newState;
-
-      // 立即保存
-      saveSettingsDebounced();
-
-      // 启用或禁用功能
+      // 启用或禁用功能（enablePhone/disablePhone 内部会更新 extension_settings 和保存）
       if (newState) {
         await enablePhone();
         toastr.success('手机功能已启用');

@@ -9,7 +9,6 @@
  */
 
 import { getThumbnailUrl } from '../../../../../../../../script.js';
-import { bindLongPress } from '../../utils/message-actions-helper.js';
 import logger from '../../../../logger.js';
 
 /**
@@ -89,10 +88,7 @@ export function renderPokeMessage(message, contact, contactId) {
   container.appendChild(avatar);
   container.appendChild(content);
 
-  // ✅ 绑定长按操作菜单（支持删除/转发/收藏等，不支持引用）
-  bindLongPress(container, message, contactId, {
-    disableQuote: true  // 戳一戳消息不支持引用
-  });
+  // 长按操作菜单由 message-chat-ui.js 统一绑定
 
   logger.info('[PokeMessage] ✅ 戳一戳消息渲染完成:', message.id, isSent ? '(我发的)' : '(对方发的)');
 

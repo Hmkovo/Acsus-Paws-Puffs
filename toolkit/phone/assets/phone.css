@@ -1,7 +1,7 @@
 ﻿/**
  * 点心铺手机 - 仿 QQ 聊天界面样式
  * 版本：2.0 (2025-10-19 重构)
- * 
+ *
  * 字体单位：所有字体使用 em，基准 16px
  * 设计风格：高度仿真 QQ，蓝白灰配色
  * 类名体系：每个页面使用独立前缀，避免CSS冲突
@@ -13,6 +13,14 @@
    ================================ */
 
 :root {
+  /* 手机专属字体系统（独立于酒馆） */
+  --phone-font-scale: 1;
+  /* 手机字体缩放倍数，调整这个值可以整体放大/缩小手机界面 */
+  --phone-base-size: 16px;
+  /* 手机基准字体大小 */
+  --phone-computed-size: calc(var(--phone-font-scale) * var(--phone-base-size));
+  /* 计算后的字体大小 */
+
   /* 主色调 */
   --phone-primary: #0099ff;
   /* QQ 蓝 */
@@ -53,6 +61,10 @@
 
   /* 边框色 */
   --phone-border: #ececec;
+  --phone-border-light: #cccccc;
+  /* 浅色边框 */
+  --phone-border-disabled: #d0d0d0;
+  /* 禁用状态边框 */
 
   /* 搜索框背景 */
   --phone-search-bg: rgba(255, 255, 255, 0.8);
@@ -60,6 +72,124 @@
 
   /* 红点提示 */
   --phone-badge: #ff4d4f;
+
+  /* 功能性颜色（状态提示） */
+  --phone-danger: #ff4d4f;
+  /* 危险/错误/删除（红色） */
+  --phone-danger-light: #fa5151;
+  /* 浅红色变体 */
+  --phone-success: #4caf50;
+  /* 成功/确认（绿色） */
+  --phone-success-dark: #388e3c;
+  /* 深绿色变体 */
+  --phone-warning: #ffc107;
+  /* 警告/提示（黄色） */
+  --phone-warning-dark: #f57c00;
+  /* 深黄色变体 */
+
+  /* 文字颜色扩展 */
+  --phone-text-tertiary: #666666;
+  /* 第三级文字（中灰） */
+
+  /* 会员专属颜色 */
+  --phone-vip-color: #c94e50;
+  /* VIP红色 */
+  --phone-svip-color: #cea77c;
+  /* SVIP金色 */
+  --phone-membership-badge-bg: #fce7d2;
+  /* 会员徽章背景 */
+  --phone-membership-badge-text: #876647;
+  /* 会员徽章文字 */
+
+  /* 半透明背景（用于提示框、遮罩等） */
+  --phone-danger-bg: rgba(255, 77, 79, 0.1);
+  /* 错误提示背景 */
+  --phone-danger-bg-hover: rgba(255, 77, 79, 0.2);
+  /* 错误提示hover */
+  --phone-warning-bg: rgba(255, 193, 7, 0.1);
+  /* 警告提示背景 */
+  --phone-success-bg: rgba(76, 175, 80, 0.15);
+  /* 成功状态背景 */
+  --phone-pending-bg: rgba(255, 152, 0, 0.15);
+  /* 待处理状态背景 */
+  --phone-overlay-light: rgba(0, 0, 0, 0.1);
+  /* 轻度遮罩 */
+  --phone-overlay-medium: rgba(0, 0, 0, 0.2);
+  /* 中度遮罩 */
+}
+
+/* ================================
+   夜间模式颜色覆盖
+   ================================ */
+
+.phone-container[data-theme="dark"] {
+  /* 主色调（夜间稍微柔和） */
+  --phone-primary: #4a9eff;
+  --phone-primary-dark: #3d8ff5;
+  --phone-primary-light: #1c3a52;
+
+  /* 背景色（深色系） */
+  --phone-bg-main: #1a1a1a;
+  /* 主背景（深灰） */
+  --phone-bg-white: #2c2c2c;
+  /* 卡片背景（深灰） */
+  --phone-bg-chat: #1e1e1e;
+  /* 聊天背景（略深） */
+
+  /* 文字色（浅色系） */
+  --phone-text-primary: #e0e0e0;
+  /* 主文字（浅灰） */
+  --phone-text-secondary: #888888;
+  /* 次要文字（中灰） */
+  --phone-text-white: #ffffff;
+  /* 白色文字（保持） */
+  --phone-text-tertiary: #999999;
+  /* 第三级文字 */
+
+  /* 弹窗专用（夜间模式下也要保持合适对比度） */
+  --phone-popup-text-main: #e0e0e0;
+  --phone-popup-text-muted: #888888;
+  --phone-popup-bg: #2c2c2c;
+
+  /* 气泡色（夜间适配） */
+  --phone-bubble-sent: #4a8c3e;
+  /* 发送气泡（深绿） */
+  --phone-bubble-received: #3a3a3a;
+  /* 接收气泡（深灰） */
+
+  /* 边框色（夜间柔和） */
+  --phone-border: #404040;
+  --phone-border-light: #555555;
+  --phone-border-disabled: #4a4a4a;
+
+  /* 搜索框背景 */
+  --phone-search-bg: rgba(60, 60, 60, 0.8);
+
+  /* 红点提示（保持醒目） */
+  --phone-badge: #ff6b6b;
+
+  /* 功能性颜色（夜间柔和但仍可辨识） */
+  --phone-danger: #ff6b6b;
+  --phone-danger-light: #ff8585;
+  --phone-success: #5cb85c;
+  --phone-success-dark: #4caf50;
+  --phone-warning: #ffb84d;
+  --phone-warning-dark: #ff9f40;
+
+  /* 会员专属颜色（夜间保持识别度） */
+  --phone-vip-color: #e57373;
+  --phone-svip-color: #deb887;
+  --phone-membership-badge-bg: #4a3e2f;
+  --phone-membership-badge-text: #d9b88e;
+
+  /* 半透明背景（夜间适配） */
+  --phone-danger-bg: rgba(255, 107, 107, 0.15);
+  --phone-danger-bg-hover: rgba(255, 107, 107, 0.25);
+  --phone-warning-bg: rgba(255, 184, 77, 0.15);
+  --phone-success-bg: rgba(92, 184, 92, 0.15);
+  --phone-pending-bg: rgba(255, 159, 64, 0.15);
+  --phone-overlay-light: rgba(255, 255, 255, 0.05);
+  --phone-overlay-medium: rgba(255, 255, 255, 0.1);
 }
 
 
@@ -94,7 +224,8 @@
 }
 
 .phone-container {
-  font-size: 16px;
+  font-size: 1em;
+  /* 继承phone-overlay的计算后大小 */
   color: var(--phone-text-primary);
   line-height: 1.5;
 }
@@ -112,6 +243,8 @@
   align-items: center;
   justify-content: center;
   z-index: 9999;
+  /* 使用手机专属字体大小，所有em单位都会基于这个计算 */
+  font-size: var(--phone-computed-size);
 }
 
 .phone-overlay .phone-container {
@@ -144,10 +277,9 @@
     box-shadow: none;
   }
 
-  /* 小屏幕缩小字体 */
-  .phone-container {
-    font-size: 15px;
-    /* 从16px缩小到15px */
+  /* 小屏幕字体大小（直接使用调整后的字体大小，不再额外缩小）*/
+  .phone-overlay {
+    font-size: var(--phone-computed-size);
   }
 }
 
@@ -374,6 +506,8 @@
   transition: color 0.2s;
   border: none;
   background: none;
+  font-size: 1em;
+  /* 设置基准font-size，防止继承外部样式 */
 }
 
 .phone-nav-item i {
@@ -500,6 +634,14 @@
 .msg-item-name {
   font-size: 0.9375em;
   /* 15px，从16px减小 */
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+}
+
+/* 消息列表中的会员徽章（稍小） */
+.msg-item-name .membership-badge {
+  font-size: 0.7em;
 }
 
 .msg-item-time {
@@ -618,7 +760,7 @@
   min-width: 1.25em;
   height: 1.25em;
   padding: 0 0.3em;
-  background: #d0d0d0;
+  background: var(--phone-border-disabled);
   /* 灰色背景 */
   border-radius: 0.625em;
   /* 圆角胶囊形状 */
@@ -629,7 +771,7 @@
   align-items: center;
   justify-content: center;
   font-size: 0.75em;
-  color: #666;
+  color: var(--phone-text-tertiary);
   /* 深灰色数字 */
 }
 
@@ -1320,7 +1462,6 @@
 .image-mode-settings-title {
   flex: 1;
   font-size: 1.0625em;
-  font-weight: 500;
   color: var(--phone-text-primary);
 }
 
@@ -1377,7 +1518,6 @@
 
 .image-mode-option-title {
   font-size: 1em;
-  font-weight: 500;
   color: var(--phone-text-primary);
   margin-bottom: 0.25em;
 }
@@ -1390,7 +1530,6 @@
   padding: 0.125em 0.5em;
   border-radius: 1em;
   margin-left: 0.5em;
-  font-weight: normal;
 }
 
 .image-mode-option-desc {
@@ -1417,14 +1556,14 @@
 }
 
 /* 用户设置页的图片模式显示项 */
-.settings-item-content {
+.phone-settings-item-content {
   flex: 1;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.settings-item-extra {
+.phone-settings-item-extra {
   font-size: 0.875em;
   color: var(--phone-text-secondary);
 }
@@ -1739,7 +1878,6 @@
   gap: 0.5em;
   font-size: 0.875em;
   color: var(--phone-text-primary);
-  font-weight: 500;
   margin-bottom: 0.5em;
   padding-bottom: 0.5em;
   border-bottom: 1px solid var(--phone-bg-main);
@@ -1793,7 +1931,6 @@
   gap: 0.5em;
   font-size: 0.9375em;
   color: var(--phone-text-primary);
-  font-weight: 500;
   margin-bottom: 0.75em;
   padding-bottom: 0.75em;
   border-bottom: 1px solid var(--phone-bg-main);
@@ -1823,7 +1960,6 @@
 .forwarded-preview-sender {
   font-size: 0.8125em;
   color: var(--phone-text-secondary);
-  font-weight: 500;
   margin-bottom: 0.375em;
 }
 
@@ -1876,7 +2012,7 @@
   max-height: 9.375em;
   padding: 0.375em 0.5em;
   border: none;
-  background: #fff;
+  background: var(--phone-bg-white);
   border-radius: 0.5em;
   font-size: 0.875em;
   color: var(--phone-text-primary);
@@ -1899,7 +2035,7 @@
   border: none;
   border-radius: 0.25em;
   font-size: 1em;
-  color: #fff;
+  color: var(--phone-text-white);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1994,10 +2130,10 @@
   min-width: 12em;
   /* 缩小：20em → 16em */
 
-  /* 🎯 弹出动画（从小变大） */
+  /* 🎯 弹出动画（平滑出现） */
   opacity: 0;
   transform: scale(0.3);
-  animation: phone-menu-popup 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+  animation: phone-menu-popup 0.2s ease-out forwards;
 }
 
 /* 🎬 弹出动画关键帧 */
@@ -2023,13 +2159,13 @@
 
 /* 显示在下方时，箭头向上 */
 .chat-msg-actions-menu.show-below::before {
-  top: -0.5em;
+  top: -0.4em;
   border-bottom: 0.5em solid rgba(60, 60, 60, 0.95);
 }
 
 /* 显示在上方时，箭头向下 */
 .chat-msg-actions-menu.show-above::before {
-  bottom: -0.5em;
+  bottom: -0.4em;
   border-top: 0.5em solid rgba(60, 60, 60, 0.95);
 }
 
@@ -2106,7 +2242,7 @@
   -webkit-appearance: none;
   -moz-appearance: none;
   background: var(--phone-bg-white);
-  border: 2px solid #ccc;
+  border: 2px solid var(--phone-border-light);
   border-radius: 3px;
   cursor: pointer;
   z-index: 10;
@@ -2135,7 +2271,6 @@
   transform: translate(-50%, -50%);
   color: white;
   font-size: 0.9em;
-  font-weight: bold;
 }
 
 /* 多选模式时，消息容器向右移，留出复选框空间 */
@@ -2574,7 +2709,7 @@
 
 .chat-media-modal-btn-send {
   background: var(--phone-primary);
-  color: #fff;
+  color: var(--phone-text-white);
 }
 
 .chat-media-modal-btn-cancel:hover,
@@ -3645,6 +3780,36 @@
   font-size: 1.125em;
   /* 18px */
   margin-bottom: 0.25em;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+/* === 会员徽章样式 === */
+
+/* 会员徽章基础样式 */
+.membership-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.05em 0.4em;
+  border-radius: 0.25em;
+  font-size: 0.55em;
+  background: var(--phone-membership-badge-bg);
+  color: var(--phone-membership-badge-text);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* VIP名字颜色（红色） */
+.name-vip {
+  color: var(--phone-vip-color) !important;
+}
+
+/* SVIP/年SVIP名字颜色（金色） */
+.name-svip,
+.name-annual-svip {
+  color: var(--phone-svip-color) !important;
 }
 
 .user-profile-signature {
@@ -4177,14 +4342,14 @@
 }
 
 /* 内容区 */
-.settings-content {
+.phone-settings-content {
   flex: 1;
   overflow-y: auto;
   background: var(--phone-bg-main);
 }
 
 /* 搜索框 */
-.settings-search-bar {
+.phone-settings-search-bar {
   height: 2.5em;
   background: var(--phone-bg-white);
   border-radius: 0.5em;
@@ -4195,12 +4360,12 @@
   gap: 0.5em;
 }
 
-.settings-search-bar i {
+.phone-settings-search-bar i {
   color: var(--phone-text-secondary);
   font-size: 0.875em;
 }
 
-.settings-search-bar input {
+.phone-settings-search-bar input {
   flex: 1;
   border: none;
   background: none;
@@ -4209,12 +4374,12 @@
   color: var(--phone-text-primary);
 }
 
-.settings-search-bar input::placeholder {
+.phone-settings-search-bar input::placeholder {
   color: var(--phone-text-secondary);
 }
 
 /* 账号与安全卡片 */
-.settings-account-card {
+.phone-settings-account-card {
   display: flex;
   align-items: center;
   padding: 1em 0.75em;
@@ -4225,23 +4390,23 @@
   transition: background 0.1s;
 }
 
-.settings-account-card:active {
+.phone-settings-account-card:active {
   background: var(--phone-bg-main);
 }
 
-.settings-account-icon {
+.phone-settings-account-icon {
   width: 2em;
   font-size: 1.25em;
   color: var(--phone-primary);
   margin-right: 0.75em;
 }
 
-.settings-account-text {
+.phone-settings-account-text {
   flex: 1;
   font-size: 1em;
 }
 
-.settings-account-avatar {
+.phone-settings-account-avatar {
   width: 2em;
   height: 2em;
   border-radius: 50%;
@@ -4250,17 +4415,17 @@
   object-position: center;
 }
 
-.settings-account-arrow {
+.phone-settings-account-arrow {
   font-size: 0.875em;
   color: var(--phone-text-secondary);
 }
 
 /* 分组 */
-.settings-section {
+.phone-settings-section {
   margin-bottom: 0.75em;
 }
 
-.settings-section-title {
+.phone-settings-section-title {
   font-size: 0.875em;
   /* 14px */
   color: var(--phone-text-secondary);
@@ -4268,14 +4433,14 @@
   background: var(--phone-bg-main);
 }
 
-.settings-section-content {
+.phone-settings-section-content {
   background: var(--phone-bg-white);
   border-radius: 0.5em;
   margin: 0 0.75em;
 }
 
 /* 设置项 */
-.settings-item {
+.phone-settings-item {
   display: flex;
   align-items: center;
   padding: 1em 0.75em;
@@ -4285,40 +4450,40 @@
   transition: background 0.1s;
 }
 
-/* .settings-item:last-child {
+/* .phone-settings-item:last-child {
   border-bottom: none;
 } */
 /* 不再需要，已移除所有边框 */
 
-.settings-item:active {
+.phone-settings-item:active {
   background: var(--phone-bg-main);
 }
 
-.settings-item>i:first-child {
+.phone-settings-item>i:first-child {
   width: 2em;
   font-size: 1.25em;
   color: var(--phone-text-secondary);
   margin-right: 0.75em;
 }
 
-.settings-item-text {
+.phone-settings-item-text {
   font-size: 1em;
 }
 
-.settings-item-content {
+.phone-settings-item-content {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.settings-item-extra {
+.phone-settings-item-extra {
   font-size: 0.875em;
   color: var(--phone-text-secondary);
   margin-left: 0.5em;
 }
 
-.settings-item-arrow {
+.phone-settings-item-arrow {
   font-size: 0.875em;
   color: var(--phone-text-secondary);
   margin-left: auto;
@@ -4868,7 +5033,7 @@
   max-width: 10em;
   padding: 0.525em 0.4em;
   background: #ff4444;
-  color: #fff;
+  color: var(--phone-text-white);
   border: none;
   border-radius: 0.5em;
   font-size: 1.125em;
@@ -4992,7 +5157,7 @@
 
 .redpack-cover-modal-btn-confirm {
   background: var(--phone-primary);
-  color: #fff;
+  color: var(--phone-text-white);
 }
 
 .redpack-cover-modal-btn-cancel:hover,
@@ -5131,13 +5296,13 @@
 }
 
 .chat-msg-plan-status.pending {
-  background: rgba(255, 152, 0, 0.15);
-  color: #f57c00;
+  background: var(--phone-pending-bg);
+  color: var(--phone-warning-dark);
 }
 
 .chat-msg-plan-status.completed {
-  background: rgba(76, 175, 80, 0.15);
-  color: #388e3c;
+  background: var(--phone-success-bg);
+  color: var(--phone-success-dark);
 }
 
 /* 计划标题区域 */
@@ -5211,7 +5376,7 @@
   display: flex;
   justify-content: center;
   /* 卡片在聊天区域居中 */
-  margin: 0.2em 0;
+  margin: 0.4em 0;
   /* 上下间距 */
   padding: 0 1em;
   /* 左右内边距 */
@@ -5248,7 +5413,7 @@
   /* 垂直居中 */
   gap: 0.625em;
   /* 子元素间距 */
-  padding: 0.625em 0.875em;
+  padding: 0.4em 0.6em;
   /* 内边距：上下 左右 - 变矮 */
   background: transparent;
   /* 透明背景，现代简约风格 */
@@ -5272,9 +5437,9 @@
 
 /* 图标圆圈 */
 .plan-story-icon {
-  width: 1.75em;
+  width: 0.9em;
   /* 圆圈宽度 - 变小更精致 */
-  height: 1.75em;
+  height: 0.9em;
   /* 圆圈高度 - 变小更精致 */
   display: flex;
   /* 弹性布局 */
@@ -5513,13 +5678,13 @@
 
 .plan-executor-btn.dice-btn {
   background: var(--phone-primary);
-  color: #fff;
+  color: var(--phone-text-white);
   border-color: var(--phone-primary);
 }
 
 .plan-executor-btn.confirm-btn {
-  background: #4caf50;
-  color: #fff;
+  background: var(--phone-success);
+  color: var(--phone-text-white);
 }
 
 .plan-executor-btn.cancel-btn {
@@ -5597,7 +5762,7 @@
 
 .plan-creator-popup .send-btn {
   background: var(--phone-primary);
-  color: #fff;
+  color: var(--phone-text-white);
   padding: 0.75em 1.5em;
   border: none;
   border-radius: 0.5em;
@@ -5923,7 +6088,7 @@
 }
 
 /* TODO: 屏幕向右震动（对方戳我） */
-/* 
+/*
 使用方法：
 1. HTML结构完全一致，只需改类名为 chat-msg-poke-received
 2. 手指emoji改为 👉（向右）
@@ -5991,7 +6156,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--phone-text-white);
   position: relative;
   overflow: hidden;
   cursor: pointer;
@@ -6051,22 +6216,6 @@
 
 .text-secondary {
   color: var(--phone-text-secondary);
-}
-
-/* ================================
-   深色主题示例（可选）
-   ================================ */
-
-.phone-container[data-theme="dark"] {
-  --phone-primary: #409eff;
-  --phone-bg-main: #1e1e1e;
-  --phone-bg-white: #2c2c2c;
-  --phone-bg-chat: #252525;
-  --phone-text-primary: #e0e0e0;
-  --phone-text-secondary: #888888;
-  --phone-bubble-sent: #409eff;
-  --phone-bubble-received: #3a3a3a;
-  --phone-border: #404040;
 }
 
 /* ================================
@@ -6286,7 +6435,7 @@
   width: 100%;
   height: 13.75em;
   /* 220px */
-  background: #ffffff;
+  background: var(--phone-bg-white);
   background-size: cover;
   background-position: center;
   cursor: pointer;
@@ -8417,15 +8566,6 @@
   border-color: var(--phone-primary);
 }
 
-.char-prompt-add-worldbook {
-  background: var(--phone-bg-white);
-  border-color: var(--phone-primary);
-  border-style: solid;
-}
-
-.char-prompt-add-worldbook:hover {
-  background: rgba(24, 144, 255, 0.05);
-}
 
 /* 条目列表 */
 .char-prompt-list {
@@ -8604,8 +8744,897 @@
   color: var(--phone-popup-text-main);
 }
 
+/* 添加按钮组容器（三个按钮并列） */
+.char-prompt-add-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.char-prompt-add-buttons .char-prompt-add-btn {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  padding: 10px 8px;
+}
+
 /* ========================================
    [END] 角色提示词设置页样式
+   ======================================== */
+
+/* ========================================
+   正则配置页样式
+   ======================================== */
+
+/* 正则配置页容器 */
+.contact-regex-page {
+  background: var(--phone-bg-main);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* 顶部栏（参考char-prompt-topbar）*/
+.contact-regex-topbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75em;
+  padding: 0;
+  background: var(--phone-bg-white);
+  border-bottom: 1px solid var(--phone-border);
+  flex-shrink: 0;
+}
+
+.contact-regex-title {
+  flex: 1;
+  text-align: center;
+  font-size: 1.0625em;
+  color: var(--phone-text-primary);
+}
+
+.contact-regex-back-btn {
+  position: absolute;
+  left: 0.75em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--phone-text-primary);
+  cursor: pointer;
+  padding: 0;
+  font-size: 1.1em;
+  min-width: 2.5em;
+}
+
+.contact-regex-back-btn:hover {
+  opacity: 0.7;
+}
+
+.contact-regex-actions {
+  position: absolute;
+  right: 0.5em;
+  display: flex;
+  gap: 0.5em;
+}
+
+.contact-regex-action-btn {
+  background: none;
+  border: none;
+  color: var(--phone-primary);
+  cursor: pointer;
+  padding: 0.3em;
+  font-size: 1.1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contact-regex-action-btn:hover {
+  opacity: 0.7;
+}
+
+/* 内容区 */
+.contact-regex-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* 同步信息区 */
+.contact-regex-sync-info {
+  background: var(--phone-bg-white);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.sync-info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 14px;
+  color: var(--phone-text-secondary);
+}
+
+.sync-info-item i {
+  color: var(--phone-theme-color);
+}
+
+/* 空状态 */
+.contact-regex-empty {
+  background: var(--phone-bg-white);
+  border-radius: 8px;
+  padding: 40px 20px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.contact-regex-empty i {
+  font-size: 48px;
+  color: var(--phone-text-tertiary);
+  margin-bottom: 16px;
+}
+
+.contact-regex-empty p {
+  margin: 8px 0;
+  color: var(--phone-text-secondary);
+  font-size: 14px;
+}
+
+/* 分类区块 */
+.contact-regex-section {
+  margin-bottom: 20px;
+}
+
+.contact-regex-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  font-size: 15px;
+  color: var(--phone-text-primary);
+  margin-bottom: 8px;
+}
+
+.contact-regex-count {
+  font-size: 13px;
+  color: var(--phone-text-tertiary);
+  background: var(--phone-bg-main);
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-left: auto;
+}
+
+/* 脚本列表（参考char-prompt-list）*/
+.contact-regex-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+.contact-regex-empty-list {
+  padding: 20px;
+  text-align: center;
+  color: var(--phone-text-tertiary);
+  font-size: 14px;
+}
+
+/* 拖拽手柄 */
+.contact-regex-item-drag {
+  color: var(--phone-text-muted);
+  font-size: 1.2em;
+  cursor: move;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5em;
+  flex-shrink: 0;
+}
+
+.contact-regex-item-drag:hover {
+  color: var(--phone-primary);
+}
+
+/* 脚本条目（参考char-prompt-item，降低高度）*/
+.contact-regex-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+  padding: 0.2em 0.45em;
+  background: var(--phone-bg-white);
+  border-radius: 0.5em;
+  border: 1px solid var(--phone-border-light);
+  cursor: default;
+}
+
+
+.contact-regex-item-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.regex-item-icon {
+  color: #f59e0b;
+  font-size: 0.875em;
+  flex-shrink: 0;
+}
+
+.regex-item-name {
+  font-size: 0.95em;
+  color: var(--phone-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 脚本操作（统一按钮间距为0.5em）*/
+.contact-regex-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  flex-shrink: 0;
+}
+
+.regex-item-toggle {
+  background: none;
+  border: none;
+  font-size: 1.1em;
+  cursor: pointer;
+  padding: 0.4em;
+  color: var(--phone-text-muted);
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25em;
+}
+
+.regex-item-toggle.enabled {
+  color: var(--phone-success);
+}
+
+.regex-item-toggle.disabled {
+  color: var(--phone-text-muted);
+  opacity: 0.5;
+}
+
+.regex-item-toggle:hover {
+  background: var(--phone-bg-hover);
+}
+
+/* 预设选择器 */
+.contact-regex-preset-selector {
+  margin-bottom: 8px;
+}
+
+.contact-regex-preset-empty {
+  background: var(--phone-bg-white);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.contact-regex-preset-empty span {
+  color: var(--phone-text-tertiary);
+  font-size: 14px;
+}
+
+.contact-regex-preset-select-btn {
+  background: var(--phone-theme-color);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.contact-regex-preset-selected {
+  background: var(--phone-bg-white);
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.preset-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--phone-text-primary);
+}
+
+.preset-info i {
+  color: var(--phone-theme-color);
+}
+
+.contact-regex-preset-change-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: var(--phone-text-secondary);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.contact-regex-preset-change-btn:hover {
+  color: var(--phone-text-primary);
+}
+
+/* 顶部提示（变矮，移到顶部）*/
+.contact-regex-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.5em 0.75em;
+  background: rgba(245, 158, 11, 0.08);
+  border-radius: 0.5em;
+  margin-bottom: 1em;
+}
+
+.contact-regex-hint i {
+  color: #f59e0b;
+  font-size: 0.875em;
+  flex-shrink: 0;
+}
+
+.contact-regex-hint span {
+  font-size: 0.8125em;
+  color: var(--phone-text-primary);
+  line-height: 1.4;
+}
+
+/* 按钮组 */
+.contact-regex-btn-group {
+  display: flex;
+  gap: 0.5em;
+  margin-bottom: 1em;
+}
+
+/* 添加自定义按钮（参考char-prompt-add-btn）*/
+.contact-regex-add-custom-btn {
+  flex: 1;
+  padding: 0.75em;
+  background: var(--phone-bg-white);
+  border: 1px dashed var(--phone-border-light);
+  border-radius: 0.5em;
+  color: var(--phone-primary);
+  font-size: 0.95em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.contact-regex-add-custom-btn:hover {
+  background: var(--phone-bg-hover);
+  border-color: var(--phone-primary);
+}
+
+/* 快速生成按钮（参考char-prompt-add-btn）*/
+.contact-regex-quick-gen-btn {
+  flex: 1;
+  padding: 0.75em;
+  background: var(--phone-bg-white);
+  border: 1px dashed var(--phone-border-light);
+  border-radius: 0.5em;
+  color: var(--phone-primary);
+  font-size: 0.95em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.contact-regex-quick-gen-btn:hover {
+  background: var(--phone-bg-hover);
+  border-color: var(--phone-primary);
+}
+
+/* 分类区块标题 */
+.contact-regex-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5em;
+}
+
+.contact-regex-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 0.875em;
+  color: var(--phone-text-primary);
+}
+
+/* 导入按钮（纯图标样式）*/
+.contact-regex-import-btn {
+  background: none;
+  color: var(--phone-text-main);
+  border: none;
+  padding: 0.3em;
+  font-size: 1.1em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+
+.contact-regex-import-btn:hover {
+  opacity: 0.7;
+}
+
+/* 编辑和删除按钮 */
+.regex-item-edit,
+.regex-item-delete {
+  background: none;
+  border: none;
+  font-size: 1.1em;
+  padding: 0.4em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25em;
+  transition: color 0.2s, background 0.2s;
+}
+
+.regex-item-edit {
+  color: var(--phone-primary);
+}
+
+.regex-item-edit:hover {
+  background: var(--phone-bg-hover);
+}
+
+.regex-item-delete {
+  color: #ff4d4f;
+}
+
+.regex-item-delete:hover {
+  background: rgba(255, 77, 79, 0.1);
+}
+
+/* 选择器对话框 */
+.regex-selector {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.regex-selector-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: var(--phone-bg-main);
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+
+.regex-selector-header span {
+  font-size: 14px;
+  color: var(--phone-text-secondary);
+}
+
+.regex-selector-select-all {
+  background: var(--phone-theme-color);
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.regex-selector-list {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.regex-selector-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 1px solid var(--phone-bg-main);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.regex-selector-item:hover {
+  background: var(--phone-bg-main);
+}
+
+.regex-selector-item:last-child {
+  border-bottom: none;
+}
+
+.regex-selector-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.regex-selector-item span {
+  flex: 1;
+  font-size: 14px;
+  color: var(--phone-text-primary);
+}
+
+/* 预设选择器 */
+.preset-selector {
+  padding: 16px 0;
+}
+
+.preset-selector-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preset-selector-field label {
+  font-size: 14px;
+  color: var(--phone-text-primary);
+}
+
+.preset-select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--phone-bg-main);
+  border-radius: 4px;
+  font-size: 14px;
+  background: white;
+  color: var(--phone-text-primary);
+  cursor: pointer;
+}
+
+/* 编辑器对话框 */
+.regex-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.regex-editor-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.regex-editor-field label {
+  font-size: 14px;
+  color: var(--phone-text-primary);
+}
+
+.regex-editor-input,
+.regex-editor-textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--phone-bg-main);
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+  background: white;
+  color: var(--phone-text-primary);
+}
+
+.regex-editor-textarea {
+  resize: vertical;
+  font-family: 'Courier New', monospace;
+  min-height: 60px;
+}
+
+.regex-editor-hint {
+  font-size: 12px;
+  color: var(--phone-text-tertiary);
+  margin-top: -2px;
+}
+
+.regex-editor-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.regex-editor-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.regex-editor-checkbox span {
+  font-size: 14px;
+  color: var(--phone-text-primary);
+}
+
+/* 帮助说明样式 */
+.regex-help {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.regex-help h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0 8px;
+  font-size: 15px;
+  color: var(--phone-text-primary);
+}
+
+.regex-help h4:first-child {
+  margin-top: 0;
+}
+
+.regex-help h4 i {
+  color: var(--phone-theme-color);
+}
+
+.regex-help p {
+  margin: 8px 0;
+  color: var(--phone-text-secondary);
+}
+
+.regex-help strong {
+  color: var(--phone-text-primary);
+}
+
+.regex-help ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.regex-help li {
+  margin: 4px 0;
+  color: var(--phone-text-secondary);
+}
+
+.regex-help code {
+  background: var(--phone-bg-main);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: var(--phone-theme-color);
+}
+
+/* 快速生成弹窗 */
+.regex-quick-gen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.regex-quick-gen-dialog {
+  background: var(--phone-bg-white);
+  border-radius: 0.75em;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.regex-quick-gen-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1em 1.25em;
+  border-bottom: 1px solid var(--phone-bg-main);
+}
+
+.regex-quick-gen-header h3 {
+  margin: 0;
+  font-size: 1.0625em;
+  color: var(--phone-text-primary);
+}
+
+.regex-quick-gen-close {
+  background: none;
+  border: none;
+  color: var(--phone-text-secondary);
+  cursor: pointer;
+  padding: 0.25em;
+  font-size: 1.125em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.regex-quick-gen-close:hover {
+  color: var(--phone-text-primary);
+}
+
+.regex-quick-gen-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25em;
+}
+
+.regex-gen-mode-section {
+  margin-bottom: 1.5em;
+}
+
+.regex-gen-mode-label {
+  display: block;
+  font-size: 0.875em;
+  color: var(--phone-text-primary);
+  margin-bottom: 0.75em;
+}
+
+.regex-gen-mode-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+.regex-gen-mode-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75em;
+  padding: 0.75em;
+  background: var(--phone-bg-main);
+  border-radius: 0.5em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.regex-gen-mode-option:hover {
+  background: rgba(var(--phone-primary-rgb, 24, 144, 255), 0.05);
+}
+
+.regex-gen-mode-option input[type="radio"] {
+  margin-top: 0.125em;
+  cursor: pointer;
+}
+
+.mode-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+}
+
+.mode-title {
+  font-size: 0.875em;
+  color: var(--phone-text-primary);
+}
+
+.mode-desc {
+  font-size: 0.75em;
+  color: var(--phone-text-secondary);
+  line-height: 1.4;
+}
+
+.regex-gen-input-section {
+  margin-bottom: 1.5em;
+}
+
+.regex-gen-input-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5em;
+}
+
+.label-text {
+  font-size: 0.875em;
+  color: var(--phone-text-primary);
+}
+
+.label-hint {
+  font-size: 0.75em;
+  color: var(--phone-text-secondary);
+}
+
+.regex-gen-input {
+  width: 100%;
+  padding: 0.75em;
+  border: 1px solid var(--phone-bg-main);
+  border-radius: 0.5em;
+  font-size: 0.875em;
+  color: var(--phone-text-primary);
+  background: var(--phone-bg-white);
+  box-sizing: border-box;
+}
+
+.regex-gen-input:focus {
+  outline: none;
+  border-color: var(--phone-primary);
+}
+
+.regex-gen-preview-section {
+  margin-bottom: 0.5em;
+}
+
+.regex-gen-preview-label {
+  display: block;
+  font-size: 0.875em;
+  color: var(--phone-text-primary);
+  margin-bottom: 0.5em;
+}
+
+.regex-gen-preview {
+  padding: 0.75em;
+  background: var(--phone-bg-main);
+  border-radius: 0.5em;
+  font-size: 0.8125em;
+  color: var(--phone-text-primary);
+  font-family: 'Courier New', monospace;
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+.regex-quick-gen-footer {
+  display: flex;
+  gap: 0.75em;
+  padding: 1em 1.25em;
+  border-top: 1px solid var(--phone-bg-main);
+}
+
+.regex-gen-cancel-btn,
+.regex-gen-confirm-btn {
+  flex: 1;
+  padding: 0.75em;
+  border: none;
+  border-radius: 0.5em;
+  font-size: 0.875em;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.regex-gen-cancel-btn {
+  background: var(--phone-bg-main);
+  color: var(--phone-text-primary);
+}
+
+.regex-gen-cancel-btn:hover {
+  opacity: 0.8;
+}
+
+.regex-gen-confirm-btn {
+  background: var(--phone-primary);
+  color: var(--phone-text-white);
+}
+
+.regex-gen-confirm-btn:hover {
+  opacity: 0.9;
+}
+
+/* ========================================
+   [END] 正则配置页样式
    ======================================== */
 
 /* ========================================
@@ -8813,7 +9842,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #666;
+  color: var(--phone-text-tertiary);
   margin-bottom: 0.5em;
 }
 
@@ -8912,7 +9941,7 @@
   -webkit-appearance: none;
   -moz-appearance: none;
   background: var(--phone-bg-white);
-  border: 2px solid #ccc;
+  border: 2px solid var(--phone-border-light);
   border-radius: 3px;
   cursor: pointer;
   z-index: 10;
@@ -9938,7 +10967,7 @@
 }
 
 .wallet-bill-item-amount.expense {
-  color: #fa5151;
+  color: var(--phone-danger-light);
   /* 微信红 */
 }
 
@@ -10006,14 +11035,14 @@
   border-radius: 0.25em;
   padding: 0.25em 0.5em;
   cursor: pointer;
-  color: #fa5151;
+  color: var(--phone-danger-light);
   font-size: 0.875em;
   transition: all 0.2s;
 }
 
 .wallet-bill-delete-btn:hover {
-  background: rgba(250, 81, 81, 0.2);
-  border-color: #fa5151;
+  background: var(--phone-danger-bg-hover);
+  border-color: var(--phone-danger-light);
 }
 
 /* ========================================
@@ -10256,14 +11285,14 @@
   border-radius: 0.25em;
   padding: 0.25em 0.5em;
   cursor: pointer;
-  color: #fa5151;
+  color: var(--phone-danger-light);
   font-size: 0.875em;
   transition: all 0.2s;
 }
 
 .transactions-record-delete-btn:hover {
-  background: rgba(250, 81, 81, 0.2);
-  border-color: #fa5151;
+  background: var(--phone-danger-bg-hover);
+  border-color: var(--phone-danger-light);
 }
 
 /* ========================================
@@ -10363,7 +11392,7 @@
 }
 
 .transfer-input-required {
-  color: #fa5151;
+  color: var(--phone-danger-light);
   margin-left: 0.25em;
 }
 
@@ -10401,7 +11430,7 @@
   left: 0;
   right: 0;
   background: var(--phone-primary);
-  color: #fff;
+  color: var(--phone-text-white);
   border: none;
   padding: 1em;
   font-size: 1em;
@@ -10427,6 +11456,357 @@
 
 /* ========================================
    [END] 转账页样式 (transfer-*)
+   ======================================== */
+
+/* ========================================
+   [START] 会员送礼页样式 (gift-membership-*)
+   ======================================== */
+
+/* 会员送礼页容器 */
+.gift-membership-page {
+  background: var(--phone-bg-main);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 顶部栏（固定）- 统一标准topbar设计 */
+.gift-membership-top-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75em;
+  /* 44px - 统一高度 */
+  padding: 0;
+  background: var(--phone-bg-white);
+  border-bottom: 1px solid var(--phone-border);
+  flex-shrink: 0;
+}
+
+.gift-membership-btn-back {
+  position: absolute;
+  left: 0.75em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--phone-text-primary);
+  font-size: 1.1em;
+  cursor: pointer;
+  padding: 0;
+  min-width: 2.5em;
+}
+
+.gift-membership-btn-back:hover {
+  opacity: 0.7;
+}
+
+.gift-membership-title {
+  flex: 1;
+  text-align: center;
+  font-size: 1.0625em;
+  /* 17px - 统一标题字号 */
+  color: var(--phone-text-primary);
+}
+
+/* 表单区域（可滚动） */
+.gift-membership-form {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* 余额提示 */
+.gift-membership-balance-hint {
+  background: var(--phone-bg-white);
+  padding: 16px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.gift-membership-balance-label {
+  font-size: 14px;
+  color: var(--phone-text-secondary);
+}
+
+.gift-membership-balance-amount {
+  font-size: 20px;
+  color: #c94e50;
+}
+
+/* 会员类型区域 */
+.gift-membership-section {
+  margin-bottom: 20px;
+}
+
+.gift-membership-section-title {
+  font-size: 16px;
+  color: var(--phone-text-primary);
+  margin-bottom: 12px;
+}
+
+/* 会员类型组 */
+.gift-membership-tier-group {
+  background: var(--phone-bg-white);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.gift-membership-tier-header {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+}
+
+.gift-membership-tier-header.vip {
+  background: linear-gradient(135deg, #c94e50 0%, #d66668 100%);
+  color: var(--phone-text-white);
+}
+
+.gift-membership-tier-header.svip {
+  background: linear-gradient(135deg, #cea77c 0%, #d9b88e 100%);
+  color: var(--phone-text-white);
+}
+
+.gift-membership-tier-header i {
+  font-size: 18px;
+}
+
+/* 会员选项 */
+.gift-membership-options {
+  padding: 8px;
+}
+
+.gift-membership-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 8px;
+}
+
+.gift-membership-option:last-child {
+  margin-bottom: 0;
+}
+
+.gift-membership-option:hover:not(.disabled) {
+  background: rgba(0,0,0,0.03);
+}
+
+.gift-membership-option.selected {
+  background: rgba(206, 78, 80, 0.1);
+  box-shadow: 0 0 0 2px #c94e50 inset;
+}
+
+.gift-membership-option.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.option-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.option-label {
+  font-size: 16px;
+  color: var(--phone-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.discount-tag {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+  color: var(--phone-text-white);
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.option-duration {
+  font-size: 13px;
+  color: var(--phone-text-secondary);
+}
+
+.option-price {
+  font-size: 20px;
+  color: #c94e50;
+}
+
+/* 底部按钮区（固定） */
+.gift-membership-bottom {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--phone-bg-white);
+  border-top: 1px solid var(--phone-border-light);
+  padding: 12px 16px;
+}
+
+/* 提交按钮 */
+.gift-membership-btn-submit {
+  flex: 1;
+  max-width: 400px;
+  background: linear-gradient(135deg, #c94e50 0%, #d66668 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.gift-membership-btn-submit:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.gift-membership-btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 错误视图 */
+.gift-membership-error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: var(--phone-text-secondary);
+  font-size: 14px;
+}
+
+/* 会员送礼消息气泡样式 */
+.chat-msg-bubble-gift-membership {
+  width: 12.5em;
+  padding: 0;
+  border-radius: 0.5em;
+  overflow: hidden;
+  box-shadow: 0 0.125em 0.5em rgba(0, 0, 0, 0.1);
+}
+
+/* 角色发的会员 - 白色背景 */
+.chat-msg-received .chat-msg-bubble-gift-membership {
+  background: #fff;
+}
+
+/* 用户发的会员 - 绿色背景 */
+.chat-msg-sent .chat-msg-bubble-gift-membership {
+  background: var(--phone-bubble-sent);
+}
+
+.chat-msg-gift-membership-header {
+  padding: 0.4em 0.625em;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.chat-msg-gift-membership-header.vip {
+  background: linear-gradient(135deg, #c94e50 0%, #d66668 100%);
+}
+
+.chat-msg-gift-membership-header.svip {
+  background: linear-gradient(135deg, #cea77c 0%, #d9b88e 100%);
+}
+
+.chat-msg-gift-membership-icon {
+  width: 2em;
+  height: 2em;
+  background: transparent;
+  border: 0.1875em solid #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.875em;
+  flex-shrink: 0;
+}
+
+.chat-msg-gift-membership-top {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1875em;
+  flex: 1;
+}
+
+.chat-msg-gift-membership-type {
+  color: #fff;
+  font-size: 0.875em;
+}
+
+.chat-msg-gift-membership-months {
+  font-size: 0.625em;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.chat-msg-gift-membership-body {
+  padding: 0.25em 0.625em;
+  background: #fff;
+}
+
+.chat-msg-gift-membership-text {
+  font-size: 0.5625em;
+  color: var(--phone-text-secondary);
+}
+
+/* ========================================
+   [END] 会员送礼页样式 (gift-membership-*)
+   ======================================== */
+
+/* ========================================
+   角色买会员系统提示样式 (buy-membership-*)
+   ======================================== */
+
+/* 角色买会员消息容器（居中对齐） */
+.chat-msg-buy-membership {
+  text-align: center;
+  margin: 8px 0;
+}
+
+/* 买会员系统提示气泡（小padding，内联显示） */
+.buy-membership-notice {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  color: var(--phone-text-white);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* VIP红色渐变 */
+.buy-membership-notice.vip {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+}
+
+/* SVIP金色渐变 */
+.buy-membership-notice.svip {
+  background: linear-gradient(135deg, #ffd700 0%, #ffb700 100%);
+}
+
+/* 皇冠图标间距 */
+.buy-membership-notice i {
+  margin-right: 4px;
+}
+
+/* ========================================
+   [END] 角色买会员系统提示样式
    ======================================== */
 
 /* ========================================
@@ -10545,7 +11925,7 @@
 
 .favorites-list-search-clear i {
   position: static;
-  color: #fff;
+  color: var(--phone-text-white);
   font-size: 0.75em;
 }
 
@@ -10738,7 +12118,7 @@
 
 .favorites-picker-search-clear i {
   position: static;
-  color: #fff;
+  color: var(--phone-text-white);
   font-size: 0.75em;
 }
 
@@ -10930,7 +12310,7 @@
 
 .contact-selector-search-clear i {
   position: static;
-  color: #fff;
+  color: var(--phone-text-white);
   font-size: 0.75em;
 }
 
@@ -11176,7 +12556,6 @@
   flex: 1;
   text-align: center;
   font-size: 1.0625em;
-  font-weight: 500;
   color: var(--phone-text-primary);
 }
 
@@ -11199,7 +12578,6 @@
 .signature-current-label {
   font-size: 0.75em;
   color: var(--phone-primary-dark);
-  font-weight: 600;
   margin-bottom: 0.5em;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -11209,7 +12587,6 @@
   font-size: 1.125em;
   line-height: 1.6;
   color: var(--phone-text-primary);
-  font-weight: 500;
   white-space: pre-wrap;
   word-wrap: break-word;
 }
@@ -11226,7 +12603,6 @@
   background: var(--phone-bg-white);
   font-size: 0.875em;
   color: var(--phone-text-secondary);
-  font-weight: 500;
   border-radius: 0.75em;
 }
 
@@ -11378,7 +12754,7 @@
   border-radius: 0.25em;
   padding: 0.25em 0.5em;
   cursor: pointer;
-  color: #fa5151;
+  color: var(--phone-danger-light);
   font-size: 0.875em;
   transition: all 0.2s;
   display: flex;
@@ -11387,8 +12763,8 @@
 }
 
 .signature-delete-history-btn:hover {
-  background: rgba(250, 81, 81, 0.2);
-  border-color: #fa5151;
+  background: var(--phone-danger-bg-hover);
+  border-color: var(--phone-danger-light);
 }
 
 /* 评论区 */
@@ -11419,7 +12795,6 @@
 .signature-comment-from {
   font-size: 0.75em;
   color: var(--phone-primary);
-  font-weight: 600;
   flex-shrink: 0;
 }
 
@@ -11741,7 +13116,6 @@
 
 .delete-mode-btn span {
   font-size: 1.05em;
-  font-weight: 500;
   margin-bottom: 4px;
   color: var(--phone-text-primary);
 }
@@ -11757,8 +13131,8 @@
    =================================== */
 
 .newfriend-item.ai-aware-deleted {
-  background: #fffbe6;
-  border-left: 3px solid #faad14;
+  background: var(--phone-warning-bg);
+  border-left: 3px solid var(--phone-warning);
 }
 
 .newfriend-item-btn-view {
@@ -11829,7 +13203,6 @@
   flex: 1;
   text-align: center;
   font-size: 1.0625em;
-  font-weight: 500;
   color: var(--phone-text-primary);
 }
 
@@ -11866,7 +13239,6 @@
 
 .friend-request-section-title {
   font-size: 1em;
-  font-weight: 500;
   color: var(--phone-text-primary);
   margin-bottom: 15px;
 }
@@ -11976,19 +13348,19 @@
   height: 32px;
   border-radius: 6px;
   border: 1px solid rgba(250, 81, 81, 0.3);
-  background: rgba(250, 81, 81, 0.1);
-  color: #fa5151;
+  background: var(--phone-danger-bg);
+  color: var(--phone-danger-light);
   font-size: 14px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: all 0.2s;
 }
 
 .friend-request-delete-message-btn:hover {
-  background: rgba(250, 81, 81, 0.2);
-  border-color: #fa5151;
+  background: var(--phone-danger-bg-hover);
+  border-color: var(--phone-danger-light);
 }
 
 .friend-request-delete-message-btn:active {
@@ -12059,7 +13431,6 @@
   min-width: 45px;
   text-align: right;
   font-size: 1em;
-  font-weight: 500;
   color: var(--phone-primary);
 }
 
@@ -12080,7 +13451,6 @@
   border: none;
   border-radius: 6px;
   font-size: 1em;
-  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -12182,7 +13552,6 @@
   flex: 1;
   text-align: center;
   font-size: 1.0625em;
-  font-weight: 500;
   color: var(--phone-text-primary);
 }
 
@@ -12301,7 +13670,6 @@
   flex: 1;
   text-align: center;
   font-size: 1.0625em;
-  font-weight: 500;
   color: var(--phone-text-primary);
 }
 
@@ -12511,4 +13879,1656 @@
 
 .image-storage-item-size {
   text-align: right;
+}
+
+/* === 会员中心页面样式 === */
+
+.membership-center-page {
+  background: var(--phone-bg-main);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 顶部导航栏 */
+.membership-center-topbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75em;
+  padding: 0;
+  background: var(--phone-bg-white);
+  border-bottom: 1px solid var(--phone-border);
+  flex-shrink: 0;
+}
+
+.membership-center-back-btn {
+  position: absolute;
+  left: 0.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--phone-text-primary);
+  font-size: 1.1em;
+  cursor: pointer;
+  padding: 0;
+  min-width: 2.5em;
+}
+
+.membership-center-back-btn:hover {
+  opacity: 0.7;
+}
+
+.membership-center-title {
+  flex: 1;
+  text-align: center;
+  font-size: 1.0625em;
+  color: var(--phone-text-primary);
+}
+
+.membership-center-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1em;
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+
+/* 会员状态卡片（固定区域） */
+.membership-status-card {
+  flex-shrink: 0;
+  background: var(--phone-bg-white);
+  margin: 0.5em 0.75em;
+  border-radius: 0.375em;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.membership-status-header {
+  padding: 0.75em;
+  display: flex;
+  align-items: center;
+  gap: 0.375em;
+  font-size: 0.9375em;
+}
+
+.membership-status-header.vip {
+  background: linear-gradient(135deg, #c94e50 0%, #d66668 100%);
+  color: white;
+}
+
+.membership-status-header.svip {
+  background: linear-gradient(135deg, #cea77c 0%, #d9b88e 100%);
+  color: white;
+}
+
+.membership-status-header.inactive {
+  background: var(--phone-bg-main);
+  color: var(--phone-text-secondary);
+}
+
+.membership-status-info {
+  padding: 0.75em;
+}
+
+.membership-status-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.375em 0;
+}
+
+.membership-status-row .label {
+  color: var(--phone-text-secondary);
+  font-size: 0.875em;
+}
+
+.membership-status-row .value {
+  font-size: 0.875em;
+}
+
+.membership-hint {
+  color: var(--phone-text-secondary);
+  font-size: 0.875em;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* 购买会员区域 */
+.membership-purchase-section {
+  background: var(--phone-bg-white);
+  border-radius: 0.5em;
+  padding: 1em;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.membership-section-title {
+  font-size: 1em;
+  margin: 0 0 1em 0;
+  color: var(--phone-text-primary);
+}
+
+.membership-balance {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin-bottom: 1em;
+  padding: 0.75em;
+  background: var(--phone-bg-main);
+  border-radius: 0.375em;
+  font-size: 0.9375em;
+}
+
+.balance-amount {
+  color: #c94e50;
+}
+
+.membership-tier-group {
+  margin-bottom: 1em;
+}
+
+.membership-tier-group:last-child {
+  margin-bottom: 0;
+}
+
+.membership-tier-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.75em;
+  border-radius: 0.375em;
+  font-size: 0.9375em;
+  margin-bottom: 0.75em;
+}
+
+.membership-tier-header.vip {
+  background: rgba(201, 78, 80, 0.1);
+  color: #c94e50;
+}
+
+.membership-tier-header.svip {
+  background: rgba(206, 167, 124, 0.1);
+  color: #cea77c;
+}
+
+.membership-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75em;
+}
+
+.membership-option-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1em 0.75em;
+  background: var(--phone-bg-main);
+  border: none;
+  border-radius: 0.375em;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.membership-option-btn:active {
+  transform: scale(0.98);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.membership-option-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.membership-option-btn.disabled:active {
+  transform: none;
+}
+
+.option-info {
+  text-align: center;
+  width: 100%;
+}
+
+.option-label {
+  font-size: 0.9375em;
+  margin-bottom: 0.25em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35em;
+}
+
+.discount-tag {
+  background: #ff4d4f;
+  color: white;
+  padding: 0.1em 0.35em;
+  border-radius: 0.25em;
+  font-size: 0.75em;
+}
+
+.option-duration {
+  font-size: 0.75em;
+  color: var(--phone-text-secondary);
+  margin-bottom: 0.5em;
+}
+
+.option-price {
+  font-size: 1.125em;
+  color: #c94e50;
+}
+
+/* 功能说明区域 */
+.membership-features-section {
+  background: var(--phone-bg-white);
+  border-radius: 0.5em;
+  padding: 1em;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.membership-tabs {
+  display: flex;
+  gap: 0.5em;
+  margin-bottom: 1em;
+}
+
+.membership-tab {
+  flex: 1;
+  padding: 0.5em;
+  background: var(--phone-bg-main);
+  border: none;
+  border-radius: 0.375em;
+  cursor: pointer;
+  font-size: 0.875em;
+  color: var(--phone-text-secondary);
+  transition: all 0.2s;
+}
+
+.membership-tab.active {
+  background: #c94e50;
+  color: white;
+}
+
+.membership-tab-content {
+  position: relative;
+}
+
+.membership-feature-panel {
+  display: none;
+}
+
+.membership-feature-panel.active {
+  display: block;
+}
+
+.membership-feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.membership-feature-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+  padding: 0.5em 0;
+  font-size: 0.9375em;
+  line-height: 1.5;
+}
+
+.membership-feature-list li i {
+  color: #52c41a;
+  margin-top: 0.2em;
+  flex-shrink: 0;
+}
+
+/* 送礼区域（固定底部） */
+.membership-gift-section {
+  flex-shrink: 0;
+  background: var(--phone-bg-white);
+  border-top: 1px solid var(--phone-border-light);
+  padding: 0.75em;
+}
+
+/* 送礼区域的标题（单独调小） */
+.membership-gift-section .membership-section-title {
+  font-size: 0.9375em;
+  margin: 0 0 0.625em 0;
+}
+
+/* 送礼区域的提示文字 */
+.membership-gift-section .membership-hint {
+  font-size: 0.8125em;
+  line-height: 1.4;
+  margin-bottom: 0.75em;
+}
+
+.membership-gift-btn {
+  width: 100%;
+  padding: 0.75em;
+  background: linear-gradient(135deg, #cea77c 0%, #d9b88e 100%);
+  border: none;
+  border-radius: 0.375em;
+  color: white;
+  font-size: 0.9375em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375em;
+  margin-top: 0;
+  transition: all 0.2s;
+}
+
+.membership-gift-btn:active {
+  transform: scale(0.98);
+}
+
+/* === 会员详情弹窗内容样式（使用统一弹窗系统）=== */
+
+.membership-detail-header-badge {
+  padding: 1em;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  font-size: 1.0625em;
+  border-radius: 0.5em;
+  margin-bottom: 1em;
+}
+
+.membership-detail-header-badge i {
+  font-size: 1.1em;
+}
+
+.membership-detail-name {
+  font-size: 1.125em;
+  color: var(--phone-text-primary);
+  margin-bottom: 1em;
+  text-align: center;
+}
+
+.membership-detail-info {
+  background: var(--phone-bg-main);
+  border-radius: 0.5em;
+  padding: 1em;
+}
+
+.membership-detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5em 0;
+}
+
+.membership-detail-row:not(:last-child) {
+  border-bottom: 1px solid var(--phone-border);
+}
+
+.membership-detail-row .label {
+  color: var(--phone-text-secondary);
+  font-size: 0.9375em;
+}
+
+.membership-detail-row .value {
+  color: var(--phone-text-primary);
+}
+
+/* ========================================
+   🎨 个性装扮页面 (customization-*)
+   ======================================== */
+
+/* 页面包装器 */
+.customization-wrapper {
+  background: var(--phone-bg-main);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+/* 顶部栏 */
+.customization-topbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75em;
+  padding: 0;
+  background: var(--phone-bg-white);
+  border-bottom: 1px solid var(--phone-border);
+  flex-shrink: 0;
+}
+
+.customization-back-btn {
+  position: absolute;
+  left: 0.5em;
+  background: none;
+  border: none;
+  color: var(--phone-text-primary);
+  font-size: 1.1em;
+  cursor: pointer;
+  padding: 0;
+  min-width: 2.5em;
+}
+
+.customization-back-btn:hover {
+  opacity: 0.7;
+}
+
+.customization-title {
+  flex: 1;
+  text-align: center;
+  font-size: 1.0625em;
+  color: var(--phone-text-primary);
+}
+
+/* 标签栏（多个标签：气泡、字体、转账等） */
+.customization-tabs {
+  display: flex;
+  background: var(--phone-bg-white);
+  border-bottom: 1px solid var(--phone-border-light);
+  flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  /* PC端使用全局滚动条样式（L207-224定义），手机端隐藏 */
+}
+
+/* 手机端：隐藏滚动条 */
+@media (max-width: 768px) {
+  .customization-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .customization-tabs {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+}
+
+.customization-tab {
+  flex-shrink: 0;
+  padding: 0.75em 1em;
+  background: none;
+  border: none;
+  color: var(--phone-text-secondary);
+  font-size: 0.875em;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  white-space: nowrap;
+}
+
+.customization-tab.active {
+  color: var(--phone-primary);
+}
+
+.customization-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1.5em;
+  height: 2px;
+  background: var(--phone-primary);
+}
+
+/* 内容区域 */
+.customization-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--phone-bg-main);
+}
+
+.customization-tab-content {
+  display: none;
+  padding: 0;
+}
+
+.customization-tab-content.active {
+  display: block;
+}
+
+.customization-empty {
+  text-align: center;
+  color: var(--phone-text-secondary);
+  padding: 2em 1em;
+  font-size: 0.9375em;
+}
+
+/* 气泡分类列表容器 */
+.customization-bubble-categories {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 单个分类区块（统一管理所有padding） */
+.customization-category-section {
+  padding: 1em 1em 0 1em; /* 只有上左右有padding，下边距靠内容撑开 */
+  margin-bottom: 0.5em; /* 增加区块间距 */
+}
+
+.customization-category-section:last-child {
+  margin-bottom: 2em; /* 最后一个多留点白 */
+}
+
+/* 分类标题栏 */
+.customization-category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  margin-bottom: 0.75em;
+}
+
+.customization-category-title {
+  font-size: 0.9375em; /* 稍微加大 */
+  color: var(--phone-text-primary);
+}
+
+.customization-category-more {
+  background: none;
+  border: none;
+  color: var(--phone-text-secondary);
+  font-size: 0.8125em; /* 字号改小 */
+  cursor: pointer;
+  padding: 0.5em;
+  transition: color 0.2s;
+  opacity: 0.8;
+}
+
+.customization-category-more:hover {
+  color: var(--phone-primary);
+}
+
+/* 横向滚动容器 */
+.customization-category-scroll {
+  display: flex;
+  gap: 0.5em;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 0;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* PC端：显示横向滚动条，隐藏竖向滚动条 */
+@media (min-width: 769px) {
+  /* 隐藏竖向滚动条 */
+  .customization-category-scroll::-webkit-scrollbar-vertical {
+    display: none;
+  }
+}
+
+/* 手机端：隐藏所有滚动条 */
+@media (max-width: 768px) {
+  .customization-category-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .customization-category-scroll {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+}
+
+/* 气泡包装器（包含卡片+价格） */
+.customization-bubble-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  cursor: pointer;
+  flex-shrink: 0;
+  width: 7.5em;
+  scroll-snap-align: start;
+}
+
+/* 气泡项（正方形卡片，白色背景） */
+.customization-bubble-item {
+  background: var(--phone-bg-white);
+  border-radius: 0.75em;
+  padding: 0.5em;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); /* 弹性过渡 */
+  width: 100%;
+  aspect-ratio: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); /* 极淡微投影 */
+}
+
+/* 悬浮效果（PC端） */
+.customization-bubble-wrapper:hover .customization-bubble-item {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* 按压回弹（所有设备） */
+.customization-bubble-wrapper:active .customization-bubble-item {
+  transform: scale(0.95);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+/* 添加自定义气泡按钮（和气泡卡片一样的正方形） */
+.customization-add-bubble .char-prompt-add-btn {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  padding: 0.5em;
+  background: var(--phone-bg-white);
+  border: 2px dashed var(--phone-border);
+  border-radius: 0.75em;
+  color: var(--phone-text-secondary);
+  font-size: 0.75em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.customization-add-bubble .char-prompt-add-btn:hover {
+  background: var(--phone-bg-hover);
+  border-color: var(--phone-primary);
+  color: var(--phone-primary);
+}
+
+.customization-add-bubble .char-prompt-add-btn i {
+  font-size: 1.5em;
+}
+
+.customization-add-bubble .char-prompt-add-btn span {
+  font-size: 0.875em;
+}
+
+/* 气泡预览区（占据更多空间） */
+.customization-bubble-preview {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  overflow: visible;
+}
+
+/* 气泡样式预览（所见即所得，padding由每个气泡在配置中自定义） */
+.customization-bubble-sample {
+  font-size: 0.875em;
+  line-height: 1.4;
+  word-break: break-word;
+  white-space: normal;
+  display: inline-block;
+  /* padding由每个气泡的css配置决定，不在这里固定 */
+}
+
+/* 气泡价格（在白框下方） */
+.customization-bubble-price {
+  font-size: 0.875em;
+  text-align: center;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25em;
+}
+
+/* 原价（需要付费时显示） */
+.customization-bubble-price .price-current {
+  color: #d4a574;
+}
+
+/* 划线原价（免费时显示） */
+.customization-bubble-price .price-original {
+  color: var(--phone-text-secondary);
+  text-decoration: line-through;
+  font-size: 0.875em;
+}
+
+/* 免费标签（浅黑色、加粗、护眼） */
+.customization-bubble-price .price-free {
+  color: #555555;
+}
+
+/* ================================
+   标签筛选栏（新架构）
+   ================================ */
+
+/* 标签栏容器 */
+.customization-filter-section {
+  padding: 1em;
+  margin-bottom: 0.5em;
+}
+
+/* 标签横向滚动容器 */
+.customization-filter-tabs {
+  display: flex;
+  gap: 0.5em;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.5em;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* PC端：使用全局滚动条样式（L207-224定义） */
+/* 无需额外样式，自动继承全局样式 */
+
+/* 手机端：隐藏滚动条 */
+@media (max-width: 768px) {
+  .customization-filter-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .customization-filter-tabs {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+}
+
+/* 单个标签按钮 */
+.customization-filter-tab {
+  flex-shrink: 0;
+  padding: 0.5em 1em;
+  background: var(--phone-bg-white);
+  border: 1px solid var(--phone-border);
+  border-radius: 1.25em;
+  font-size: 0.875em;
+  color: var(--phone-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+/* 标签激活状态 */
+.customization-filter-tab.active {
+  background: var(--phone-primary);
+  color: var(--phone-text-white);
+  border-color: var(--phone-primary);
+}
+
+/* 标签hover（PC端） */
+.customization-filter-tab:hover {
+  border-color: var(--phone-primary);
+}
+
+/* ================================
+   气泡网格显示区
+   ================================ */
+
+/* 网格容器 */
+.customization-grid-section {
+  padding: 0 1em 1em 1em;
+}
+
+/* 气泡网格（3列） */
+.customization-bubble-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75em;
+}
+
+/* 网格中的气泡包装器 */
+.customization-bubble-grid .customization-bubble-wrapper {
+  width: 100%;
+}
+
+
+/* ========================================
+   个性装扮 - 购买/应用弹窗样式
+   ======================================== */
+
+/* 购买确认弹窗 */
+.customization-purchase-dialog,
+.customization-apply-dialog {
+  padding: 1em;
+  text-align: center;
+}
+
+/* 大号气泡预览 */
+.customization-bubble-preview-large {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5em;
+  background: var(--phone-bg-secondary);
+  border-radius: 0.5em;
+  margin-bottom: 1em;
+}
+
+.customization-bubble-preview-large .customization-bubble-sample {
+  max-width: 70%;
+  padding: 0.75em 1em;
+  border-radius: 0.5em;
+  font-size: 1em;
+  word-break: break-word;
+}
+
+/* 购买信息 */
+.customization-purchase-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+
+/* ========================================
+   🎨 角色专属装扮页面 (character-customization-*)
+   ======================================== */
+
+/* 页面包装器 */
+.character-customization-wrapper {
+  background: var(--phone-bg-main);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+/* 顶部栏 */
+.character-customization-topbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75em;
+  padding: 0;
+  background: var(--phone-bg-white);
+  border-bottom: 1px solid var(--phone-border);
+  flex-shrink: 0;
+}
+
+.character-customization-back-btn {
+  position: absolute;
+  left: 0.5em;
+  background: none;
+  border: none;
+  color: var(--phone-text-primary);
+  font-size: 1.1em;
+  cursor: pointer;
+  padding: 0;
+  min-width: 2.5em;
+}
+
+.character-customization-back-btn:hover {
+  opacity: 0.7;
+}
+
+.character-customization-title {
+  flex: 1;
+  text-align: center;
+  font-size: 1.0625em;
+  color: var(--phone-text-primary);
+}
+
+/* 标签栏（多个标签：气泡、字体、转账等） */
+.character-customization-tabs {
+  display: flex;
+  background: var(--phone-bg-white);
+  border-bottom: 1px solid var(--phone-border-light);
+  flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  /* PC端使用全局滚动条样式（L207-224定义），手机端隐藏 */
+}
+
+/* 手机端：隐藏滚动条 */
+@media (max-width: 768px) {
+  .character-customization-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .character-customization-tabs {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+}
+
+.character-customization-tab {
+  flex-shrink: 0;
+  padding: 0.75em 1em;
+  background: none;
+  border: none;
+  color: var(--phone-text-secondary);
+  font-size: 0.875em;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  white-space: nowrap;
+}
+
+.character-customization-tab.active {
+  color: var(--phone-primary);
+}
+
+.character-customization-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1.5em;
+  height: 2px;
+  background: var(--phone-primary);
+}
+
+/* 内容区域 */
+.character-customization-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--phone-bg-main);
+}
+
+.character-customization-tab-content {
+  display: none;
+  padding: 0;
+}
+
+.character-customization-tab-content.active {
+  display: block;
+}
+
+/* 提示文字 */
+.character-customization-hint {
+  padding: 1em;
+  font-size: 0.875em;
+  color: var(--phone-text-secondary);
+  text-align: center;
+  background: var(--phone-bg-white);
+  margin-bottom: 0.5em;
+}
+
+/* 气泡网格（3列） */
+.character-customization-bubble-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75em;
+  padding: 1em;
+}
+
+/* 气泡包装器 */
+.character-customization-bubble-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  cursor: pointer;
+}
+
+/* 气泡项（正方形卡片） */
+.character-customization-bubble-item {
+  background: var(--phone-bg-white);
+  border-radius: 0.75em;
+  padding: 0.5em;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  width: 100%;
+  aspect-ratio: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* 悬浮效果 */
+.character-customization-bubble-wrapper:hover .character-customization-bubble-item {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* 按压回弹 */
+.character-customization-bubble-wrapper:active .character-customization-bubble-item {
+  transform: scale(0.95);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+/* 气泡预览区 */
+.character-customization-bubble-preview {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  overflow: visible;
+}
+
+/* 气泡样式预览 */
+.character-customization-bubble-sample {
+  font-size: 0.875em;
+  line-height: 1.4;
+  word-break: break-word;
+  white-space: normal;
+  display: inline-block;
+}
+
+/* 气泡名称 */
+.character-customization-bubble-name {
+  font-size: 0.8125em;
+  text-align: center;
+  color: var(--phone-text-secondary);
+  margin-top: 0.25em;
+}
+
+/* 空状态 */
+.character-customization-empty {
+  text-align: center;
+  color: var(--phone-text-secondary);
+  padding: 2em 1em;
+  font-size: 0.9375em;
+}
+
+/* 错误视图 */
+.character-customization-error {
+  text-align: center;
+  color: var(--phone-danger);
+  padding: 2em 1em;
+  font-size: 0.9375em;
+}
+
+.customization-purchase-name,
+.customization-apply-name {
+  font-size: 1.125em;
+  font-weight: 600;
+  color: var(--phone-text-primary);
+}
+
+.customization-purchase-price {
+  font-size: 1.25em;
+  font-weight: 700;
+  color: #d4a574;
+}
+
+.customization-purchase-balance {
+  font-size: 0.875em;
+  color: var(--phone-text-secondary);
+}
+
+/* 应用设置 */
+.customization-apply-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+
+.customization-apply-scope {
+  text-align: left;
+}
+
+.customization-apply-scope-title {
+  font-size: 0.875em;
+  font-weight: 600;
+  color: var(--phone-text-primary);
+  margin-bottom: 0.75em;
+}
+
+.customization-apply-scope-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75em;
+}
+
+.customization-apply-scope-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.75em;
+  background: var(--phone-bg-secondary);
+  border-radius: 0.375em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.customization-apply-scope-option:hover {
+  background: var(--phone-bg-hover);
+}
+
+.customization-apply-scope-option input[type="radio"] {
+  width: 1.125em;
+  height: 1.125em;
+  margin: 0;
+  cursor: pointer;
+}
+
+.customization-apply-scope-option span {
+  font-size: 0.9375em;
+  color: var(--phone-text-primary);
+  cursor: pointer;
+}
+
+
+/* ========================================
+   个性装扮 - 气泡样式覆盖
+   ======================================== */
+
+/* 简约风格 */
+body[data-bubble-theme="bubble-minimal-gray-1"] .chat-msg-sent .chat-msg-bubble {
+  background: #f0f0f0;
+  color: #333333;
+  border-radius: 16px;
+  border: 1px solid #e0e0e0;
+}
+
+body[data-bubble-theme="bubble-minimal-white-1"] .chat-msg-sent .chat-msg-bubble {
+  background: #ffffff;
+  color: #333333;
+  border-radius: 18px;
+  border: 1px solid #d0d0d0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+body[data-bubble-theme="bubble-minimal-beige-1"] .chat-msg-sent .chat-msg-bubble {
+  background: #f5f5dc;
+  color: #5a5a4d;
+  border-radius: 16px;
+}
+
+body[data-bubble-theme="bubble-minimal-gray-2"] .chat-msg-sent .chat-msg-bubble {
+  background: #e8e8e8;
+  color: #444444;
+  border-radius: 20px;
+  border: 1px solid #d0d0d0;
+}
+
+body[data-bubble-theme="bubble-minimal-blue-soft"] .chat-msg-sent .chat-msg-bubble {
+  background: #e8f4f8;
+  color: #2c5f7d;
+  border-radius: 16px;
+}
+
+body[data-bubble-theme="bubble-minimal-pink-soft"] .chat-msg-sent .chat-msg-bubble {
+  background: #ffe8f0;
+  color: #8b3a5a;
+  border-radius: 18px;
+}
+
+body[data-bubble-theme="bubble-minimal-green-soft"] .chat-msg-sent .chat-msg-bubble {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 16px;
+}
+
+body[data-bubble-theme="bubble-minimal-cream"] .chat-msg-sent .chat-msg-bubble {
+  background: #fffbf0;
+  color: #6b5d4f;
+  border-radius: 18px;
+  border: 1px solid #f0e8d8;
+}
+
+/* 黑色系 */
+body[data-bubble-theme="bubble-black-pure"] .chat-msg-sent .chat-msg-bubble {
+  background: #000000;
+  color: #ffffff;
+  border-radius: 18px;
+}
+
+body[data-bubble-theme="bubble-black-soft"] .chat-msg-sent .chat-msg-bubble {
+  background: #1a1a1a;
+  color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+body[data-bubble-theme="bubble-black-charcoal"] .chat-msg-sent .chat-msg-bubble {
+  background: #2d2d2d;
+  color: #f0f0f0;
+  border-radius: 20px;
+}
+
+body[data-bubble-theme="bubble-black-navy"] .chat-msg-sent .chat-msg-bubble {
+  background: #0a1929;
+  color: #ffffff;
+  border-radius: 18px;
+}
+
+body[data-bubble-theme="bubble-black-rounded"] .chat-msg-sent .chat-msg-bubble {
+  background: #1c1c1c;
+  color: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+}
+
+body[data-bubble-theme="bubble-black-border"] .chat-msg-sent .chat-msg-bubble {
+  background: #000000;
+  color: #ffffff;
+  border-radius: 16px;
+  border: 2px solid #333333;
+}
+
+body[data-bubble-theme="bubble-black-gray-mix"] .chat-msg-sent .chat-msg-bubble {
+  background: #424242;
+  color: #ffffff;
+  border-radius: 18px;
+}
+
+body[data-bubble-theme="bubble-black-matte"] .chat-msg-sent .chat-msg-bubble {
+  background: #212121;
+  color: #e0e0e0;
+  border-radius: 16px;
+}
+
+/* 蓝色系 */
+body[data-bubble-theme="bubble-blue-sky"] .chat-msg-sent .chat-msg-bubble {
+  background: #87ceeb;
+  color: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 2px 6px rgba(135,206,235,0.3);
+}
+
+body[data-bubble-theme="bubble-blue-ocean"] .chat-msg-sent .chat-msg-bubble {
+  background: #006994;
+  color: #ffffff;
+  border-radius: 16px;
+}
+
+body[data-bubble-theme="bubble-blue-gradient-1"] .chat-msg-sent .chat-msg-bubble {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 2px 8px rgba(102,126,234,0.3);
+}
+
+body[data-bubble-theme="bubble-blue-royal"] .chat-msg-sent .chat-msg-bubble {
+  background: #4169e1;
+  color: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 2px 6px rgba(65,105,225,0.4);
+}
+
+body[data-bubble-theme="bubble-blue-cyan"] .chat-msg-sent .chat-msg-bubble {
+  background: #00bcd4;
+  color: #ffffff;
+  border-radius: 16px;
+}
+
+body[data-bubble-theme="bubble-blue-navy-gradient"] .chat-msg-sent .chat-msg-bubble {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  color: #ffffff;
+  border-radius: 18px;
+}
+
+body[data-bubble-theme="bubble-blue-light-gradient"] .chat-msg-sent .chat-msg-bubble {
+  background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+  color: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 2px 8px rgba(102,166,255,0.3);
+}
+
+body[data-bubble-theme="bubble-blue-teal"] .chat-msg-sent .chat-msg-bubble {
+  background: #008b8b;
+  color: #ffffff;
+  border-radius: 16px;
+}
+
+body[data-bubble-theme="bubble-blue-steel"] .chat-msg-sent .chat-msg-bubble {
+  background: #4682b4;
+  color: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 2px 6px rgba(70,130,180,0.3);
+}
+
+/* 白色系 */
+body[data-bubble-theme="bubble-white-pure"] .chat-msg-sent .chat-msg-bubble {
+  background: #ffffff;
+  color: #333333;
+  border-radius: 18px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+body[data-bubble-theme="bubble-white-snow"] .chat-msg-sent .chat-msg-bubble {
+  background: #fffafa;
+  color: #333333;
+  border-radius: 16px;
+  border: 1px solid #f0e8e8;
+}
+
+body[data-bubble-theme="bubble-white-ivory"] .chat-msg-sent .chat-msg-bubble {
+  background: #fffff0;
+  color: #5a5a4d;
+  border-radius: 18px;
+  border: 1px solid #f0f0d8;
+}
+
+body[data-bubble-theme="bubble-white-ghost"] .chat-msg-sent .chat-msg-bubble {
+  background: #f8f8ff;
+  color: #333333;
+  border-radius: 16px;
+  border: 1px solid #e8e8f0;
+}
+
+body[data-bubble-theme="bubble-white-floral"] .chat-msg-sent .chat-msg-bubble {
+  background: #fffaf0;
+  color: #5a5a4d;
+  border-radius: 18px;
+  border: 1px solid #f0e8d8;
+}
+
+body[data-bubble-theme="bubble-white-smoke"] .chat-msg-sent .chat-msg-bubble {
+  background: #f5f5f5;
+  color: #333333;
+  border-radius: 16px;
+  border: 1px solid #e0e0e0;
+}
+
+body[data-bubble-theme="bubble-white-linen"] .chat-msg-sent .chat-msg-bubble {
+  background: #faf0e6;
+  color: #5a5a4d;
+  border-radius: 18px;
+  border: 1px solid #e8d8c8;
+}
+
+body[data-bubble-theme="bubble-white-pearl"] .chat-msg-sent .chat-msg-bubble {
+  background: #f0f0f0;
+  color: #333333;
+  border-radius: 20px;
+  border: 1px solid #d8d8d8;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+/* 多彩系 */
+body[data-bubble-theme="bubble-colorful-pink"] .chat-msg-sent .chat-msg-bubble {
+  background: #ff69b4;
+  color: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 2px 6px rgba(255,105,180,0.3);
+}
+
+body[data-bubble-theme="bubble-colorful-red"] .chat-msg-sent .chat-msg-bubble {
+  background: #dc143c;
+  color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 2px 6px rgba(220,20,60,0.3);
+}
+
+body[data-bubble-theme="bubble-colorful-orange"] .chat-msg-sent .chat-msg-bubble {
+  background: #ff8c00;
+  color: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 2px 6px rgba(255,140,0,0.3);
+}
+
+body[data-bubble-theme="bubble-colorful-green"] .chat-msg-sent .chat-msg-bubble {
+  background: #32cd32;
+  color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 2px 6px rgba(50,205,50,0.3);
+}
+
+body[data-bubble-theme="bubble-colorful-purple"] .chat-msg-sent .chat-msg-bubble {
+  background: #9370db;
+  color: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 2px 6px rgba(147,112,219,0.3);
+}
+
+body[data-bubble-theme="bubble-colorful-sunset"] .chat-msg-sent .chat-msg-bubble {
+  background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
+  color: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 2px 8px rgba(255,107,107,0.3);
+}
+
+body[data-bubble-theme="bubble-colorful-rainbow"] .chat-msg-sent .chat-msg-bubble {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  color: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 2px 8px rgba(102,126,234,0.3);
+}
+
+body[data-bubble-theme="bubble-colorful-mint"] .chat-msg-sent .chat-msg-bubble {
+  background: #98d8c8;
+  color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 2px 6px rgba(152,216,200,0.3);
+}
+
+
+/* ========================================
+   角色专属装扮 - 角色气泡样式覆盖
+   data-character-bubble-theme 作用于 .chat-msg-received（角色发送的消息）
+   ======================================== */
+
+/* 简约风格 - 角色气泡 */
+body[data-character-bubble-theme="bubble-minimal-gray-1"] .chat-msg-received .chat-msg-bubble {
+  background: #f0f0f0 !important;
+  color: #333333 !important;
+  border-radius: 16px !important;
+  border: 1px solid #e0e0e0 !important;
+}
+
+body[data-character-bubble-theme="bubble-minimal-white-1"] .chat-msg-received .chat-msg-bubble {
+  background: #ffffff !important;
+  color: #333333 !important;
+  border-radius: 18px !important;
+  border: 1px solid #d0d0d0 !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+}
+
+body[data-character-bubble-theme="bubble-minimal-beige-1"] .chat-msg-received .chat-msg-bubble {
+  background: #f5f5dc !important;
+  color: #5a5a4d !important;
+}
+
+body[data-character-bubble-theme="bubble-minimal-gray-2"] .chat-msg-received .chat-msg-bubble {
+  background: #e8e8e8 !important;
+  color: #444444 !important;
+  border-radius: 20px !important;
+}
+
+body[data-character-bubble-theme="bubble-minimal-blue-soft"] .chat-msg-received .chat-msg-bubble {
+  background: #e8f4f8 !important;
+  color: #2c5f7d !important;
+}
+
+body[data-character-bubble-theme="bubble-minimal-pink-soft"] .chat-msg-received .chat-msg-bubble {
+  background: #ffe8f0 !important;
+  color: #8b3a5a !important;
+}
+
+body[data-character-bubble-theme="bubble-minimal-green-soft"] .chat-msg-received .chat-msg-bubble {
+  background: #e8f5e9 !important;
+  color: #2e7d32 !important;
+}
+
+body[data-character-bubble-theme="bubble-minimal-cream"] .chat-msg-received .chat-msg-bubble {
+  background: #fffbf0 !important;
+  color: #6b5d4f !important;
+}
+
+/* 黑色系 - 角色气泡 */
+body[data-character-bubble-theme="bubble-black-pure"] .chat-msg-received .chat-msg-bubble {
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+
+body[data-character-bubble-theme="bubble-black-soft"] .chat-msg-received .chat-msg-bubble {
+  background: #1a1a1a !important;
+  color: #ffffff !important;
+  border-radius: 16px !important;
+}
+
+body[data-character-bubble-theme="bubble-black-charcoal"] .chat-msg-received .chat-msg-bubble {
+  background: #2d2d2d !important;
+  color: #f0f0f0 !important;
+}
+
+body[data-character-bubble-theme="bubble-black-navy"] .chat-msg-received .chat-msg-bubble {
+  background: #0a1929 !important;
+  color: #ffffff !important;
+}
+
+body[data-character-bubble-theme="bubble-black-rounded"] .chat-msg-received .chat-msg-bubble {
+  background: #1c1c1c !important;
+  color: #ffffff !important;
+  border-radius: 24px !important;
+}
+
+body[data-character-bubble-theme="bubble-black-border"] .chat-msg-received .chat-msg-bubble {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #333333 !important;
+}
+
+body[data-character-bubble-theme="bubble-black-gray-mix"] .chat-msg-received .chat-msg-bubble {
+  background: #424242 !important;
+  color: #ffffff !important;
+}
+
+body[data-character-bubble-theme="bubble-black-matte"] .chat-msg-received .chat-msg-bubble {
+  background: #212121 !important;
+  color: #e0e0e0 !important;
+}
+
+/* 蓝色系 - 角色气泡 */
+body[data-character-bubble-theme="bubble-blue-sky"] .chat-msg-received .chat-msg-bubble {
+  background: #87ceeb !important;
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;
+}
+
+body[data-character-bubble-theme="bubble-blue-ocean"] .chat-msg-received .chat-msg-bubble {
+  background: #006994 !important;
+  color: #ffffff !important;
+}
+
+body[data-character-bubble-theme="bubble-blue-gradient-1"] .chat-msg-received .chat-msg-bubble {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: #ffffff !important;
+  border-radius: 18px !important;
+}
+
+body[data-character-bubble-theme="bubble-blue-royal"] .chat-msg-received .chat-msg-bubble {
+  background: #4169e1 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(65,105,225,0.3) !important;
+}
+
+body[data-character-bubble-theme="bubble-blue-cyan"] .chat-msg-received .chat-msg-bubble {
+  background: #00bcd4 !important;
+  color: #ffffff !important;
+}
+
+body[data-character-bubble-theme="bubble-blue-navy-gradient"] .chat-msg-received .chat-msg-bubble {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+  color: #ffffff !important;
+}
+
+body[data-character-bubble-theme="bubble-blue-light-gradient"] .chat-msg-received .chat-msg-bubble {
+  background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%) !important;
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.15) !important;
+}
+
+body[data-character-bubble-theme="bubble-blue-teal"] .chat-msg-received .chat-msg-bubble {
+  background: #008b8b !important;
+  color: #ffffff !important;
+}
+
+body[data-character-bubble-theme="bubble-blue-steel"] .chat-msg-received .chat-msg-bubble {
+  background: #4682b4 !important;
+  color: #ffffff !important;
+}
+
+/* 白色系 - 角色气泡 */
+body[data-character-bubble-theme="bubble-white-pure"] .chat-msg-received .chat-msg-bubble {
+  background: #ffffff !important;
+  color: #333333 !important;
+  border: 1px solid #e0e0e0 !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+}
+
+body[data-character-bubble-theme="bubble-white-snow"] .chat-msg-received .chat-msg-bubble {
+  background: #fffafa !important;
+  color: #333333 !important;
+  border: 1px solid #f0e0e0 !important;
+}
+
+body[data-character-bubble-theme="bubble-white-ivory"] .chat-msg-received .chat-msg-bubble {
+  background: #fffff0 !important;
+  color: #5a5a4d !important;
+  border: 1px solid #e8e8d0 !important;
+}
+
+body[data-character-bubble-theme="bubble-white-ghost"] .chat-msg-received .chat-msg-bubble {
+  background: #f8f8ff !important;
+  color: #333333 !important;
+  border: 1px solid #e0e0f0 !important;
+}
+
+body[data-character-bubble-theme="bubble-white-floral"] .chat-msg-received .chat-msg-bubble {
+  background: #fffaf0 !important;
+  color: #5a5a4d !important;
+  border: 1px solid #f0e8d8 !important;
+}
+
+body[data-character-bubble-theme="bubble-white-smoke"] .chat-msg-received .chat-msg-bubble {
+  background: #f5f5f5 !important;
+  color: #333333 !important;
+  border: 1px solid #e0e0e0 !important;
+}
+
+body[data-character-bubble-theme="bubble-white-linen"] .chat-msg-received .chat-msg-bubble {
+  background: #faf0e6 !important;
+  color: #5a5a4d !important;
+  border: 1px solid #e8dcd0 !important;
+}
+
+body[data-character-bubble-theme="bubble-white-pearl"] .chat-msg-received .chat-msg-bubble {
+  background: #f0f0f0 !important;
+  color: #333333 !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1) !important;
+}
+
+/* 多彩系 - 角色气泡 */
+body[data-character-bubble-theme="bubble-colorful-pink"] .chat-msg-received .chat-msg-bubble {
+  background: #ff69b4 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(255,105,180,0.3) !important;
+}
+
+body[data-character-bubble-theme="bubble-colorful-red"] .chat-msg-received .chat-msg-bubble {
+  background: #dc143c !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(220,20,60,0.3) !important;
+}
+
+body[data-character-bubble-theme="bubble-colorful-orange"] .chat-msg-received .chat-msg-bubble {
+  background: #ff8c00 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(255,140,0,0.3) !important;
+}
+
+body[data-character-bubble-theme="bubble-colorful-green"] .chat-msg-received .chat-msg-bubble {
+  background: #32cd32 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(50,205,50,0.3) !important;
+}
+
+body[data-character-bubble-theme="bubble-colorful-purple"] .chat-msg-received .chat-msg-bubble {
+  background: #9370db !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(147,112,219,0.3) !important;
+}
+
+body[data-character-bubble-theme="bubble-colorful-sunset"] .chat-msg-received .chat-msg-bubble {
+  background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%) !important;
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;
+}
+
+body[data-character-bubble-theme="bubble-colorful-rainbow"] .chat-msg-received .chat-msg-bubble {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%) !important;
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;
+}
+
+body[data-character-bubble-theme="bubble-colorful-mint"] .chat-msg-received .chat-msg-bubble {
+  background: #98d8c8 !important;
+  color: #ffffff !important;
+  border-radius: 16px !important;
+  box-shadow: 0 2px 6px rgba(152,216,200,0.3) !important;
 }
