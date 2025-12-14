@@ -162,7 +162,25 @@
                     <input type="checkbox" id="beautify-fullwidth-enabled">
                     <span>全宽文字模式</span>
                   </label>
-                  <span class="beautify-hint">隐藏消息头像/名字栏，文字左右占满，翻页按钮移到底部</span>
+                  <span class="beautify-hint">文字左右占满，翻页按钮移到底部</span>
+                </div>
+
+                <!-- 全宽模式子选项：隐藏头像 -->
+                <div class="beautify-setting-item beautify-sub-setting">
+                  <label class="checkbox_label">
+                    <input type="checkbox" id="beautify-fullwidth-hide-avatar-enabled">
+                    <span>隐藏消息头像</span>
+                  </label>
+                  <span class="beautify-hint">隐藏消息左侧的头像区域</span>
+                </div>
+
+                <!-- 全宽模式子选项：隐藏名字栏 -->
+                <div class="beautify-setting-item beautify-sub-setting">
+                  <label class="checkbox_label">
+                    <input type="checkbox" id="beautify-fullwidth-hide-name-enabled">
+                    <span>隐藏名字栏</span>
+                  </label>
+                  <span class="beautify-hint">隐藏名字和时间戳，保留操作按钮</span>
                 </div>
 
                 <!-- 全宽模式宽度调节（仅在全宽模式启用时显示） -->
@@ -234,6 +252,15 @@
                         <span>设置图片</span>
                       </button>
                     </div>
+                  </div>
+
+                  <!-- 复位按钮位置 -->
+                  <div class="floating-btn-reset-section">
+                    <button class="beautify-popup-btn" id="floating-btn-reset-position">
+                      <i class="fa-solid fa-location-crosshairs"></i>
+                      <span>复位按钮位置</span>
+                    </button>
+                    <span class="beautify-hint">按钮跑到屏幕外时点击复位</span>
                   </div>
                 </div>
 
@@ -333,33 +360,109 @@
                     <span class="beautify-hint">自动将 #logo_block 替换为 #backgrounds-drawer-toggle（兼容更新前美化）</span>
                   </div>
 
+                  <!-- 关闭导航栏阴影 -->
+                  <div class="beautify-setting-item" data-keywords="导航栏 阴影 顶部 top-bar shadow">
+                    <label class="checkbox_label">
+                      <input type="checkbox" id="beautify-hide-topbar-shadow-enabled">
+                      <span>关闭导航栏阴影</span>
+                    </label>
+                    <span class="beautify-hint">移除顶部导航栏的阴影效果，让界面更扁平</span>
+                  </div>
+
+                  <!-- 关闭预设按钮阴影 -->
+                  <div class="beautify-setting-item" data-keywords="预设 按钮 阴影 prompt manager">
+                    <label class="checkbox_label">
+                      <input type="checkbox" id="beautify-hide-preset-shadow-enabled">
+                      <span>关闭预设按钮阴影</span>
+                    </label>
+                    <span class="beautify-hint">移除预设管理器中控制按钮的扩散阴影</span>
+                  </div>
+
+                  <!-- 预设开关直觉优化 -->
+                  <div class="beautify-setting-item" data-keywords="预设 开关 直觉 toggle 透明度">
+                    <label class="checkbox_label">
+                      <input type="checkbox" id="beautify-preset-toggle-intuitive-enabled">
+                      <span>预设开关直觉优化</span>
+                    </label>
+                    <span class="beautify-hint">禁用的预设条目变暗，更容易区分启用/禁用状态</span>
+                  </div>
+
+                  <!-- 人设选中状态优化 -->
+                  <div class="beautify-setting-item" data-keywords="人设 选中 高亮 persona avatar">
+                    <label class="checkbox_label">
+                      <input type="checkbox" id="beautify-persona-select-highlight-enabled">
+                      <span>人设选中状态优化</span>
+                    </label>
+                    <span class="beautify-hint">为当前选中的人设头像添加明显的高亮边框和发光效果</span>
+                  </div>
+
+                  <!-- 人设输入框显示头像 -->
+                  <div class="beautify-setting-item" data-keywords="人设 头像 预览 输入框 persona avatar preview">
+                    <label class="checkbox_label">
+                      <input type="checkbox" id="beautify-persona-avatar-preview-enabled">
+                      <span>人设输入框显示头像</span>
+                    </label>
+                    <span class="beautify-hint">在人设描述输入框左边显示当前选中人设的头像</span>
+                  </div>
+
+                  <!-- 聊天字体独立设置 -->
+                  <div class="beautify-setting-item" data-keywords="聊天 字体 独立 大小 font scale">
+                    <label class="checkbox_label">
+                      <input type="checkbox" id="beautify-chat-font-independent-enabled">
+                      <span>聊天字体独立设置</span>
+                    </label>
+                    <span class="beautify-hint">聊天区域使用独立的字体比例，不受官方设置影响</span>
+                  </div>
+                  <div class="beautify-setting-item beautify-slider-item beautify-sub-setting" id="beautify-chat-font-scale-setting" data-keywords="聊天 字体 独立 大小 font scale">
+                    <div class="beautify-slider-row">
+                      <label>
+                        <i class="fa-solid fa-text-height"></i>
+                        <span>字体比例</span>
+                      </label>
+                      <input type="range" id="beautify-chat-font-scale" min="0.5" max="2.5" step="0.01" value="1">
+                      <span class="beautify-slider-value" id="beautify-chat-font-scale-value">1.00</span>
+                    </div>
+                  </div>
+
                   <!-- 分隔线 -->
                   <hr class="beautify-divider">
 
                   <!-- 导航栏图标透明度 -->
-                  <div class="beautify-setting-item beautify-slider-item" data-keywords="导航 图标 透明度 顶部">
+                  <div class="beautify-setting-item" data-keywords="导航 图标 透明度 顶部">
+                    <label class="checkbox_label">
+                      <input type="checkbox" id="beautify-nav-icon-opacity-enabled">
+                      <span>自定义导航栏图标透明度</span>
+                    </label>
+                    <span class="beautify-hint">勾选后可调整顶部导航栏图标的透明度（不勾选则使用美化主题设置）</span>
+                  </div>
+                  <div class="beautify-setting-item beautify-slider-item beautify-sub-setting" id="beautify-nav-icon-opacity-setting" data-keywords="导航 图标 透明度 顶部">
                     <div class="beautify-slider-row">
                       <label>
                         <i class="fa-solid fa-eye"></i>
-                        <span>导航栏图标透明度</span>
+                        <span>透明度</span>
                       </label>
                       <input type="range" id="beautify-nav-icon-opacity" min="0" max="1" step="0.1" value="0.3">
                       <span class="beautify-slider-value" id="beautify-nav-icon-opacity-value">0.3</span>
                     </div>
-                    <span class="beautify-hint">调整顶部导航栏图标的透明度（官方默认0.3）</span>
                   </div>
 
                   <!-- 编辑按钮透明度 -->
-                  <div class="beautify-setting-item beautify-slider-item" data-keywords="编辑 按钮 透明度 消息">
+                  <div class="beautify-setting-item" data-keywords="编辑 按钮 透明度 消息">
+                    <label class="checkbox_label">
+                      <input type="checkbox" id="beautify-edit-btn-opacity-enabled">
+                      <span>自定义编辑按钮透明度</span>
+                    </label>
+                    <span class="beautify-hint">勾选后可调整消息编辑按钮的透明度（不勾选则使用美化主题设置）</span>
+                  </div>
+                  <div class="beautify-setting-item beautify-slider-item beautify-sub-setting" id="beautify-edit-btn-opacity-setting" data-keywords="编辑 按钮 透明度 消息">
                     <div class="beautify-slider-row">
                       <label>
                         <i class="fa-solid fa-pen"></i>
-                        <span>编辑按钮透明度</span>
+                        <span>透明度</span>
                       </label>
                       <input type="range" id="beautify-edit-btn-opacity" min="0" max="1" step="0.1" value="0.3">
                       <span class="beautify-slider-value" id="beautify-edit-btn-opacity-value">0.3</span>
                     </div>
-                    <span class="beautify-hint">调整消息编辑按钮的透明度（官方默认0.3）</span>
                   </div>
 
                   <!-- 抽屉页面位置调整 -->

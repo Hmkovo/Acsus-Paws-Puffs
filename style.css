@@ -3205,7 +3205,6 @@ select.compact {
 }
 
 .beautify-setting-item .checkbox_label span {
-  font-weight: 500;
   font-size: 0.82em;
 }
 
@@ -3224,8 +3223,9 @@ select.compact {
   border-top: 1px solid color-mix(in srgb, var(--SmartThemeBorderColor) 30%, transparent 70%);
 }
 
-/* 全宽模式宽度滑块（默认隐藏，JS 控制显示） */
-.beautify-fullwidth-width-setting {
+/* 子设置项样式（勾选后显示的滑块等） */
+.beautify-fullwidth-width-setting,
+.beautify-sub-setting {
   margin-left: 20px;
   padding-left: 10px;
   border-left: 2px solid color-mix(in srgb, var(--SmartThemeQuoteColor) 30%, transparent 70%);
@@ -3521,6 +3521,22 @@ body.beautify-hide-edit-shadow .mes_edit_buttons {
 
 .floating-btn-image-actions .menu_button i {
   margin-right: 4px;
+}
+
+/* 复位按钮区域 */
+.floating-btn-reset-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--SmartThemeBorderColor) 30%, transparent 70%);
+}
+
+.floating-btn-reset-section .beautify-hint {
+  margin: 0;
+  padding: 0;
+  flex: 1;
 }
 
 /* ========== 悬浮按钮图片弹窗样式 ========== */

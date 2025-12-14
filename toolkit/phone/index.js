@@ -1,11 +1,11 @@
 /**
  * 点心铺手机 - 主入口
- * 
+ *
  * 职责：
  * - 初始化手机系统（使用 PhoneSystem 类）
  * - 提供打开/关闭手机界面的接口
  * - 注册扩展菜单
- * 
+ *
  * 依赖：
  * - phone-system.js
  * - phone-main-ui.js
@@ -24,7 +24,7 @@ const EXT_ID = 'acsusPawsPuffs';
 
 /**
  * 初始化手机系统
- * 
+ *
  * @async
  * @returns {Promise<Object>} 返回 PhoneSystem 实例
  */
@@ -53,11 +53,11 @@ export async function initPhone() {
 
 /**
  * 在 APP_READY 事件时注册宏
- * 
+ *
  * @description
  * ✅ 关键：宏必须在 APP_READY 事件时注册（SillyTavern规范）
  * ✅ 只在功能启用时注册宏（避免无用的宏污染）
- * 
+ *
  * @param {boolean} shouldRegister - 是否应该注册宏
  */
 function registerMacrosOnReady(shouldRegister) {
@@ -79,7 +79,7 @@ function registerMacrosOnReady(shouldRegister) {
 
 /**
  * 注册扩展菜单入口
- * 
+ *
  * @description
  * 在 extensionsMenuButton 的菜单中添加【手机】选项
  * 点击后打开手机界面
@@ -130,11 +130,11 @@ function registerMenuEntry() {
 
 /**
  * 打开手机界面
- * 
+ *
  * @description
  * 创建手机容器元素并添加到页面中
  * 如果已经打开，则不重复创建
- * 
+ *
  * @returns {void}
  */
 export function openPhoneUI() {
@@ -163,10 +163,10 @@ export function openPhoneUI() {
 
 /**
  * 关闭手机界面
- * 
+ *
  * @description
  * 从页面中移除手机容器元素
- * 
+ *
  * @returns {void}
  */
 export function closePhoneUI() {
@@ -176,7 +176,7 @@ export function closePhoneUI() {
 
 /**
  * 启用手机系统
- * 
+ *
  * @async
  */
 export async function enablePhone() {
@@ -239,11 +239,11 @@ export function disablePhone() {
 
 /**
  * 显示扩展菜单中的手机图标
- * 
+ *
  * @description
  * 设置菜单项为可见状态（display: ''）
  * 如果菜单项尚未创建，则不执行任何操作（等待 APP_READY 事件触发）
- * 
+ *
  * @returns {void}
  */
 export function showMenuEntry() {
@@ -262,11 +262,11 @@ export function showMenuEntry() {
 
 /**
  * 隐藏扩展菜单中的手机图标
- * 
+ *
  * @description
  * 设置菜单项为隐藏状态（display: 'none'）
  * 如果菜单项尚未创建，则不执行任何操作
- * 
+ *
  * @returns {void}
  */
 export function hideMenuEntry() {

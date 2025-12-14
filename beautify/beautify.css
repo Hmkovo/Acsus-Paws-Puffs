@@ -361,25 +361,6 @@ body:has(#top-bar.beautify-hidden) #chat {
     --beautify-fullwidth-padding: 0%;
 }
 
-/* 隐藏头像区域（包含头像、楼层号、计时器、token计数） */
-body.beautify-fullwidth-mode #chat .mes .mesAvatarWrapper {
-    display: none !important;
-}
-
-/* 隐藏名字和时间戳，但保留操作按钮 */
-body.beautify-fullwidth-mode #chat .mes .mes_block .ch_name .name_text,
-body.beautify-fullwidth-mode #chat .mes .mes_block .ch_name .timestamp,
-body.beautify-fullwidth-mode #chat .mes .mes_block .ch_name .timestamp-icon,
-body.beautify-fullwidth-mode #chat .mes .mes_block .ch_name .mes_ghost {
-    display: none !important;
-}
-
-/* 名字栏只保留操作按钮，调整布局 */
-body.beautify-fullwidth-mode #chat .mes .mes_block .ch_name {
-    justify-content: flex-end !important;
-    min-height: unset !important;
-}
-
 /* 消息容器：通过 CSS 变量控制左右留白 */
 body.beautify-fullwidth-mode #chat .mes {
     padding-left: calc(10px + var(--beautify-fullwidth-padding)) !important;
@@ -400,6 +381,31 @@ body.beautify-fullwidth-mode #chat .mes .mes_text {
     max-width: 100% !important;
     padding-right: 0 !important;
     padding-left: 0 !important;
+}
+
+/* ==========================================
+   全宽模式 - 隐藏消息头像（独立选项）
+   ========================================== */
+
+body.beautify-fullwidth-hide-avatar #chat .mes .mesAvatarWrapper {
+    display: none !important;
+}
+
+/* ==========================================
+   全宽模式 - 隐藏名字栏（独立选项）
+   ========================================== */
+
+body.beautify-fullwidth-hide-name #chat .mes .mes_block .ch_name .name_text,
+body.beautify-fullwidth-hide-name #chat .mes .mes_block .ch_name .timestamp,
+body.beautify-fullwidth-hide-name #chat .mes .mes_block .ch_name .timestamp-icon,
+body.beautify-fullwidth-hide-name #chat .mes .mes_block .ch_name .mes_ghost {
+    display: none !important;
+}
+
+/* 名字栏只保留操作按钮，调整布局 */
+body.beautify-fullwidth-hide-name #chat .mes .mes_block .ch_name {
+    justify-content: flex-end !important;
+    min-height: unset !important;
 }
 
 /* 最后一条消息：预留底部空间给翻页栏 */
@@ -507,4 +513,115 @@ body.beautify-hide-scrollbar * {
 /* IE和旧版Edge */
 body.beautify-hide-scrollbar * {
     -ms-overflow-style: none;
+}
+
+/* ==========================================
+   关闭导航栏阴影
+   ========================================== */
+
+body.beautify-hide-topbar-shadow #top-bar {
+    box-shadow: none !important;
+}
+
+/* ==========================================
+   关闭预设按钮阴影
+   ========================================== */
+
+body.beautify-hide-preset-shadow .prompt_manager_prompt_controls span {
+    filter: none !important;
+}
+
+body.beautify-hide-preset-shadow .prompt-manager-detach-action,
+body.beautify-hide-preset-shadow .prompt-manager-edit-action,
+body.beautify-hide-preset-shadow .prompt-manager-toggle-action {
+    filter: none !important;
+    text-shadow: none !important;
+}
+
+/* ==========================================
+   预设开关直觉优化
+   ========================================== */
+
+/* 启用状态：正常透明度 */
+body.beautify-preset-toggle-intuitive .completion_prompt_manager_prompt {
+    opacity: 1;
+    transition: opacity 0.2s ease;
+}
+
+/* 禁用状态：降低透明度 */
+body.beautify-preset-toggle-intuitive .completion_prompt_manager_prompt:has(.fa-toggle-off) {
+    opacity: 0.5;
+}
+
+/* 开关图标颜色增强 */
+body.beautify-preset-toggle-intuitive .prompt-manager-toggle-action.fa-toggle-on {
+    color: var(--SmartThemeQuoteColor, #4a9eff);
+}
+
+body.beautify-preset-toggle-intuitive .prompt-manager-toggle-action.fa-toggle-off {
+    color: var(--SmartThemeEmColor, #888);
+}
+
+/* ==========================================
+   聊天字体独立设置
+   ========================================== */
+
+:root {
+    --beautify-chat-font-scale: 1;
+}
+
+body.beautify-chat-font-independent #chat {
+    font-size: calc(var(--beautify-chat-font-scale) * var(--mainFontSize, 15px)) !important;
+}
+
+body.beautify-chat-font-independent #chat .mes_text {
+    font-size: inherit !important;
+}
+
+/* ==========================================
+   人设选中状态优化
+   ========================================== */
+
+body.beautify-persona-select-highlight .avatar-container.selected {
+    border: 3px solid var(--SmartThemeQuoteColor, #4a9eff) !important;
+    transition: border 0.2s ease;
+}
+
+body.beautify-persona-select-highlight .avatar-container:not(.selected) {
+    border: 3px solid transparent !important;
+    opacity: 0.7;
+    transition: opacity 0.2s ease, border 0.2s ease;
+}
+
+body.beautify-persona-select-highlight .avatar-container:not(.selected):hover {
+    opacity: 1;
+}
+
+
+/* ==========================================
+   人设输入框显示头像
+   ========================================== */
+
+.beautify-persona-preview-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.beautify-persona-preview-avatar {
+    width: 80px;
+    min-width: 80px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 0px;
+    flex-shrink: 0;
+    align-self: flex-start;
+    background: var(--SmartThemeBlurTintColor, rgba(0, 0, 0, 0.2));
+}
+
+.beautify-persona-preview-wrapper #persona_description {
+    flex: 1;
+    min-width: 0;
+    margin-top: 0;
 }

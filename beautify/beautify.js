@@ -12,7 +12,7 @@
 
 import logger from '../logger.js';
 import { extension_settings, getContext } from '../../../../extensions.js';
-import { eventSource, event_types, saveSettingsDebounced } from '../../../../../script.js';
+import { eventSource, event_types, saveSettingsDebounced, getThumbnailUrl } from '../../../../../script.js';
 import { openBeautifyPopup, initBeautifyPopup, applyDisplaySettings } from './beautify-popup.js';
 
 
@@ -53,9 +53,6 @@ let immersiveMode = false;
 /** @type {boolean} 悬浮栏是否锁定（不跟随滚动） */
 let isLocked = false;
 
-/** @type {number|null} 长按定时器 */
-let longPressTimer = null;
-
 /** @type {boolean} 悬浮按钮功能是否启用 */
 let floatingBtnEnabled = false;
 
@@ -67,6 +64,12 @@ let fullwidthEnabled = false;
 
 /** @type {number} 全宽模式宽度（0-100，0=最宽，100=最窄） */
 let fullwidthWidth = 0;
+
+/** @type {boolean} 全宽模式隐藏头像是否启用 */
+let fullwidthHideAvatarEnabled = false;
+
+/** @type {boolean} 全宽模式隐藏名字栏是否启用 */
+let fullwidthHideNameEnabled = false;
 
 /** @type {boolean} 隐藏滚动条是否启用 */
 let hideScrollbarEnabled = false;
@@ -89,11 +92,38 @@ let hideQrEnabled = false;
 /** @type {boolean} 隐藏编辑按钮阴影是否启用 */
 let hideEditShadowEnabled = false;
 
+/** @type {boolean} 导航栏图标透明度是否启用自定义 */
+let navIconOpacityEnabled = false;
+
 /** @type {number} 导航栏图标透明度（官方默认0.3） */
 let navIconOpacity = 0.3;
 
+/** @type {boolean} 编辑按钮透明度是否启用自定义 */
+let editBtnOpacityEnabled = false;
+
 /** @type {number} 编辑按钮透明度（官方默认0.3） */
 let editBtnOpacity = 0.3;
+
+/** @type {boolean} 关闭导航栏阴影是否启用 */
+let hideTopbarShadowEnabled = false;
+
+/** @type {boolean} 关闭预设按钮阴影是否启用 */
+let hidePresetShadowEnabled = false;
+
+/** @type {boolean} 预设开关直觉优化是否启用 */
+let presetToggleIntuitiveEnabled = false;
+
+/** @type {boolean} 聊天字体独立设置是否启用 */
+let chatFontIndependentEnabled = false;
+
+/** @type {number} 聊天字体比例（0.5-1.5，默认1.0） */
+let chatFontScale = 1.0;
+
+/** @type {boolean} 人设选中状态优化是否启用 */
+let personaSelectHighlightEnabled = false;
+
+/** @type {boolean} 人设输入框显示头像是否启用 */
+let personaAvatarPreviewEnabled = false;
 
 /** @type {boolean} 修复旧版美化类名是否启用 */
 let fixOldCssEnabled = false;
@@ -159,6 +189,8 @@ function loadSettings() {
         floatingBtnEnabled: false,
         fullwidthEnabled: false,
         fullwidthWidth: 0,  // 全宽模式宽度（0=最宽，100=最窄）
+        fullwidthHideAvatarEnabled: false,  // 全宽模式隐藏头像
+        fullwidthHideNameEnabled: false,  // 全宽模式隐藏名字栏
         hideScrollbarEnabled: false,
         // 便捷小功能
         sliderBrightEnabled: false,
@@ -167,9 +199,19 @@ function loadSettings() {
         hideProxyWarnEnabled: false,
         hideQrEnabled: false,
         hideEditShadowEnabled: false,
-        navIconOpacity: 0.3,  // 官方默认值
-        editBtnOpacity: 0.3,  // 官方默认值
+        navIconOpacityEnabled: false,  // 是否启用自定义导航栏图标透明度
+        navIconOpacity: 0.3,  // 导航栏图标透明度值
+        editBtnOpacityEnabled: false,  // 是否启用自定义编辑按钮透明度
+        editBtnOpacity: 0.3,  // 编辑按钮透明度值
         fixOldCssEnabled: false,  // 修复旧版美化类名
+        // 新增美化功能
+        hideTopbarShadowEnabled: false,  // 关闭导航栏阴影
+        hidePresetShadowEnabled: false,  // 关闭预设按钮阴影
+        presetToggleIntuitiveEnabled: false,  // 预设开关直觉优化
+        chatFontIndependentEnabled: false,  // 聊天字体独立设置
+        chatFontScale: 1.0,  // 聊天字体比例（0.5-1.5）
+        personaSelectHighlightEnabled: false,  // 人设选中状态优化
+        personaAvatarPreviewEnabled: false,  // 人设输入框显示头像
         drawerOffset: 0,  // 抽屉页面位置偏移
         floatingBtnPosition: { x: window.innerWidth - 70, y: 100 },
         layoutMode: 'default',
@@ -198,6 +240,8 @@ function loadSettings() {
     floatingBtnEnabled = extension_settings[EXT_ID].beautify.floatingBtnEnabled;
     fullwidthEnabled = extension_settings[EXT_ID].beautify.fullwidthEnabled;
     fullwidthWidth = extension_settings[EXT_ID].beautify.fullwidthWidth;
+    fullwidthHideAvatarEnabled = extension_settings[EXT_ID].beautify.fullwidthHideAvatarEnabled;
+    fullwidthHideNameEnabled = extension_settings[EXT_ID].beautify.fullwidthHideNameEnabled;
     hideScrollbarEnabled = extension_settings[EXT_ID].beautify.hideScrollbarEnabled;
     // 便捷小功能
     sliderBrightEnabled = extension_settings[EXT_ID].beautify.sliderBrightEnabled;
@@ -206,10 +250,20 @@ function loadSettings() {
     hideProxyWarnEnabled = extension_settings[EXT_ID].beautify.hideProxyWarnEnabled;
     hideQrEnabled = extension_settings[EXT_ID].beautify.hideQrEnabled;
     hideEditShadowEnabled = extension_settings[EXT_ID].beautify.hideEditShadowEnabled;
+    navIconOpacityEnabled = extension_settings[EXT_ID].beautify.navIconOpacityEnabled;
     navIconOpacity = extension_settings[EXT_ID].beautify.navIconOpacity;
+    editBtnOpacityEnabled = extension_settings[EXT_ID].beautify.editBtnOpacityEnabled;
     editBtnOpacity = extension_settings[EXT_ID].beautify.editBtnOpacity;
     fixOldCssEnabled = extension_settings[EXT_ID].beautify.fixOldCssEnabled;
     drawerOffset = extension_settings[EXT_ID].beautify.drawerOffset;
+    // 新增美化功能
+    hideTopbarShadowEnabled = extension_settings[EXT_ID].beautify.hideTopbarShadowEnabled;
+    hidePresetShadowEnabled = extension_settings[EXT_ID].beautify.hidePresetShadowEnabled;
+    presetToggleIntuitiveEnabled = extension_settings[EXT_ID].beautify.presetToggleIntuitiveEnabled;
+    chatFontIndependentEnabled = extension_settings[EXT_ID].beautify.chatFontIndependentEnabled;
+    chatFontScale = extension_settings[EXT_ID].beautify.chatFontScale;
+    personaSelectHighlightEnabled = extension_settings[EXT_ID].beautify.personaSelectHighlightEnabled;
+    personaAvatarPreviewEnabled = extension_settings[EXT_ID].beautify.personaAvatarPreviewEnabled;
     logger.debug('[Beautify] 设置已加载');
 }
 
@@ -281,6 +335,12 @@ export function bindBeautifyToggle() {
         enableFloatingBtn();
     }
 
+    // 绑定复位按钮位置
+    const resetPositionBtn = document.getElementById('floating-btn-reset-position');
+    if (resetPositionBtn) {
+        resetPositionBtn.addEventListener('click', resetFloatingBtnPosition);
+    }
+
     // 全宽文字模式开关
     const fullwidthCheckbox = document.getElementById('beautify-fullwidth-enabled');
     const fullwidthWidthSetting = document.getElementById('beautify-fullwidth-width-setting');
@@ -318,6 +378,9 @@ export function bindBeautifyToggle() {
 
     // 绑定全宽模式宽度滑块
     bindFullwidthWidthSlider();
+
+    // 绑定全宽模式子选项
+    bindFullwidthSubOptions();
 
     // 如果全宽模式已启用，立即应用
     if (fullwidthEnabled) {
@@ -397,22 +460,60 @@ function bindMiscFeatures() {
         () => document.body.classList.remove('beautify-hide-edit-shadow')
     );
 
-    // 导航栏图标透明度滑块
-    bindOpacitySlider('beautify-nav-icon-opacity', 'navIconOpacity', navIconOpacity,
-        (value) => {
-            document.querySelectorAll('.drawer-icon.closedIcon').forEach(el => {
-                /** @type {HTMLElement} */ (el).style.opacity = String(value);
-            });
-        }
+    // 关闭导航栏阴影
+    bindCheckboxToggle('beautify-hide-topbar-shadow-enabled', 'hideTopbarShadowEnabled', hideTopbarShadowEnabled,
+        () => document.body.classList.add('beautify-hide-topbar-shadow'),
+        () => document.body.classList.remove('beautify-hide-topbar-shadow')
     );
 
-    // 编辑按钮透明度滑块
-    bindOpacitySlider('beautify-edit-btn-opacity', 'editBtnOpacity', editBtnOpacity,
-        (value) => {
-            document.querySelectorAll('.mes_button.extraMesButtonsHint, .mes_button.mes_edit').forEach(el => {
-                /** @type {HTMLElement} */ (el).style.opacity = String(value);
-            });
-        }
+    // 关闭预设按钮阴影
+    bindCheckboxToggle('beautify-hide-preset-shadow-enabled', 'hidePresetShadowEnabled', hidePresetShadowEnabled,
+        () => document.body.classList.add('beautify-hide-preset-shadow'),
+        () => document.body.classList.remove('beautify-hide-preset-shadow')
+    );
+
+    // 预设开关直觉优化
+    bindCheckboxToggle('beautify-preset-toggle-intuitive-enabled', 'presetToggleIntuitiveEnabled', presetToggleIntuitiveEnabled,
+        () => document.body.classList.add('beautify-preset-toggle-intuitive'),
+        () => document.body.classList.remove('beautify-preset-toggle-intuitive')
+    );
+
+    // 人设选中状态优化
+    bindCheckboxToggle('beautify-persona-select-highlight-enabled', 'personaSelectHighlightEnabled', personaSelectHighlightEnabled,
+        () => document.body.classList.add('beautify-persona-select-highlight'),
+        () => document.body.classList.remove('beautify-persona-select-highlight')
+    );
+
+    // 聊天字体独立设置（勾选框+滑块）
+    bindChatFontIndependent();
+
+    // 人设输入框显示头像
+    bindPersonaAvatarPreview();
+
+    // 导航栏图标透明度（勾选框+滑块）
+    bindOpacityWithToggle(
+        'beautify-nav-icon-opacity-enabled',
+        'beautify-nav-icon-opacity',
+        'beautify-nav-icon-opacity-setting',
+        'navIconOpacityEnabled',
+        'navIconOpacity',
+        navIconOpacityEnabled,
+        navIconOpacity,
+        applyNavIconOpacity,
+        clearNavIconOpacity
+    );
+
+    // 编辑按钮透明度（勾选框+滑块）
+    bindOpacityWithToggle(
+        'beautify-edit-btn-opacity-enabled',
+        'beautify-edit-btn-opacity',
+        'beautify-edit-btn-opacity-setting',
+        'editBtnOpacityEnabled',
+        'editBtnOpacity',
+        editBtnOpacityEnabled,
+        editBtnOpacity,
+        applyEditBtnOpacity,
+        clearEditBtnOpacity
     );
 
     // 抽屉页面位置偏移滑块
@@ -500,6 +601,138 @@ function bindOpacitySlider(elementId, settingKey, initialValue, applyFn) {
 }
 
 /**
+ * 绑定带开关的透明度滑块（勾选后才生效）
+ *
+ * @description
+ * 用于导航栏图标透明度、编辑按钮透明度等功能。
+ * 勾选后显示滑块并应用透明度，取消勾选则隐藏滑块并清除自定义样式。
+ *
+ * @param {string} checkboxId - 勾选框元素ID
+ * @param {string} sliderId - 滑块元素ID
+ * @param {string} settingContainerId - 滑块容器ID（用于显示/隐藏）
+ * @param {string} enabledKey - 启用状态的设置键名
+ * @param {string} valueKey - 透明度值的设置键名
+ * @param {boolean} enabledInitial - 启用状态初始值
+ * @param {number} valueInitial - 透明度初始值
+ * @param {Function} applyFn - 应用透明度的函数
+ * @param {Function} clearFn - 清除透明度的函数
+ */
+function bindOpacityWithToggle(checkboxId, sliderId, settingContainerId, enabledKey, valueKey, enabledInitial, valueInitial, applyFn, clearFn) {
+    const checkbox = document.getElementById(checkboxId);
+    const slider = document.getElementById(sliderId);
+    const settingContainer = document.getElementById(settingContainerId);
+    const valueDisplay = document.getElementById(`${sliderId}-value`);
+
+    if (!checkbox) {
+        logger.warn(`[Beautify] 未找到勾选框 #${checkboxId}`);
+        return;
+    }
+
+    // 同步勾选框初始状态
+    /** @type {HTMLInputElement} */ (checkbox).checked = enabledInitial;
+
+    // 同步滑块初始值
+    if (slider) {
+        /** @type {HTMLInputElement} */ (slider).value = String(valueInitial);
+    }
+    if (valueDisplay) {
+        valueDisplay.textContent = String(valueInitial);
+    }
+
+    // 根据启用状态显示/隐藏滑块容器
+    if (settingContainer) {
+        settingContainer.style.display = enabledInitial ? 'block' : 'none';
+    }
+
+    // 如果已启用，立即应用
+    if (enabledInitial) {
+        applyFn(valueInitial);
+    }
+
+    // 勾选框事件
+    checkbox.addEventListener('change', function () {
+        const newState = /** @type {HTMLInputElement} */ (this).checked;
+        extension_settings[EXT_ID].beautify[enabledKey] = newState;
+        saveSettingsDebounced();
+        logger.info(`[Beautify] ${enabledKey} 状态变更:`, newState);
+
+        // 显示/隐藏滑块容器
+        if (settingContainer) {
+            settingContainer.style.display = newState ? 'block' : 'none';
+        }
+
+        if (newState) {
+            // 启用：应用当前滑块值
+            const currentValue = slider ? parseFloat(/** @type {HTMLInputElement} */ (slider).value) : valueInitial;
+            applyFn(currentValue);
+        } else {
+            // 禁用：清除自定义样式
+            clearFn();
+        }
+    });
+
+    // 滑块事件
+    if (slider) {
+        slider.addEventListener('input', function () {
+            const value = parseFloat(/** @type {HTMLInputElement} */ (this).value);
+            extension_settings[EXT_ID].beautify[valueKey] = value;
+            saveSettingsDebounced();
+
+            if (valueDisplay) {
+                valueDisplay.textContent = String(value);
+            }
+
+            // 只有启用时才应用
+            if (/** @type {HTMLInputElement} */ (checkbox).checked) {
+                applyFn(value);
+            }
+        });
+    }
+}
+
+/**
+ * 应用导航栏图标透明度
+ * @param {number} value - 透明度值 (0-1)
+ */
+function applyNavIconOpacity(value) {
+    document.querySelectorAll('.drawer-icon.closedIcon').forEach(el => {
+        /** @type {HTMLElement} */ (el).style.opacity = String(value);
+    });
+    logger.debug('[Beautify] 导航栏图标透明度已应用:', value);
+}
+
+/**
+ * 清除导航栏图标透明度（恢复默认/主题设置）
+ */
+function clearNavIconOpacity() {
+    document.querySelectorAll('.drawer-icon.closedIcon').forEach(el => {
+        /** @type {HTMLElement} */ (el).style.opacity = '';
+    });
+    logger.debug('[Beautify] 导航栏图标透明度已清除');
+}
+
+/**
+ * 应用编辑按钮透明度
+ * @param {number} value - 透明度值 (0-1)
+ */
+function applyEditBtnOpacity(value) {
+    document.querySelectorAll('.mes_button.extraMesButtonsHint, .mes_button.mes_edit').forEach(el => {
+        /** @type {HTMLElement} */ (el).style.opacity = String(value);
+    });
+    logger.debug('[Beautify] 编辑按钮透明度已应用:', value);
+}
+
+/**
+ * 清除编辑按钮透明度（恢复默认/主题设置）
+ */
+function clearEditBtnOpacity() {
+    document.querySelectorAll('.mes_button.extraMesButtonsHint, .mes_button.mes_edit').forEach(el => {
+        /** @type {HTMLElement} */ (el).style.opacity = '';
+    });
+    logger.debug('[Beautify] 编辑按钮透明度已清除');
+}
+
+/**
  * 绑定抽屉页面位置偏移滑块
  * @description 调整导航栏展开页面的上下位置，通过 CSS 变量控制
  */
@@ -533,6 +766,239 @@ function bindDrawerOffsetSlider() {
 
     // 立即应用初始值
     document.documentElement.style.setProperty('--beautify-drawer-offset', `${drawerOffset}px`);
+}
+
+/**
+ * 绑定聊天字体独立设置（勾选框+滑块）
+ * @description 聊天区域使用独立的字体比例，不受官方 font_scale 影响
+ */
+function bindChatFontIndependent() {
+    const checkbox = document.getElementById('beautify-chat-font-independent-enabled');
+    const slider = document.getElementById('beautify-chat-font-scale');
+    const settingContainer = document.getElementById('beautify-chat-font-scale-setting');
+    const valueDisplay = document.getElementById('beautify-chat-font-scale-value');
+
+    if (!checkbox) {
+        logger.warn('[Beautify] 未找到聊天字体独立设置勾选框 #beautify-chat-font-independent-enabled');
+        return;
+    }
+
+    // 同步勾选框初始状态
+    /** @type {HTMLInputElement} */ (checkbox).checked = chatFontIndependentEnabled;
+
+    // 同步滑块初始值
+    if (slider) {
+        /** @type {HTMLInputElement} */ (slider).value = String(chatFontScale);
+    }
+    if (valueDisplay) {
+        valueDisplay.textContent = chatFontScale.toFixed(2);
+    }
+
+    // 根据启用状态显示/隐藏滑块容器
+    if (settingContainer) {
+        settingContainer.style.display = chatFontIndependentEnabled ? 'block' : 'none';
+    }
+
+    // 如果已启用，立即应用
+    if (chatFontIndependentEnabled) {
+        document.body.classList.add('beautify-chat-font-independent');
+        applyChatFontScale(chatFontScale);
+    }
+
+    // 勾选框事件
+    checkbox.addEventListener('change', function () {
+        const newState = /** @type {HTMLInputElement} */ (this).checked;
+        chatFontIndependentEnabled = newState;
+        extension_settings[EXT_ID].beautify.chatFontIndependentEnabled = newState;
+        saveSettingsDebounced();
+        logger.info('[Beautify] 聊天字体独立设置状态变更:', newState);
+
+        // 显示/隐藏滑块容器
+        if (settingContainer) {
+            settingContainer.style.display = newState ? 'block' : 'none';
+        }
+
+        if (newState) {
+            document.body.classList.add('beautify-chat-font-independent');
+            const currentValue = slider ? parseFloat(/** @type {HTMLInputElement} */ (slider).value) : chatFontScale;
+            applyChatFontScale(currentValue);
+        } else {
+            document.body.classList.remove('beautify-chat-font-independent');
+            clearChatFontScale();
+        }
+    });
+
+    // 滑块事件
+    if (slider) {
+        slider.addEventListener('input', function () {
+            const value = parseFloat(/** @type {HTMLInputElement} */ (this).value);
+            chatFontScale = value;
+            extension_settings[EXT_ID].beautify.chatFontScale = value;
+            saveSettingsDebounced();
+
+            if (valueDisplay) {
+                valueDisplay.textContent = value.toFixed(2);
+            }
+
+            // 只有启用时才应用
+            if (/** @type {HTMLInputElement} */ (checkbox).checked) {
+                applyChatFontScale(value);
+            }
+        });
+    }
+}
+
+/**
+ * 应用聊天字体比例
+ * @param {number} value - 字体比例值 (0.5-1.5)
+ */
+function applyChatFontScale(value) {
+    document.documentElement.style.setProperty('--beautify-chat-font-scale', String(value));
+    logger.debug('[Beautify] 聊天字体比例已应用:', value);
+}
+
+/**
+ * 清除聊天字体比例（恢复默认）
+ */
+function clearChatFontScale() {
+    document.documentElement.style.setProperty('--beautify-chat-font-scale', '1');
+    logger.debug('[Beautify] 聊天字体比例已清除');
+}
+
+/**
+ * 绑定人设输入框显示头像功能
+ * @description 在 persona_description 输入框左边显示当前选中人设的头像
+ */
+function bindPersonaAvatarPreview() {
+    const checkbox = document.getElementById('beautify-persona-avatar-preview-enabled');
+    if (!checkbox) {
+        logger.warn('[Beautify] 未找到人设头像预览勾选框 #beautify-persona-avatar-preview-enabled');
+        return;
+    }
+
+    /** @type {HTMLInputElement} */ (checkbox).checked = personaAvatarPreviewEnabled;
+
+    // 如果已启用，立即创建头像预览
+    if (personaAvatarPreviewEnabled) {
+        createPersonaAvatarPreview();
+    }
+
+    checkbox.addEventListener('change', function () {
+        const newState = /** @type {HTMLInputElement} */ (this).checked;
+        personaAvatarPreviewEnabled = newState;
+        extension_settings[EXT_ID].beautify.personaAvatarPreviewEnabled = newState;
+        saveSettingsDebounced();
+        logger.info('[Beautify] 人设头像预览状态变更:', newState);
+
+        if (newState) {
+            createPersonaAvatarPreview();
+        } else {
+            removePersonaAvatarPreview();
+        }
+    });
+}
+
+/**
+ * 创建人设头像预览
+ * @description 在 persona_description 输入框左边插入头像
+ */
+function createPersonaAvatarPreview() {
+    const textarea = document.getElementById('persona_description');
+    if (!textarea) {
+        logger.warn('[Beautify] 未找到 #persona_description 输入框');
+        return;
+    }
+
+    // 如果已存在，先移除
+    removePersonaAvatarPreview();
+
+    // 创建包装容器
+    const wrapper = document.createElement('div');
+    wrapper.id = 'beautify-persona-preview-wrapper';
+    wrapper.className = 'beautify-persona-preview-wrapper';
+
+    // 创建头像元素
+    const avatar = document.createElement('img');
+    avatar.id = 'beautify-persona-preview-avatar';
+    avatar.className = 'beautify-persona-preview-avatar';
+    avatar.alt = 'Persona Avatar';
+
+    // 获取当前人设头像并设置
+    updatePersonaAvatarPreview(avatar);
+
+    wrapper.appendChild(avatar);
+
+    // 在输入框前插入包装容器
+    textarea.parentNode.insertBefore(wrapper, textarea);
+    // 把输入框移到包装容器内
+    wrapper.appendChild(textarea);
+
+    // 监听人设切换事件（SETTINGS_UPDATED 在人设切换时触发）
+    // 使用闭包捕获 wrapper 引用，当 wrapper 被移除时自动停止更新
+    const updateHandler = () => {
+        // 检查 wrapper 是否还存在于 DOM 中
+        const currentWrapper = document.getElementById('beautify-persona-preview-wrapper');
+        if (!currentWrapper || !personaAvatarPreviewEnabled) {
+            return; // wrapper 已被移除或功能已禁用，不再更新
+        }
+        const avatarEl = document.getElementById('beautify-persona-preview-avatar');
+        if (avatarEl) {
+            updatePersonaAvatarPreview(/** @type {HTMLImageElement} */ (avatarEl));
+        }
+    };
+
+    // 注册事件监听（事件会一直存在，但 handler 会检查 wrapper 是否存在）
+    eventSource.on(event_types.SETTINGS_UPDATED, updateHandler);
+
+    logger.info('[Beautify] 人设头像预览已创建');
+}
+
+/**
+ * 更新人设头像预览
+ * @param {HTMLImageElement} avatarEl - 头像元素
+ */
+function updatePersonaAvatarPreview(avatarEl) {
+    // 动态导入 personas.js 获取当前人设头像
+    // 路径：从 beautify/beautify.js 到 scripts/personas.js 需要上4级
+    // 官方用 getThumbnailUrl('persona', user_avatar) 获取缩略图 URL
+    import('../../../../personas.js').then(({ user_avatar }) => {
+        if (user_avatar) {
+            avatarEl.src = getThumbnailUrl('persona', user_avatar);
+            avatarEl.style.display = 'block';
+        } else {
+            // 没有选中人设时显示默认图
+            avatarEl.src = 'img/ai4.png';
+            avatarEl.style.display = 'block';
+        }
+        logger.debug('[Beautify] 人设头像已更新:', user_avatar || '默认');
+    }).catch(err => {
+        logger.error('[Beautify] 导入 personas.js 失败:', err);
+    });
+}
+
+/**
+ * 移除人设头像预览
+ * @description 通过设置 _disabled 标记禁用事件处理，然后移除 DOM 元素
+ */
+function removePersonaAvatarPreview() {
+    const wrapper = document.getElementById('beautify-persona-preview-wrapper');
+    if (!wrapper) return;
+
+    const textarea = wrapper.querySelector('#persona_description');
+
+    // 标记为已禁用，事件处理器会检查这个标记
+    // @ts-ignore
+    wrapper._disabled = true;
+
+    // 把输入框移回原位置
+    if (textarea && wrapper.parentNode) {
+        wrapper.parentNode.insertBefore(textarea, wrapper);
+    }
+
+    // 移除包装容器
+    wrapper.remove();
+
+    logger.info('[Beautify] 人设头像预览已移除');
 }
 
 /**
@@ -1365,107 +1831,7 @@ function bindGlobalEvents() {
         });
     }
 
-    // 长按消息固定悬浮栏
-    bindLongPressEvents();
-
     logger.debug('[Beautify] 全局事件已绑定');
-}
-
-/**
- * 绑定长按消息事件
- *
- * @description
- * 在移动端，用户滚动时容易误触消息气泡。
- * 通过长按（500ms）来固定悬浮栏，避免误触。
- * 使用 pointerdown/up/move 事件支持触摸和鼠标。
- */
-function bindLongPressEvents() {
-    const chatElement = document.getElementById('chat');
-    if (!chatElement) return;
-
-    // 使用事件委托监听所有消息
-    chatElement.addEventListener('pointerdown', (e) => {
-        // 只处理消息气泡
-        const mesBlock = e.target.closest('.mes_block');
-        if (!mesBlock) return;
-
-        const mes = mesBlock.closest('.mes');
-        if (!mes) return;
-
-        // 开始长按计时
-        longPressTimer = setTimeout(() => {
-            // 长按 500ms 后触发
-            handleLongPress(mes);
-        }, 500);
-    });
-
-    // 取消长按（手指移开或移动）
-    chatElement.addEventListener('pointerup', cancelLongPress);
-    chatElement.addEventListener('pointercancel', cancelLongPress);
-    chatElement.addEventListener('pointermove', (e) => {
-        // 移动超过 10px 取消长按
-        if (longPressTimer && e.movementX ** 2 + e.movementY ** 2 > 100) {
-            cancelLongPress();
-        }
-    });
-
-    logger.debug('[Beautify] 长按事件已绑定');
-}
-
-/**
- * 取消长按
- *
- * @description
- * 在以下情况取消长按计时：
- * - 手指/鼠标抬起（pointerup）
- * - 触摸被系统取消（pointercancel）
- * - 手指移动超过 10px（pointermove）
- */
-function cancelLongPress() {
-    if (longPressTimer) {
-        clearTimeout(longPressTimer);
-        longPressTimer = null;
-    }
-}
-
-/**
- * 处理长按消息
- *
- * @description
- * 长按消息后执行以下操作：
- * 1. 锁定悬浮栏（停止自动跟随滚动）
- * 2. 更新悬浮栏内容到这条消息
- * 3. 提供震动反馈（如果设备支持）
- *
- * @param {Element} mes - 消息元素
- */
-function handleLongPress(mes) {
-    logger.info('[Beautify] 长按消息，固定悬浮栏');
-
-    // 锁定悬浮栏
-    if (!isLocked) {
-        isLocked = true;
-        const lockBtn = stickyHeader?.querySelector('#beautify-lock-btn i');
-        if (lockBtn) {
-            lockBtn.className = 'fa-solid fa-lock';
-        }
-        const lockBtnEl = stickyHeader?.querySelector('#beautify-lock-btn');
-        if (lockBtnEl) {
-            lockBtnEl.title = '解锁悬浮栏（恢复自动跟随）';
-        }
-        stickyHeader?.classList.add('is-locked');
-    }
-
-    // 更新悬浮栏到这条消息
-    updateStickyHeaderFromMessage(mes);
-
-    // 震动反馈（如果支持）
-    if (navigator.vibrate) {
-        navigator.vibrate(50);
-    }
-
-    // 清除定时器
-    longPressTimer = null;
 }
 
 
@@ -1526,16 +1892,94 @@ function enableFullwidthMode() {
     document.body.classList.add('beautify-fullwidth-mode');
     // 应用宽度设置
     applyFullwidthWidth(fullwidthWidth);
+    // 应用子选项
+    if (fullwidthHideAvatarEnabled) {
+        document.body.classList.add('beautify-fullwidth-hide-avatar');
+    }
+    if (fullwidthHideNameEnabled) {
+        document.body.classList.add('beautify-fullwidth-hide-name');
+    }
     logger.info('[Beautify] 全宽文字模式已启用，宽度:', fullwidthWidth, '%');
 }
 
 /**
  * 禁用全宽文字模式
+ * @description 移除全宽模式类名，同时清理子选项（隐藏头像、隐藏名字栏）的类名
  */
 function disableFullwidthMode() {
     fullwidthEnabled = false;
     document.body.classList.remove('beautify-fullwidth-mode');
+    // 同时移除子选项的类名
+    document.body.classList.remove('beautify-fullwidth-hide-avatar');
+    document.body.classList.remove('beautify-fullwidth-hide-name');
     logger.info('[Beautify] 全宽文字模式已禁用');
+}
+
+/**
+ * 绑定全宽模式子选项（隐藏头像、隐藏名字栏）
+ *
+ * @description
+ * 为两个子选项勾选框绑定事件：
+ * 1. 初始化时根据保存的设置恢复勾选状态
+ * 2. 如果全宽模式已启用且子选项也启用，立即应用对应CSS类名
+ * 3. 勾选变更时，只有在全宽模式启用的情况下才会应用/移除CSS类名
+ */
+function bindFullwidthSubOptions() {
+    // 隐藏头像子选项
+    const hideAvatarCheckbox = document.getElementById('beautify-fullwidth-hide-avatar-enabled');
+    if (hideAvatarCheckbox) {
+        /** @type {HTMLInputElement} */ (hideAvatarCheckbox).checked = fullwidthHideAvatarEnabled;
+
+        // 如果全宽模式和子选项都启用，立即应用
+        if (fullwidthEnabled && fullwidthHideAvatarEnabled) {
+            document.body.classList.add('beautify-fullwidth-hide-avatar');
+        }
+
+        hideAvatarCheckbox.addEventListener('change', function () {
+            const newState = /** @type {HTMLInputElement} */ (this).checked;
+            fullwidthHideAvatarEnabled = newState;
+            extension_settings[EXT_ID].beautify.fullwidthHideAvatarEnabled = newState;
+            saveSettingsDebounced();
+            logger.info('[Beautify] 全宽模式隐藏头像状态变更:', newState);
+
+            // 只有全宽模式启用时才应用
+            if (fullwidthEnabled) {
+                if (newState) {
+                    document.body.classList.add('beautify-fullwidth-hide-avatar');
+                } else {
+                    document.body.classList.remove('beautify-fullwidth-hide-avatar');
+                }
+            }
+        });
+    }
+
+    // 隐藏名字栏子选项
+    const hideNameCheckbox = document.getElementById('beautify-fullwidth-hide-name-enabled');
+    if (hideNameCheckbox) {
+        /** @type {HTMLInputElement} */ (hideNameCheckbox).checked = fullwidthHideNameEnabled;
+
+        // 如果全宽模式和子选项都启用，立即应用
+        if (fullwidthEnabled && fullwidthHideNameEnabled) {
+            document.body.classList.add('beautify-fullwidth-hide-name');
+        }
+
+        hideNameCheckbox.addEventListener('change', function () {
+            const newState = /** @type {HTMLInputElement} */ (this).checked;
+            fullwidthHideNameEnabled = newState;
+            extension_settings[EXT_ID].beautify.fullwidthHideNameEnabled = newState;
+            saveSettingsDebounced();
+            logger.info('[Beautify] 全宽模式隐藏名字栏状态变更:', newState);
+
+            // 只有全宽模式启用时才应用
+            if (fullwidthEnabled) {
+                if (newState) {
+                    document.body.classList.add('beautify-fullwidth-hide-name');
+                } else {
+                    document.body.classList.remove('beautify-fullwidth-hide-name');
+                }
+            }
+        });
+    }
 }
 
 
@@ -1625,6 +2069,37 @@ function constrainFloatingBtnPosition() {
         x: currentX,
         y: currentY
     };
+}
+
+/**
+ * 复位悬浮按钮位置到屏幕右上角
+ * @description 当按钮跑到屏幕外时，用户可以点击复位按钮将其移回可见区域
+ * @returns {void}
+ */
+export function resetFloatingBtnPosition() {
+    if (!floatingBtn) {
+        logger.warn('[Beautify] 悬浮按钮不存在，无法复位');
+        return;
+    }
+
+    // 默认位置：屏幕右上角，距离边缘 20px
+    const defaultX = window.innerWidth - 70;
+    const defaultY = 100;
+
+    // 更新位置
+    floatingBtn.style.left = `${defaultX}px`;
+    floatingBtn.style.top = `${defaultY}px`;
+    floatingBtn.style.transform = '';  // 清除可能存在的 transform
+
+    // 保存位置
+    extension_settings[EXT_ID].beautify.floatingBtnPosition = {
+        x: defaultX,
+        y: defaultY
+    };
+    saveSettingsDebounced();
+
+    logger.info('[Beautify] 悬浮按钮位置已复位:', defaultX, defaultY);
+    toastr.success('悬浮按钮已复位到屏幕右上角');
 }
 
 /**
