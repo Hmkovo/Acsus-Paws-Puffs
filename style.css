@@ -1344,6 +1344,301 @@ select.compact {
   }
 }
 
+/* ========== 预设快照列表样式 ========== */
+
+/* 使用说明入口链接 */
+.snapshot-info-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  font-size: 0.85em;
+  color: var(--SmartThemeQuoteColor);
+}
+
+.snapshot-info-link:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 20%, transparent 80%);
+}
+
+.snapshot-info-link i {
+  font-size: 1em;
+}
+
+/* 搜索框 */
+.snapshot-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 6px 10px;
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 50%, transparent 50%);
+  border-radius: 6px;
+}
+
+.snapshot-search-box i {
+  opacity: 0.5;
+  font-size: 0.9em;
+}
+
+.snapshot-search-box input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 4px;
+  font-size: 0.9em;
+}
+
+.snapshot-search-box input:focus {
+  outline: none;
+}
+
+.snapshot-enable-section {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--SmartThemeBorderColor) 50%, transparent 50%);
+}
+
+/* 弹窗菜单样式设置 */
+.snapshot-menu-settings {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 50%, transparent 50%);
+  border-radius: 6px;
+  flex-wrap: wrap;
+}
+
+.snapshot-setting-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 120px;
+}
+
+.snapshot-setting-row label {
+  font-size: 0.85em;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+
+.snapshot-setting-row input[type="range"] {
+  flex: 1;
+  min-width: 60px;
+  max-width: 80px;
+}
+
+.snapshot-setting-row span {
+  font-size: 0.8em;
+  min-width: 30px;
+  text-align: right;
+  opacity: 0.7;
+}
+
+#snapshot-info-popup-btn {
+  margin-left: auto;
+}
+
+/* 预设选择下拉框 */
+.snapshot-preset-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 8px;
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 50%, transparent 50%);
+  border-radius: 6px;
+}
+
+.snapshot-preset-selector select {
+  flex: 1;
+  min-width: 0;
+}
+
+.snapshot-list-container {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.snapshot-empty-hint {
+  text-align: center;
+  padding: 20px;
+  color: var(--SmartThemeBodyColor);
+}
+
+.snapshot-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 80%, transparent 20%);
+  border-radius: 6px;
+  transition: background 0.2s ease;
+}
+
+.snapshot-item:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 15%, var(--SmartThemeBlurTintColor) 85%);
+}
+
+.snapshot-item.last-applied {
+  border-left: 3px solid var(--SmartThemeQuoteColor);
+}
+
+.snapshot-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.snapshot-item-name {
+  font-weight: 500;
+  color: var(--SmartThemeBodyColor);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.snapshot-item-meta {
+  font-size: 0.8em;
+  color: var(--SmartThemeUnderlineColor);
+  opacity: 0.8;
+}
+
+.snapshot-item-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: 8px;
+}
+
+.snapshot-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--SmartThemeBodyColor);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 12px;
+}
+
+.snapshot-btn:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 20%, transparent 80%);
+  color: var(--SmartThemeQuoteColor);
+}
+
+.snapshot-apply-btn:hover {
+  color: var(--SmartThemeQuoteColor);
+}
+
+.snapshot-delete-btn:hover {
+  color: #e74c3c;
+}
+
+/* ========== 悬浮按钮长按菜单样式 ========== */
+
+/* CSS 变量默认值 */
+:root {
+  --snapshot-menu-scale: 1;
+  --snapshot-menu-font-scale: 1;
+}
+
+.snapshot-floating-menu {
+  position: fixed;
+  z-index: 10001;
+  min-width: calc(140px * var(--snapshot-menu-scale));
+  max-width: calc(220px * var(--snapshot-menu-scale));
+  background: var(--SmartThemeBlurTintColor);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  padding: 4px 0;
+  animation: snapshotMenuFadeIn 0.15s ease-out;
+  transform-origin: center bottom;
+  transform: scale(var(--snapshot-menu-scale));
+}
+
+@keyframes snapshotMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(calc(0.95 * var(--snapshot-menu-scale)));
+  }
+  to {
+    opacity: 1;
+    transform: scale(var(--snapshot-menu-scale));
+  }
+}
+
+.snapshot-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  color: var(--SmartThemeBodyColor);
+  transition: background 0.15s ease;
+  font-size: calc(13px * var(--snapshot-menu-font-scale));
+}
+
+.snapshot-menu-item:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 20%, transparent 80%);
+}
+
+.snapshot-menu-item i {
+  width: 14px;
+  text-align: center;
+  color: var(--SmartThemeQuoteColor);
+  font-size: calc(11px * var(--snapshot-menu-font-scale));
+}
+
+.snapshot-menu-item span {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.snapshot-menu-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px;
+  color: var(--SmartThemeBodyColor);
+  opacity: 0.6;
+  font-size: calc(12px * var(--snapshot-menu-font-scale));
+}
+
+.snapshot-menu-empty i {
+  font-size: calc(18px * var(--snapshot-menu-font-scale));
+}
+  opacity: 1;
+}
+
+/* 悬浮按钮长按视觉反馈 */
+.beautify-floating-btn.pressing {
+  transform: scale(0.95);
+  transition: transform 0.1s ease;
+}
+
+.beautify-floating-btn.long-pressing {
+  transform: scale(1.05);
+  transition: transform 0.15s ease;
+}
+
 /* ==================== 预设管理样式结束 ==================== */
 
 /* ========================================

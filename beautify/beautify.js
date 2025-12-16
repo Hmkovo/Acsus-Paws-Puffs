@@ -2106,11 +2106,12 @@ export function resetFloatingBtnPosition() {
  * 绑定悬浮按钮事件（使用 transform 优化性能）
  *
  * @description
- * 实现悬浮按钮的拖动和点击功能：
+ * 实现悬浮按钮的拖动、点击和长按功能：
  * - 拖动时使用 transform 而不是 left/top（避免触发重排，性能更好）
  * - 使用 requestAnimationFrame 优化渲染
  * - 拖动结束后将 transform 转换为 left/top 保存位置
  * - 通过 hasMoved 标志区分点击和拖动（移动超过 5px 才算拖动）
+ * - 长按 350ms 显示快照菜单
  * - 支持 pointercancel 事件（处理意外中断）
  */
 function bindFloatingBtnEvents() {
@@ -2126,11 +2127,17 @@ function bindFloatingBtnEvents() {
     let initialY = 0;
     let animationFrameId = null;
 
-    // 点击切换沉浸模式
+    // 长按相关
+    let longPressTimer = null;
+    let isLongPress = false;
+    const LONG_PRESS_DURATION = 350; // 长按时间 350ms
+
+    // 点击切换沉浸模式（只在非长按、非拖动时触发）
     floatingBtn.addEventListener('click', (e) => {
-        // 如果刚拖动过，不触发点击
-        if (hasMoved) {
+        // 如果刚拖动过或长按过，不触发点击
+        if (hasMoved || isLongPress) {
             hasMoved = false;
+            isLongPress = false;
             return;
         }
         toggleImmersiveMode();
@@ -2146,6 +2153,7 @@ function bindFloatingBtnEvents() {
 
         isDragging = true;
         hasMoved = false;
+        isLongPress = false;
         startX = e.clientX;
         startY = e.clientY;
 
@@ -2158,6 +2166,20 @@ function bindFloatingBtnEvents() {
 
         floatingBtn.setPointerCapture(e.pointerId);
         floatingBtn.classList.add('dragging');
+
+        // 开始长按计时
+        longPressTimer = setTimeout(() => {
+            // 只有在没有移动的情况下才触发长按
+            if (!hasMoved) {
+                isLongPress = true;
+                floatingBtn.classList.remove('dragging');
+                floatingBtn.classList.add('long-pressing');
+                showSnapshotMenu(e.clientX, e.clientY);
+            }
+        }, LONG_PRESS_DURATION);
+
+        // 添加长按视觉反馈
+        floatingBtn.classList.add('pressing');
     });
 
     // 拖动中（使用 transform 而不是 left/top）
@@ -2169,12 +2191,18 @@ function bindFloatingBtnEvents() {
         const deltaX = e.clientX - startX;
         const deltaY = e.clientY - startY;
 
-        // 移动超过 5px 才算拖动
+        // 移动超过 5px 才算拖动，同时取消长按计时
         if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
             hasMoved = true;
+            // 取消长按计时
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+            floatingBtn.classList.remove('pressing');
         }
 
-        if (hasMoved) {
+        if (hasMoved && !isLongPress) {
             // 取消之前的动画帧
             if (animationFrameId) {
                 cancelAnimationFrame(animationFrameId);
@@ -2209,6 +2237,14 @@ function bindFloatingBtnEvents() {
         e.preventDefault();
         isDragging = false;
 
+        // 取消长按计时
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+        floatingBtn.classList.remove('pressing');
+        floatingBtn.classList.remove('long-pressing');
+
         // 取消未完成的动画帧
         if (animationFrameId) {
             cancelAnimationFrame(animationFrameId);
@@ -2222,7 +2258,7 @@ function bindFloatingBtnEvents() {
         floatingBtn.classList.remove('dragging');
 
         // 保存位置（将 transform 转换为 left/top）
-        if (hasMoved) {
+        if (hasMoved && !isLongPress) {
             floatingBtn.style.left = `${currentX}px`;
             floatingBtn.style.top = `${currentY}px`;
             floatingBtn.style.transform = '';  // 清除 transform
@@ -2235,9 +2271,10 @@ function bindFloatingBtnEvents() {
             logger.debug('[Beautify] 悬浮按钮位置已保存:', currentX, currentY);
         }
 
-        // 延迟重置 hasMoved，避免触发点击
+        // 延迟重置标志，避免触发点击
         setTimeout(() => {
             hasMoved = false;
+            isLongPress = false;
         }, 100);
     });
 
@@ -2247,6 +2284,15 @@ function bindFloatingBtnEvents() {
 
         isDragging = false;
         hasMoved = false;
+        isLongPress = false;
+
+        // 取消长按计时
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+        floatingBtn.classList.remove('pressing');
+        floatingBtn.classList.remove('long-pressing');
 
         // 取消未完成的动画帧
         if (animationFrameId) {
@@ -2261,6 +2307,121 @@ function bindFloatingBtnEvents() {
 
         logger.debug('[Beautify] 拖动被取消');
     });
+}
+
+// ==========================================
+// 快照长按菜单
+// ==========================================
+
+/** @type {HTMLElement|null} 快照菜单元素 */
+let snapshotMenu = null;
+
+/**
+ * 显示快照菜单
+ * @param {number} x - 点击位置 X
+ * @param {number} y - 点击位置 Y
+ */
+async function showSnapshotMenu(x, y) {
+    // 动态导入快照数据模块
+    const snapshotData = await import('../preset-snapshot-data.js');
+
+    // 检查功能是否启用
+    if (!snapshotData.isEnabled()) {
+        // 功能禁用时，触发单击行为
+        toggleImmersiveMode();
+        return;
+    }
+
+    // 关闭已存在的菜单
+    hideSnapshotMenu();
+
+    const snapshots = snapshotData.getSnapshotList();
+
+    // 创建菜单
+    snapshotMenu = document.createElement('div');
+    snapshotMenu.className = 'snapshot-floating-menu';
+
+    // 菜单内容
+    let menuHtml = '';
+
+    if (snapshots.length === 0) {
+        menuHtml = `
+            <div class="snapshot-menu-empty">
+                <i class="fa-solid fa-inbox"></i>
+                <span>暂无快照</span>
+            </div>
+        `;
+    } else {
+        menuHtml = snapshots.map(s => `
+            <div class="snapshot-menu-item" data-id="${s.id}">
+                <i class="fa-solid fa-camera"></i>
+                <span>${s.name}</span>
+            </div>
+        `).join('');
+    }
+
+    snapshotMenu.innerHTML = menuHtml;
+
+    // 定位菜单（在按钮附近）
+    document.body.appendChild(snapshotMenu);
+
+    // 计算位置（避免超出屏幕）
+    const menuRect = snapshotMenu.getBoundingClientRect();
+    let menuX = x - menuRect.width / 2;
+    let menuY = y - menuRect.height - 10;
+
+    // 边界检查
+    if (menuX < 10) menuX = 10;
+    if (menuX + menuRect.width > window.innerWidth - 10) {
+        menuX = window.innerWidth - menuRect.width - 10;
+    }
+    if (menuY < 10) {
+        menuY = y + 50; // 显示在下方
+    }
+
+    snapshotMenu.style.left = `${menuX}px`;
+    snapshotMenu.style.top = `${menuY}px`;
+
+    // 绑定菜单事件
+    snapshotMenu.querySelectorAll('.snapshot-menu-item[data-id]').forEach(item => {
+        item.addEventListener('click', async () => {
+            const id = item.dataset.id;
+            const success = snapshotData.applySnapshot(id);
+            if (success) {
+                toastr.success('快照已应用');
+            }
+            hideSnapshotMenu();
+        });
+    });
+
+    // 点击外部关闭菜单
+    setTimeout(() => {
+        document.addEventListener('click', handleOutsideClick);
+        document.addEventListener('pointerdown', handleOutsideClick);
+    }, 100);
+
+    logger.debug('[Beautify] 快照菜单已显示');
+}
+
+/**
+ * 隐藏快照菜单
+ */
+function hideSnapshotMenu() {
+    if (snapshotMenu) {
+        snapshotMenu.remove();
+        snapshotMenu = null;
+    }
+    document.removeEventListener('click', handleOutsideClick);
+    document.removeEventListener('pointerdown', handleOutsideClick);
+}
+
+/**
+ * 处理点击外部关闭菜单
+ */
+function handleOutsideClick(e) {
+    if (snapshotMenu && !snapshotMenu.contains(e.target) && e.target !== floatingBtn) {
+        hideSnapshotMenu();
+    }
 }
 
 
