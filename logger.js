@@ -1,6 +1,6 @@
 /**
  * Acsus-Paws-Puffs 日志模块
- * 
+ *
  * @description
  * 简单的日志系统，用于调试和错误追踪。
  * 通过 DEBUG_MODE 开关控制是否显示调试信息。
@@ -28,10 +28,10 @@ const LOG_PREFIX = '[Acsus-Paws-Puffs]';
 
 /**
  * 获取当前时间戳
- * 
+ *
  * @description
  * 用于在日志前添加时间戳，方便追踪问题发生的时间
- * 
+ *
  * @returns {string} HH:MM:SS 格式的时间
  */
 function getTimestamp() {
@@ -41,11 +41,11 @@ function getTimestamp() {
 
 /**
  * 日志记录器对象
- * 
+ *
  * @description
  * 统一的日志输出接口，提供四个日志级别：debug, info, warn, error
  * 通过 ENABLE_LOGGING 开关控制所有日志的显示/隐藏
- * 
+ *
  * @example
  * import logger from './logger.js';
  * logger.debug('[ClassName.method] 开始处理', data);
@@ -56,10 +56,10 @@ function getTimestamp() {
 const logger = {
   /**
    * 调试日志（用于定位问题）
-   * 
+   *
    * @description
    * 用于记录函数入口、分支决策、中间状态等调试信息
-   * 
+   *
    * @param {string} message - 日志消息
    * @param {...any} args - 额外参数（如对象、数组等）
    */
@@ -71,10 +71,10 @@ const logger = {
 
   /**
    * 普通信息日志（记录重要操作）
-   * 
+   *
    * @description
    * 用于记录增删改、状态变更、初始化等重要操作
-   * 
+   *
    * @param {string} message - 日志消息
    * @param {...any} args - 额外参数（如对象、数组等）
    */
@@ -86,10 +86,10 @@ const logger = {
 
   /**
    * 警告日志（记录失败原因）
-   * 
+   *
    * @description
    * 用于记录操作失败、验证失败、边界条件等警告信息
-   * 
+   *
    * @param {string} message - 日志消息
    * @param {...any} args - 额外参数（如对象、数组等）
    */
@@ -101,10 +101,10 @@ const logger = {
 
   /**
    * 错误日志（记录异常）
-   * 
+   *
    * @description
    * 用于记录 try-catch 捕获的异常和关键失败
-   * 
+   *
    * @param {string} message - 日志消息
    * @param {...any} args - 额外参数（如 Error 对象）
    */

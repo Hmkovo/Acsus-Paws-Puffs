@@ -402,24 +402,45 @@
   font-style: italic;
 }
 
-/* 预设管理功能开关区域（和字体管理保持一致） */
-.preset-enable-section-compact {
-  padding: 3px 0;
-  margin-bottom: 3px;
-  border-bottom: 1px solid var(--SmartThemeBorderColor);
+/* 预设管理介绍条（和使用条款样式一致） */
+.preset-intro-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 50%, transparent 50%);
+  border-radius: 6px;
 }
 
-.preset-enable-section-compact .checkbox_label {
+.preset-intro-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9em;
+  opacity: 0.85;
+}
+
+.preset-intro-text i {
+  color: var(--SmartThemeQuoteColor);
+}
+
+/* 预设管理设置项（和beautify-setting-item一致） */
+.preset-setting-item {
+  margin-bottom: 10px;
+}
+
+.preset-setting-item .checkbox_label {
   display: inline-flex;
   align-items: center;
-  font-size: 0.9em;
 }
 
-.preset-enable-section-compact .hint-inline {
-  margin-left: 8px;
-  font-size: 0.8em;
+.preset-hint {
+  display: block;
+  margin-left: 22px;
+  font-size: 0.85em;
   opacity: 0.7;
-  font-style: italic;
+  margin-top: 2px;
 }
 
 /* 字体添加区域 */
@@ -1149,7 +1170,7 @@ select.compact {
   gap: 0;
   margin-bottom: 10px;
   /* 和字体管理保持一致：只有底部margin，没有顶部margin */
-  height: 200px;
+  height: 400px;
   border: 1px solid var(--SmartThemeBorderColor);
   border-radius: 8px;
   overflow: hidden;
@@ -1397,11 +1418,7 @@ select.compact {
   outline: none;
 }
 
-.snapshot-enable-section {
-  margin-bottom: 12px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid color-mix(in srgb, var(--SmartThemeBorderColor) 50%, transparent 50%);
-}
+/* snapshot-enable-section 已废弃，改用 preset-setting-item */
 
 /* 弹窗菜单样式设置 */
 .snapshot-menu-settings {
@@ -1409,7 +1426,7 @@ select.compact {
   align-items: center;
   gap: 12px;
   margin-bottom: 12px;
-  padding: 8px 10px;
+  padding: 2px 8px;
   background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 50%, transparent 50%);
   border-radius: 6px;
   flex-wrap: wrap;
@@ -1473,15 +1490,17 @@ select.compact {
   color: var(--SmartThemeBodyColor);
 }
 
+/* ===== 快照条目 ===== */
 .snapshot-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 10px;
-  margin-bottom: 6px;
+  padding: 4px 8px;       /* 条目内边距（和快速开关一致） */
+  margin-bottom: 3px;
   background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 80%, transparent 20%);
-  border-radius: 6px;
+  border-radius: 5px;
   transition: background 0.2s ease;
+  font-size: 0.9em;       /* 条目整体字体大小（和快速开关一致） */
 }
 
 .snapshot-item:hover {
@@ -1492,37 +1511,28 @@ select.compact {
   border-left: 3px solid var(--SmartThemeQuoteColor);
 }
 
-.snapshot-item-info {
+/* 快照条目 - 名称文字 */
+.snapshot-item-name {
   flex: 1;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.snapshot-item-name {
-  font-weight: 500;
   color: var(--SmartThemeBodyColor);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 0.95em;      /* 名称字体大小（和快速开关一致） */
 }
 
-.snapshot-item-meta {
-  font-size: 0.8em;
-  color: var(--SmartThemeUnderlineColor);
-  opacity: 0.8;
-}
-
+/* 快照条目 - 右侧操作区 */
 .snapshot-item-actions {
   display: flex;
-  gap: 4px;
-  margin-left: 8px;
+  gap: 2px;
+  margin-left: 6px;
 }
 
+/* 快照条目 - 操作按钮 */
 .snapshot-btn {
-  width: 28px;
-  height: 28px;
+  width: 22px;            /* 按钮宽度 */
+  height: 22px;           /* 按钮高度 */
   border: none;
   border-radius: 4px;
   background: transparent;
@@ -1532,7 +1542,7 @@ select.compact {
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  font-size: 12px;
+  font-size: 11px;        /* 按钮图标大小 */
 }
 
 .snapshot-btn:hover {
@@ -1625,7 +1635,687 @@ select.compact {
 .snapshot-menu-empty i {
   font-size: calc(18px * var(--snapshot-menu-font-scale));
 }
+
+/* 悬浮菜单中的快速开关 */
+.snapshot-menu-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 10px;
+  cursor: pointer;
+  color: var(--SmartThemeBodyColor);
+  transition: background 0.15s ease;
+  font-size: calc(13px * var(--snapshot-menu-font-scale));
+}
+
+.snapshot-menu-toggle:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 15%, transparent 85%);
+}
+
+.snapshot-menu-toggle .menu-toggle-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.snapshot-menu-toggle .menu-toggle-switch {
+  font-size: calc(16px * var(--snapshot-menu-font-scale));
+  transition: color 0.2s ease;
+}
+
+.snapshot-menu-toggle .menu-toggle-switch.on {
+  color: var(--SmartThemeQuoteColor);
+}
+
+.snapshot-menu-toggle .menu-toggle-switch.off {
+  color: var(--SmartThemeBodyColor);
+  opacity: 0.5;
+}
+
+/* 悬浮菜单分隔线 */
+.snapshot-menu-divider {
+  height: 1px;
+  margin: 4px 8px;
+  background: color-mix(in srgb, var(--SmartThemeBorderColor) 60%, transparent 40%);
+}
+
+/* ========== 折叠分组样式 ========== */
+
+.snapshot-collapsible-container {
+  margin: 8px 0;
+}
+
+.snapshot-collapsible-group {
+  margin-bottom: 6px;
+}
+
+.snapshot-collapsible-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, var(--SmartThemeBlurTintColor) 90%);
+  border-radius: 5px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s ease;
+}
+
+.snapshot-collapsible-header:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 18%, var(--SmartThemeBlurTintColor) 82%);
+}
+
+.snapshot-collapsible-header .collapsible-icon {
+  width: 12px;
+  font-size: 10px;
+  color: var(--SmartThemeBodyColor);
+  opacity: 0.7;
+  transition: transform 0.2s ease;
+}
+
+.snapshot-collapsible-header .collapsible-title {
+  flex: 1;
+  font-weight: 500;
+  font-size: 0.95em;
+  color: var(--SmartThemeBodyColor);
+}
+
+.snapshot-collapsible-header .collapsible-count {
+  font-size: 0.8em;
+  color: var(--SmartThemeBodyColor);
+  opacity: 0.6;
+}
+
+.snapshot-collapsible-body {
+  padding: 6px 0 0 0;
+  max-height: 200px;
+  overflow-y: auto;
+  transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.3s ease;
+}
+
+.snapshot-collapsible-body.collapsed {
+  max-height: 0;
+  padding: 0;
+  overflow: hidden;
+  opacity: 0;
+}
+
+/* ========== 总开关样式 ========== */
+
+/* 总开关 - 空状态容器 */
+.toggle-group-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  color: var(--SmartThemeBodyColor);
+  opacity: 0.7;
+}
+
+.toggle-group-empty p {
+  margin: 0 0 8px 0;
+  font-size: 0.85em;
+}
+
+.toggle-group-empty .menu_button {
+  width: 100%;
+  font-size: 12px;
+}
+
+/* 总开关条目 */
+.toggle-group-item {
+  padding: 6px 8px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  background: color-mix(in srgb, var(--SmartThemeBodyColor) 3%, var(--SmartThemeBlurTintColor) 97%);
+  transition: background 0.15s ease;
+}
+
+.toggle-group-item:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 12%, var(--SmartThemeBlurTintColor) 88%);
+}
+
+.toggle-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toggle-group-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.9em;
+  color: var(--SmartThemeBodyColor);
+}
+
+.toggle-group-count {
+  font-size: 0.8em;
+  opacity: 0.6;
+}
+
+.toggle-group-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toggle-group-switch {
+  font-size: 15px;
+  cursor: pointer;
+  padding: 2px;
+  transition: opacity 0.15s ease;
+}
+
+.toggle-group-switch.on {
+  color: var(--SmartThemeQuoteColor);
+}
+
+.toggle-group-switch.off {
+  color: var(--SmartThemeBodyColor);
+  opacity: 0.5;
+}
+
+.toggle-group-switch.mixed {
+  color: var(--SmartThemeUnderlineColor);
+  opacity: 0.8;
+}
+
+.toggle-group-switch:hover {
   opacity: 1;
+}
+
+.toggle-group-edit-btn,
+.toggle-group-delete-btn {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--SmartThemeBodyColor);
+  opacity: 0.5;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.toggle-group-edit-btn:hover {
+  opacity: 1;
+  color: var(--SmartThemeQuoteColor);
+}
+
+.toggle-group-delete-btn:hover {
+  opacity: 1;
+  color: #e74c3c;
+}
+
+.toggle-group-add-inline {
+  width: 100%;
+  margin-top: 4px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.toggle-group-add-inline:hover {
+  opacity: 1;
+}
+
+/* ===== 总开关编辑弹窗 ===== */
+.toggle-group-edit-popup {
+  min-width: 300px;
+  max-width: 400px;
+}
+
+.toggle-group-edit-header {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.toggle-group-name-input {
+  flex: 1;
+}
+
+.toggle-group-rename-btn {
+  flex-shrink: 0;
+}
+
+.toggle-group-floating-option {
+  margin: 10px 0;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 8%, var(--SmartThemeBlurTintColor) 92%);
+  border-radius: 4px;
+}
+
+.toggle-group-floating-option .checkbox_label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+.toggle-group-entries-section {
+  margin-top: 10px;
+}
+
+.toggle-group-entries-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 0.9em;
+  color: var(--SmartThemeBodyColor);
+}
+
+.toggle-group-entries-header span {
+  flex-shrink: 0;
+}
+
+.toggle-group-add-entry-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.toggle-group-entries-list {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  padding: 6px;
+}
+
+.toggle-group-empty-hint {
+  text-align: center;
+  font-size: 0.85em;
+  opacity: 0.6;
+  margin: 10px 0;
+}
+
+.toggle-group-entry-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 3px;
+  margin-bottom: 4px;
+  background: color-mix(in srgb, var(--SmartThemeBodyColor) 3%, var(--SmartThemeBlurTintColor) 97%);
+}
+
+.toggle-group-entry-item:last-child {
+  margin-bottom: 0;
+}
+
+.toggle-group-entry-type {
+  width: 20px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.toggle-group-entry-type.preset {
+  color: var(--SmartThemeQuoteColor);
+}
+
+.toggle-group-entry-type.worldinfo {
+  color: var(--SmartThemeUnderlineColor);
+}
+
+.toggle-group-entry-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85em;
+}
+
+.toggle-group-entry-remove {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--SmartThemeBodyColor);
+  opacity: 0.4;
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.toggle-group-entry-remove:hover {
+  opacity: 1;
+  color: #e74c3c;
+}
+
+/* ===== 添加成员弹窗 ===== */
+.toggle-group-add-entry-popup {
+  min-width: 320px;
+  max-width: 400px;
+}
+
+.toggle-group-add-entry-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--SmartThemeBorderColor);
+  padding-bottom: 8px;
+}
+
+.toggle-group-tab {
+  flex: 1;
+  padding: 6px 12px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--SmartThemeBodyColor);
+  cursor: pointer;
+  font-size: 0.85em;
+  transition: all 0.15s ease;
+}
+
+.toggle-group-tab:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%);
+}
+
+.toggle-group-tab.active {
+  background: var(--SmartThemeQuoteColor);
+  color: white;
+  border-color: var(--SmartThemeQuoteColor);
+}
+
+.toggle-group-tab-panel {
+  display: none;
+}
+
+.toggle-group-tab-panel.active {
+  display: block;
+}
+
+/* 世界书搜索框 */
+.toggle-group-worldinfo-search {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.toggle-group-worldinfo-search input {
+  flex: 1;
+}
+
+.toggle-group-worldinfo-search .menu_button {
+  flex-shrink: 0;
+  padding: 4px 10px;
+}
+
+.toggle-group-entry-list {
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  padding: 6px;
+}
+
+.toggle-group-available-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: 3px;
+  margin-bottom: 4px;
+  background: color-mix(in srgb, var(--SmartThemeBodyColor) 3%, var(--SmartThemeBlurTintColor) 97%);
+  transition: background 0.15s ease;
+}
+
+.toggle-group-available-entry:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, var(--SmartThemeBlurTintColor) 90%);
+}
+
+.toggle-group-available-entry .entry-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85em;
+}
+
+.toggle-group-available-entry .entry-world-tag {
+  display: inline-block;
+  padding: 1px 5px;
+  margin-right: 4px;
+  font-size: 0.75em;
+  background: color-mix(in srgb, var(--SmartThemeUnderlineColor) 20%, transparent 80%);
+  color: var(--SmartThemeUnderlineColor);
+  border-radius: 3px;
+  vertical-align: middle;
+}
+
+.toggle-group-available-entry .entry-add-btn {
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
+.loading-hint {
+  text-align: center;
+  font-size: 0.85em;
+  opacity: 0.6;
+  margin: 15px 0;
+}
+
+/* ========== 快速开关样式 ========== */
+
+/* 快速开关 - 空状态容器 */
+.quick-toggle-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  color: var(--SmartThemeBodyColor);
+  opacity: 0.7;
+}
+
+.quick-toggle-empty p {
+  margin: 0 0 8px 0;
+  font-size: 0.85em;
+}
+
+/* 快速开关 - 空状态时的添加按钮 */
+.quick-toggle-empty .menu_button {
+  width: 100%;
+  font-size: 12px;  /* 按钮文字大小 */
+}
+
+/* ===== 快速开关条目 ===== */
+.quick-toggle-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;       /* 条目内边距（和快照条目一致） */
+  margin-bottom: 3px;
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 80%, transparent 20%);
+  border-radius: 5px;
+  transition: background 0.2s ease;
+  font-size: 0.9em;       /* 条目整体字体大小（和快照条目一致） */
+}
+
+.quick-toggle-item:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 12%, var(--SmartThemeBlurTintColor) 88%);
+}
+
+/* 快速开关条目 - 名称文字 */
+.quick-toggle-name {
+  flex: 1;
+  min-width: 0;
+  color: var(--SmartThemeBodyColor);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.95em;      /* 名称字体大小 */
+}
+
+/* 快速开关条目 - 右侧操作区 */
+.quick-toggle-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+}
+
+/* 快速开关条目 - 开关图标 */
+.quick-toggle-switch {
+  font-size: 15px;        /* 开关图标大小 */
+  cursor: pointer;
+  transition: color 0.2s ease;
+  padding: 2px 3px;
+}
+
+.quick-toggle-switch.on {
+  color: var(--SmartThemeQuoteColor);
+}
+
+.quick-toggle-switch.off {
+  color: var(--SmartThemeBodyColor);
+  opacity: 0.5;
+}
+
+.quick-toggle-switch:hover {
+  opacity: 1;
+}
+
+/* 快速开关条目 - 删除按钮 */
+/* 快速开关条目 - 删除按钮（续） */
+.quick-toggle-remove-btn {
+  width: 20px;            /* 删除按钮宽度 */
+  height: 20px;           /* 删除按钮高度 */
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--SmartThemeBodyColor);
+  opacity: 0.4;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 10px;        /* 删除图标大小 */
+}
+
+.quick-toggle-remove-btn:hover {
+  opacity: 1;
+  color: #e74c3c;
+  background: color-mix(in srgb, #e74c3c 10%, transparent 90%);
+}
+
+/* 快速开关 - 列表底部的添加按钮 */
+.quick-toggle-add-inline {
+  width: 100%;
+  margin-top: 4px;
+  padding: 4px;           /* 按钮内边距 */
+  font-size: 11px;        /* 按钮文字大小 */
+  opacity: 0.7;
+}
+
+.quick-toggle-add-inline:hover {
+  opacity: 1;
+}
+
+/* ========== 快速开关选择弹窗样式 ========== */
+
+.quick-toggle-select-popup {
+  max-width: 350px;
+}
+
+.quick-toggle-select-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 6px;
+  background: var(--SmartThemeBlurTintColor);
+}
+
+.quick-toggle-select-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  border-bottom: 1px solid color-mix(in srgb, var(--SmartThemeBorderColor) 50%, transparent 50%);
+}
+
+.quick-toggle-select-item:last-child {
+  border-bottom: none;
+}
+
+.quick-toggle-select-item:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%);
+}
+
+.quick-toggle-select-item.selected {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 15%, transparent 85%);
+}
+
+.quick-toggle-select-item .select-item-name {
+  flex: 1;
+  color: var(--SmartThemeBodyColor);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quick-toggle-select-item .select-item-check {
+  color: var(--SmartThemeQuoteColor);
+  font-size: 14px;
+}
+
+.quick-toggle-select-item .select-item-check .fa-square {
+  opacity: 0.4;
+}
+
+/* 快速开关弹窗标签页样式 */
+.quick-toggle-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.quick-toggle-tab {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 6px;
+  background: var(--SmartThemeBlurTintColor);
+  color: var(--SmartThemeBodyColor);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 0.9em;
+}
+
+.quick-toggle-tab:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%);
+}
+
+.quick-toggle-tab.active {
+  background: var(--SmartThemeQuoteColor);
+  color: var(--SmartThemeBlurTintColor);
+  border-color: var(--SmartThemeQuoteColor);
+}
+
+.quick-toggle-worldinfo-search {
+  margin-bottom: 10px;
+}
+
+.quick-toggle-worldinfo-search input {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 0.95em;
 }
 
 /* 悬浮按钮长按视觉反馈 */
@@ -3490,6 +4180,24 @@ select.compact {
 
 .beautify-setting-item:last-child {
   margin-bottom: 0;
+}
+
+/* 设置项行（开关+按钮并排） */
+.beautify-setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.beautify-setting-row .checkbox_label {
+  flex: 1;
+}
+
+.beautify-setting-row .menu_button {
+  padding: 4px 8px;
+  font-size: 0.85em;
+  white-space: nowrap;
 }
 
 .beautify-setting-item .checkbox_label {

@@ -12,8 +12,10 @@
 
 import logger from '../logger.js';
 import { extension_settings, getContext } from '../../../../extensions.js';
-import { eventSource, event_types, saveSettingsDebounced, getThumbnailUrl } from '../../../../../script.js';
+import { eventSource, event_types, saveSettingsDebounced, getThumbnailUrl, chat } from '../../../../../script.js';
 import { openBeautifyPopup, initBeautifyPopup, applyDisplaySettings } from './beautify-popup.js';
+import { timestampToMoment } from '../../../../utils.js';
+import { getTokenCountAsync } from '../../../../tokenizers.js';
 
 
 // ==========================================
@@ -271,9 +273,10 @@ function loadSettings() {
  * 绑定美化功能的所有开关事件（由 index.js 在设置面板加载后调用）
  *
  * @description
- * 绑定以下开关：
+ * 绑定以下元素：
  * 1. 头像布局开关 (#beautify-avatar-layout-enabled)
- * 2. 悬浮按钮开关 (#beautify-floating-btn-enabled)
+ * 2. 设置按钮 (#beautify-open-popup-btn) - 点击打开悬浮栏设置弹窗
+ * 3. 悬浮按钮开关 (#beautify-floating-btn-enabled)
  *
  * 每个开关会：
  * - 同步初始状态到 UI
@@ -305,6 +308,15 @@ export function bindBeautifyToggle() {
             disableBeautify();
         }
     });
+
+    // 绑定设置按钮（直接打开悬浮栏设置弹窗）
+    const openPopupBtn = document.getElementById('beautify-open-popup-btn');
+    if (openPopupBtn) {
+        openPopupBtn.addEventListener('click', () => {
+            openBeautifyPopup();
+            logger.debug('[Beautify] 从设置按钮打开弹窗');
+        });
+    }
 
     // 悬浮按钮开关
     const floatingBtnCheckbox = document.getElementById('beautify-floating-btn-enabled');
@@ -1271,6 +1283,12 @@ function disableBeautify() {
 
 /**
  * 创建悬浮头像栏
+ *
+ * @description
+ * 悬浮栏结构说明：
+ * - beautify-deco-1 ~ beautify-deco-10：10个装饰元素，用户可用CSS贴素材
+ * - beautify-bg-container：背景图容器
+ * - beautify-info-row：头像和消息信息区域
  */
 function createStickyHeader() {
     if (stickyHeader) return;
@@ -1279,6 +1297,18 @@ function createStickyHeader() {
     stickyHeader.id = 'beautify-sticky-header';
     stickyHeader.className = 'beautify-sticky-header';
     stickyHeader.innerHTML = `
+        <!-- 装饰元素层（用户可用CSS贴素材，共10个） -->
+        <div class="beautify-deco beautify-deco-1"></div>
+        <div class="beautify-deco beautify-deco-2"></div>
+        <div class="beautify-deco beautify-deco-3"></div>
+        <div class="beautify-deco beautify-deco-4"></div>
+        <div class="beautify-deco beautify-deco-5"></div>
+        <div class="beautify-deco beautify-deco-6"></div>
+        <div class="beautify-deco beautify-deco-7"></div>
+        <div class="beautify-deco beautify-deco-8"></div>
+        <div class="beautify-deco beautify-deco-9"></div>
+        <div class="beautify-deco beautify-deco-10"></div>
+
         <!-- 背景图区域（包含所有信息和按钮） -->
         <div class="beautify-bg-container">
             <div class="beautify-bg" id="beautify-bg"></div>
@@ -1300,6 +1330,7 @@ function createStickyHeader() {
                     <span class="beautify-name" id="beautify-name"></span>
                     <span class="beautify-meta">
                         <span id="beautify-time"></span>
+                        <span id="beautify-timer"></span>
                         <span id="beautify-tokens"></span>
                         <span id="beautify-mesid"></span>
                     </span>
@@ -1553,6 +1584,10 @@ function initializeFirstMessage() {
 /**
  * 根据消息更新悬浮头像栏
  *
+ * @description
+ * 从 chat 数组读取 token 数和时间，不依赖 DOM 元素的可见性。
+ * 这样即使用户关闭了官方的 token 计数/计时器开关，悬浮栏仍能正常显示。
+ *
  * @param {Element} mesElement - 消息元素
  */
 function updateStickyHeaderFromMessage(mesElement) {
@@ -1565,6 +1600,8 @@ function updateStickyHeaderFromMessage(mesElement) {
     // 更新头像栏类名（控制头像位置：左/右）
     stickyHeader.classList.toggle('is-user', isUser);
     stickyHeader.classList.toggle('is-char', !isUser);
+    // 添加 is_user 属性，方便用户用 CSS 选择器分离定义样式
+    stickyHeader.setAttribute('is_user', isUser ? 'true' : 'false');
 
     // 更新头像（带淡入淡出动画，仿现代社交软件风格）
     const avatarImg = mesElement.querySelector('.avatar img');
@@ -1595,18 +1632,59 @@ function updateStickyHeaderFromMessage(mesElement) {
         mesIdEl.textContent = `#${mesId}`;
     }
 
-    // 更新时间
-    const timestamp = mesElement.querySelector('.timestamp');
+    // 从 chat 数组读取数据（不依赖 DOM 元素的可见性）
+    const mesIdNum = parseInt(mesId, 10);
+    const message = chat[mesIdNum];
+
+    // 更新时间（优先从 chat 数组读取，兜底从 DOM 读取）
     const timeEl = stickyHeader.querySelector('#beautify-time');
-    if (timestamp && timeEl) {
-        timeEl.textContent = timestamp.textContent || '';
+    if (timeEl) {
+        if (message?.send_date) {
+            // 格式化时间：从 send_date 提取时间部分（中文格式）
+            timeEl.textContent = formatMessageTime(message.send_date);
+        } else {
+            // 兜底：从 DOM 读取
+            const timestamp = mesElement.querySelector('.timestamp');
+            timeEl.textContent = timestamp?.textContent || '';
+        }
     }
 
-    // 更新 token 数
-    const tokenCounter = mesElement.querySelector('.tokenCounterDisplay');
+    // 更新生成耗时（从 chat 数组读取 gen_finished - gen_started）
+    const timerEl = stickyHeader.querySelector('#beautify-timer');
+    if (timerEl) {
+        const genTime = message?.extra?.gen_finished && message?.extra?.gen_started
+            ? ((message.extra.gen_finished - message.extra.gen_started) / 1000).toFixed(1)
+            : null;
+        if (genTime) {
+            timerEl.textContent = `${genTime}s`;
+        } else {
+            // 兜底：从 DOM 读取
+            const mesTimer = mesElement.querySelector('.mes_timer');
+            timerEl.textContent = mesTimer?.textContent || '';
+        }
+    }
+
+    // 更新 token 数（优先从 chat 数组读取，没有则自己计算）
     const tokensEl = stickyHeader.querySelector('#beautify-tokens');
-    if (tokenCounter && tokensEl) {
-        tokensEl.textContent = tokenCounter.textContent || '';
+    if (tokensEl) {
+        const tokenCount = message?.extra?.token_count;
+        if (tokenCount) {
+            tokensEl.textContent = `${tokenCount}t`;
+        } else if (message?.mes) {
+            // 如果没有 token_count，自己计算（异步）
+            const tokenCountText = (message?.extra?.reasoning || '') + message.mes;
+            getTokenCountAsync(tokenCountText, 0).then(count => {
+                if (count > 0) {
+                    tokensEl.textContent = `${count}t`;
+                }
+            }).catch(() => {
+                // 计算失败时静默处理
+            });
+        } else {
+            // 兜底：从 DOM 读取
+            const tokenCounter = mesElement.querySelector('.tokenCounterDisplay');
+            tokensEl.textContent = tokenCounter?.textContent || '';
+        }
     }
 
     // 更新背景图
@@ -1616,6 +1694,27 @@ function updateStickyHeaderFromMessage(mesElement) {
     stickyHeader.dataset.currentMesId = mesId;
 
     logger.debug('[Beautify] 悬浮栏已更新，mesId:', mesId, 'isUser:', isUser);
+}
+
+/**
+ * 格式化消息时间（使用官方moment库，自动跟随系统语言）
+ * @param {string} sendDate - 消息的 send_date 字符串
+ * @returns {string} 格式化后的时间字符串，如 "2025年12月20日 04:29"
+ */
+function formatMessageTime(sendDate) {
+    if (!sendDate) return '';
+
+    try {
+        // 使用官方的 timestampToMoment 函数，自动处理语言和格式
+        const momentDate = timestampToMoment(sendDate);
+        if (!momentDate.isValid()) {
+            return sendDate;
+        }
+        // 使用和官方一样的格式：'LL LT' = "2025年12月20日 04:29"
+        return momentDate.format('LL LT');
+    } catch {
+        return sendDate;
+    }
 }
 
 
@@ -2317,13 +2416,15 @@ function bindFloatingBtnEvents() {
 let snapshotMenu = null;
 
 /**
- * 显示快照菜单
+ * 显示快照菜单（包含总开关、快速开关和快照三个区域）
  * @param {number} x - 点击位置 X
  * @param {number} y - 点击位置 Y
  */
 async function showSnapshotMenu(x, y) {
-    // 动态导入快照数据模块
+    // 动态导入数据模块
     const snapshotData = await import('../preset-snapshot-data.js');
+    const quickToggleData = await import('../preset-quick-toggle-data.js');
+    const toggleGroupData = await import('../toggle-group-data.js');
 
     // 检查功能是否启用
     if (!snapshotData.isEnabled()) {
@@ -2336,33 +2437,217 @@ async function showSnapshotMenu(x, y) {
     hideSnapshotMenu();
 
     const snapshots = snapshotData.getSnapshotList();
+    const quickToggles = quickToggleData.getQuickTogglesWithState();
+    const toggleGroups = toggleGroupData.getFloatingMenuGroups();
+
+    // 如果三个区域都为空，显示空状态
+    if (snapshots.length === 0 && quickToggles.length === 0 && toggleGroups.length === 0) {
+        snapshotMenu = document.createElement('div');
+        snapshotMenu.className = 'snapshot-floating-menu';
+        snapshotMenu.innerHTML = `
+            <div class="snapshot-menu-empty">
+                <i class="fa-solid fa-inbox"></i>
+                <span>暂无内容</span>
+            </div>
+        `;
+        positionAndShowMenu(x, y);
+        return;
+    }
 
     // 创建菜单
     snapshotMenu = document.createElement('div');
     snapshotMenu.className = 'snapshot-floating-menu';
 
-    // 菜单内容
     let menuHtml = '';
+    let hasContent = false;
 
-    if (snapshots.length === 0) {
-        menuHtml = `
-            <div class="snapshot-menu-empty">
-                <i class="fa-solid fa-inbox"></i>
-                <span>暂无快照</span>
+    // 总开关组区域（最上面）
+    if (toggleGroups.length > 0) {
+        const groupsHtml = toggleGroups.map(g => {
+            const state = toggleGroupData.getGroupState(g.id);
+            const isOn = state === true;
+            return `
+            <div class="snapshot-menu-toggle toggle-group-item" data-group-id="${g.id}">
+                <span class="menu-toggle-name">${g.name}</span>
+                <span class="menu-toggle-switch ${isOn ? 'on' : 'off'}">
+                    <i class="fa-solid ${isOn ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
+                </span>
             </div>
         `;
-    } else {
-        menuHtml = snapshots.map(s => `
+        }).join('');
+        menuHtml += groupsHtml;
+        hasContent = true;
+    }
+
+    // 分隔线
+    if (hasContent && quickToggles.length > 0) {
+        menuHtml += '<div class="snapshot-menu-divider"></div>';
+    }
+
+    // 快速开关区域（支持预设条目和世界书条目）
+    if (quickToggles.length > 0) {
+        const togglesHtml = quickToggles.map(t => {
+            if (t.type === 'worldinfo') {
+                // 世界书条目
+                return `
+                <div class="snapshot-menu-toggle quick-toggle-worldinfo"
+                     data-world-name="${t.worldName}"
+                     data-uid="${t.uid}">
+                    <span class="menu-toggle-name">${t.name}</span>
+                    <span class="menu-toggle-switch ${t.enabled ? 'on' : 'off'}">
+                        <i class="fa-solid ${t.enabled ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
+                    </span>
+                </div>
+            `;
+            } else {
+                // 预设条目
+                return `
+                <div class="snapshot-menu-toggle quick-toggle-preset" data-identifier="${t.identifier}">
+                    <span class="menu-toggle-name">${t.name}</span>
+                    <span class="menu-toggle-switch ${t.enabled ? 'on' : 'off'}">
+                        <i class="fa-solid ${t.enabled ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
+                    </span>
+                </div>
+            `;
+            }
+        }).join('');
+        menuHtml += togglesHtml;
+        hasContent = true;
+    }
+
+    // 分隔线（如果有内容且有快照）
+    if (hasContent && snapshots.length > 0) {
+        menuHtml += '<div class="snapshot-menu-divider"></div>';
+    }
+
+    // 快照区域
+    if (snapshots.length > 0) {
+        const snapshotsHtml = snapshots.map(s => `
             <div class="snapshot-menu-item" data-id="${s.id}">
                 <i class="fa-solid fa-camera"></i>
                 <span>${s.name}</span>
             </div>
         `).join('');
+        menuHtml += snapshotsHtml;
     }
 
     snapshotMenu.innerHTML = menuHtml;
 
-    // 定位菜单（在按钮附近）
+    // 定位并显示菜单
+    positionAndShowMenu(x, y);
+
+    // 绑定总开关组事件
+    snapshotMenu.querySelectorAll('.toggle-group-item').forEach(item => {
+        item.addEventListener('click', async () => {
+            const groupId = item.dataset.groupId;
+            const currentState = toggleGroupData.getGroupState(groupId);
+            const newState = currentState !== true;  // 如果当前是true则关闭，否则开启
+
+            await toggleGroupData.toggleGroup(groupId, newState);
+
+            // 更新菜单内的开关显示
+            const switchEl = item.querySelector('.menu-toggle-switch');
+            const icon = switchEl?.querySelector('i');
+
+            if (newState) {
+                switchEl?.classList.remove('off');
+                switchEl?.classList.add('on');
+                icon?.classList.remove('fa-toggle-off');
+                icon?.classList.add('fa-toggle-on');
+            } else {
+                switchEl?.classList.remove('on');
+                switchEl?.classList.add('off');
+                icon?.classList.remove('fa-toggle-on');
+                icon?.classList.add('fa-toggle-off');
+            }
+            // 不关闭菜单，允许连续操作
+        });
+    });
+
+    // 绑定快速开关事件（预设条目）
+    snapshotMenu.querySelectorAll('.quick-toggle-preset').forEach(item => {
+        item.addEventListener('click', async () => {
+            const identifier = item.dataset.identifier;
+            const newState = await quickToggleData.toggleState(identifier);
+
+            if (newState !== null) {
+                // 更新菜单内的开关显示
+                const switchEl = item.querySelector('.menu-toggle-switch');
+                const icon = switchEl?.querySelector('i');
+
+                if (newState) {
+                    switchEl?.classList.remove('off');
+                    switchEl?.classList.add('on');
+                    icon?.classList.remove('fa-toggle-off');
+                    icon?.classList.add('fa-toggle-on');
+                } else {
+                    switchEl?.classList.remove('on');
+                    switchEl?.classList.add('off');
+                    icon?.classList.remove('fa-toggle-on');
+                    icon?.classList.add('fa-toggle-off');
+                }
+            }
+            // 不关闭菜单，允许连续操作
+        });
+    });
+
+    // 绑定快速开关事件（世界书条目）
+    snapshotMenu.querySelectorAll('.quick-toggle-worldinfo').forEach(item => {
+        item.addEventListener('click', async () => {
+            const worldName = item.dataset.worldName;
+            const uid = parseInt(item.dataset.uid, 10);
+            const newState = await quickToggleData.toggleState(null, worldName, uid);
+
+            if (newState !== null) {
+                // 更新菜单内的开关显示
+                const switchEl = item.querySelector('.menu-toggle-switch');
+                const icon = switchEl?.querySelector('i');
+
+                if (newState) {
+                    switchEl?.classList.remove('off');
+                    switchEl?.classList.add('on');
+                    icon?.classList.remove('fa-toggle-off');
+                    icon?.classList.add('fa-toggle-on');
+                } else {
+                    switchEl?.classList.remove('on');
+                    switchEl?.classList.add('off');
+                    icon?.classList.remove('fa-toggle-on');
+                    icon?.classList.add('fa-toggle-off');
+                }
+            }
+            // 不关闭菜单，允许连续操作
+        });
+    });
+
+    // 绑定快照事件
+    snapshotMenu.querySelectorAll('.snapshot-menu-item[data-id]').forEach(item => {
+        item.addEventListener('click', async () => {
+            const id = item.dataset.id;
+            const success = snapshotData.applySnapshot(id);
+            if (success) {
+                toastr.success('快照已应用');
+            }
+            hideSnapshotMenu();
+        });
+    });
+
+    // 点击外部关闭菜单
+    setTimeout(() => {
+        document.addEventListener('click', handleOutsideClick);
+        document.addEventListener('pointerdown', handleOutsideClick);
+    }, 100);
+
+    logger.debug('[Beautify] 快照菜单已显示，总开关:', toggleGroups.length, '快速开关:', quickToggles.length, '快照:', snapshots.length);
+}
+
+/**
+ * 定位并显示菜单
+ * @param {number} x - 点击位置 X
+ * @param {number} y - 点击位置 Y
+ */
+function positionAndShowMenu(x, y) {
+    if (!snapshotMenu) return;
+
     document.body.appendChild(snapshotMenu);
 
     // 计算位置（避免超出屏幕）
@@ -2381,26 +2666,6 @@ async function showSnapshotMenu(x, y) {
 
     snapshotMenu.style.left = `${menuX}px`;
     snapshotMenu.style.top = `${menuY}px`;
-
-    // 绑定菜单事件
-    snapshotMenu.querySelectorAll('.snapshot-menu-item[data-id]').forEach(item => {
-        item.addEventListener('click', async () => {
-            const id = item.dataset.id;
-            const success = snapshotData.applySnapshot(id);
-            if (success) {
-                toastr.success('快照已应用');
-            }
-            hideSnapshotMenu();
-        });
-    });
-
-    // 点击外部关闭菜单
-    setTimeout(() => {
-        document.addEventListener('click', handleOutsideClick);
-        document.addEventListener('pointerdown', handleOutsideClick);
-    }, 100);
-
-    logger.debug('[Beautify] 快照菜单已显示');
 }
 
 /**

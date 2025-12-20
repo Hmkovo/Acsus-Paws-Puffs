@@ -9,8 +9,14 @@ import { eventSource } from "../../../../script.js";
 import { callGenericPopup } from '../../../popup.js';
 import logger from './logger.js';
 import * as snapshotData from './preset-snapshot-data.js';
+import * as quickToggleData from './preset-quick-toggle-data.js';
+import * as toggleGroupData from './toggle-group-data.js';
 
 export class PresetManagerUI {
+  // ========================================
+  // 生命周期
+  // ========================================
+
   constructor(presetManager) {
     this.presetManager = presetManager;
     this.container = null;
@@ -32,6 +38,10 @@ export class PresetManagerUI {
     logger.debug('[PresetManagerUI.init] 初始化完成');
   }
 
+  // ========================================
+  // 渲染
+  // ========================================
+
   /**
    * 渲染UI
    */
@@ -40,13 +50,12 @@ export class PresetManagerUI {
 
     this.container.innerHTML = `
       <div class="enhanced-section preset-manager-section">
-        <!-- 功能开关 -->
-        <div class="preset-enable-section-compact">
-          <label class="checkbox_label">
-            <input type="checkbox" id="preset-manager-enabled" ${this.presetManager.enabled ? 'checked' : ''}>
-            <span>启用世界书工具</span>
-            <span class="hint-inline">在预设页面添加独立的世界书管理工具</span>
-          </label>
+        <!-- 功能介绍条 -->
+        <div class="preset-intro-bar">
+          <div class="preset-intro-text">
+            <i class="fa-solid fa-info-circle"></i>
+            预设管理工具：让预设操作更方便快捷
+          </div>
         </div>
 
         <!-- 手风琴卡片容器 -->
@@ -60,7 +69,16 @@ export class PresetManagerUI {
               </div>
             </div>
             <div class="preset-accordion-body">
-              <h4 style="margin-top: 0; color: var(--SmartThemeQuoteColor);">这是什么功能？</h4>
+              <!-- 功能开关（移到手风琴内部） -->
+              <div class="preset-setting-item">
+                <label class="checkbox_label">
+                  <input type="checkbox" id="preset-manager-enabled" ${this.presetManager.enabled ? 'checked' : ''}>
+                  <span>启用世界书工具</span>
+                </label>
+                <span class="preset-hint">在预设页面添加独立的世界书管理工具</span>
+              </div>
+
+              <h4 style="margin-top: 12px; color: var(--SmartThemeQuoteColor);">这是什么功能？</h4>
               <p>世界书工具就像一个<strong>智能百科全书</strong>，可以根据聊天内容自动提供相关背景信息给AI。</p>
               <p style="background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%); padding: 4px; border-radius: 5px;">
                 举个例子：聊天里提到"小红"，世界书就能自动告诉AI"小红是你的猫咪，橘色的，爱吃鱼"，AI就能更准确地回答你。
@@ -143,12 +161,12 @@ export class PresetManagerUI {
               </div>
 
               <!-- 功能开关 -->
-              <div class="snapshot-enable-section">
+              <div class="preset-setting-item">
                 <label class="checkbox_label">
                   <input type="checkbox" id="snapshot-enabled" ${snapshotData.isEnabled() ? 'checked' : ''}>
                   <span>启用预设快照</span>
-                  <span class="hint-inline">保存预设开关状态，通过悬浮按钮快捷切换</span>
                 </label>
+                <span class="preset-hint">保存预设开关状态，通过悬浮按钮快捷切换</span>
               </div>
 
               <!-- 弹窗菜单样式设置 -->
@@ -165,21 +183,57 @@ export class PresetManagerUI {
                 </div>
               </div>
 
-              <h4 style="color: var(--SmartThemeQuoteColor);">已保存的快照</h4>
-              <!-- 搜索框 -->
+              <!-- 统一搜索框 -->
               <div class="snapshot-search-box">
                 <i class="fa-solid fa-search"></i>
-                <input type="text" id="snapshot-search-input" placeholder="搜索快照..." class="text_pole">
+                <input type="text" id="snapshot-search-input" placeholder="搜索快速开关或快照..." class="text_pole">
               </div>
-              <!-- 预设选择下拉框 -->
+
+              <!-- 折叠分组容器 -->
+              <div class="snapshot-collapsible-container" id="snapshot-collapsible-container">
+                <!-- 总开关分组（默认折叠） -->
+                <div class="snapshot-collapsible-group" data-group="toggle-groups">
+                  <div class="snapshot-collapsible-header" data-group="toggle-groups">
+                    <i class="fa-solid fa-chevron-right collapsible-icon"></i>
+                    <span class="collapsible-title">总开关</span>
+                    <span class="collapsible-count" id="toggle-group-count">(0)</span>
+                  </div>
+                  <div class="snapshot-collapsible-body collapsed" id="toggle-group-list-container">
+                    <!-- 总开关列表将在这里渲染 -->
+                  </div>
+                </div>
+
+                <!-- 快速开关分组（默认折叠） -->
+                <div class="snapshot-collapsible-group" data-group="quick-toggles">
+                  <div class="snapshot-collapsible-header" data-group="quick-toggles">
+                    <i class="fa-solid fa-chevron-right collapsible-icon"></i>
+                    <span class="collapsible-title">快速开关</span>
+                    <span class="collapsible-count" id="quick-toggle-count">(0)</span>
+                  </div>
+                  <div class="snapshot-collapsible-body collapsed" id="quick-toggle-list-container">
+                    <!-- 快速开关列表将在这里渲染 -->
+                  </div>
+                </div>
+
+                <!-- 快照分组（默认折叠） -->
+                <div class="snapshot-collapsible-group" data-group="snapshots">
+                  <div class="snapshot-collapsible-header" data-group="snapshots">
+                    <i class="fa-solid fa-chevron-right collapsible-icon"></i>
+                    <span class="collapsible-title">快照</span>
+                    <span class="collapsible-count" id="snapshot-count">(0)</span>
+                  </div>
+                  <div class="snapshot-collapsible-body collapsed" id="snapshot-list-container">
+                    <!-- 快照列表将在这里渲染 -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- 预设选择下拉框（移到底部） -->
               <div class="snapshot-preset-selector">
                 <label style="font-size: 0.9em; opacity: 0.8;">选择预设查看快照：</label>
                 <select id="snapshot-preset-select" class="text_pole">
                   <!-- 选项将动态填充 -->
                 </select>
-              </div>
-              <div id="snapshot-list-container" class="snapshot-list-container">
-                <!-- 快照列表将在这里渲染 -->
               </div>
             </div>
           </div>
@@ -195,6 +249,10 @@ export class PresetManagerUI {
       </div>
     `;
   }
+
+  // ========================================
+  // 主事件绑定
+  // ========================================
 
   /**
    * 绑定事件
@@ -218,9 +276,9 @@ export class PresetManagerUI {
         }
 
         if (enabled) {
-          this.showMessage('世界书工具已启用', 'success');
+          toastr.success('世界书工具已启用');
         } else {
-          this.showMessage('世界书工具已禁用', 'info');
+          toastr.info('世界书工具已禁用');
         }
       });
     }
@@ -255,6 +313,9 @@ export class PresetManagerUI {
     // 绑定快照功能
     this.bindSnapshotToggle();
     this.bindPresetSelector();
+    this.bindCollapsibleGroups();
+    this.renderToggleGroupList();
+    this.renderQuickToggleList();
     this.renderSnapshotList();
 
     // 监听快照保存事件，刷新列表
@@ -265,26 +326,1190 @@ export class PresetManagerUI {
     });
   }
 
+  // ========================================
+  // 折叠分组相关
+  // ========================================
+
   /**
-   * 显示消息
+   * 绑定折叠分组的点击事件
    */
-  showMessage(message, type = 'info') {
-    if (typeof toastr !== 'undefined') {
-      switch (type) {
-        case 'success':
-          toastr.success(message);
-          break;
-        case 'warning':
-          toastr.warning(message);
-          break;
-        case 'error':
-          toastr.error(message);
-          break;
-        default:
-          toastr.info(message);
+  bindCollapsibleGroups() {
+    const headers = this.container?.querySelectorAll('.snapshot-collapsible-header');
+    if (!headers) return;
+
+    headers.forEach(header => {
+      header.addEventListener('click', () => {
+        const group = header.dataset.group;
+        const body = header.nextElementSibling;
+        const icon = header.querySelector('.collapsible-icon');
+
+        // 如果正在搜索，不允许折叠
+        const searchInput = this.container?.querySelector('#snapshot-search-input');
+        if (searchInput?.value?.trim()) {
+          return;
+        }
+
+        // 切换展开/折叠状态
+        const isExpanded = header.classList.contains('expanded');
+
+        if (isExpanded) {
+          header.classList.remove('expanded');
+          body?.classList.add('collapsed');
+          icon?.classList.remove('fa-chevron-down');
+          icon?.classList.add('fa-chevron-right');
+        } else {
+          header.classList.add('expanded');
+          body?.classList.remove('collapsed');
+          icon?.classList.remove('fa-chevron-right');
+          icon?.classList.add('fa-chevron-down');
+        }
+
+        logger.debug('[PresetManagerUI] 切换折叠分组:', group, isExpanded ? '折叠' : '展开');
+      });
+    });
+  }
+
+  // ========================================
+  // 总开关相关
+  // ========================================
+
+  /**
+   * 渲染总开关列表
+   *
+   * @description
+   * 显示所有开关组，支持搜索过滤。每个组显示名称、成员数量、当前状态（全开/全关/混合）。
+   * 空状态时显示添加按钮，有数据时底部也有添加按钮。
+   */
+  renderToggleGroupList() {
+    const container = this.container?.querySelector('#toggle-group-list-container');
+    const countEl = this.container?.querySelector('#toggle-group-count');
+    if (!container) return;
+
+    const groups = toggleGroupData.getToggleGroups();
+
+    // 更新计数
+    if (countEl) {
+      countEl.textContent = `(${groups.length})`;
+    }
+
+    // 获取搜索关键词
+    const searchInput = this.container?.querySelector('#snapshot-search-input');
+    const searchKeyword = searchInput?.value?.trim().toLowerCase() || '';
+
+    // 过滤
+    const filteredGroups = searchKeyword
+      ? groups.filter(g => g.name.toLowerCase().includes(searchKeyword))
+      : groups;
+
+    // 空状态
+    if (groups.length === 0) {
+      container.innerHTML = `
+        <div class="toggle-group-empty">
+          <p>还没有创建总开关</p>
+          <button class="menu_button" id="toggle-group-add-btn">
+            <i class="fa-solid fa-plus"></i> 添加
+          </button>
+        </div>
+      `;
+      this.bindAddToggleGroupBtn();
+      return;
+    }
+
+    // 搜索无结果
+    if (filteredGroups.length === 0 && searchKeyword) {
+      container.innerHTML = `
+        <div class="toggle-group-empty">
+          <p style="opacity: 0.6;">没有匹配的总开关</p>
+        </div>
+      `;
+      return;
+    }
+
+    // 渲染列表
+    const listHtml = filteredGroups.map(group => {
+      const state = toggleGroupData.getGroupState(group.id);
+      const stateClass = state === true ? 'on' : (state === false ? 'off' : 'mixed');
+      const stateIcon = state === true ? 'fa-toggle-on' : (state === false ? 'fa-toggle-off' : 'fa-circle-half-stroke');
+      const stateTitle = state === true ? '全部开启' : (state === false ? '全部关闭' : '部分开启');
+
+      return `
+        <div class="toggle-group-item" data-group-id="${group.id}">
+          <div class="toggle-group-header">
+            <span class="toggle-group-name" title="${group.name}">${group.name}</span>
+            <span class="toggle-group-count">(${group.entries.length})</span>
+            <div class="toggle-group-actions">
+              <span class="toggle-group-switch ${stateClass}" title="${stateTitle}">
+                <i class="fa-solid ${stateIcon}"></i>
+              </span>
+              <button class="toggle-group-edit-btn" title="编辑">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button class="toggle-group-delete-btn" title="删除">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    container.innerHTML = `
+      ${listHtml}
+      <button class="menu_button toggle-group-add-inline" id="toggle-group-add-btn">
+        <i class="fa-solid fa-plus"></i> 添加
+      </button>
+    `;
+
+    this.bindToggleGroupListEvents();
+    this.bindAddToggleGroupBtn();
+  }
+
+  /**
+   * 绑定总开关列表事件
+   *
+   * @description
+   * 为列表中的每个开关组绑定三种交互：
+   * 1. 开关图标点击 - 切换整组状态（开→关 或 关/混合→开）
+   * 2. 编辑按钮 - 打开编辑弹窗
+   * 3. 删除按钮 - 二次确认后删除
+   */
+  bindToggleGroupListEvents() {
+    const container = this.container?.querySelector('#toggle-group-list-container');
+    if (!container) return;
+
+    // 开关点击 - 切换整组状态
+    container.querySelectorAll('.toggle-group-switch').forEach(switchEl => {
+      switchEl.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const item = e.target.closest('.toggle-group-item');
+        const groupId = item?.dataset.groupId;
+        if (!groupId) return;
+
+        const currentState = toggleGroupData.getGroupState(groupId);
+        // 如果当前是开启或混合状态，则关闭；否则开启
+        const newState = currentState !== true;
+
+        const result = await toggleGroupData.toggleGroup(groupId, newState);
+        if (result.success > 0 || result.skipped > 0) {
+          toastr.success(`已${newState ? '开启' : '关闭'} ${result.success} 个条目`);
+          this.renderToggleGroupList();
+          this.renderQuickToggleList();  // 快速开关状态可能也变了
+        }
+      });
+    });
+
+    // 编辑按钮
+    container.querySelectorAll('.toggle-group-edit-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const item = e.target.closest('.toggle-group-item');
+        const groupId = item?.dataset.groupId;
+        if (!groupId) return;
+
+        this.showEditToggleGroupPopup(groupId);
+      });
+    });
+
+    // 删除按钮
+    container.querySelectorAll('.toggle-group-delete-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const item = e.target.closest('.toggle-group-item');
+        const groupId = item?.dataset.groupId;
+        if (!groupId) return;
+
+        const group = toggleGroupData.getToggleGroupById(groupId);
+        if (!group) return;
+
+        const confirmed = await callGenericPopup(
+          `确定要删除总开关「${group.name}」吗？`,
+          2  // POPUP_TYPE.CONFIRM
+        );
+
+        if (confirmed) {
+          toggleGroupData.deleteToggleGroup(groupId);
+          this.renderToggleGroupList();
+          toastr.info('已删除总开关');
+        }
+      });
+    });
+  }
+
+  /**
+   * 绑定添加总开关按钮
+   */
+  bindAddToggleGroupBtn() {
+    const btn = this.container?.querySelector('#toggle-group-add-btn');
+    if (!btn) return;
+
+    btn.addEventListener('click', () => {
+      this.showCreateToggleGroupPopup();
+    });
+  }
+
+  /**
+   * 显示创建总开关弹窗
+   *
+   * @description
+   * 弹出输入框让用户输入名称，创建成功后自动打开编辑弹窗添加成员。
+   *
+   * @async
+   */
+  async showCreateToggleGroupPopup() {
+    const name = await callGenericPopup(
+      '请输入总开关名称：',
+      3,  // POPUP_TYPE.INPUT
+      ''
+    );
+
+    if (name && name.trim()) {
+      const group = toggleGroupData.createToggleGroup(name.trim());
+      if (group) {
+        toastr.success('已创建总开关：' + group.name);
+        this.renderToggleGroupList();
+        // 创建后直接打开编辑弹窗
+        this.showEditToggleGroupPopup(group.id);
       }
     }
   }
+
+  /**
+   * 显示编辑总开关弹窗
+   *
+   * @description
+   * 弹窗内容包括：重命名输入框、"加入悬浮按钮菜单"选项、成员列表（可移除）、添加成员按钮。
+   * 点击添加成员会打开 showAddEntryPopup 选择预设条目或世界书条目。
+   *
+   * @async
+   * @param {string} groupId - 要编辑的开关组ID
+   */
+  async showEditToggleGroupPopup(groupId) {
+    const group = toggleGroupData.getToggleGroupById(groupId);
+    if (!group) return;
+
+    // 保存 this 引用
+    const self = this;
+
+    // 构建弹窗内容
+    const popupHtml = `
+      <div class="toggle-group-edit-popup">
+        <div class="toggle-group-edit-header">
+          <input type="text" class="text_pole toggle-group-name-input" value="${group.name}" placeholder="总开关名称">
+          <button class="menu_button toggle-group-rename-btn" title="重命名">
+            <i class="fa-solid fa-check"></i>
+          </button>
+        </div>
+
+        <div class="toggle-group-floating-option">
+          <label class="checkbox_label">
+            <input type="checkbox" class="toggle-group-floating-checkbox" ${group.showInFloatingMenu ? 'checked' : ''}>
+            <span>加入悬浮按钮菜单</span>
+          </label>
+        </div>
+
+        <div class="toggle-group-entries-section">
+          <div class="toggle-group-entries-header">
+            <span>组内成员 (${group.entries.length})</span>
+            <button class="menu_button toggle-group-add-entry-btn">
+              <i class="fa-solid fa-plus"></i> 添加
+            </button>
+          </div>
+          <div class="toggle-group-entries-list">
+            ${group.entries.length === 0 ? '<p class="toggle-group-empty-hint">还没有添加成员，点击上方按钮添加</p>' : ''}
+            ${group.entries.map((entry, index) => `
+              <div class="toggle-group-entry-item" data-index="${index}">
+                <span class="toggle-group-entry-type ${entry.type}">
+                  ${entry.type === 'preset' ? '<i class="fa-solid fa-sliders"></i>' : '<i class="fa-solid fa-book"></i>'}
+                </span>
+                <span class="toggle-group-entry-name" title="${entry.displayName}">${entry.displayName}</span>
+                <button class="toggle-group-entry-remove" title="移除">
+                  <i class="fa-solid fa-times"></i>
+                </button>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+
+    // 显示弹窗（不await，让代码继续执行绑定事件）
+    callGenericPopup(popupHtml, 1);  // POPUP_TYPE.TEXT
+
+    // 等待DOM更新后绑定事件
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const popupEl = document.querySelector('.toggle-group-edit-popup');
+    if (!popupEl) return;
+
+    // 重命名按钮
+    const renameBtn = popupEl.querySelector('.toggle-group-rename-btn');
+    const nameInput = popupEl.querySelector('.toggle-group-name-input');
+    renameBtn?.addEventListener('click', () => {
+      const newName = nameInput?.value?.trim();
+      if (newName && newName !== group.name) {
+        toggleGroupData.renameToggleGroup(groupId, newName);
+        toastr.success('已重命名');
+        self.renderToggleGroupList();
+      }
+    });
+
+    // 悬浮按钮选项
+    const floatingCheckbox = popupEl.querySelector('.toggle-group-floating-checkbox');
+    floatingCheckbox?.addEventListener('change', (e) => {
+      const checked = e.target.checked;
+      toggleGroupData.setShowInFloatingMenu(groupId, checked);
+      toastr.info(checked ? '已加入悬浮按钮菜单' : '已从悬浮按钮菜单移除');
+    });
+
+    // 添加成员按钮
+    const addEntryBtn = popupEl.querySelector('.toggle-group-add-entry-btn');
+    addEntryBtn?.addEventListener('click', () => {
+      self.showAddEntryPopup(groupId);
+    });
+
+    // 移除成员按钮
+    popupEl.querySelectorAll('.toggle-group-entry-remove').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const item = e.target.closest('.toggle-group-entry-item');
+        const index = parseInt(item?.dataset.index);
+        if (!isNaN(index)) {
+          toggleGroupData.removeEntry(groupId, index);
+          toastr.info('已移除成员');
+          // 刷新弹窗
+          self.showEditToggleGroupPopup(groupId);
+        }
+      });
+    });
+  }
+
+  /**
+   * 显示添加成员弹窗
+   *
+   * @description
+   * 弹窗分两个标签页：预设条目、世界书条目。
+   * 预设条目从当前预设的prompt_order获取。
+   * 世界书条目默认显示所有世界书的条目列表，支持搜索过滤。
+   *
+   * @async
+   * @param {string} groupId - 要添加成员的开关组ID
+   */
+  async showAddEntryPopup(groupId) {
+    // 保存 this 引用和groupId
+    const self = this;
+    this._currentEditingGroupId = groupId;
+
+    const popupHtml = `
+      <div class="toggle-group-add-entry-popup">
+        <div class="toggle-group-add-entry-tabs">
+          <button class="toggle-group-tab active" data-tab="preset">预设条目</button>
+          <button class="toggle-group-tab" data-tab="worldinfo">世界书条目</button>
+        </div>
+        <div class="toggle-group-add-entry-content">
+          <div class="toggle-group-tab-panel active" data-panel="preset">
+            <div class="toggle-group-entry-list" id="preset-entry-list">
+              <p class="loading-hint">加载中...</p>
+            </div>
+          </div>
+          <div class="toggle-group-tab-panel" data-panel="worldinfo">
+            <select class="text_pole" id="worldinfo-book-select" style="margin-bottom:8px;">
+              <option value="">-- 选择世界书 --</option>
+            </select>
+            <div class="toggle-group-worldinfo-search">
+              <input type="text" class="text_pole" id="worldinfo-search-input" placeholder="搜索过滤条目...">
+            </div>
+            <div class="toggle-group-entry-list" id="worldinfo-entry-list">
+              <p class="toggle-group-empty-hint">请先选择世界书</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // 显示弹窗（不await）
+    callGenericPopup(popupHtml, 1);
+
+    // 等待DOM更新后绑定事件
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const popupEl = document.querySelector('.toggle-group-add-entry-popup');
+    if (!popupEl) return;
+
+    // 标签切换
+    popupEl.querySelectorAll('.toggle-group-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabName = tab.dataset.tab;
+
+        // 切换标签激活状态
+        popupEl.querySelectorAll('.toggle-group-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        // 切换面板显示
+        popupEl.querySelectorAll('.toggle-group-tab-panel').forEach(p => p.classList.remove('active'));
+        popupEl.querySelector(`[data-panel="${tabName}"]`)?.classList.add('active');
+      });
+    });
+
+    // 渲染预设条目列表
+    this.renderPresetEntryList(groupId, popupEl);
+
+    // 加载世界书列表到下拉框
+    this.loadWorldBookSelect(popupEl);
+
+    // 世界书下拉框选择事件
+    const bookSelect = popupEl.querySelector('#worldinfo-book-select');
+    bookSelect?.addEventListener('change', async () => {
+      const worldName = bookSelect.value;
+      if (!worldName) {
+        const container = popupEl.querySelector('#worldinfo-entry-list');
+        if (container) container.innerHTML = '<p class="toggle-group-empty-hint">请先选择世界书</p>';
+        return;
+      }
+      await self.loadWorldInfoEntriesForBook(groupId, popupEl, worldName);
+    });
+
+    // 绑定世界书搜索（实时过滤）
+    const searchInput = popupEl.querySelector('#worldinfo-search-input');
+    searchInput?.addEventListener('input', () => {
+      const keyword = searchInput?.value?.trim().toLowerCase() || '';
+      self.filterWorldInfoEntries(popupEl, keyword);
+    });
+  }
+
+  /**
+   * 渲染预设条目列表（添加成员弹窗用）
+   *
+   * @description
+   * 从 quickToggleData.getAvailablePrompts() 获取所有可用预设条目，
+   * 过滤掉已添加到该组的条目，渲染成可点击的列表。
+   *
+   * @param {string} groupId - 开关组ID
+   * @param {HTMLElement} popupEl - 弹窗DOM元素
+   */
+  renderPresetEntryList(groupId, popupEl) {
+    const container = popupEl.querySelector('#preset-entry-list');
+    if (!container) return;
+
+    const group = toggleGroupData.getToggleGroupById(groupId);
+    const prompts = quickToggleData.getAvailablePrompts();
+
+    // 过滤掉已添加的
+    const existingIdentifiers = new Set(
+      group.entries.filter(e => e.type === 'preset').map(e => e.identifier)
+    );
+    const availablePrompts = prompts.filter(p => !existingIdentifiers.has(p.identifier));
+
+    if (availablePrompts.length === 0) {
+      container.innerHTML = '<p class="toggle-group-empty-hint">没有可添加的预设条目</p>';
+      return;
+    }
+
+    container.innerHTML = availablePrompts.map(p => `
+      <div class="toggle-group-available-entry" data-identifier="${p.identifier}" data-name="${p.name}">
+        <span class="entry-name">${p.name}</span>
+        <button class="menu_button entry-add-btn">
+          <i class="fa-solid fa-plus"></i>
+        </button>
+      </div>
+    `).join('');
+
+    // 绑定添加按钮
+    const self = this;
+    container.querySelectorAll('.entry-add-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const item = e.target.closest('.toggle-group-available-entry');
+        const identifier = item?.dataset.identifier;
+        const name = item?.dataset.name;
+        if (!identifier || !name) return;
+
+        const success = toggleGroupData.addPresetEntry(groupId, identifier, name);
+        if (success) {
+          toastr.success('已添加：' + name);
+          item.remove();
+          self.renderToggleGroupList();
+          self.refreshEditPopupEntries(groupId);
+        } else {
+          toastr.warning('添加失败，可能已存在');
+        }
+      });
+    });
+  }
+
+  /**
+   * 加载世界书列表到下拉框
+   * @param {HTMLElement} popupEl - 弹窗DOM元素
+   */
+  async loadWorldBookSelect(popupEl) {
+    const select = popupEl.querySelector('#worldinfo-book-select');
+    if (!select) return;
+
+    try {
+      const { world_names } = await import('../../../world-info.js');
+      const worldList = world_names || [];
+
+      if (worldList.length === 0) {
+        select.innerHTML = '<option value="">没有世界书</option>';
+        return;
+      }
+
+      let optionsHtml = '<option value="">-- 选择世界书 --</option>';
+      worldList.forEach(name => {
+        optionsHtml += `<option value="${name}">${name}</option>`;
+      });
+      select.innerHTML = optionsHtml;
+    } catch (error) {
+      logger.error('[ToggleGroup] 加载世界书列表失败:', error.message);
+      select.innerHTML = '<option value="">加载失败</option>';
+    }
+  }
+
+  /**
+   * 加载指定世界书的条目
+   * @param {string} groupId - 开关组ID
+   * @param {HTMLElement} popupEl - 弹窗DOM元素
+   * @param {string} worldName - 世界书名称
+   */
+  async loadWorldInfoEntriesForBook(groupId, popupEl, worldName) {
+    const container = popupEl.querySelector('#worldinfo-entry-list');
+    if (!container) return;
+
+    container.innerHTML = '<p class="loading-hint"><i class="fa-solid fa-spinner fa-spin"></i> 加载中...</p>';
+
+    try {
+      const { loadWorldInfo } = await import('../../../world-info.js');
+      const data = await loadWorldInfo(worldName);
+
+      if (!data || !data.entries) {
+        container.innerHTML = '<p class="toggle-group-empty-hint">该世界书没有条目</p>';
+        return;
+      }
+
+      const group = toggleGroupData.getToggleGroupById(groupId);
+      const existingKeys = new Set(
+        group.entries.filter(e => e.type === 'worldinfo').map(e => `${e.worldName}:${e.uid}`)
+      );
+
+      const entries = [];
+      for (const [uid, entry] of Object.entries(data.entries)) {
+        const entryName = entry.comment || entry.key?.join(', ') || `条目${uid}`;
+        const key = `${worldName}:${uid}`;
+
+        if (!existingKeys.has(key)) {
+          entries.push({
+            worldName,
+            uid: parseInt(uid),
+            name: entryName,
+            content: entry.content || ''
+          });
+        }
+      }
+
+      // 存储到临时变量供过滤使用
+      this._worldInfoEntries = entries;
+
+      // 渲染列表
+      this.renderWorldInfoEntryItems(popupEl, entries, groupId);
+
+    } catch (error) {
+      logger.error('[ToggleGroup] 加载世界书条目失败:', error.message);
+      container.innerHTML = '<p class="toggle-group-empty-hint">加载失败，请重试</p>';
+    }
+  }
+
+  /**
+   * 过滤世界书条目
+   * @param {HTMLElement} popupEl - 弹窗DOM元素
+   * @param {string} keyword - 搜索关键词
+   */
+  filterWorldInfoEntries(popupEl, keyword) {
+    const allEntries = this._worldInfoEntries || [];
+    const groupId = this._currentEditingGroupId;
+
+    if (!keyword) {
+      this.renderWorldInfoEntryItems(popupEl, allEntries, groupId);
+      return;
+    }
+
+    const filtered = allEntries.filter(item => {
+      return item.worldName.toLowerCase().includes(keyword) ||
+             item.name.toLowerCase().includes(keyword) ||
+             item.content.toLowerCase().includes(keyword);
+    });
+
+    this.renderWorldInfoEntryItems(popupEl, filtered, groupId);
+  }
+
+  /**
+   * 渲染世界书条目列表项
+   * @param {HTMLElement} popupEl - 弹窗DOM元素
+   * @param {Array} entries - 条目数组
+   * @param {string} groupId - 开关组ID
+   */
+  renderWorldInfoEntryItems(popupEl, entries, groupId) {
+    const container = popupEl.querySelector('#worldinfo-entry-list');
+    if (!container) return;
+
+    if (entries.length === 0) {
+      container.innerHTML = '<p class="toggle-group-empty-hint">没有可添加的世界书条目</p>';
+      return;
+    }
+
+    container.innerHTML = entries.slice(0, 100).map(item => `
+      <div class="toggle-group-available-entry"
+           data-world-name="${item.worldName}"
+           data-uid="${item.uid}"
+           data-name="${item.name}">
+        <span class="entry-name" title="${item.worldName}: ${item.name}">
+          <span class="entry-world-tag">${item.worldName}</span>
+          ${item.name}
+        </span>
+        <button class="menu_button entry-add-btn">
+          <i class="fa-solid fa-plus"></i>
+        </button>
+      </div>
+    `).join('');
+
+    if (entries.length > 100) {
+      container.innerHTML += '<p class="toggle-group-empty-hint">显示前100条，请使用搜索缩小范围</p>';
+    }
+
+    // 绑定添加按钮
+    const self = this;
+    container.querySelectorAll('.entry-add-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const item = e.target.closest('.toggle-group-available-entry');
+        const worldName = item?.dataset.worldName;
+        const uid = parseInt(item?.dataset.uid);
+        const name = item?.dataset.name;
+        if (!worldName || isNaN(uid) || !name) return;
+
+        const displayName = `${worldName}: ${name}`;
+        const success = toggleGroupData.addWorldInfoEntry(groupId, worldName, uid, displayName);
+        if (success) {
+          toastr.success('已添加：' + name);
+          item.remove();
+          self.renderToggleGroupList();
+          // 从临时数组中移除
+          const idx = self._worldInfoEntries?.findIndex(e => e.worldName === worldName && e.uid === uid);
+          if (idx !== undefined && idx >= 0) {
+            self._worldInfoEntries.splice(idx, 1);
+          }
+          // 刷新编辑弹窗中的成员列表
+          self.refreshEditPopupEntries(groupId);
+        } else {
+          toastr.warning('添加失败，可能已存在');
+        }
+      });
+    });
+  }
+
+  /**
+   * 刷新编辑弹窗中的成员列表
+   * @param {string} groupId - 开关组ID
+   */
+  refreshEditPopupEntries(groupId) {
+    const editPopup = document.querySelector('.toggle-group-edit-popup');
+    if (!editPopup) return;
+
+    const group = toggleGroupData.getToggleGroupById(groupId);
+    if (!group) return;
+
+    const entriesList = editPopup.querySelector('.toggle-group-entries-list');
+    const countSpan = editPopup.querySelector('.toggle-group-entries-header span');
+
+    if (countSpan) {
+      countSpan.textContent = `组内成员 (${group.entries.length})`;
+    }
+
+    if (entriesList) {
+      if (group.entries.length === 0) {
+        entriesList.innerHTML = '<p class="toggle-group-empty-hint">还没有添加成员，点击上方按钮添加</p>';
+      } else {
+        entriesList.innerHTML = group.entries.map((entry, index) => `
+          <div class="toggle-group-entry-item" data-index="${index}">
+            <span class="toggle-group-entry-type ${entry.type}">
+              ${entry.type === 'preset' ? '<i class="fa-solid fa-sliders"></i>' : '<i class="fa-solid fa-book"></i>'}
+            </span>
+            <span class="toggle-group-entry-name" title="${entry.displayName}">${entry.displayName}</span>
+            <button class="toggle-group-entry-remove" title="移除">
+              <i class="fa-solid fa-times"></i>
+            </button>
+          </div>
+        `).join('');
+
+        // 重新绑定移除按钮事件
+        const self = this;
+        entriesList.querySelectorAll('.toggle-group-entry-remove').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const item = e.target.closest('.toggle-group-entry-item');
+            const index = parseInt(item?.dataset.index);
+            if (!isNaN(index)) {
+              toggleGroupData.removeEntry(groupId, index);
+              toastr.info('已移除成员');
+              self.refreshEditPopupEntries(groupId);
+              self.renderToggleGroupList();
+            }
+          });
+        });
+      }
+    }
+  }
+
+  // ========================================
+  // 快速开关相关
+  // ========================================
+
+  /**
+   * 渲染快速开关列表
+   * @description 根据选中的预设加载快速开关，支持预设条目和世界书条目两种类型，支持按名称搜索过滤
+   */
+  renderQuickToggleList() {
+    const container = this.container?.querySelector('#quick-toggle-list-container');
+    const countEl = this.container?.querySelector('#quick-toggle-count');
+    if (!container) return;
+
+    // 使用选中的预设（和快照列表保持一致）
+    const selectedPreset = this.getSelectedPreset();
+    const toggles = quickToggleData.getQuickTogglesWithState(selectedPreset);
+
+    // 更新计数
+    if (countEl) {
+      countEl.textContent = `(${toggles.length})`;
+    }
+
+    // 获取搜索关键词
+    const searchInput = this.container?.querySelector('#snapshot-search-input');
+    const searchKeyword = searchInput?.value?.trim().toLowerCase() || '';
+
+    // 过滤
+    const filteredToggles = searchKeyword
+      ? toggles.filter(t => t.name.toLowerCase().includes(searchKeyword))
+      : toggles;
+
+    // 空状态
+    if (toggles.length === 0) {
+      container.innerHTML = `
+        <div class="quick-toggle-empty">
+          <p>还没有添加快速开关</p>
+          <button class="menu_button" id="quick-toggle-add-btn">
+            <i class="fa-solid fa-plus"></i> 添加
+          </button>
+        </div>
+      `;
+      this.bindAddQuickToggleBtn();
+      return;
+    }
+
+    // 搜索无结果
+    if (filteredToggles.length === 0 && searchKeyword) {
+      container.innerHTML = `
+        <div class="quick-toggle-empty">
+          <p style="opacity: 0.6;">没有匹配的快速开关</p>
+        </div>
+      `;
+      return;
+    }
+
+    // 渲染列表（支持预设条目和世界书条目）
+    const listHtml = filteredToggles.map(toggle => {
+      if (toggle.type === 'worldinfo') {
+        // 世界书条目
+        return `
+          <div class="quick-toggle-item quick-toggle-worldinfo"
+               data-world-name="${toggle.worldName}"
+               data-uid="${toggle.uid}">
+            <span class="quick-toggle-name" title="${toggle.name}">${toggle.name}</span>
+            <div class="quick-toggle-actions">
+              <span class="quick-toggle-switch ${toggle.enabled ? 'on' : 'off'}"
+                    title="${toggle.enabled ? '点击关闭' : '点击开启'}">
+                <i class="fa-solid ${toggle.enabled ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
+              </span>
+              <button class="quick-toggle-remove-btn" title="移除">
+                <i class="fa-solid fa-times"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      } else {
+        // 预设条目
+        return `
+          <div class="quick-toggle-item quick-toggle-preset" data-identifier="${toggle.identifier}">
+            <span class="quick-toggle-name" title="${toggle.name}">${toggle.name}</span>
+            <div class="quick-toggle-actions">
+              <span class="quick-toggle-switch ${toggle.enabled ? 'on' : 'off'}"
+                    title="${toggle.enabled ? '点击关闭' : '点击开启'}">
+                <i class="fa-solid ${toggle.enabled ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
+              </span>
+              <button class="quick-toggle-remove-btn" title="移除">
+                <i class="fa-solid fa-times"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }
+    }).join('');
+
+    container.innerHTML = `
+      ${listHtml}
+      <button class="menu_button quick-toggle-add-inline" id="quick-toggle-add-btn">
+        <i class="fa-solid fa-plus"></i> 添加
+      </button>
+    `;
+
+    this.bindQuickToggleListEvents();
+    this.bindAddQuickToggleBtn();
+  }
+
+  /**
+   * 绑定快速开关列表事件
+   * @description 分别为预设条目和世界书条目绑定开关点击和移除按钮事件
+   */
+  bindQuickToggleListEvents() {
+    const container = this.container?.querySelector('#quick-toggle-list-container');
+    if (!container) return;
+
+    // 预设条目开关点击
+    container.querySelectorAll('.quick-toggle-preset .quick-toggle-switch').forEach(switchEl => {
+      switchEl.addEventListener('click', async (e) => {
+        const item = e.target.closest('.quick-toggle-item');
+        const identifier = item?.dataset.identifier;
+        if (!identifier) return;
+
+        const newState = await quickToggleData.toggleState(identifier);
+        if (newState !== null) {
+          this.updateToggleSwitchUI(switchEl, newState);
+        }
+      });
+    });
+
+    // 世界书条目开关点击
+    container.querySelectorAll('.quick-toggle-worldinfo .quick-toggle-switch').forEach(switchEl => {
+      switchEl.addEventListener('click', async (e) => {
+        const item = e.target.closest('.quick-toggle-item');
+        const worldName = item?.dataset.worldName;
+        const uid = parseInt(item?.dataset.uid, 10);
+        if (!worldName || isNaN(uid)) return;
+
+        const newState = await quickToggleData.toggleState(null, worldName, uid);
+        if (newState !== null) {
+          this.updateToggleSwitchUI(switchEl, newState);
+        }
+      });
+    });
+
+    // 预设条目移除按钮
+    container.querySelectorAll('.quick-toggle-preset .quick-toggle-remove-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const item = e.target.closest('.quick-toggle-item');
+        const identifier = item?.dataset.identifier;
+        if (!identifier) return;
+
+        quickToggleData.removeQuickToggle(identifier);
+        this.renderQuickToggleList();
+        toastr.info('已移除快速开关');
+      });
+    });
+
+    // 世界书条目移除按钮
+    container.querySelectorAll('.quick-toggle-worldinfo .quick-toggle-remove-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const item = e.target.closest('.quick-toggle-item');
+        const worldName = item?.dataset.worldName;
+        const uid = parseInt(item?.dataset.uid, 10);
+        if (!worldName || isNaN(uid)) return;
+
+        quickToggleData.removeQuickToggle(null, worldName, uid);
+        this.renderQuickToggleList();
+        toastr.info('已移除快速开关');
+      });
+    });
+  }
+
+  /**
+   * 更新开关UI状态
+   * @param {Element} switchEl - 开关元素
+   * @param {boolean} newState - 新状态
+   */
+  updateToggleSwitchUI(switchEl, newState) {
+    const icon = switchEl.querySelector('i');
+    if (newState) {
+      switchEl.classList.remove('off');
+      switchEl.classList.add('on');
+      icon?.classList.remove('fa-toggle-off');
+      icon?.classList.add('fa-toggle-on');
+      switchEl.title = '点击关闭';
+    } else {
+      switchEl.classList.remove('on');
+      switchEl.classList.add('off');
+      icon?.classList.remove('fa-toggle-on');
+      icon?.classList.add('fa-toggle-off');
+      switchEl.title = '点击开启';
+    }
+  }
+
+  /**
+   * 绑定添加快速开关按钮
+   */
+  bindAddQuickToggleBtn() {
+    const btn = this.container?.querySelector('#quick-toggle-add-btn');
+    if (!btn) return;
+
+    btn.addEventListener('click', () => {
+      this.showAddQuickTogglePopup();
+    });
+  }
+
+  /**
+   * 显示添加快速开关弹窗
+   *
+   * @description
+   * 弹窗分两个标签页：预设条目和世界书条目。
+   * - 预设条目：从当前预设的 prompt_order 获取，点击即可选中/取消
+   * - 世界书条目：先用下拉框选择一个世界书，加载该世界书的所有条目（最多显示100条），
+   *   搜索框用于实时过滤已加载的条目（匹配名称或内容）
+   * 点击确认后收集两种类型的选中项，保存到快速开关列表。
+   *
+   * @async
+   * @returns {Promise<void>}
+   */
+  async showAddQuickTogglePopup() {
+    const availablePrompts = quickToggleData.getAvailablePrompts();
+    const currentToggles = quickToggleData.getQuickToggles();
+
+    // 构建预设条目列表
+    const presetListHtml = availablePrompts.map(prompt => {
+      const isAdded = currentToggles.some(t => t.type !== 'worldinfo' && t.identifier === prompt.identifier);
+      return `
+        <div class="quick-toggle-select-item ${isAdded ? 'selected' : ''}"
+             data-type="preset"
+             data-identifier="${prompt.identifier}"
+             data-name="${prompt.name}">
+          <span class="select-item-name">${prompt.name}</span>
+          <span class="select-item-check">
+            <i class="fa-solid ${isAdded ? 'fa-check-square' : 'fa-square'}"></i>
+          </span>
+        </div>
+      `;
+    }).join('');
+
+    const htmlContent = `
+      <div class="quick-toggle-select-popup">
+        <!-- 标签页切换 -->
+        <div class="quick-toggle-tabs">
+          <button class="quick-toggle-tab active" data-tab="preset">预设条目</button>
+          <button class="quick-toggle-tab" data-tab="worldinfo">世界书条目</button>
+        </div>
+
+        <!-- 预设条目标签页 -->
+        <div class="quick-toggle-tab-content active" data-tab="preset">
+          <div class="quick-toggle-select-list">
+            ${presetListHtml || '<div style="text-align:center;padding:20px;opacity:0.6;">当前预设没有可用的条目</div>'}
+          </div>
+        </div>
+
+        <!-- 世界书条目标签页 -->
+        <div class="quick-toggle-tab-content" data-tab="worldinfo" style="display:none;">
+          <select class="text_pole" id="quick-toggle-wi-select" style="margin-bottom:8px;">
+            <option value="">-- 选择世界书 --</option>
+          </select>
+          <div class="quick-toggle-worldinfo-search">
+            <input type="text" class="text_pole" placeholder="搜索过滤条目..." id="quick-toggle-wi-search">
+          </div>
+          <div class="quick-toggle-select-list" id="quick-toggle-wi-list">
+            <div style="text-align:center;padding:20px;opacity:0.6;">请先选择世界书</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const $html = $(htmlContent);
+
+    // 标签页切换
+    $html.find('.quick-toggle-tab').on('click', function () {
+      const tab = $(this).data('tab');
+      $html.find('.quick-toggle-tab').removeClass('active');
+      $(this).addClass('active');
+      $html.find('.quick-toggle-tab-content').hide();
+      $html.find(`.quick-toggle-tab-content[data-tab="${tab}"]`).show();
+
+      // 切换到世界书标签页时加载世界书列表
+      if (tab === 'worldinfo') {
+        loadWorldBookList($html);
+      }
+    });
+
+    // 预设条目点击事件
+    $html.find('.quick-toggle-select-item[data-type="preset"]').on('click', function () {
+      $(this).toggleClass('selected');
+      const $icon = $(this).find('.select-item-check i');
+      if ($(this).hasClass('selected')) {
+        $icon.removeClass('fa-square').addClass('fa-check-square');
+      } else {
+        $icon.removeClass('fa-check-square').addClass('fa-square');
+      }
+    });
+
+    // 世界书选择变化
+    $html.find('#quick-toggle-wi-select').on('change', async function () {
+      const worldName = $(this).val();
+      if (!worldName) {
+        $html.find('#quick-toggle-wi-list').html('<div style="text-align:center;padding:20px;opacity:0.6;">请先选择世界书</div>');
+        return;
+      }
+      await loadWorldInfoEntries($html, worldName, currentToggles);
+    });
+
+    // 世界书搜索过滤
+    $html.find('#quick-toggle-wi-search').on('input', function () {
+      const keyword = $(this).val().trim().toLowerCase();
+      filterWorldInfoEntries($html, keyword);
+    });
+
+    // 加载世界书列表
+    async function loadWorldBookList($popup) {
+      const $select = $popup.find('#quick-toggle-wi-select');
+      if ($select.find('option').length > 1) return;  // 已加载过
+
+      try {
+        const { world_names } = await import('../../../world-info.js');
+        const worldList = world_names || [];
+
+        if (worldList.length === 0) {
+          $select.html('<option value="">没有世界书</option>');
+          return;
+        }
+
+        let optionsHtml = '<option value="">-- 选择世界书 --</option>';
+        worldList.forEach(name => {
+          optionsHtml += `<option value="${name}">${name}</option>`;
+        });
+        $select.html(optionsHtml);
+      } catch (error) {
+        $select.html('<option value="">加载失败</option>');
+      }
+    }
+
+    // 加载世界书条目
+    let allWorldInfoEntries = [];
+    async function loadWorldInfoEntries($popup, worldName, existingToggles) {
+      const $list = $popup.find('#quick-toggle-wi-list');
+      $list.html('<div style="text-align:center;padding:20px;"><i class="fa-solid fa-spinner fa-spin"></i> 加载中...</div>');
+
+      try {
+        const { loadWorldInfo } = await import('../../../world-info.js');
+        const data = await loadWorldInfo(worldName);
+        if (!data || !data.entries) {
+          $list.html('<div style="text-align:center;padding:20px;opacity:0.6;">该世界书没有条目</div>');
+          return;
+        }
+
+        allWorldInfoEntries = [];
+        for (const [uid, entry] of Object.entries(data.entries)) {
+          const name = entry.comment || '未命名条目';
+          allWorldInfoEntries.push({
+            worldName,
+            uid: parseInt(uid, 10),
+            name,
+            displayName: `${worldName}: ${name}`,
+            content: entry.content || ''
+          });
+        }
+
+        renderWorldInfoList($popup, allWorldInfoEntries, existingToggles);
+      } catch (error) {
+        $list.html('<div style="text-align:center;padding:20px;color:#ff6b6b;">加载失败</div>');
+      }
+    }
+
+    // 过滤世界书条目
+    function filterWorldInfoEntries($popup, keyword) {
+      if (!keyword) {
+        renderWorldInfoList($popup, allWorldInfoEntries, currentToggles);
+        return;
+      }
+      const filtered = allWorldInfoEntries.filter(item =>
+        item.name.toLowerCase().includes(keyword) ||
+        item.content.toLowerCase().includes(keyword)
+      );
+      renderWorldInfoList($popup, filtered, currentToggles);
+    }
+
+    // 渲染世界书条目列表
+    function renderWorldInfoList($popup, entries, existingToggles) {
+      const $list = $popup.find('#quick-toggle-wi-list');
+
+      if (entries.length === 0) {
+        $list.html('<div style="text-align:center;padding:20px;opacity:0.6;">没有匹配的条目</div>');
+        return;
+      }
+
+      const listHtml = entries.slice(0, 100).map(item => {
+        const isAdded = existingToggles.some(t => t.type === 'worldinfo' && t.worldName === item.worldName && t.uid === item.uid);
+        return `
+          <div class="quick-toggle-select-item ${isAdded ? 'selected' : ''}"
+               data-type="worldinfo"
+               data-world-name="${item.worldName}"
+               data-uid="${item.uid}"
+               data-name="${item.displayName}">
+            <span class="select-item-name">${item.name}</span>
+            <span class="select-item-check">
+              <i class="fa-solid ${isAdded ? 'fa-check-square' : 'fa-square'}"></i>
+            </span>
+          </div>
+        `;
+      }).join('');
+
+      $list.html(listHtml);
+
+      if (entries.length > 100) {
+        $list.append('<div style="text-align:center;padding:10px;opacity:0.6;font-size:0.9em;">显示前100条，请使用搜索缩小范围</div>');
+      }
+
+      // 绑定点击事件
+      $list.find('.quick-toggle-select-item').on('click', function () {
+        $(this).toggleClass('selected');
+        const $icon = $(this).find('.select-item-check i');
+        if ($(this).hasClass('selected')) {
+          $icon.removeClass('fa-square').addClass('fa-check-square');
+        } else {
+          $icon.removeClass('fa-check-square').addClass('fa-square');
+        }
+      });
+    }
+
+    // 显示弹窗
+    const result = await callGenericPopup($html, 1, '添加快速开关');
+
+    if (result) {
+      const newToggles = [];
+
+      // 收集预设条目
+      $html.find('.quick-toggle-select-item[data-type="preset"].selected').each(function () {
+        newToggles.push({
+          type: 'preset',
+          identifier: $(this).data('identifier'),
+          name: $(this).data('name')
+        });
+      });
+
+      // 收集世界书条目
+      $html.find('.quick-toggle-select-item[data-type="worldinfo"].selected').each(function () {
+        newToggles.push({
+          type: 'worldinfo',
+          worldName: $(this).data('world-name'),
+          uid: $(this).data('uid'),
+          name: $(this).data('name')
+        });
+      });
+
+      quickToggleData.setQuickToggles(newToggles);
+      this.renderQuickToggleList();
+      toastr.success(`已更新快速开关，共 ${newToggles.length} 项`);
+    }
+  }
+
+  // ========================================
+  // 快照相关
+  // ========================================
 
   /**
    * 渲染快照列表
@@ -293,11 +1518,17 @@ export class PresetManagerUI {
    */
   renderSnapshotList() {
     const container = this.container?.querySelector('#snapshot-list-container');
+    const countEl = this.container?.querySelector('#snapshot-count');
     if (!container) return;
 
     const selectedPreset = this.getSelectedPreset();
     const snapshots = snapshotData.getSnapshotList(selectedPreset);
     const lastAppliedId = snapshotData.getLastAppliedId();
+
+    // 更新计数
+    if (countEl) {
+      countEl.textContent = `(${snapshots.length})`;
+    }
 
     if (snapshots.length === 0) {
       container.innerHTML = `
@@ -334,10 +1565,7 @@ export class PresetManagerUI {
 
       return `
         <div class="snapshot-item ${isLastApplied ? 'last-applied' : ''}" data-id="${snapshot.id}">
-          <div class="snapshot-item-info">
-            <span class="snapshot-item-name" title="${snapshot.name}">${snapshot.name}</span>
-            <span class="snapshot-item-meta">${snapshot.stateCount}项</span>
-          </div>
+          <span class="snapshot-item-name" title="${snapshot.name}">${snapshot.name}</span>
           <div class="snapshot-item-actions">
             <button class="snapshot-btn snapshot-apply-btn" title="应用此快照">
               <i class="fa-solid fa-play"></i>
@@ -372,10 +1600,10 @@ export class PresetManagerUI {
         if (id) {
           const success = snapshotData.applySnapshot(id);
           if (success) {
-            this.showMessage('快照已应用', 'success');
+            toastr.success('快照已应用');
             this.renderSnapshotList(); // 刷新列表显示"上次应用"标记
           } else {
-            this.showMessage('应用快照失败', 'error');
+            toastr.error('应用快照失败');
           }
         }
       });
@@ -395,7 +1623,7 @@ export class PresetManagerUI {
         if (newName && newName !== currentName) {
           const success = snapshotData.renameSnapshot(id, newName);
           if (success) {
-            this.showMessage('已重命名', 'success');
+            toastr.success('已重命名');
             this.renderSnapshotList();
           }
         }
@@ -414,13 +1642,17 @@ export class PresetManagerUI {
         if (confirmed) {
           const success = snapshotData.deleteSnapshot(id);
           if (success) {
-            this.showMessage('已删除', 'info');
+            toastr.info('已删除');
             this.renderSnapshotList();
           }
         }
       });
     });
   }
+
+  // ========================================
+  // 设置面板相关
+  // ========================================
 
   /**
    * 绑定快照功能开关事件
@@ -435,11 +1667,11 @@ export class PresetManagerUI {
       logger.info('[PresetManagerUI] 预设快照功能:', enabled ? '启用' : '禁用');
 
       if (enabled) {
-        this.showMessage('预设快照已启用', 'success');
+        toastr.success('预设快照已启用');
         // 检查悬浮按钮是否启用，给出提示
         this.checkFloatingBtnStatus();
       } else {
-        this.showMessage('预设快照已禁用', 'info');
+        toastr.info('预设快照已禁用');
       }
 
       // 触发事件通知其他模块
@@ -529,7 +1761,32 @@ export class PresetManagerUI {
 
     // 输入时实时过滤
     searchInput.addEventListener('input', () => {
+      const keyword = searchInput.value?.trim();
+
+      // 搜索时强制展开所有分组
+      if (keyword) {
+        this.expandAllGroups();
+      }
+
+      // 刷新两个列表
+      this.renderQuickToggleList();
       this.renderSnapshotList();
+    });
+  }
+
+  /**
+   * 展开所有折叠分组
+   */
+  expandAllGroups() {
+    const headers = this.container?.querySelectorAll('.snapshot-collapsible-header');
+    headers?.forEach(header => {
+      const body = header.nextElementSibling;
+      const icon = header.querySelector('.collapsible-icon');
+
+      header.classList.add('expanded');
+      body?.classList.remove('collapsed');
+      icon?.classList.remove('fa-chevron-right');
+      icon?.classList.add('fa-chevron-down');
     });
   }
 
@@ -580,13 +1837,22 @@ export class PresetManagerUI {
     if (floatingBtnCheckbox && !floatingBtnCheckbox.checked) {
       // 悬浮按钮未启用，给出提示
       setTimeout(() => {
-        this.showMessage('提示：长按悬浮按钮可快捷切换快照，建议同时启用悬浮按钮', 'info');
+        toastr.info('提示：长按悬浮按钮可快捷切换快照，建议同时启用悬浮按钮');
       }, 500);
     }
   }
 
+  // ========================================
+  // 预设选择器相关
+  // ========================================
+
   /**
    * 绑定预设选择下拉框事件
+   *
+   * @description
+   * 处理两个场景的预设切换：
+   * 1. 设置面板内的下拉框切换 - 刷新快速开关和快照列表
+   * 2. SillyTavern 主界面的预设选择器切换 - 同步刷新设置面板
    */
   bindPresetSelector() {
     const select = this.container?.querySelector('#snapshot-preset-select');
@@ -597,13 +1863,34 @@ export class PresetManagerUI {
       this.refreshPresetSelector();
     });
 
-    // 选择变化时刷新快照列表
+    // 选择变化时刷新两个列表
     select.addEventListener('change', () => {
-      this.renderSnapshotList();
+      this.refreshAllLists();
     });
+
+    // 监听 SillyTavern 主界面的预设切换
+    const mainPresetSelect = document.querySelector('#settings_preset_openai');
+    if (mainPresetSelect) {
+      mainPresetSelect.addEventListener('change', () => {
+        // 延迟一点等待 SillyTavern 内部状态更新
+        setTimeout(() => {
+          this.refreshPresetSelector();
+          this.refreshAllLists();
+        }, 100);
+      });
+    }
 
     // 初始填充
     this.refreshPresetSelector();
+  }
+
+  /**
+   * 刷新所有列表（快速开关 + 快照）
+   * @description 统一刷新方法，确保两个列表同步更新
+   */
+  refreshAllLists() {
+    this.renderQuickToggleList();
+    this.renderSnapshotList();
   }
 
   /**
@@ -663,7 +1950,7 @@ export class PresetManagerUI {
         );
         if (confirmed) {
           snapshotData.deletePresetSnapshots(presetName);
-          this.showMessage(`已删除预设"${presetName}"的 ${count} 个快照`, 'info');
+          toastr.info(`已删除预设"${presetName}"的 ${count} 个快照`);
           this.refreshPresetSelector();
         }
         break; // 一次只处理一个
@@ -671,12 +1958,39 @@ export class PresetManagerUI {
     }
   }
 
+  // ========================================
+  // 工具函数
+  // ========================================
+
   /**
    * 获取当前选中的预设名称
    */
   getSelectedPreset() {
     const select = this.container?.querySelector('#snapshot-preset-select');
     return select?.value || snapshotData.getCurrentPresetName();
+  }
+
+  /**
+   * 显示消息提示
+   * @param {string} message - 消息内容
+   * @param {string} type - 消息类型：success/warning/error/info
+   */
+  showMessage(message, type = 'info') {
+    if (typeof toastr !== 'undefined') {
+      switch (type) {
+        case 'success':
+          toastr.success(message);
+          break;
+        case 'warning':
+          toastr.warning(message);
+          break;
+        case 'error':
+          toastr.error(message);
+          break;
+        default:
+          toastr.info(message);
+      }
+    }
   }
 
   /**

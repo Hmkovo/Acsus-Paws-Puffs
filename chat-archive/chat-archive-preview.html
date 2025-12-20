@@ -1,0 +1,1385 @@
+<!--
+  聊天记录管理中心 - 视觉预览页面 v2
+  独立于手机功能，但视觉风格相似
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>聊天记录管理中心 - 预览</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --archive-primary: #0099ff;
+      --archive-primary-dark: #0e7ab8;
+      --archive-primary-light: #e6f4fb;
+      --archive-bg-main: #f0f0f2;
+      --archive-bg-white: #ffffff;
+      --archive-bg-chat: #ededef;
+      --archive-text-primary: #333333;
+      --archive-text-secondary: #999999;
+      --archive-text-tertiary: #666666;
+      --archive-text-white: #ffffff;
+      --archive-border: #ececec;
+      --archive-danger: #ff4d4f;
+      --archive-success: #4caf50;
+      --archive-warning: #ffc107;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 16px;
+      background: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .archive-container {
+      width: 420px;
+      height: 750px;
+      background: var(--archive-bg-main);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* 顶部标题栏 */
+    .archive-header {
+      height: 3em;
+      background: var(--archive-bg-white);
+      display: flex;
+      align-items: center;
+      padding: 0 1em;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    .archive-header-back {
+      width: 2em;
+      height: 2em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--archive-text-secondary);
+      cursor: pointer;
+    }
+
+    .archive-header-back:hover { color: var(--archive-primary); }
+
+    .archive-header-title {
+      flex: 1;
+      text-align: center;
+      font-size: 1.1em;
+      font-weight: 500;
+      color: var(--archive-text-primary);
+    }
+
+    .archive-header-action {
+      width: 2em;
+      height: 2em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--archive-text-secondary);
+      cursor: pointer;
+    }
+
+    .archive-header-action:hover { color: var(--archive-primary); }
+
+    /* 内容区域 */
+    .archive-content {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* 底部导航栏 */
+    .archive-nav {
+      height: 3.5em;
+      background: var(--archive-bg-white);
+      display: flex;
+      box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
+      flex-shrink: 0;
+    }
+
+    .archive-nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.2em;
+      color: var(--archive-text-secondary);
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .archive-nav-item:hover { color: var(--archive-text-tertiary); }
+    .archive-nav-item.active { color: var(--archive-primary); }
+    .archive-nav-item i { font-size: 1.2em; }
+    .archive-nav-item span { font-size: 0.65em; }
+
+    /* 页面通用 */
+    .archive-page {
+      display: none;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      flex-direction: column;
+      background: var(--archive-bg-main);
+    }
+
+    .archive-page.active { display: flex; }
+
+    /* ========== 搜索页面 ========== */
+    .search-bar {
+      padding: 0.8em;
+      background: var(--archive-bg-white);
+    }
+
+    .search-input-wrapper {
+      display: flex;
+      align-items: center;
+      background: var(--archive-bg-main);
+      border-radius: 1.5em;
+      padding: 0.5em 1em;
+      gap: 0.5em;
+    }
+
+    .search-input-wrapper i { color: var(--archive-text-secondary); }
+
+    .search-input-wrapper input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      outline: none;
+      font-size: 0.9em;
+      color: var(--archive-text-primary);
+    }
+
+    .search-results {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5em;
+    }
+
+    .search-result-item {
+      background: var(--archive-bg-white);
+      border-radius: 0.5em;
+      padding: 0.8em;
+      margin-bottom: 0.5em;
+      cursor: pointer;
+    }
+
+    .search-result-item:hover { background: var(--archive-primary-light); }
+
+    .search-result-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      margin-bottom: 0.5em;
+    }
+
+    .search-result-avatar {
+      width: 2.5em;
+      height: 2.5em;
+      border-radius: 0.3em;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      overflow: hidden;
+    }
+
+    .search-result-meta { flex: 1; }
+
+    .search-result-char-name {
+      font-size: 0.9em;
+      font-weight: 500;
+      color: var(--archive-text-primary);
+    }
+
+    .search-result-chat-name {
+      font-size: 0.75em;
+      color: var(--archive-text-secondary);
+    }
+
+    .search-result-actions {
+      display: flex;
+      gap: 0.5em;
+    }
+
+    .search-result-action {
+      width: 1.8em;
+      height: 1.8em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--archive-text-secondary);
+      border-radius: 50%;
+    }
+
+    .search-result-action:hover {
+      background: var(--archive-bg-main);
+      color: var(--archive-primary);
+    }
+
+    .search-result-action.favorited { color: var(--archive-warning); }
+
+    .search-result-content {
+      font-size: 0.85em;
+      color: var(--archive-text-tertiary);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .search-result-content mark {
+      background: var(--archive-warning);
+      color: var(--archive-text-primary);
+      padding: 0 0.2em;
+      border-radius: 0.2em;
+    }
+
+    /* ========== 收藏夹页面 ========== */
+    .favorites-groups {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .favorites-group {
+      background: var(--archive-bg-white);
+      margin-bottom: 0.5em;
+    }
+
+    .favorites-group-header {
+      display: flex;
+      align-items: center;
+      padding: 0.8em 1em;
+      cursor: pointer;
+    }
+
+    .favorites-group-header:hover { background: var(--archive-bg-main); }
+
+    .favorites-group-arrow {
+      width: 1.5em;
+      color: var(--archive-text-secondary);
+      transition: transform 0.2s;
+    }
+
+    .favorites-group.collapsed .favorites-group-arrow { transform: rotate(-90deg); }
+
+    .favorites-group-title {
+      flex: 1;
+      font-size: 0.95em;
+      font-weight: 500;
+      color: var(--archive-text-primary);
+    }
+
+    .favorites-group-count {
+      font-size: 0.8em;
+      color: var(--archive-text-secondary);
+    }
+
+    .favorites-group-items { border-top: 1px solid var(--archive-border); }
+    .favorites-group.collapsed .favorites-group-items { display: none; }
+
+    .favorites-item {
+      display: flex;
+      align-items: center;
+      padding: 0.8em 1em;
+      gap: 0.8em;
+      cursor: pointer;
+    }
+
+    .favorites-item:hover { background: var(--archive-primary-light); }
+    .favorites-item:not(:last-child) { border-bottom: 1px solid var(--archive-border); }
+
+    .favorites-item-avatar {
+      width: 3em;
+      height: 3em;
+      border-radius: 0.3em;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .favorites-item-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .favorites-item-title {
+      font-size: 0.9em;
+      font-weight: 500;
+      color: var(--archive-text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
+      gap: 0.4em;
+    }
+
+    /* 笔记标记 */
+    .favorites-item-title .has-note {
+      color: var(--archive-warning);
+      font-size: 0.8em;
+    }
+
+    .favorites-item-preview {
+      font-size: 0.8em;
+      color: var(--archive-text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 0.2em;
+    }
+
+    .favorites-item-meta {
+      font-size: 0.7em;
+      color: var(--archive-text-secondary);
+      margin-top: 0.2em;
+    }
+
+    .favorites-manage-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5em;
+      padding: 0.8em;
+      margin: 0.5em;
+      background: var(--archive-bg-white);
+      border-radius: 0.5em;
+      color: var(--archive-text-secondary);
+      cursor: pointer;
+      font-size: 0.85em;
+    }
+
+    .favorites-manage-btn:hover {
+      background: var(--archive-primary-light);
+      color: var(--archive-primary);
+    }
+
+    .favorites-item.invalid { opacity: 0.5; }
+
+    .favorites-item.invalid .favorites-item-title::after {
+      content: ' (已失效)';
+      color: var(--archive-danger);
+      font-size: 0.8em;
+    }
+
+    /* ========== 笔记页面 ========== */
+    .notes-filter {
+      display: flex;
+      gap: 0.5em;
+      padding: 0.8em;
+      background: var(--archive-bg-white);
+      overflow-x: auto;
+    }
+
+    .notes-filter::-webkit-scrollbar { display: none; }
+
+    .notes-filter-tag {
+      padding: 0.4em 0.8em;
+      background: var(--archive-bg-main);
+      border-radius: 1em;
+      font-size: 0.8em;
+      color: var(--archive-text-secondary);
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .notes-filter-tag:hover { background: var(--archive-primary-light); }
+    .notes-filter-tag.active {
+      background: var(--archive-primary);
+      color: var(--archive-text-white);
+    }
+
+    .notes-filter-tag.add-tag {
+      border: 1px dashed var(--archive-border);
+      background: transparent;
+    }
+
+    .notes-filter-tag.add-tag:hover {
+      border-color: var(--archive-primary);
+      color: var(--archive-primary);
+    }
+
+    .notes-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5em;
+    }
+
+    .note-item {
+      background: var(--archive-bg-white);
+      border-radius: 0.5em;
+      padding: 0.8em;
+      margin-bottom: 0.5em;
+      cursor: pointer;
+    }
+
+    .note-item:hover { background: var(--archive-primary-light); }
+
+    .note-item-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      margin-bottom: 0.5em;
+    }
+
+    .note-item-avatar {
+      width: 2em;
+      height: 2em;
+      border-radius: 0.3em;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 0.8em;
+    }
+
+    .note-item-source {
+      flex: 1;
+    }
+
+    .note-item-char {
+      font-size: 0.85em;
+      font-weight: 500;
+      color: var(--archive-text-primary);
+    }
+
+    .note-item-chat {
+      font-size: 0.7em;
+      color: var(--archive-text-secondary);
+    }
+
+    .note-item-tags {
+      display: flex;
+      gap: 0.3em;
+    }
+
+    .note-item-tag {
+      padding: 0.2em 0.5em;
+      background: var(--archive-primary-light);
+      border-radius: 0.3em;
+      font-size: 0.65em;
+      color: var(--archive-primary);
+    }
+
+    .note-item-content {
+      font-size: 0.85em;
+      color: var(--archive-text-tertiary);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      background: var(--archive-bg-main);
+      padding: 0.5em;
+      border-radius: 0.3em;
+      margin-bottom: 0.5em;
+    }
+
+    .note-item-preview {
+      font-size: 0.8em;
+      color: var(--archive-text-secondary);
+      font-style: italic;
+    }
+
+    .note-item-preview::before { content: '📝 '; }
+
+    /* ========== 阅读模式 - 角色列表页 ========== */
+    .reader-char-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5em;
+    }
+
+    .reader-char-search {
+      padding: 0.8em;
+      background: var(--archive-bg-white);
+      margin-bottom: 0.5em;
+      border-radius: 0.5em;
+    }
+
+    .reader-char-search input {
+      width: 100%;
+      padding: 0.6em 1em;
+      border: none;
+      background: var(--archive-bg-main);
+      border-radius: 1.5em;
+      font-size: 0.9em;
+      outline: none;
+    }
+
+    .reader-char-item {
+      display: flex;
+      align-items: center;
+      padding: 0.8em;
+      background: var(--archive-bg-white);
+      border-radius: 0.5em;
+      margin-bottom: 0.5em;
+      cursor: pointer;
+      gap: 0.8em;
+    }
+
+    .reader-char-item:hover { background: var(--archive-primary-light); }
+
+    .reader-char-avatar {
+      width: 3.5em;
+      height: 3.5em;
+      border-radius: 0.5em;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      overflow: hidden;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .reader-char-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .reader-char-name {
+      font-size: 1em;
+      font-weight: 500;
+      color: var(--archive-text-primary);
+    }
+
+    .reader-char-stats {
+      font-size: 0.8em;
+      color: var(--archive-text-secondary);
+      margin-top: 0.2em;
+    }
+
+    .reader-char-arrow { color: var(--archive-text-secondary); }
+
+    /* ========== 阅读模式 - 聊天记录列表页 ========== */
+    .reader-chat-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5em;
+    }
+
+    .reader-chat-item {
+      display: flex;
+      align-items: center;
+      padding: 0.8em;
+      background: var(--archive-bg-white);
+      border-radius: 0.5em;
+      margin-bottom: 0.5em;
+      cursor: pointer;
+      gap: 0.8em;
+    }
+
+    .reader-chat-item:hover { background: var(--archive-primary-light); }
+
+    .reader-chat-icon {
+      width: 2.5em;
+      height: 2.5em;
+      background: var(--archive-primary-light);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--archive-primary);
+      flex-shrink: 0;
+    }
+
+    .reader-chat-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .reader-chat-name {
+      font-size: 0.9em;
+      color: var(--archive-text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .reader-chat-meta {
+      font-size: 0.75em;
+      color: var(--archive-text-secondary);
+      margin-top: 0.2em;
+    }
+
+    /* ========== 阅读模式 - 阅读视图 ========== */
+    .reader-view {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .reader-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1em;
+      background: var(--archive-bg-white);
+    }
+
+    .reader-message { margin-bottom: 1.5em; }
+
+    .reader-message-sender {
+      font-size: 0.8em;
+      color: var(--archive-primary);
+      margin-bottom: 0.3em;
+      font-weight: 500;
+    }
+
+    .reader-message-sender.user { color: var(--archive-success); }
+
+    .reader-message-text {
+      font-size: 0.95em;
+      line-height: 1.8;
+      color: var(--archive-text-primary);
+    }
+
+    .reader-message-divider {
+      height: 1px;
+      background: var(--archive-border);
+      margin-top: 1em;
+    }
+
+    .reader-bottom-bar {
+      background: var(--archive-bg-white);
+      padding: 0.8em;
+      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .reader-progress {
+      display: flex;
+      align-items: center;
+      gap: 0.8em;
+      margin-bottom: 0.6em;
+    }
+
+    .reader-progress-bar {
+      flex: 1;
+      height: 4px;
+      background: var(--archive-bg-main);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .reader-progress-fill {
+      width: 35%;
+      height: 100%;
+      background: var(--archive-primary);
+      border-radius: 2px;
+    }
+
+    .reader-progress-text {
+      font-size: 0.75em;
+      color: var(--archive-text-secondary);
+      white-space: nowrap;
+    }
+
+    .reader-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .reader-control-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+
+    .reader-control-label {
+      font-size: 0.8em;
+      color: var(--archive-text-secondary);
+    }
+
+    .reader-control-input {
+      width: 3.5em;
+      padding: 0.4em;
+      border: 1px solid var(--archive-border);
+      border-radius: 0.3em;
+      text-align: center;
+      font-size: 0.85em;
+    }
+
+    .reader-control-btn {
+      padding: 0.5em 1em;
+      background: var(--archive-primary);
+      color: var(--archive-text-white);
+      border: none;
+      border-radius: 0.3em;
+      font-size: 0.85em;
+      cursor: pointer;
+    }
+
+    .reader-control-btn:hover { background: var(--archive-primary-dark); }
+
+    .reader-control-btn.secondary {
+      background: var(--archive-bg-main);
+      color: var(--archive-text-tertiary);
+    }
+
+    .reader-control-btn.secondary:hover { background: var(--archive-border); }
+
+    /* ========== 收藏详情页 ========== */
+    .favorite-detail {
+      display: none;
+      flex-direction: column;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: var(--archive-bg-main);
+      z-index: 20;
+    }
+
+    .favorite-detail.active { display: flex; }
+
+    .favorite-detail-header {
+      display: flex;
+      align-items: center;
+      padding: 0.8em;
+      background: var(--archive-bg-white);
+      gap: 0.5em;
+    }
+
+    .favorite-detail-back {
+      width: 2em;
+      height: 2em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--archive-text-secondary);
+      cursor: pointer;
+    }
+
+    .favorite-detail-title {
+      flex: 1;
+      font-size: 1em;
+      font-weight: 500;
+      color: var(--archive-text-primary);
+    }
+
+    .favorite-detail-actions {
+      display: flex;
+      gap: 0.5em;
+    }
+
+    .favorite-detail-action {
+      width: 2em;
+      height: 2em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--archive-text-secondary);
+      cursor: pointer;
+    }
+
+    .favorite-detail-action:hover { color: var(--archive-primary); }
+
+    /* 新的上下文控制 - 上方加载更多 */
+    .context-load-more {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5em;
+      padding: 0.6em;
+      background: var(--archive-bg-white);
+      margin: 0.5em;
+      border-radius: 0.5em;
+      font-size: 0.8em;
+      color: var(--archive-text-secondary);
+      cursor: pointer;
+    }
+
+    .context-load-more:hover {
+      background: var(--archive-primary-light);
+      color: var(--archive-primary);
+    }
+
+    .context-load-more input {
+      width: 3em;
+      padding: 0.3em;
+      border: 1px solid var(--archive-border);
+      border-radius: 0.3em;
+      text-align: center;
+      font-size: 1em;
+    }
+
+    .context-load-more i { font-size: 1em; }
+
+    .favorite-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 0.8em;
+      background: var(--archive-bg-chat);
+    }
+
+    .favorite-message {
+      display: flex;
+      gap: 0.5em;
+      margin-bottom: 1em;
+    }
+
+    .favorite-message.sent { flex-direction: row-reverse; }
+
+    .favorite-message-avatar {
+      width: 2.5em;
+      height: 2.5em;
+      border-radius: 0.3em;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      flex-shrink: 0;
+    }
+
+    .favorite-message.sent .favorite-message-avatar {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+
+    .favorite-message-bubble {
+      max-width: 70%;
+      padding: 0.6em 0.8em;
+      border-radius: 0.5em;
+      font-size: 0.9em;
+      line-height: 1.5;
+      background: var(--archive-bg-white);
+      color: var(--archive-text-primary);
+    }
+
+    .favorite-message.sent .favorite-message-bubble { background: #95ec69; }
+
+    .favorite-message.highlighted .favorite-message-bubble {
+      box-shadow: 0 0 0 2px var(--archive-primary);
+    }
+
+    .favorite-notes {
+      background: var(--archive-bg-white);
+      border-top: 1px solid var(--archive-border);
+    }
+
+    .favorite-notes-header {
+      display: flex;
+      align-items: center;
+      padding: 0.6em 0.8em;
+      cursor: pointer;
+    }
+
+    .favorite-notes-header i {
+      margin-right: 0.5em;
+      color: var(--archive-text-secondary);
+    }
+
+    .favorite-notes-header span {
+      flex: 1;
+      font-size: 0.85em;
+      color: var(--archive-text-secondary);
+    }
+
+    .favorite-notes-content { padding: 0 0.8em 0.8em; }
+
+    /* 笔记分类选择 */
+    .favorite-notes-tags {
+      display: flex;
+      gap: 0.4em;
+      margin-bottom: 0.5em;
+      flex-wrap: wrap;
+    }
+
+    .favorite-notes-tag {
+      padding: 0.3em 0.6em;
+      background: var(--archive-bg-main);
+      border-radius: 0.3em;
+      font-size: 0.75em;
+      color: var(--archive-text-secondary);
+      cursor: pointer;
+    }
+
+    .favorite-notes-tag:hover { background: var(--archive-primary-light); }
+
+    .favorite-notes-tag.active {
+      background: var(--archive-primary);
+      color: var(--archive-text-white);
+    }
+
+    .favorite-notes-tag.add-tag {
+      border: 1px dashed var(--archive-border);
+      background: transparent;
+    }
+
+    .favorite-notes-textarea {
+      width: 100%;
+      min-height: 4em;
+      padding: 0.5em;
+      border: 1px solid var(--archive-border);
+      border-radius: 0.3em;
+      font-size: 0.85em;
+      resize: vertical;
+      font-family: inherit;
+    }
+  </style>
+</head>
+<body>
+  <div class="archive-container">
+    <div class="archive-header">
+      <div class="archive-header-back">
+        <i class="fa-solid fa-chevron-left"></i>
+      </div>
+      <div class="archive-header-title">聊天记录管理</div>
+      <div class="archive-header-action">
+        <i class="fa-solid fa-ellipsis-vertical"></i>
+      </div>
+    </div>
+
+    <div class="archive-content">
+
+      <!-- ========== 搜索页面 ========== -->
+      <div class="archive-page active" id="page-search">
+        <div class="search-bar">
+          <div class="search-input-wrapper">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" placeholder="搜索所有聊天记录..." value="你好">
+          </div>
+        </div>
+        <div class="search-results">
+          <div class="search-result-item">
+            <div class="search-result-header">
+              <div class="search-result-avatar">
+                <i class="fa-solid fa-user"></i>
+              </div>
+              <div class="search-result-meta">
+                <div class="search-result-char-name">炼狱杏寿郎</div>
+                <div class="search-result-chat-name">2025-12-12 @20h 53m</div>
+              </div>
+              <div class="search-result-actions">
+                <div class="search-result-action" title="收藏"><i class="fa-regular fa-star"></i></div>
+                <div class="search-result-action" title="跳转"><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
+              </div>
+            </div>
+            <div class="search-result-content">「<mark>你好</mark>啊！今天的天气真不错，要不要一起去修炼？」</div>
+          </div>
+          <div class="search-result-item">
+            <div class="search-result-header">
+              <div class="search-result-avatar" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <i class="fa-solid fa-cat"></i>
+              </div>
+              <div class="search-result-meta">
+                <div class="search-result-char-name">猫娘小雪</div>
+                <div class="search-result-chat-name">2025-12-10 @15h 22m</div>
+              </div>
+              <div class="search-result-actions">
+                <div class="search-result-action favorited" title="已收藏"><i class="fa-solid fa-star"></i></div>
+                <div class="search-result-action" title="跳转"><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
+              </div>
+            </div>
+            <div class="search-result-content">「喵～主人<mark>你好</mark>呀！今天想要小雪陪你做什么呢？」</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== 收藏夹页面 ========== -->
+      <div class="archive-page" id="page-favorites">
+        <div class="favorites-groups">
+          <div class="favorites-group">
+            <div class="favorites-group-header">
+              <i class="fa-solid fa-caret-down favorites-group-arrow"></i>
+              <div class="favorites-group-title">默认收藏</div>
+              <div class="favorites-group-count">3</div>
+            </div>
+            <div class="favorites-group-items">
+              <div class="favorites-item">
+                <div class="favorites-item-avatar"><i class="fa-solid fa-user"></i></div>
+                <div class="favorites-item-content">
+                  <div class="favorites-item-title">
+                    杏寿郎的经典台词
+                    <i class="fa-solid fa-note-sticky has-note" title="有笔记"></i>
+                  </div>
+                  <div class="favorites-item-preview">「心を燃やせ！」——燃烧你的心吧！</div>
+                  <div class="favorites-item-meta">炼狱杏寿郎 · 12月12日</div>
+                </div>
+              </div>
+              <div class="favorites-item">
+                <div class="favorites-item-avatar" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                  <i class="fa-solid fa-cat"></i>
+                </div>
+                <div class="favorites-item-content">
+                  <div class="favorites-item-title">小雪的撒娇</div>
+                  <div class="favorites-item-preview">「喵～主人不要离开小雪嘛...」</div>
+                  <div class="favorites-item-meta">猫娘小雪 · 12月10日</div>
+                </div>
+              </div>
+              <div class="favorites-item invalid">
+                <div class="favorites-item-avatar" style="background: #ccc;"><i class="fa-solid fa-question"></i></div>
+                <div class="favorites-item-content">
+                  <div class="favorites-item-title">测试对话</div>
+                  <div class="favorites-item-preview">原消息已被删除</div>
+                  <div class="favorites-item-meta">未知角色 · 12月5日</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="favorites-group collapsed">
+            <div class="favorites-group-header">
+              <i class="fa-solid fa-caret-down favorites-group-arrow"></i>
+              <div class="favorites-group-title">精彩片段</div>
+              <div class="favorites-group-count">2</div>
+            </div>
+            <div class="favorites-group-items"></div>
+          </div>
+        </div>
+        <div class="favorites-manage-btn"><i class="fa-solid fa-folder-plus"></i><span>管理分组</span></div>
+      </div>
+
+      <!-- ========== 笔记页面 ========== -->
+      <div class="archive-page" id="page-notes">
+        <!-- 分类筛选 -->
+        <div class="notes-filter">
+          <div class="notes-filter-tag active">全部</div>
+          <div class="notes-filter-tag">经典台词</div>
+          <div class="notes-filter-tag">世界观</div>
+          <div class="notes-filter-tag">感动片段</div>
+          <div class="notes-filter-tag">待整理</div>
+          <div class="notes-filter-tag add-tag"><i class="fa-solid fa-plus"></i> 新分类</div>
+        </div>
+        <!-- 笔记列表 -->
+        <div class="notes-list">
+          <div class="note-item">
+            <div class="note-item-header">
+              <div class="note-item-avatar"><i class="fa-solid fa-fire"></i></div>
+              <div class="note-item-source">
+                <div class="note-item-char">炼狱杏寿郎</div>
+                <div class="note-item-chat">2025-12-12 @20h 53m</div>
+              </div>
+              <div class="note-item-tags">
+                <span class="note-item-tag">经典台词</span>
+              </div>
+            </div>
+            <div class="note-item-content">「心を燃やせ！」——燃烧你的心吧！无论遇到什么困难，都不要放弃！</div>
+            <div class="note-item-preview">这是杏寿郎最经典的台词，每次看到都很感动。可以用在需要鼓励自己的时候。</div>
+          </div>
+          <div class="note-item">
+            <div class="note-item-header">
+              <div class="note-item-avatar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <i class="fa-solid fa-book"></i>
+              </div>
+              <div class="note-item-source">
+                <div class="note-item-char">设定集</div>
+                <div class="note-item-chat">2025-12-01 @14h 22m</div>
+              </div>
+              <div class="note-item-tags">
+                <span class="note-item-tag">世界观</span>
+              </div>
+            </div>
+            <div class="note-item-content">这个世界由七大元素构成：火、水、风、土、光、暗、虚空...</div>
+            <div class="note-item-preview">重要的世界观设定，后续剧情可能会用到。记得和角色卡的设定保持一致。</div>
+          </div>
+          <div class="note-item">
+            <div class="note-item-header">
+              <div class="note-item-avatar" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                <i class="fa-solid fa-heart"></i>
+              </div>
+              <div class="note-item-source">
+                <div class="note-item-char">恋爱角色</div>
+                <div class="note-item-chat">2025-12-08 @09h 15m</div>
+              </div>
+              <div class="note-item-tags">
+                <span class="note-item-tag">感动片段</span>
+              </div>
+            </div>
+            <div class="note-item-content">「我一直都很喜欢你...从第一次见面开始，就无法移开视线」</div>
+            <div class="note-item-preview">超级感动的告白场景！这段对话写得太好了，要保存下来。</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== 阅读模式 - 角色列表页 ========== -->
+      <div class="archive-page" id="page-reader">
+        <div class="reader-char-list">
+          <div class="reader-char-search"><input type="text" placeholder="搜索角色..."></div>
+          <div class="reader-char-item" data-char="rengoku">
+            <div class="reader-char-avatar"><i class="fa-solid fa-fire" style="font-size: 1.5em; color: white;"></i></div>
+            <div class="reader-char-info">
+              <div class="reader-char-name">炼狱杏寿郎</div>
+              <div class="reader-char-stats">3 个聊天记录 · 共 156 条消息</div>
+            </div>
+            <div class="reader-char-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+          </div>
+          <div class="reader-char-item" data-char="cat">
+            <div class="reader-char-avatar" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+              <i class="fa-solid fa-cat" style="font-size: 1.5em; color: white;"></i>
+            </div>
+            <div class="reader-char-info">
+              <div class="reader-char-name">猫娘小雪</div>
+              <div class="reader-char-stats">5 个聊天记录 · 共 423 条消息</div>
+            </div>
+            <div class="reader-char-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+          </div>
+          <div class="reader-char-item" data-char="ai">
+            <div class="reader-char-avatar" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+              <i class="fa-solid fa-robot" style="font-size: 1.5em; color: white;"></i>
+            </div>
+            <div class="reader-char-info">
+              <div class="reader-char-name">AI助手</div>
+              <div class="reader-char-stats">2 个聊天记录 · 共 89 条消息</div>
+            </div>
+            <div class="reader-char-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== 阅读模式 - 聊天记录列表页 ========== -->
+      <div class="archive-page" id="page-reader-chats">
+        <div class="reader-chat-list">
+          <div class="reader-chat-item" data-chat="1">
+            <div class="reader-chat-icon"><i class="fa-solid fa-comments"></i></div>
+            <div class="reader-chat-info">
+              <div class="reader-chat-name">2025-12-12 @20h 53m 33s</div>
+              <div class="reader-chat-meta">15 条消息 · 5.42 KB</div>
+            </div>
+          </div>
+          <div class="reader-chat-item" data-chat="2">
+            <div class="reader-chat-icon"><i class="fa-solid fa-comments"></i></div>
+            <div class="reader-chat-info">
+              <div class="reader-chat-name">2025-12-10 @14h 22m 15s</div>
+              <div class="reader-chat-meta">42 条消息 · 18.7 KB</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== 阅读模式 - 阅读视图 ========== -->
+      <div class="archive-page" id="page-reader-view">
+        <div class="reader-view">
+          <div class="reader-content">
+            <div class="reader-message">
+              <div class="reader-message-sender user">【你】</div>
+              <div class="reader-message-text">你好啊，杏寿郎！今天的天气真不错。</div>
+              <div class="reader-message-divider"></div>
+            </div>
+            <div class="reader-message">
+              <div class="reader-message-sender">【炼狱杏寿郎】</div>
+              <div class="reader-message-text">哈哈哈！你好啊！确实是个适合修炼的好天气！心を燃やせ！让我们一起燃烧起来吧！</div>
+              <div class="reader-message-divider"></div>
+            </div>
+            <div class="reader-message">
+              <div class="reader-message-sender user">【你】</div>
+              <div class="reader-message-text">你总是这么有活力呢...</div>
+              <div class="reader-message-divider"></div>
+            </div>
+            <div class="reader-message">
+              <div class="reader-message-sender">【炼狱杏寿郎】</div>
+              <div class="reader-message-text">当然！作为炎柱，我必须时刻保持最佳状态！无论遇到什么困难，都要勇往直前！</div>
+              <div class="reader-message-divider"></div>
+            </div>
+          </div>
+          <div class="reader-bottom-bar">
+            <div class="reader-progress">
+              <div class="reader-progress-bar"><div class="reader-progress-fill"></div></div>
+              <div class="reader-progress-text">4 / 15</div>
+            </div>
+            <div class="reader-controls">
+              <div class="reader-control-group">
+                <span class="reader-control-label">跳转到第</span>
+                <input type="number" class="reader-control-input" value="1" min="1">
+                <span class="reader-control-label">条</span>
+                <button class="reader-control-btn">跳转</button>
+              </div>
+              <button class="reader-control-btn secondary"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== 收藏详情页（新设计：上下加载按钮） ========== -->
+      <div class="favorite-detail" id="favorite-detail">
+        <div class="favorite-detail-header">
+          <div class="favorite-detail-back"><i class="fa-solid fa-chevron-left"></i></div>
+          <div class="favorite-detail-title">杏寿郎的经典台词</div>
+          <div class="favorite-detail-actions">
+            <div class="favorite-detail-action" title="跳转原位置"><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
+            <div class="favorite-detail-action" title="编辑"><i class="fa-solid fa-pen"></i></div>
+          </div>
+        </div>
+
+        <!-- 向上加载更多 -->
+        <div class="context-load-more" id="load-more-up">
+          <i class="fa-solid fa-chevron-up"></i>
+          <span>向上看</span>
+          <input type="number" value="3" min="1" max="50">
+          <span>条</span>
+        </div>
+
+        <!-- 消息区域 -->
+        <div class="favorite-messages">
+          <div class="favorite-message">
+            <div class="favorite-message-avatar"></div>
+            <div class="favorite-message-bubble">你觉得什么是最重要的？</div>
+          </div>
+          <div class="favorite-message">
+            <div class="favorite-message-avatar"></div>
+            <div class="favorite-message-bubble">作为一个剑士，我认为...</div>
+          </div>
+          <div class="favorite-message highlighted">
+            <div class="favorite-message-avatar"></div>
+            <div class="favorite-message-bubble">「心を燃やせ！」——燃烧你的心吧！无论遇到什么困难，都不要放弃！这就是我炼狱杏寿郎的信念！</div>
+          </div>
+          <div class="favorite-message sent">
+            <div class="favorite-message-avatar"></div>
+            <div class="favorite-message-bubble">太感动了...</div>
+          </div>
+        </div>
+
+        <!-- 向下加载更多 -->
+        <div class="context-load-more" id="load-more-down">
+          <i class="fa-solid fa-chevron-down"></i>
+          <span>向下看</span>
+          <input type="number" value="3" min="1" max="50">
+          <span>条</span>
+        </div>
+
+        <!-- 笔记区域（带分类） -->
+        <div class="favorite-notes">
+          <div class="favorite-notes-header">
+            <i class="fa-solid fa-note-sticky"></i>
+            <span>我的笔记</span>
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="favorite-notes-content">
+            <div class="favorite-notes-tags">
+              <div class="favorite-notes-tag active">经典台词</div>
+              <div class="favorite-notes-tag">世界观</div>
+              <div class="favorite-notes-tag">感动片段</div>
+              <div class="favorite-notes-tag add-tag"><i class="fa-solid fa-plus"></i></div>
+            </div>
+            <textarea class="favorite-notes-textarea" placeholder="在这里写下你的想法...">这是杏寿郎最经典的台词，每次看到都很感动。可以用在需要鼓励自己的时候。</textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部导航栏（4个标签） -->
+    <div class="archive-nav">
+      <div class="archive-nav-item active" data-page="search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <span>搜索</span>
+      </div>
+      <div class="archive-nav-item" data-page="favorites">
+        <i class="fa-solid fa-star"></i>
+        <span>收藏夹</span>
+      </div>
+      <div class="archive-nav-item" data-page="notes">
+        <i class="fa-solid fa-note-sticky"></i>
+        <span>笔记</span>
+      </div>
+      <div class="archive-nav-item" data-page="reader">
+        <i class="fa-solid fa-book-open"></i>
+        <span>阅读</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let pageStack = ['page-search'];
+
+    function showPage(pageId, addToStack = true) {
+      document.querySelectorAll('.archive-page').forEach(p => p.classList.remove('active'));
+      document.getElementById(pageId).classList.add('active');
+      document.getElementById('favorite-detail').classList.remove('active');
+
+      if (addToStack && pageStack[pageStack.length - 1] !== pageId) {
+        pageStack.push(pageId);
+      }
+
+      const titles = {
+        'page-search': '聊天记录管理',
+        'page-favorites': '收藏夹',
+        'page-notes': '我的笔记',
+        'page-reader': '选择角色',
+        'page-reader-chats': '选择聊天记录',
+        'page-reader-view': '阅读模式'
+      };
+      document.querySelector('.archive-header-title').textContent = titles[pageId] || '聊天记录管理';
+    }
+
+    // 导航切换
+    document.querySelectorAll('.archive-nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.archive-nav-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        const pageId = 'page-' + item.dataset.page;
+        pageStack = [pageId];
+        showPage(pageId, false);
+      });
+    });
+
+    // 返回按钮
+    document.querySelector('.archive-header-back').addEventListener('click', () => {
+      if (pageStack.length > 1) {
+        pageStack.pop();
+        showPage(pageStack[pageStack.length - 1], false);
+      }
+    });
+
+    // 分组折叠
+    document.querySelectorAll('.favorites-group-header').forEach(header => {
+      header.addEventListener('click', () => header.parentElement.classList.toggle('collapsed'));
+    });
+
+    // 点击收藏项显示详情
+    document.querySelectorAll('.favorites-item:not(.invalid)').forEach(item => {
+      item.addEventListener('click', () => document.getElementById('favorite-detail').classList.add('active'));
+    });
+
+    // 详情页返回
+    document.querySelector('.favorite-detail-back').addEventListener('click', () => {
+      document.getElementById('favorite-detail').classList.remove('active');
+    });
+
+    // 笔记分类筛选
+    document.querySelectorAll('.notes-filter-tag:not(.add-tag)').forEach(tag => {
+      tag.addEventListener('click', () => {
+        document.querySelectorAll('.notes-filter-tag').forEach(t => t.classList.remove('active'));
+        tag.classList.add('active');
+      });
+    });
+
+    // 笔记分类选择（详情页）
+    document.querySelectorAll('.favorite-notes-tag:not(.add-tag)').forEach(tag => {
+      tag.addEventListener('click', () => tag.classList.toggle('active'));
+    });
+
+    // 阅读模式导航
+    document.querySelectorAll('.reader-char-item').forEach(item => {
+      item.addEventListener('click', () => showPage('page-reader-chats'));
+    });
+    document.querySelectorAll('.reader-chat-item').forEach(item => {
+      item.addEventListener('click', () => showPage('page-reader-view'));
+    });
+
+    // 点击笔记项跳转到收藏详情
+    document.querySelectorAll('.note-item').forEach(item => {
+      item.addEventListener('click', () => document.getElementById('favorite-detail').classList.add('active'));
+    });
+  </script>
+</body>
+</html>

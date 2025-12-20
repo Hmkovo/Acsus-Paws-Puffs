@@ -25,18 +25,58 @@
     flex-direction: column;
     position: sticky;
     top: 0;
-    /* 确保占满宽度 */
     width: 100%;
     z-index: 100;
-    /* 添加回背景色 */
-    background: var(--SmartThemeBlurTintColor, rgba(0, 0, 0, 0.5));
-    backdrop-filter: blur(10px);
+    /* 背景由 .beautify-bg 控制，容器本身透明 */
+    background: transparent;
     border-radius: 0px;
     overflow: visible;
     /* 允许头像下半部分溢出 */
     /* 过渡动画 */
-    transition: top var(--beautify-transition-duration) ease;
+    transition: top var(--beautify-transition-duration) ease,
+                margin 0.3s ease,
+                width 0.3s ease;
 }
+
+/* ==========================================
+   装饰元素（用户可用CSS贴素材）
+   共10个空div，默认隐藏，用户可通过CSS自定义
+   使用方法：
+   .beautify-deco-1 {
+       display: block;
+       position: absolute;
+       top: 0; left: 0; right: 0; bottom: 0;
+       background-image: url('...');
+       background-size: contain;
+       pointer-events: none;
+   }
+   ========================================== */
+
+.beautify-deco {
+    display: none;
+    /* 默认隐藏，用户通过CSS启用 */
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    /* 不阻挡点击 */
+    z-index: 50;
+    /* 在背景图之上，在信息区域之下 */
+}
+
+/* 为每个装饰元素设置递增的 z-index，方便用户控制层级 */
+.beautify-deco-1 { z-index: 51; }
+.beautify-deco-2 { z-index: 52; }
+.beautify-deco-3 { z-index: 53; }
+.beautify-deco-4 { z-index: 54; }
+.beautify-deco-5 { z-index: 55; }
+.beautify-deco-6 { z-index: 56; }
+.beautify-deco-7 { z-index: 57; }
+.beautify-deco-8 { z-index: 58; }
+.beautify-deco-9 { z-index: 59; }
+.beautify-deco-10 { z-index: 60; }
 
 /* 悬浮栏启用时，最后一条消息添加底部间距 */
 /* 使用 :has() 检测悬浮栏是否显示（display: flex） */

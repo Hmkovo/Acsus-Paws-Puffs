@@ -24,7 +24,7 @@
 
 
 /* ==========================================
-   遮罩层
+   遮罩层（透明，不遮挡背景）
    ========================================== */
 
 .beautify-popup-overlay {
@@ -34,31 +34,31 @@
     width: 100vw;
     height: 100vh;
     height: 100dvh;  /* 动态视口高度，移动端关键 */
-    background: rgba(0, 0, 0, 0);
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 10000;
     opacity: 0;
-    transition: background 0.3s ease, opacity 0.3s ease;
+    transition: opacity 0.3s ease;
     pointer-events: none;
 }
 
 .beautify-popup-overlay.show {
-    background: rgba(0, 0, 0, 0.5);
     opacity: 1;
     pointer-events: auto;
 }
 
 
 /* ==========================================
-   弹窗主体
+   弹窗主体（高度自适应，可拉伸）
    ========================================== */
 
 .beautify-popup {
     width: 90%;
     max-width: 400px;
-    max-height: 80vh;
+    min-height: 200px;
+    max-height: 90vh;
     background: var(--beautify-popup-bg);
     border-radius: 16px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
@@ -68,6 +68,8 @@
     transform: scale(0.9);
     opacity: 0;
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+    /* 允许用户拖拽调整高度 */
+    resize: vertical;
 }
 
 .beautify-popup-overlay.show .beautify-popup {
@@ -1525,4 +1527,147 @@
     color: var(--beautify-popup-text-muted);
     min-width: 3em;
     text-align: center;
+}
+
+
+/* 自定义CSS输入框样式已移至下方CSS区域样式部分，避免重复定义 */
+
+
+/* ==========================================
+   方案管理样式
+   ========================================== */
+
+.beautify-scheme-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    margin-bottom: 0.75em;
+    padding-bottom: 0.5em;
+    border-bottom: 1px solid var(--beautify-popup-border);
+}
+
+.beautify-scheme-select {
+    flex: 1;
+    padding: 0.4em 0.6em;
+    border: 1px solid var(--beautify-popup-border);
+    border-radius: 0.4em;
+    background: var(--beautify-popup-hover);
+    color: var(--beautify-popup-text);
+    font-size: 0.85em;
+    cursor: pointer;
+    outline: none;
+}
+
+.beautify-scheme-select:focus {
+    border-color: var(--beautify-popup-primary);
+}
+
+.beautify-scheme-actions {
+    display: flex;
+    gap: 0.25em;
+}
+
+.beautify-scheme-btn {
+    width: 1.8em;
+    height: 1.8em;
+    border: none;
+    border-radius: 0.3em;
+    background: var(--beautify-popup-hover);
+    color: var(--beautify-popup-text-muted);
+    font-size: 0.85em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+}
+
+.beautify-scheme-btn:hover {
+    background: var(--beautify-popup-primary);
+    color: white;
+}
+
+/* ==========================================
+   显示设置折叠样式
+   ========================================== */
+
+.beautify-display-details {
+    margin-bottom: 0.75em;
+}
+
+.beautify-display-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    padding: 0.5em 0.75em;
+    background: var(--beautify-popup-hover);
+    border-radius: 0.4em;
+    cursor: pointer;
+    font-size: 0.85em;
+    color: var(--beautify-popup-text);
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.beautify-display-summary:hover {
+    background: var(--beautify-popup-bg);
+}
+
+.beautify-display-summary i {
+    color: var(--beautify-popup-primary);
+}
+
+.beautify-display-switches {
+    padding: 0.5em 0;
+}
+
+/* ==========================================
+   CSS输入区域样式（更新）
+   ========================================== */
+
+.beautify-css-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.beautify-css-section .beautify-popup-hint-small {
+    margin-bottom: 0.5em;
+}
+
+.beautify-custom-css-input {
+    width: 100%;
+    min-height: 150px;
+    padding: 0.6em;
+    border: 1px solid var(--beautify-popup-border);
+    border-radius: 0.4em;
+    background: var(--beautify-popup-hover);
+    color: var(--beautify-popup-text);
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.8em;
+    line-height: 1.4;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.beautify-custom-css-input:focus {
+    border-color: var(--beautify-popup-primary);
+}
+
+.beautify-custom-css-input::placeholder {
+    color: var(--beautify-popup-text-muted);
+    opacity: 0.6;
+}
+
+/* CSS区域头部（标题+帮助按钮） */
+.beautify-css-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5em;
+}
+
+.beautify-css-header .beautify-popup-hint-small {
+    margin: 0;
 }

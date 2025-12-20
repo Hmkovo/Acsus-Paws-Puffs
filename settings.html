@@ -147,11 +147,16 @@
               <div class="beautify-accordion-body">
                 <!-- 头像布局开关 -->
                 <div class="beautify-setting-item">
-                  <label class="checkbox_label">
-                    <input type="checkbox" id="beautify-avatar-layout-enabled">
-                    <span>启用头像布局</span>
-                  </label>
-                  <span class="beautify-hint">调整酒馆的头像显示布局，点击悬浮栏的user或char头像来打开详细设置</span>
+                  <div class="beautify-setting-row">
+                    <label class="checkbox_label">
+                      <input type="checkbox" id="beautify-avatar-layout-enabled">
+                      <span>启用头像布局</span>
+                    </label>
+                    <button class="menu_button" id="beautify-open-popup-btn" title="打开悬浮栏设置">
+                      <i class="fa-solid fa-gear"></i>
+                    </button>
+                  </div>
+                  <span class="beautify-hint">调整酒馆的头像显示布局。如果关闭了悬浮栏头像，可点击右侧齿轮重新打开设置</span>
                 </div>
 
                 <hr class="beautify-divider">

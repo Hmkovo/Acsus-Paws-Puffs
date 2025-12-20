@@ -34,6 +34,11 @@ const PRESETS_PER_PAGE = 10;
 const DEFAULT_POPUP_SETTINGS = {
     // 预设列表
     presets: [],  // { id, name, settings, createdTime }
+    // 用户自定义CSS
+    customCSS: '',
+    // 悬浮栏方案管理
+    schemes: [],  // { id, name, customCSS, display, createdTime }
+    currentScheme: '',  // 当前选中的方案ID
     display: {
         showName: true,
         showTime: true,
@@ -400,42 +405,104 @@ function formatPresetTime(timestamp) {
 
 /**
  * 创建"显示"标签页内容
+ *
+ * @description
+ * 包含三部分：
+ * 1. 显示开关（折叠）：控制悬浮栏显示哪些信息
+ * 2. 自定义CSS：用户可以写CSS美化悬浮栏（实时更新）
+ * 3. 方案管理：导入/导出/切换悬浮栏方案
  */
 function createDisplayTabContent() {
     const { display } = currentSettings;
+    const customCSS = currentSettings.customCSS || '';
+    const schemes = currentSettings.schemes || [];
+    const currentScheme = currentSettings.currentScheme || '';
 
     return `
         <div class="beautify-popup-panel" data-panel="display">
-            <div class="beautify-popup-section">
-                <div class="beautify-popup-hint">控制悬浮栏显示哪些信息</div>
+            <!-- 方案管理区域 -->
+            <div class="beautify-scheme-header">
+                <select id="beautify-scheme-select" class="beautify-scheme-select">
+                    <option value="">默认方案</option>
+                    ${schemes.map(s => `<option value="${s.id}" ${currentScheme === s.id ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}
+                </select>
+                <div class="beautify-scheme-actions">
+                    <button class="beautify-scheme-btn" id="beautify-scheme-save" title="保存当前方案">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                    </button>
+                    <button class="beautify-scheme-btn" id="beautify-scheme-import" title="导入方案">
+                        <i class="fa-solid fa-file-import"></i>
+                    </button>
+                    <button class="beautify-scheme-btn" id="beautify-scheme-export" title="导出方案">
+                        <i class="fa-solid fa-file-export"></i>
+                    </button>
+                    <button class="beautify-scheme-btn" id="beautify-scheme-delete" title="删除方案">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+                <input type="file" id="beautify-scheme-file" accept=".json" hidden>
+            </div>
 
-                <label class="beautify-popup-switch">
-                    <input type="checkbox" id="beautify-show-name" ${display.showName ? 'checked' : ''}>
-                    <span class="beautify-popup-switch-label">显示名字</span>
-                </label>
+            <!-- 显示开关（折叠） -->
+            <details class="beautify-display-details">
+                <summary class="beautify-display-summary">
+                    <i class="fa-solid fa-eye"></i> 显示设置
+                </summary>
+                <div class="beautify-display-switches">
+                    <label class="beautify-popup-switch">
+                        <input type="checkbox" id="beautify-show-name" ${display.showName ? 'checked' : ''}>
+                        <span class="beautify-popup-switch-label">显示名字</span>
+                    </label>
+                    <label class="beautify-popup-switch">
+                        <input type="checkbox" id="beautify-show-time" ${display.showTime ? 'checked' : ''}>
+                        <span class="beautify-popup-switch-label">显示时间</span>
+                    </label>
+                    <label class="beautify-popup-switch">
+                        <input type="checkbox" id="beautify-show-tokens" ${display.showTokens ? 'checked' : ''}>
+                        <span class="beautify-popup-switch-label">显示 Token 数</span>
+                    </label>
+                    <label class="beautify-popup-switch">
+                        <input type="checkbox" id="beautify-show-mesid" ${display.showMesId ? 'checked' : ''}>
+                        <span class="beautify-popup-switch-label">显示楼层号</span>
+                    </label>
+                    <label class="beautify-popup-switch">
+                        <input type="checkbox" id="beautify-show-avatar" ${display.showAvatar ? 'checked' : ''}>
+                        <span class="beautify-popup-switch-label">显示头像</span>
+                    </label>
+                </div>
+            </details>
 
-                <label class="beautify-popup-switch">
-                    <input type="checkbox" id="beautify-show-time" ${display.showTime ? 'checked' : ''}>
-                    <span class="beautify-popup-switch-label">显示时间</span>
-                </label>
-
-                <label class="beautify-popup-switch">
-                    <input type="checkbox" id="beautify-show-tokens" ${display.showTokens ? 'checked' : ''}>
-                    <span class="beautify-popup-switch-label">显示 Token 数</span>
-                </label>
-
-                <label class="beautify-popup-switch">
-                    <input type="checkbox" id="beautify-show-mesid" ${display.showMesId ? 'checked' : ''}>
-                    <span class="beautify-popup-switch-label">显示楼层号</span>
-                </label>
-
-                <label class="beautify-popup-switch">
-                    <input type="checkbox" id="beautify-show-avatar" ${display.showAvatar ? 'checked' : ''}>
-                    <span class="beautify-popup-switch-label">显示头像</span>
-                </label>
+            <!-- 自定义CSS区域（实时更新） -->
+            <div class="beautify-css-section">
+                <div class="beautify-css-header">
+                    <span class="beautify-popup-hint-small">在这里写CSS美化悬浮栏，实时生效</span>
+                    <button class="beautify-scheme-btn" id="beautify-css-help" title="查看类名和结构说明">
+                        <i class="fa-solid fa-circle-question"></i>
+                    </button>
+                </div>
+                <textarea id="beautify-custom-css" class="beautify-custom-css-input" placeholder="/* 示例：给角色悬浮栏添加装饰 */
+.beautify-sticky-header[is_user='false'] .beautify-deco-1 {
+    display: block;
+    background-image: url('...');
+}">${escapeHtml(customCSS)}</textarea>
             </div>
         </div>
     `;
+}
+
+/**
+ * HTML转义（防止XSS）
+ * @param {string} str - 要转义的字符串
+ * @returns {string} 转义后的字符串
+ */
+function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 
 /**
@@ -1035,13 +1102,6 @@ function createAvatarTabContent() {
 function bindPopupEvents() {
     if (!popupOverlay) return;
 
-    // 点击遮罩层关闭
-    popupOverlay.addEventListener('click', (e) => {
-        if (e.target === popupOverlay) {
-            closeBeautifyPopup();
-        }
-    });
-
     // 点击关闭按钮
     const closeBtn = popupOverlay.querySelector('.beautify-popup-close');
     closeBtn?.addEventListener('click', closeBeautifyPopup);
@@ -1348,9 +1408,274 @@ function bindDisplaySwitches() {
         checkbox?.addEventListener('change', (e) => {
             currentSettings.display[key] = e.target.checked;
             applyDisplaySettings();
+            savePopupSettings();
             logger.info(`[BeautifyPopup] ${key} 设置为:`, e.target.checked);
         });
     });
+
+    // 自定义CSS实时更新（和官方一样，input事件直接应用）
+    const cssTextarea = popupOverlay.querySelector('#beautify-custom-css');
+    cssTextarea?.addEventListener('input', (e) => {
+        const css = e.target.value || '';
+        currentSettings.customCSS = css;
+        applyCustomCSS(css);
+        savePopupSettings();
+    });
+
+    // 方案管理
+    bindSchemeEvents();
+
+    // CSS帮助按钮
+    const helpBtn = popupOverlay.querySelector('#beautify-css-help');
+    helpBtn?.addEventListener('click', showCssHelpPopup);
+}
+
+/**
+ * 绑定方案管理事件
+ */
+function bindSchemeEvents() {
+    if (!popupOverlay || !currentSettings) return;
+
+    // 方案选择
+    const schemeSelect = popupOverlay.querySelector('#beautify-scheme-select');
+    schemeSelect?.addEventListener('change', (e) => {
+        const schemeId = e.target.value;
+        loadScheme(schemeId);
+    });
+
+    // 保存方案
+    const saveBtn = popupOverlay.querySelector('#beautify-scheme-save');
+    saveBtn?.addEventListener('click', saveCurrentScheme);
+
+    // 导入方案
+    const importBtn = popupOverlay.querySelector('#beautify-scheme-import');
+    const importFile = popupOverlay.querySelector('#beautify-scheme-file');
+    importBtn?.addEventListener('click', () => importFile?.click());
+    importFile?.addEventListener('change', handleSchemeImport);
+
+    // 导出方案
+    const exportBtn = popupOverlay.querySelector('#beautify-scheme-export');
+    exportBtn?.addEventListener('click', exportCurrentScheme);
+
+    // 删除方案
+    const deleteBtn = popupOverlay.querySelector('#beautify-scheme-delete');
+    deleteBtn?.addEventListener('click', deleteCurrentScheme);
+}
+
+/**
+ * 加载方案
+ * @param {string} schemeId - 方案ID，空字符串表示默认方案
+ */
+function loadScheme(schemeId) {
+    currentSettings.currentScheme = schemeId;
+
+    if (!schemeId) {
+        // 默认方案：清空CSS
+        currentSettings.customCSS = '';
+        currentSettings.display = {
+            showName: true,
+            showTime: true,
+            showTokens: true,
+            showMesId: true,
+            showAvatar: true
+        };
+    } else {
+        const scheme = currentSettings.schemes?.find(s => s.id === schemeId);
+        if (scheme) {
+            currentSettings.customCSS = scheme.customCSS || '';
+            if (scheme.display) {
+                currentSettings.display = { ...currentSettings.display, ...scheme.display };
+            }
+        }
+    }
+
+    // 更新UI
+    const cssTextarea = popupOverlay?.querySelector('#beautify-custom-css');
+    if (cssTextarea) {
+        cssTextarea.value = currentSettings.customCSS;
+    }
+
+    // 更新显示开关
+    const switches = [
+        { id: 'beautify-show-name', key: 'showName' },
+        { id: 'beautify-show-time', key: 'showTime' },
+        { id: 'beautify-show-tokens', key: 'showTokens' },
+        { id: 'beautify-show-mesid', key: 'showMesId' },
+        { id: 'beautify-show-avatar', key: 'showAvatar' }
+    ];
+    switches.forEach(({ id, key }) => {
+        const checkbox = popupOverlay?.querySelector(`#${id}`);
+        if (checkbox) {
+            checkbox.checked = currentSettings.display[key];
+        }
+    });
+
+    // 应用设置
+    applyCustomCSS(currentSettings.customCSS);
+    applyDisplaySettings();
+    savePopupSettings();
+
+    logger.info('[BeautifyPopup] 已加载方案:', schemeId || '默认');
+}
+
+/**
+ * 保存当前方案
+ */
+async function saveCurrentScheme() {
+    const name = await callGenericPopup('请输入方案名称：', POPUP_TYPE.INPUT, '我的悬浮栏方案');
+    if (name === false || name === null) return;
+
+    const schemeName = String(name).trim() || '我的悬浮栏方案';
+
+    const scheme = {
+        id: `scheme_${Date.now()}`,
+        name: schemeName,
+        customCSS: currentSettings.customCSS || '',
+        display: { ...currentSettings.display },
+        createdTime: Date.now()
+    };
+
+    if (!currentSettings.schemes) currentSettings.schemes = [];
+    currentSettings.schemes.push(scheme);
+    currentSettings.currentScheme = scheme.id;
+
+    // 更新下拉框
+    refreshSchemeSelect();
+    savePopupSettings();
+
+    toastr.success(`方案"${schemeName}"已保存`);
+    logger.info('[BeautifyPopup] 方案已保存:', schemeName);
+}
+
+/**
+ * 导入方案
+ * @param {Event} e - change事件
+ */
+async function handleSchemeImport(e) {
+    const file = e.target?.files?.[0];
+    if (!file) return;
+
+    try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+
+        if (!parsed.name) {
+            throw new Error('方案文件缺少名称');
+        }
+
+        // 检查是否已存在同名方案
+        if (currentSettings.schemes?.some(s => s.name === parsed.name)) {
+            const confirm = await callGenericPopup(`方案"${parsed.name}"已存在，是否覆盖？`, POPUP_TYPE.CONFIRM);
+            if (!confirm) return;
+            // 删除旧方案
+            currentSettings.schemes = currentSettings.schemes.filter(s => s.name !== parsed.name);
+        }
+
+        const scheme = {
+            id: `scheme_${Date.now()}`,
+            name: parsed.name,
+            customCSS: parsed.customCSS || '',
+            display: parsed.display || {},
+            createdTime: Date.now()
+        };
+
+        if (!currentSettings.schemes) currentSettings.schemes = [];
+        currentSettings.schemes.push(scheme);
+
+        // 自动切换到导入的方案
+        loadScheme(scheme.id);
+        refreshSchemeSelect();
+
+        toastr.success(`方案"${parsed.name}"已导入`);
+        logger.info('[BeautifyPopup] 方案已导入:', parsed.name);
+    } catch (error) {
+        toastr.error(String(error), '导入失败');
+        logger.error('[BeautifyPopup] 导入方案失败:', error);
+    } finally {
+        e.target.value = null;
+    }
+}
+
+/**
+ * 导出当前方案
+ */
+function exportCurrentScheme() {
+    const schemeId = currentSettings.currentScheme;
+    let scheme;
+
+    if (!schemeId) {
+        // 导出当前设置为新方案
+        scheme = {
+            name: '悬浮栏方案',
+            customCSS: currentSettings.customCSS || '',
+            display: { ...currentSettings.display }
+        };
+    } else {
+        scheme = currentSettings.schemes?.find(s => s.id === schemeId);
+        if (!scheme) {
+            toastr.warning('请先选择一个方案');
+            return;
+        }
+    }
+
+    const fileName = `${scheme.name}.json`;
+    const data = {
+        name: scheme.name,
+        customCSS: scheme.customCSS,
+        display: scheme.display
+    };
+
+    // 下载文件
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    toastr.success(`方案"${scheme.name}"已导出`);
+    logger.info('[BeautifyPopup] 方案已导出:', scheme.name);
+}
+
+/**
+ * 删除当前方案
+ */
+async function deleteCurrentScheme() {
+    const schemeId = currentSettings.currentScheme;
+    if (!schemeId) {
+        toastr.warning('默认方案无法删除');
+        return;
+    }
+
+    const scheme = currentSettings.schemes?.find(s => s.id === schemeId);
+    if (!scheme) return;
+
+    const confirm = await callGenericPopup(`确定要删除方案"${scheme.name}"吗？`, POPUP_TYPE.CONFIRM);
+    if (!confirm) return;
+
+    currentSettings.schemes = currentSettings.schemes.filter(s => s.id !== schemeId);
+    loadScheme('');  // 切换回默认方案
+    refreshSchemeSelect();
+
+    toastr.info(`方案"${scheme.name}"已删除`);
+    logger.info('[BeautifyPopup] 方案已删除:', scheme.name);
+}
+
+/**
+ * 刷新方案下拉框
+ */
+function refreshSchemeSelect() {
+    const select = popupOverlay?.querySelector('#beautify-scheme-select');
+    if (!select) return;
+
+    const schemes = currentSettings.schemes || [];
+    const currentScheme = currentSettings.currentScheme || '';
+
+    select.innerHTML = `
+        <option value="">默认方案</option>
+        ${schemes.map(s => `<option value="${s.id}" ${currentScheme === s.id ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}
+    `;
 }
 
 /**
@@ -2300,6 +2625,7 @@ export function applyBackgroundSettings() {
     if (bgElement) {
         // 轮播模式
         if (background.carouselEnabled && background.carouselImages?.length > 0) {
+            bgElement.style.backgroundColor = 'transparent';  // 有背景图时透明
             startCarousel(bgElement, background);
         }
         // 静态背景
@@ -2307,8 +2633,10 @@ export function applyBackgroundSettings() {
             bgElement.style.backgroundImage = `url('${background.imageUrl}')`;
             bgElement.style.backgroundSize = background.mode || 'cover';
             bgElement.style.backgroundPosition = 'center';
+            bgElement.style.backgroundColor = 'transparent';  // 有背景图时透明
         } else {
             bgElement.style.backgroundImage = '';
+            bgElement.style.backgroundColor = '';  // 恢复默认系统配色
         }
     }
 
@@ -2780,7 +3108,208 @@ export function initBeautifyPopup() {
     applyLayoutSettings();
     applyBackgroundSettings();
     applyAvatarFrameSettings();
+    // 应用用户自定义CSS
+    if (currentSettings?.customCSS) {
+        applyCustomCSS(currentSettings.customCSS);
+    }
     logger.info('[BeautifyPopup] 弹窗模块已初始化');
+}
+
+/**
+ * 应用用户自定义CSS
+ * @param {string} css - CSS字符串
+ * @description 将用户的CSS注入到页面，覆盖悬浮栏默认样式
+ */
+function applyCustomCSS(css) {
+    const styleId = 'beautify-user-custom-css';
+    let styleEl = document.getElementById(styleId);
+
+    if (!css) {
+        // 清空CSS时移除style标签
+        if (styleEl) {
+            styleEl.remove();
+            logger.debug('[BeautifyPopup] 用户自定义CSS已移除');
+        }
+        return;
+    }
+
+    // 创建或更新style标签
+    if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = styleId;
+        styleEl.setAttribute('type', 'text/css');
+        document.head.appendChild(styleEl);
+    }
+
+    styleEl.innerHTML = css;
+    logger.debug('[BeautifyPopup] 用户自定义CSS已应用');
+}
+
+/**
+ * 显示CSS帮助弹窗
+ * @description 展示悬浮栏的HTML结构和可用类名，方便用户写CSS。带复制按钮，左对齐，可滚动
+ */
+function showCssHelpPopup() {
+    // 悬浮栏结构（纯文本，方便复制）
+    const structureText = `<div class="beautify-sticky-header" is_user="true/false">
+  <!-- 10个装饰元素，默认隐藏，用CSS显示 -->
+  <div class="beautify-deco beautify-deco-1"></div>
+  <div class="beautify-deco beautify-deco-2"></div>
+  ... (beautify-deco-3 ~ beautify-deco-10)
+
+  <div class="beautify-bg-container">
+    <div class="beautify-bg"></div>  <!-- 背景图 -->
+    <button class="beautify-lock-btn"></button>  <!-- 锁定按钮 -->
+
+    <div class="beautify-info-row">
+      <div class="beautify-avatar-wrapper">
+        <img class="beautify-avatar">  <!-- 头像 -->
+      </div>
+      <div class="beautify-message-info">
+        <span class="beautify-name"></span>  <!-- 名字 -->
+        <span class="beautify-meta">
+          <span id="beautify-time"></span>    <!-- 时间 -->
+          <span id="beautify-timer"></span>   <!-- 生成耗时 -->
+          <span id="beautify-tokens"></span>  <!-- Token数 -->
+          <span id="beautify-mesid"></span>   <!-- 楼层号 -->
+        </span>
+      </div>
+    </div>
+  </div>
+</div>`;
+
+    // CSS示例（纯文本，方便复制）
+    const cssExampleText = `/* 角色消息的悬浮栏 */
+.beautify-sticky-header[is_user='false'] {
+    /* 你的样式 */
+}
+.beautify-sticky-header[is_user='false'] .beautify-avatar {
+    border-color: pink;
+}
+
+/* 用户消息的悬浮栏 */
+.beautify-sticky-header[is_user='true'] {
+    /* 你的样式 */
+}
+.beautify-sticky-header[is_user='true'] .beautify-avatar {
+    border-color: skyblue;
+}
+
+/* 装饰元素示例 */
+.beautify-sticky-header[is_user='false'] .beautify-deco-1 {
+    display: block;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 50px;
+    height: 50px;
+    background-image: url('你的图片链接');
+    background-size: contain;
+    pointer-events: none;
+}`;
+
+    const helpContent = `
+<div style="font-size: 13px; line-height: 1.6; text-align: left; max-height: 70vh; overflow-y: auto;">
+
+<h4 style="margin: 0 0 8px; color: var(--SmartThemeQuoteColor);">📋 悬浮栏结构（复制给AI用）</h4>
+<div style="position: relative; margin-bottom: 12px;">
+    <button id="copy-structure-btn" style="position: absolute; top: 4px; right: 4px; padding: 4px 8px; font-size: 11px; background: var(--SmartThemeQuoteColor); color: white; border: none; border-radius: 4px; cursor: pointer;">
+        <i class="fa-solid fa-copy"></i> 复制
+    </button>
+    <pre id="structure-text" style="background: var(--SmartThemeBlurTintColor); padding: 10px; padding-right: 60px; border-radius: 6px; overflow-x: auto; font-size: 11px; white-space: pre-wrap; word-break: break-all;">${structureText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+</div>
+
+<h4 style="margin: 0 0 8px; color: var(--SmartThemeQuoteColor);">🎨 CSS写法示例（复制后修改）</h4>
+<div style="position: relative; margin-bottom: 12px;">
+    <button id="copy-css-btn" style="position: absolute; top: 4px; right: 4px; padding: 4px 8px; font-size: 11px; background: var(--SmartThemeQuoteColor); color: white; border: none; border-radius: 4px; cursor: pointer;">
+        <i class="fa-solid fa-copy"></i> 复制
+    </button>
+    <pre id="css-text" style="background: var(--SmartThemeBlurTintColor); padding: 10px; padding-right: 60px; border-radius: 6px; overflow-x: auto; font-size: 11px; white-space: pre-wrap;">${cssExampleText}</pre>
+</div>
+
+<h4 style="margin: 0 0 8px; color: var(--SmartThemeQuoteColor);">📝 常用类名速查</h4>
+<table style="width: 100%; font-size: 11px; border-collapse: collapse; text-align: left;">
+<tr style="background: var(--SmartThemeBlurTintColor);">
+    <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);"><code>.beautify-sticky-header</code></td>
+    <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);">悬浮栏容器</td>
+</tr>
+<tr>
+    <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);"><code>[is_user='false']</code></td>
+    <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);">角色消息（属性选择器）</td>
+</tr>
+<tr style="background: var(--SmartThemeBlurTintColor);">
+    <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);"><code>[is_user='true']</code></td>
+    <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);">用户消息（属性选择器）</td>
+</tr>
+<tr>
+    <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);"><code>.beautify-deco-1~10</code></td>
+    <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);">装饰元素（默认隐藏）</td>
+</tr>
+<tr style="background: var(--SmartThemeBlurTintColor);">
+    <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);"><code>.beautify-bg-container</code></td>
+    <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);">背景容器（控制高度）</td>
+</tr>
+<tr>
+    <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);"><code>.beautify-bg</code></td>
+    <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);">背景图</td>
+</tr>
+<tr style="background: var(--SmartThemeBlurTintColor);">
+    <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);"><code>.beautify-avatar-wrapper</code></td>
+    <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);">头像容器</td>
+</tr>
+<tr>
+    <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);"><code>.beautify-avatar</code></td>
+    <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);">头像图片</td>
+</tr>
+<tr style="background: var(--SmartThemeBlurTintColor);">
+    <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);"><code>.beautify-name</code></td>
+    <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);">名字</td>
+</tr>
+<tr>
+    <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);"><code>.beautify-meta</code></td>
+    <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);">信息区（时间/耗时/Token/楼层）</td>
+</tr>
+<tr style="background: var(--SmartThemeBlurTintColor);">
+    <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);"><code>.is-user / .is-char</code></td>
+    <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);">类名方式区分（也可用）</td>
+</tr>
+</table>
+
+<p style="margin: 12px 0 0; font-size: 11px; color: var(--SmartThemeEmColor);">
+    💡 提示：复制结构和CSS示例给AI，说明你想要的效果，AI可以帮你写CSS
+</p>
+</div>
+    `;
+
+    callGenericPopup(helpContent, POPUP_TYPE.TEXT, '', { wide: true, large: true });
+
+    // 绑定复制按钮事件（延迟等待DOM渲染）
+    setTimeout(() => {
+        const copyStructureBtn = document.getElementById('copy-structure-btn');
+        const copyCssBtn = document.getElementById('copy-css-btn');
+
+        copyStructureBtn?.addEventListener('click', () => {
+            navigator.clipboard.writeText(structureText).then(() => {
+                toastr.success('结构已复制');
+                copyStructureBtn.innerHTML = '<i class="fa-solid fa-check"></i> 已复制';
+                setTimeout(() => {
+                    copyStructureBtn.innerHTML = '<i class="fa-solid fa-copy"></i> 复制';
+                }, 2000);
+            });
+        });
+
+        copyCssBtn?.addEventListener('click', () => {
+            navigator.clipboard.writeText(cssExampleText).then(() => {
+                toastr.success('CSS示例已复制');
+                copyCssBtn.innerHTML = '<i class="fa-solid fa-check"></i> 已复制';
+                setTimeout(() => {
+                    copyCssBtn.innerHTML = '<i class="fa-solid fa-copy"></i> 复制';
+                }, 2000);
+            });
+        });
+    }, 100);
+
+    logger.debug('[BeautifyPopup] 显示CSS帮助弹窗');
 }
 
 

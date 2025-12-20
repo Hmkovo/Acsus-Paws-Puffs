@@ -335,9 +335,9 @@ export class PresetManagerModule {
     const id = snapshotData.saveSnapshot(snapshotName);
 
     if (id) {
-      this.showMessage(`快照"${snapshotName}"已保存`, 'success');
+      toastr.success(`快照"${snapshotName}"已保存`);
     } else {
-      this.showMessage('保存快照失败', 'error');
+      toastr.error('保存快照失败');
     }
   }
 
