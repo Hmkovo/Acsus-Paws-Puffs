@@ -91,9 +91,6 @@ let hideProxyWarnEnabled = false;
 /** @type {boolean} 快捷回复隐藏是否启用 */
 let hideQrEnabled = false;
 
-/** @type {boolean} 隐藏编辑按钮阴影是否启用 */
-let hideEditShadowEnabled = false;
-
 /** @type {boolean} 导航栏图标透明度是否启用自定义 */
 let navIconOpacityEnabled = false;
 
@@ -105,12 +102,6 @@ let editBtnOpacityEnabled = false;
 
 /** @type {number} 编辑按钮透明度（官方默认0.3） */
 let editBtnOpacity = 0.3;
-
-/** @type {boolean} 关闭导航栏阴影是否启用 */
-let hideTopbarShadowEnabled = false;
-
-/** @type {boolean} 关闭预设按钮阴影是否启用 */
-let hidePresetShadowEnabled = false;
 
 /** @type {boolean} 预设开关直觉优化是否启用 */
 let presetToggleIntuitiveEnabled = false;
@@ -132,6 +123,71 @@ let fixOldCssEnabled = false;
 
 /** @type {number} 抽屉页面位置偏移（默认0，负数上移，正数下移） */
 let drawerOffset = 0;
+
+/** @type {boolean} 世界书按钮竖排是否启用 */
+let wiButtonVerticalEnabled = false;
+
+// ==========================================
+// 去除阴影 - 状态变量
+// ==========================================
+
+/** @type {boolean} 一键去除所有阴影是否启用 */
+let removeShadowAllEnabled = false;
+
+/** @type {boolean} 去除文字阴影是否启用 */
+let removeTextShadowEnabled = false;
+
+/** @type {boolean} 去除图标滤镜阴影是否启用 */
+let removeFilterShadowEnabled = false;
+
+/** @type {boolean} 去除弹窗阴影是否启用 */
+let removePopupShadowEnabled = false;
+
+/** @type {boolean} 去除弹窗遮罩是否启用 */
+let removeBackdropEnabled = false;
+
+/** @type {boolean} 去除头像阴影是否启用 */
+let removeAvatarShadowEnabled = false;
+
+/** @type {boolean} 去除菜单阴影是否启用 */
+let removeMenuShadowEnabled = false;
+
+/** @type {boolean} 去除背景卡片阴影是否启用 */
+let removeBgShadowEnabled = false;
+
+// ==========================================
+// 阅读辅助 - 状态变量
+// ==========================================
+
+/** @type {boolean} 阅读辅助模式是否启用 */
+let readingAidEnabled = false;
+
+/** @type {boolean} 文本下划线是否启用 */
+let underlineEnabled = false;
+
+/** @type {string} AI下划线颜色 */
+let underlineAiColor = 'rgba(187, 193, 138, 0.5)';
+
+/** @type {string} 用户下划线颜色 */
+let underlineUserColor = 'rgba(170, 192, 199, 0.2)';
+
+/** @type {boolean} 首字下沉是否启用 */
+let dropcapEnabled = false;
+
+/** @type {boolean} 首行缩进是否启用 */
+let indentEnabled = false;
+
+/** @type {boolean} 段落间距是否启用 */
+let paragraphSpacingEnabled = false;
+
+/** @type {string} 段落间距值 */
+let paragraphSpacingValue = '0.8';
+
+/** @type {boolean} 悬停段落高亮是否启用 */
+let hoverHighlightEnabled = false;
+
+/** @type {string} 悬停高亮颜色 */
+let hoverHighlightColor = 'rgba(242, 198, 116, 0.15)';
 
 
 // ==========================================
@@ -200,15 +256,12 @@ function loadSettings() {
         hideNameEnabled: false,
         hideProxyWarnEnabled: false,
         hideQrEnabled: false,
-        hideEditShadowEnabled: false,
         navIconOpacityEnabled: false,  // 是否启用自定义导航栏图标透明度
         navIconOpacity: 0.3,  // 导航栏图标透明度值
         editBtnOpacityEnabled: false,  // 是否启用自定义编辑按钮透明度
         editBtnOpacity: 0.3,  // 编辑按钮透明度值
         fixOldCssEnabled: false,  // 修复旧版美化类名
         // 新增美化功能
-        hideTopbarShadowEnabled: false,  // 关闭导航栏阴影
-        hidePresetShadowEnabled: false,  // 关闭预设按钮阴影
         presetToggleIntuitiveEnabled: false,  // 预设开关直觉优化
         chatFontIndependentEnabled: false,  // 聊天字体独立设置
         chatFontScale: 1.0,  // 聊天字体比例（0.5-1.5）
@@ -226,7 +279,32 @@ function loadSettings() {
             imageUrl: '',       // 自定义图片 URL
             imageOpacity: 1.0,  // 图片透明度 0.1-1.0
             savedImages: []     // 存档列表 { id, name, url, type, addedTime }
-        }
+        },
+        // 去除阴影
+        removeShadowAllEnabled: false,
+        removeTextShadowEnabled: false,
+        removeFilterShadowEnabled: false,
+        removePopupShadowEnabled: false,
+        removeBackdropEnabled: false,
+        removeAvatarShadowEnabled: false,
+        removeMenuShadowEnabled: false,
+        removeBgShadowEnabled: false,
+        removeTopbarShadowEnabled: false,  // 去除导航栏阴影
+        removePresetShadowEnabled: false,  // 去除预设按钮阴影
+        removeEditShadowEnabled: false,  // 去除编辑按钮阴影
+        // 阅读辅助
+        readingAidEnabled: false,
+        chatLineHeightEnabled: false,  // 聊天行高开关
+        chatLineHeight: 1.6,  // 聊天行高值
+        underlineEnabled: false,
+        underlineAiColor: 'rgba(187, 193, 138, 0.5)',
+        underlineUserColor: 'rgba(170, 192, 199, 0.2)',
+        dropcapEnabled: false,
+        indentEnabled: false,
+        paragraphSpacingEnabled: false,
+        paragraphSpacingValue: '0.8',
+        hoverHighlightEnabled: false,
+        hoverHighlightColor: 'rgba(242, 198, 116, 0.15)'
     };
 
     extension_settings[EXT_ID].beautify = extension_settings[EXT_ID].beautify || {};
@@ -251,21 +329,39 @@ function loadSettings() {
     hideNameEnabled = extension_settings[EXT_ID].beautify.hideNameEnabled;
     hideProxyWarnEnabled = extension_settings[EXT_ID].beautify.hideProxyWarnEnabled;
     hideQrEnabled = extension_settings[EXT_ID].beautify.hideQrEnabled;
-    hideEditShadowEnabled = extension_settings[EXT_ID].beautify.hideEditShadowEnabled;
     navIconOpacityEnabled = extension_settings[EXT_ID].beautify.navIconOpacityEnabled;
     navIconOpacity = extension_settings[EXT_ID].beautify.navIconOpacity;
     editBtnOpacityEnabled = extension_settings[EXT_ID].beautify.editBtnOpacityEnabled;
     editBtnOpacity = extension_settings[EXT_ID].beautify.editBtnOpacity;
     fixOldCssEnabled = extension_settings[EXT_ID].beautify.fixOldCssEnabled;
     drawerOffset = extension_settings[EXT_ID].beautify.drawerOffset;
+    wiButtonVerticalEnabled = extension_settings[EXT_ID].beautify.wiButtonVerticalEnabled;
     // 新增美化功能
-    hideTopbarShadowEnabled = extension_settings[EXT_ID].beautify.hideTopbarShadowEnabled;
-    hidePresetShadowEnabled = extension_settings[EXT_ID].beautify.hidePresetShadowEnabled;
     presetToggleIntuitiveEnabled = extension_settings[EXT_ID].beautify.presetToggleIntuitiveEnabled;
     chatFontIndependentEnabled = extension_settings[EXT_ID].beautify.chatFontIndependentEnabled;
     chatFontScale = extension_settings[EXT_ID].beautify.chatFontScale;
     personaSelectHighlightEnabled = extension_settings[EXT_ID].beautify.personaSelectHighlightEnabled;
     personaAvatarPreviewEnabled = extension_settings[EXT_ID].beautify.personaAvatarPreviewEnabled;
+    // 去除阴影
+    removeShadowAllEnabled = extension_settings[EXT_ID].beautify.removeShadowAllEnabled;
+    removeTextShadowEnabled = extension_settings[EXT_ID].beautify.removeTextShadowEnabled;
+    removeFilterShadowEnabled = extension_settings[EXT_ID].beautify.removeFilterShadowEnabled;
+    removePopupShadowEnabled = extension_settings[EXT_ID].beautify.removePopupShadowEnabled;
+    removeBackdropEnabled = extension_settings[EXT_ID].beautify.removeBackdropEnabled;
+    removeAvatarShadowEnabled = extension_settings[EXT_ID].beautify.removeAvatarShadowEnabled;
+    removeMenuShadowEnabled = extension_settings[EXT_ID].beautify.removeMenuShadowEnabled;
+    removeBgShadowEnabled = extension_settings[EXT_ID].beautify.removeBgShadowEnabled;
+    // 阅读辅助
+    readingAidEnabled = extension_settings[EXT_ID].beautify.readingAidEnabled;
+    underlineEnabled = extension_settings[EXT_ID].beautify.underlineEnabled;
+    underlineAiColor = extension_settings[EXT_ID].beautify.underlineAiColor;
+    underlineUserColor = extension_settings[EXT_ID].beautify.underlineUserColor;
+    dropcapEnabled = extension_settings[EXT_ID].beautify.dropcapEnabled;
+    indentEnabled = extension_settings[EXT_ID].beautify.indentEnabled;
+    paragraphSpacingEnabled = extension_settings[EXT_ID].beautify.paragraphSpacingEnabled;
+    paragraphSpacingValue = extension_settings[EXT_ID].beautify.paragraphSpacingValue;
+    hoverHighlightEnabled = extension_settings[EXT_ID].beautify.hoverHighlightEnabled;
+    hoverHighlightColor = extension_settings[EXT_ID].beautify.hoverHighlightColor;
     logger.debug('[Beautify] 设置已加载');
 }
 
@@ -466,24 +562,6 @@ function bindMiscFeatures() {
         () => document.body.classList.remove('beautify-hide-qr')
     );
 
-    // 隐藏编辑按钮阴影
-    bindCheckboxToggle('beautify-hide-edit-shadow-enabled', 'hideEditShadowEnabled', hideEditShadowEnabled,
-        () => document.body.classList.add('beautify-hide-edit-shadow'),
-        () => document.body.classList.remove('beautify-hide-edit-shadow')
-    );
-
-    // 关闭导航栏阴影
-    bindCheckboxToggle('beautify-hide-topbar-shadow-enabled', 'hideTopbarShadowEnabled', hideTopbarShadowEnabled,
-        () => document.body.classList.add('beautify-hide-topbar-shadow'),
-        () => document.body.classList.remove('beautify-hide-topbar-shadow')
-    );
-
-    // 关闭预设按钮阴影
-    bindCheckboxToggle('beautify-hide-preset-shadow-enabled', 'hidePresetShadowEnabled', hidePresetShadowEnabled,
-        () => document.body.classList.add('beautify-hide-preset-shadow'),
-        () => document.body.classList.remove('beautify-hide-preset-shadow')
-    );
-
     // 预设开关直觉优化
     bindCheckboxToggle('beautify-preset-toggle-intuitive-enabled', 'presetToggleIntuitiveEnabled', presetToggleIntuitiveEnabled,
         () => document.body.classList.add('beautify-preset-toggle-intuitive'),
@@ -536,6 +614,15 @@ function bindMiscFeatures() {
 
     // 修复旧版美化类名
     bindFixOldCss();
+
+    // 世界书按钮竖排
+    bindWiButtonVertical();
+
+    // 去除阴影功能组
+    bindRemoveShadowGroup();
+
+    // 阅读辅助功能组
+    bindReadingAidGroup();
 
     logger.debug('[Beautify] 便捷小功能已绑定');
 }
@@ -708,7 +795,7 @@ function bindOpacityWithToggle(checkboxId, sliderId, settingContainerId, enabled
  */
 function applyNavIconOpacity(value) {
     document.querySelectorAll('.drawer-icon.closedIcon').forEach(el => {
-        /** @type {HTMLElement} */ (el).style.opacity = String(value);
+        /** @type {HTMLElement} */ (el).style.setProperty('opacity', String(value), 'important');
     });
     logger.debug('[Beautify] 导航栏图标透明度已应用:', value);
 }
@@ -718,7 +805,7 @@ function applyNavIconOpacity(value) {
  */
 function clearNavIconOpacity() {
     document.querySelectorAll('.drawer-icon.closedIcon').forEach(el => {
-        /** @type {HTMLElement} */ (el).style.opacity = '';
+        /** @type {HTMLElement} */ (el).style.removeProperty('opacity');
     });
     logger.debug('[Beautify] 导航栏图标透明度已清除');
 }
@@ -729,7 +816,7 @@ function clearNavIconOpacity() {
  */
 function applyEditBtnOpacity(value) {
     document.querySelectorAll('.mes_button.extraMesButtonsHint, .mes_button.mes_edit').forEach(el => {
-        /** @type {HTMLElement} */ (el).style.opacity = String(value);
+        /** @type {HTMLElement} */ (el).style.setProperty('opacity', String(value), 'important');
     });
     logger.debug('[Beautify] 编辑按钮透明度已应用:', value);
 }
@@ -739,7 +826,7 @@ function applyEditBtnOpacity(value) {
  */
 function clearEditBtnOpacity() {
     document.querySelectorAll('.mes_button.extraMesButtonsHint, .mes_button.mes_edit').forEach(el => {
-        /** @type {HTMLElement} */ (el).style.opacity = '';
+        /** @type {HTMLElement} */ (el).style.removeProperty('opacity');
     });
     logger.debug('[Beautify] 编辑按钮透明度已清除');
 }
@@ -1192,6 +1279,106 @@ function removeCompatCSS() {
         compatStyleEl.remove();
         logger.info('[Beautify] 已移除旧版美化兼容CSS');
     }
+}
+
+/**
+ * 绑定世界书按钮竖排功能
+ * @description
+ * 勾选时执行一次包裹，取消勾选时执行一次解除
+ * 监听世界书图标点击，打开时自动包裹
+ */
+function bindWiButtonVertical() {
+    const checkbox = document.getElementById('beautify-wi-button-vertical-enabled');
+    if (!checkbox) {
+        logger.warn('[Beautify] 未找到世界书按钮竖排开关 #beautify-wi-button-vertical-enabled');
+        return;
+    }
+
+    // 同步初始状态
+    /** @type {HTMLInputElement} */ (checkbox).checked = wiButtonVerticalEnabled;
+
+    // 如果已启用，添加class（CSS会自动生效）
+    if (wiButtonVerticalEnabled) {
+        document.body.classList.add('beautify-wi-button-vertical');
+    }
+
+    // 勾选事件：执行一次包裹/解除
+    checkbox.addEventListener('change', function () {
+        const newState = /** @type {HTMLInputElement} */ (this).checked;
+        wiButtonVerticalEnabled = newState;
+        extension_settings[EXT_ID].beautify.wiButtonVerticalEnabled = newState;
+        saveSettingsDebounced();
+        logger.info('[Beautify] 世界书按钮竖排状态变更:', newState);
+
+        if (newState) {
+            document.body.classList.add('beautify-wi-button-vertical');
+            wrapWiButtons(); // 执行一次包裹
+        } else {
+            document.body.classList.remove('beautify-wi-button-vertical');
+            unwrapWiButtons(); // 执行一次解除
+        }
+    });
+
+    // 监听世界书图标点击，打开时自动包裹
+    const wiDrawerIcon = document.getElementById('WIDrawerIcon');
+    if (wiDrawerIcon) {
+        wiDrawerIcon.addEventListener('click', () => {
+            if (!wiButtonVerticalEnabled) return;
+            // 延迟执行，等待世界书DOM加载完成
+            setTimeout(wrapWiButtons, 300);
+        });
+        logger.debug('[Beautify] 已绑定世界书图标点击事件');
+    }
+}
+
+/**
+ * 包裹世界书按钮
+ * @description 将三个按钮包进一个容器，方便 CSS 竖排
+ */
+function wrapWiButtons() {
+    const entries = document.querySelectorAll('.world_entry .inline-drawer-header.gap5px');
+    entries.forEach(header => {
+        // 检查是否已经包裹过
+        if (header.querySelector('.beautify-wi-btn-group')) return;
+
+        const moveBtn = header.querySelector('i.move_entry_button');
+        const dupBtn = header.querySelector('i.duplicate_entry_button');
+        const delBtn = header.querySelector('i.delete_entry_button');
+
+        if (moveBtn && dupBtn && delBtn) {
+            // 创建包裹容器
+            const wrapper = document.createElement('div');
+            wrapper.className = 'beautify-wi-btn-group';
+
+            // 移动按钮到容器中
+            wrapper.appendChild(moveBtn);
+            wrapper.appendChild(dupBtn);
+            wrapper.appendChild(delBtn);
+
+            // 添加到 header 末尾
+            header.appendChild(wrapper);
+            logger.debug('[Beautify] 已包裹世界书按钮');
+        }
+    });
+}
+
+/**
+ * 解除世界书按钮包裹
+ * @description 将按钮从容器中移出，恢复原状
+ */
+function unwrapWiButtons() {
+    const wrappers = document.querySelectorAll('.beautify-wi-btn-group');
+    wrappers.forEach(wrapper => {
+        const parent = wrapper.parentElement;
+        if (parent) {
+            // 将按钮移回 parent
+            while (wrapper.firstChild) {
+                parent.appendChild(wrapper.firstChild);
+            }
+            wrapper.remove();
+        }
+    });
+    logger.debug('[Beautify] 已解除世界书按钮包裹');
 }
 
 /**
@@ -1949,6 +2136,12 @@ function enableFloatingBtn() {
         createFloatingBtn();
     }
 
+    // 初始化等待动画监听器（只初始化一次）
+    if (!waitingAnimState.listenersInitialized) {
+        initWaitingAnimationListeners();
+        waitingAnimState.listenersInitialized = true;
+    }
+
     // 显示悬浮按钮
     if (floatingBtn) {
         floatingBtn.style.display = 'flex';
@@ -2415,8 +2608,31 @@ function bindFloatingBtnEvents() {
 /** @type {HTMLElement|null} 快照菜单元素 */
 let snapshotMenu = null;
 
+/** @type {Object<string, boolean>} 世界书分组展开状态 */
+let worldInfoGroupExpanded = {};
+
+/**
+ * 获取世界书条目的显示名称
+ * @description 优先使用别名，否则从原始名称中提取条目名（去掉世界书名前缀）
+ * @param {Object} item - 世界书条目
+ * @returns {string} 显示名称
+ */
+function getWorldInfoDisplayName(item) {
+    // 优先使用别名
+    if (item.displayAlias) {
+        return item.displayAlias;
+    }
+    // 从原始名称中提取条目名（格式：世界书名: 条目名）
+    const colonIndex = item.name.indexOf(': ');
+    if (colonIndex !== -1) {
+        return item.name.substring(colonIndex + 2);
+    }
+    return item.name;
+}
+
 /**
  * 显示快照菜单（包含总开关、快速开关和快照三个区域）
+ * @description 世界书条目按世界书分组显示，支持折叠展开
  * @param {number} x - 点击位置 X
  * @param {number} y - 点击位置 Y
  */
@@ -2484,34 +2700,77 @@ async function showSnapshotMenu(x, y) {
         menuHtml += '<div class="snapshot-menu-divider"></div>';
     }
 
-    // 快速开关区域（支持预设条目和世界书条目）
+    // 快速开关区域（预设条目 + 世界书条目分组）
     if (quickToggles.length > 0) {
-        const togglesHtml = quickToggles.map(t => {
-            if (t.type === 'worldinfo') {
-                // 世界书条目
-                return `
-                <div class="snapshot-menu-toggle quick-toggle-worldinfo"
-                     data-world-name="${t.worldName}"
-                     data-uid="${t.uid}">
-                    <span class="menu-toggle-name">${t.name}</span>
-                    <span class="menu-toggle-switch ${t.enabled ? 'on' : 'off'}">
-                        <i class="fa-solid ${t.enabled ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
-                    </span>
-                </div>
-            `;
-            } else {
-                // 预设条目
-                return `
+        // 分离预设条目和世界书条目
+        const presetToggles = quickToggles.filter(t => t.type === 'preset');
+        const worldInfoToggles = quickToggles.filter(t => t.type === 'worldinfo');
+
+        // 渲染预设条目
+        if (presetToggles.length > 0) {
+            const presetsHtml = presetToggles.map(t => `
                 <div class="snapshot-menu-toggle quick-toggle-preset" data-identifier="${t.identifier}">
                     <span class="menu-toggle-name">${t.name}</span>
                     <span class="menu-toggle-switch ${t.enabled ? 'on' : 'off'}">
                         <i class="fa-solid ${t.enabled ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
                     </span>
                 </div>
-            `;
-            }
-        }).join('');
-        menuHtml += togglesHtml;
+            `).join('');
+            menuHtml += presetsHtml;
+        }
+
+        // 按世界书分组渲染世界书条目
+        if (worldInfoToggles.length > 0) {
+            // 异步获取所有世界书条目的真实状态
+            const statePromises = worldInfoToggles.map(t =>
+                quickToggleData.getWorldInfoStateAsync(t.worldName, t.uid)
+            );
+            const states = await Promise.all(statePromises);
+
+            // 把真实状态写回条目
+            worldInfoToggles.forEach((t, index) => {
+                t.enabled = states[index];
+            });
+
+            // 按世界书名分组
+            const worldInfoGroups = {};
+            worldInfoToggles.forEach(t => {
+                if (!worldInfoGroups[t.worldName]) {
+                    worldInfoGroups[t.worldName] = [];
+                }
+                worldInfoGroups[t.worldName].push(t);
+            });
+
+            // 渲染每个世界书分组
+            Object.keys(worldInfoGroups).forEach(worldName => {
+                const entries = worldInfoGroups[worldName];
+                const isExpanded = worldInfoGroupExpanded[worldName] !== false; // 默认展开
+                const groupId = `wi-group-${worldName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+
+                menuHtml += `
+                    <div class="snapshot-menu-wi-group" data-world-name="${worldName}">
+                        <div class="snapshot-menu-wi-header ${isExpanded ? 'expanded' : ''}" data-group-id="${groupId}">
+                            <i class="fa-solid ${isExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} wi-group-icon"></i>
+                            <span class="wi-group-name">${worldName}</span>
+                            <span class="wi-group-count">(${entries.length})</span>
+                        </div>
+                        <div class="snapshot-menu-wi-entries ${isExpanded ? '' : 'collapsed'}" id="${groupId}">
+                            ${entries.map(t => `
+                                <div class="snapshot-menu-toggle quick-toggle-worldinfo"
+                                     data-world-name="${t.worldName}"
+                                     data-uid="${t.uid}">
+                                    <span class="menu-toggle-name">${getWorldInfoDisplayName(t)}</span>
+                                    <span class="menu-toggle-switch ${t.enabled ? 'on' : 'off'}">
+                                        <i class="fa-solid ${t.enabled ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
+                                    </span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
         hasContent = true;
     }
 
@@ -2535,6 +2794,37 @@ async function showSnapshotMenu(x, y) {
 
     // 定位并显示菜单
     positionAndShowMenu(x, y);
+
+    // 绑定世界书分组折叠事件
+    snapshotMenu.querySelectorAll('.snapshot-menu-wi-header').forEach(header => {
+        header.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const worldName = header.closest('.snapshot-menu-wi-group')?.dataset.worldName;
+            const groupId = header.dataset.groupId;
+            const entriesEl = document.getElementById(groupId);
+            const icon = header.querySelector('.wi-group-icon');
+
+            if (!entriesEl || !worldName) return;
+
+            const isExpanded = header.classList.contains('expanded');
+
+            if (isExpanded) {
+                // 折叠
+                header.classList.remove('expanded');
+                entriesEl.classList.add('collapsed');
+                icon?.classList.remove('fa-chevron-down');
+                icon?.classList.add('fa-chevron-right');
+                worldInfoGroupExpanded[worldName] = false;
+            } else {
+                // 展开
+                header.classList.add('expanded');
+                entriesEl.classList.remove('collapsed');
+                icon?.classList.remove('fa-chevron-right');
+                icon?.classList.add('fa-chevron-down');
+                worldInfoGroupExpanded[worldName] = true;
+            }
+        });
+    });
 
     // 绑定总开关组事件
     snapshotMenu.querySelectorAll('.toggle-group-item').forEach(item => {
@@ -2710,7 +3000,8 @@ function getFloatingBtnSettings() {
 
 /**
  * 应用悬浮按钮所有设置
- * @description 读取设置并应用到悬浮按钮，包括大小、颜色、自定义图片
+ * @description 读取设置并应用到悬浮按钮，包括大小、颜色、自定义图片、GIF动画库，
+ * 并初始化等待动画监听器（只初始化一次，防止重复注册事件）
  */
 export function applyFloatingBtnSettings() {
     if (!floatingBtn) return;
@@ -2720,6 +3011,17 @@ export function applyFloatingBtnSettings() {
     updateFloatingBtnSize(settings.size);
     updateFloatingBtnColor(settings.color);
 
+    // 优先检查是否有GIF动画库
+    if (settings.currentGifPackId && settings.gifPacks) {
+        const pack = settings.gifPacks.find(p => p.id === settings.currentGifPackId);
+        if (pack) {
+            applyGifAnimationPack(pack);
+            logger.debug('[Beautify] 悬浮按钮已应用GIF动画库:', pack.name);
+            return;
+        }
+    }
+
+    // 没有动画库，使用静态图片
     if (settings.imageUrl) {
         setFloatingBtnImage(settings.imageUrl, settings.imageOpacity);
     } else {
@@ -2850,4 +3152,845 @@ export function saveFloatingBtnSettings(newSettings) {
 
     saveSettingsDebounced();
     logger.debug('[Beautify] 悬浮按钮设置已保存:', newSettings);
+}
+
+// ==========================================
+// GIF动画库功能
+// ==========================================
+
+/** 当前动画库状态 */
+let currentGifPackState = {
+    pack: null,           // 当前动画库数据
+    state: 'idle',        // 'idle' | 'clicking' | 'afterClick'
+    restoreTimer: null    // 恢复待机的定时器
+};
+
+/**
+ * 应用GIF动画库到悬浮按钮
+ * @param {Object} pack - 动画库数据
+ */
+export function applyGifAnimationPack(pack) {
+    if (!floatingBtn || !pack) return;
+
+    // 清除之前的状态
+    clearGifPackState();
+
+    // 保存当前动画库
+    currentGifPackState.pack = pack;
+    currentGifPackState.state = 'idle';
+
+    // 显示待机图片
+    if (pack.idle) {
+        setFloatingBtnImageInternal(pack.idle);
+    }
+
+    // 绑定点击事件（如果有点击动画）
+    if (pack.clickAnim || pack.afterClick) {
+        floatingBtn.addEventListener('click', handleGifPackClick);
+    }
+
+    logger.info('[Beautify] 已应用GIF动画库:', pack.name);
+}
+
+/**
+ * 清除GIF动画库
+ */
+export function clearGifAnimationPack() {
+    clearGifPackState();
+    clearFloatingBtnImage();
+    logger.info('[Beautify] 已清除GIF动画库');
+}
+
+/**
+ * 清除动画库状态
+ */
+function clearGifPackState() {
+    // 清除定时器
+    if (currentGifPackState.restoreTimer) {
+        clearTimeout(currentGifPackState.restoreTimer);
+        currentGifPackState.restoreTimer = null;
+    }
+
+    // 移除点击事件
+    if (floatingBtn) {
+        floatingBtn.removeEventListener('click', handleGifPackClick);
+    }
+
+    // 重置状态
+    currentGifPackState.pack = null;
+    currentGifPackState.state = 'idle';
+}
+
+/**
+ * 处理GIF动画库点击
+ * @param {Event} e - 点击事件
+ */
+function handleGifPackClick(e) {
+    const pack = currentGifPackState.pack;
+    if (!pack) return;
+
+    // 阻止事件冒泡，避免触发悬浮按钮的其他点击事件
+    e.stopPropagation();
+
+    const currentState = currentGifPackState.state;
+
+    // 清除之前的恢复定时器
+    if (currentGifPackState.restoreTimer) {
+        clearTimeout(currentGifPackState.restoreTimer);
+        currentGifPackState.restoreTimer = null;
+    }
+
+    if (currentState === 'idle') {
+        // 从待机状态点击 → 播放点击动画
+        if (pack.clickAnim) {
+            currentGifPackState.state = 'clicking';
+            playClickAnimation(pack);
+        } else if (pack.afterClick) {
+            // 没有点击动画，直接显示点击后图片
+            currentGifPackState.state = 'afterClick';
+            setFloatingBtnImageInternal(pack.afterClick);
+            scheduleRestoreIdle(pack);
+        }
+    } else if (currentState === 'afterClick') {
+        // 从点击后状态再次点击 → 恢复待机
+        currentGifPackState.state = 'idle';
+        if (pack.idle) {
+            setFloatingBtnImageInternal(pack.idle);
+        }
+    }
+    // clicking状态下点击不做处理，等动画播完
+}
+
+/**
+ * 播放点击动画
+ * @param {Object} pack - 动画库数据
+ */
+function playClickAnimation(pack) {
+    if (!pack.clickAnim) return;
+
+    // 显示点击动画GIF
+    // 为了让GIF重新播放，需要重新设置src（加时间戳强制刷新）
+    const gifUrl = pack.clickAnim + '?t=' + Date.now();
+    setFloatingBtnImageInternal(gifUrl);
+
+    // 使用用户设置的动画时长（秒转毫秒），默认2秒
+    const animDuration = (pack.animDuration || 2) * 1000;
+
+    setTimeout(() => {
+        if (currentGifPackState.state !== 'clicking') return;
+
+        // 动画播完，切换到点击后状态
+        if (pack.afterClick) {
+            currentGifPackState.state = 'afterClick';
+            setFloatingBtnImageInternal(pack.afterClick);
+            scheduleRestoreIdle(pack);
+        } else {
+            // 没有点击后图片，直接恢复
+            currentGifPackState.state = 'idle';
+
+            // 检查是否正在等待AI响应
+            if (waitingAnimState.isWaiting && waitingAnimState.currentPack?.waitingGif) {
+                // 正在等待中，恢复到等待动画
+                const waitingGifUrl = waitingAnimState.currentPack.waitingGif + '?t=' + Date.now();
+                setFloatingBtnImageInternal(waitingGifUrl);
+                logger.debug('[Beautify] 点击动画播完，恢复到等待动画');
+            } else if (pack.idle) {
+                // 不在等待中，恢复到待机图片
+                setFloatingBtnImageInternal(pack.idle);
+            }
+        }
+    }, animDuration);
+}
+
+/**
+ * 安排恢复待机状态
+ * @description 点击动画播完后，延迟恢复。如果正在等待AI响应，则恢复到等待动画而不是待机图片
+ * @param {Object} pack - 动画库数据
+ */
+function scheduleRestoreIdle(pack) {
+    if (!pack.restoreDelay || pack.restoreDelay <= 0) return;
+
+    currentGifPackState.restoreTimer = setTimeout(() => {
+        if (currentGifPackState.state === 'afterClick') {
+            currentGifPackState.state = 'idle';
+
+            // 检查是否正在等待AI响应
+            if (waitingAnimState.isWaiting && waitingAnimState.currentPack) {
+                // 正在等待中，恢复到等待动画
+                const waitingPack = waitingAnimState.currentPack;
+                if (waitingPack.waitingGif) {
+                    const gifUrl = waitingPack.waitingGif + '?t=' + Date.now();
+                    setFloatingBtnImageInternal(gifUrl);
+                    logger.debug('[Beautify] 点击动画播完，恢复到等待动画');
+                    return;
+                }
+            }
+
+            // 不在等待中，恢复到待机图片
+            if (pack.idle) {
+                setFloatingBtnImageInternal(pack.idle);
+                logger.debug('[Beautify] GIF动画库已自动恢复待机');
+            }
+        }
+    }, pack.restoreDelay * 1000);
+}
+
+/**
+ * 内部设置悬浮按钮图片（不保存设置）
+ * @param {string} url - 图片URL
+ */
+function setFloatingBtnImageInternal(url) {
+    if (!floatingBtn || !url) return;
+
+    // 隐藏图标
+    const icon = floatingBtn.querySelector('i');
+    if (icon) {
+        icon.style.display = 'none';
+    }
+
+    // 创建或更新图片元素
+    let img = floatingBtn.querySelector('img');
+    if (!img) {
+        img = document.createElement('img');
+        img.style.objectFit = 'contain';
+        img.style.pointerEvents = 'none';
+        floatingBtn.appendChild(img);
+    }
+
+    // 获取当前按钮大小
+    const settings = getFloatingBtnSettings();
+    const size = settings.size || 38;
+
+    img.src = url;
+    img.style.width = `${size * 0.8}px`;
+    img.style.height = `${size * 0.8}px`;
+    img.style.display = 'block';
+}
+
+// ==========================================
+// 等待动画功能（发送消息时的动画）
+// ==========================================
+
+/** 等待动画状态 */
+let waitingAnimState = {
+    isWaiting: false,         // 是否正在等待AI响应
+    currentPack: null,        // 当前使用的等待动画库
+    startTimer: null,         // 开始动画定时器（播完后切换到等待动画）
+    completeTimer: null,      // 完成动画定时器
+    previousImageUrl: '',     // 等待前的图片URL（用于恢复）
+    previousOpacity: 1.0,     // 等待前的透明度
+    listenersInitialized: false  // 监听器是否已初始化
+};
+
+/**
+ * 初始化等待动画监听器
+ * @description 监听发送消息和生成完成事件，自动切换等待动画
+ */
+export function initWaitingAnimationListeners() {
+    // 监听生成开始事件（用户点击发送后触发）
+    eventSource.on(event_types.GENERATION_STARTED, handleGenerationStarted);
+
+    // 监听生成结束事件（AI输出完成后触发）
+    eventSource.on(event_types.GENERATION_ENDED, handleGenerationEnded);
+
+    // 监听终止按钮点击
+    $(document).on('click', '.mes_stop', handleGenerationStopped);
+
+    logger.info('[Beautify] 等待动画监听器已初始化');
+}
+
+/**
+ * 处理生成开始事件
+ * @description 用户点击发送后，先播放开始动画（如有），再切换到等待动画
+ */
+function handleGenerationStarted() {
+    // 如果已经在等待状态，忽略
+    if (waitingAnimState.isWaiting) return;
+
+    // 获取当前等待动画库设置
+    const settings = extension_settings[EXT_ID]?.beautify?.floatingBtn || {};
+    const waitingPacks = settings.waitingPacks || [];
+    const currentWaitingPackId = settings.currentWaitingPackId || '';
+
+    // 如果没有设置等待动画库，不做任何处理
+    if (!currentWaitingPackId || waitingPacks.length === 0) {
+        logger.debug('[Beautify] 未设置等待动画库，保持当前状态');
+        return;
+    }
+
+    // 查找当前使用的等待动画库
+    const pack = waitingPacks.find(p => p.id === currentWaitingPackId);
+    if (!pack || (!pack.startGif && !pack.waitingGif)) {
+        logger.debug('[Beautify] 等待动画库无效或没有动画GIF');
+        return;
+    }
+
+    // 保存当前状态（用于恢复）
+    waitingAnimState.previousImageUrl = settings.imageUrl || '';
+    waitingAnimState.previousOpacity = settings.imageOpacity || 1.0;
+
+    // 切换到等待状态
+    waitingAnimState.isWaiting = true;
+    waitingAnimState.currentPack = pack;
+
+    // 如果有开始动画，先播放开始动画
+    if (pack.startGif) {
+        // 显示开始动画（加时间戳强制GIF重新播放）
+        const startGifUrl = pack.startGif + '?t=' + Date.now();
+        setFloatingBtnImageInternal(startGifUrl);
+
+        logger.info('[Beautify] 播放开始动画:', pack.name, '时长:', pack.startDuration, '秒');
+
+        // 设置定时器，开始动画播完后切换到等待动画
+        const startDuration = (pack.startDuration || 2) * 1000;
+        waitingAnimState.startTimer = setTimeout(() => {
+            // 检查是否还在等待状态（可能被用户终止了）
+            if (!waitingAnimState.isWaiting) return;
+
+            // 切换到等待动画
+            if (pack.waitingGif) {
+                const waitingGifUrl = pack.waitingGif + '?t=' + Date.now();
+                setFloatingBtnImageInternal(waitingGifUrl);
+                logger.debug('[Beautify] 切换到等待动画（循环播放）');
+            }
+        }, startDuration);
+    } else {
+        // 没有开始动画，直接显示等待动画
+        const gifUrl = pack.waitingGif + '?t=' + Date.now();
+        setFloatingBtnImageInternal(gifUrl);
+        logger.info('[Beautify] 开始播放等待动画:', pack.name);
+    }
+}
+
+/**
+ * 处理生成结束事件
+ * @description AI输出完成后，播放完成动画，然后恢复待机
+ */
+function handleGenerationEnded() {
+    // 如果不在等待状态，忽略
+    if (!waitingAnimState.isWaiting) return;
+
+    const pack = waitingAnimState.currentPack;
+
+    // 如果有完成动画，播放它
+    if (pack && pack.completeGif) {
+        // 显示完成动画
+        const gifUrl = pack.completeGif + '?t=' + Date.now();
+        setFloatingBtnImageInternal(gifUrl);
+
+        // 设置定时器，完成动画播放完后恢复待机
+        const duration = (pack.completeDuration || 3) * 1000;
+        waitingAnimState.completeTimer = setTimeout(() => {
+            restoreToIdleState();
+        }, duration);
+
+        logger.info('[Beautify] 播放完成动画，', pack.completeDuration, '秒后恢复待机');
+    } else {
+        // 没有完成动画，直接恢复待机
+        restoreToIdleState();
+    }
+}
+
+/**
+ * 处理生成终止事件
+ * @description 用户点击终止按钮，直接恢复待机（不播放完成动画）
+ */
+function handleGenerationStopped() {
+    // 如果不在等待状态，忽略
+    if (!waitingAnimState.isWaiting) return;
+
+    logger.info('[Beautify] 用户终止生成，直接恢复待机');
+
+    // 清除开始动画定时器（如果有）
+    if (waitingAnimState.startTimer) {
+        clearTimeout(waitingAnimState.startTimer);
+        waitingAnimState.startTimer = null;
+    }
+
+    // 清除完成动画定时器（如果有）
+    if (waitingAnimState.completeTimer) {
+        clearTimeout(waitingAnimState.completeTimer);
+        waitingAnimState.completeTimer = null;
+    }
+
+    // 直接恢复待机
+    restoreToIdleState();
+}
+
+/**
+ * 恢复到待机状态
+ * @description 恢复等待前的图片，或使用点击动画库的待机图
+ */
+function restoreToIdleState() {
+    // 清除开始动画定时器
+    if (waitingAnimState.startTimer) {
+        clearTimeout(waitingAnimState.startTimer);
+        waitingAnimState.startTimer = null;
+    }
+
+    // 清除完成动画定时器
+    if (waitingAnimState.completeTimer) {
+        clearTimeout(waitingAnimState.completeTimer);
+        waitingAnimState.completeTimer = null;
+    }
+
+    // 重置等待状态
+    waitingAnimState.isWaiting = false;
+    waitingAnimState.currentPack = null;
+
+    // 恢复之前的图片
+    const settings = extension_settings[EXT_ID]?.beautify?.floatingBtn || {};
+
+    // 优先使用点击动画库的待机图
+    if (settings.currentGifPackId && settings.gifPacks) {
+        const gifPack = settings.gifPacks.find(p => p.id === settings.currentGifPackId);
+        if (gifPack && gifPack.idle) {
+            setFloatingBtnImageInternal(gifPack.idle);
+            logger.debug('[Beautify] 恢复到点击动画库的待机图');
+            return;
+        }
+    }
+
+    // 其次使用静态待机图片
+    if (waitingAnimState.previousImageUrl) {
+        setFloatingBtnImage(waitingAnimState.previousImageUrl, waitingAnimState.previousOpacity);
+        logger.debug('[Beautify] 恢复到静态待机图片');
+        return;
+    }
+
+    // 最后清除图片，显示默认图标
+    clearFloatingBtnImage();
+    logger.debug('[Beautify] 恢复到默认图标');
+}
+
+/**
+ * 检查是否正在等待AI响应
+ * @returns {boolean} 是否正在等待
+ */
+export function isWaitingForGeneration() {
+    return waitingAnimState.isWaiting;
+}
+
+// ==========================================
+// 去除阴影功能组
+// ==========================================
+
+/**
+ * 绑定去除阴影功能组
+ * @description 折叠展开式，包含一键去除和分类去除
+ */
+function bindRemoveShadowGroup() {
+    // 折叠展开绑定
+    bindCollapsible('beautify-shadow-collapse-header', 'beautify-shadow-collapse-content');
+
+    const allCheckbox = document.getElementById('beautify-remove-shadow-all-enabled');
+
+    // 子开关配置
+    const shadowSubItems = [
+        { id: 'beautify-remove-text-shadow-enabled', key: 'removeTextShadowEnabled', className: 'beautify-remove-text-shadow' },
+        { id: 'beautify-remove-filter-shadow-enabled', key: 'removeFilterShadowEnabled', className: 'beautify-remove-filter-shadow' },
+        { id: 'beautify-remove-popup-shadow-enabled', key: 'removePopupShadowEnabled', className: 'beautify-remove-popup-shadow' },
+        { id: 'beautify-remove-backdrop-enabled', key: 'removeBackdropEnabled', className: 'beautify-remove-backdrop' },
+        { id: 'beautify-remove-avatar-shadow-enabled', key: 'removeAvatarShadowEnabled', className: 'beautify-remove-avatar-shadow' },
+        { id: 'beautify-remove-menu-shadow-enabled', key: 'removeMenuShadowEnabled', className: 'beautify-remove-menu-shadow' },
+        { id: 'beautify-remove-bg-shadow-enabled', key: 'removeBgShadowEnabled', className: 'beautify-remove-bg-shadow' },
+        { id: 'beautify-remove-topbar-shadow-enabled', key: 'removeTopbarShadowEnabled', className: 'beautify-remove-topbar-shadow' },
+        { id: 'beautify-remove-preset-shadow-enabled', key: 'removePresetShadowEnabled', className: 'beautify-remove-preset-shadow' },
+        { id: 'beautify-remove-edit-shadow-enabled', key: 'removeEditShadowEnabled', className: 'beautify-remove-edit-shadow' }
+    ];
+
+    // 应用所有阴影设置
+    const applyAllShadowSettings = (enabled) => {
+        shadowSubItems.forEach(item => {
+            const checkbox = document.getElementById(item.id);
+            if (checkbox) {
+                /** @type {HTMLInputElement} */ (checkbox).checked = enabled;
+            }
+            extension_settings[EXT_ID].beautify[item.key] = enabled;
+            if (enabled) {
+                document.body.classList.add(item.className);
+            } else {
+                document.body.classList.remove(item.className);
+            }
+        });
+    };
+
+    // 一键去除所有阴影
+    if (allCheckbox) {
+        /** @type {HTMLInputElement} */ (allCheckbox).checked = removeShadowAllEnabled;
+
+        allCheckbox.addEventListener('change', function () {
+            const newState = /** @type {HTMLInputElement} */ (this).checked;
+            removeShadowAllEnabled = newState;
+            extension_settings[EXT_ID].beautify.removeShadowAllEnabled = newState;
+            saveSettingsDebounced();
+            logger.info('[Beautify] 一键去除所有阴影:', newState);
+
+            applyAllShadowSettings(newState);
+        });
+
+        // 如果已启用，立即应用
+        if (removeShadowAllEnabled) {
+            applyAllShadowSettings(true);
+        }
+    }
+
+    // 绑定各个子开关
+    shadowSubItems.forEach(item => {
+        const initialValue = extension_settings[EXT_ID].beautify[item.key] || false;
+        bindCheckboxToggle(item.id, item.key, initialValue,
+            () => document.body.classList.add(item.className),
+            () => document.body.classList.remove(item.className)
+        );
+    });
+
+    logger.debug('[Beautify] 去除阴影功能组已绑定');
+}
+
+// ==========================================
+// 阅读辅助功能组
+// ==========================================
+
+/**
+ * 绑定阅读辅助功能组
+ * @description 折叠展开式，无总开关，各功能独立控制
+ */
+function bindReadingAidGroup() {
+    // 折叠展开绑定
+    bindCollapsible('beautify-reading-aid-collapse-header', 'beautify-reading-aid-collapse-content');
+
+    // 聊天行高（独立功能，勾选后显示滑块）
+    bindChatLineHeight();
+
+    // 文本下划线（勾选后显示子选项）
+    const underlineCheckbox = document.getElementById('beautify-underline-enabled');
+    const underlineOptions = document.getElementById('beautify-underline-options');
+
+    if (underlineCheckbox) {
+        /** @type {HTMLInputElement} */ (underlineCheckbox).checked = underlineEnabled;
+
+        // 根据初始状态显示/隐藏子选项
+        if (underlineOptions) {
+            underlineOptions.style.display = underlineEnabled ? 'block' : 'none';
+        }
+
+        underlineCheckbox.addEventListener('change', function () {
+            const newState = /** @type {HTMLInputElement} */ (this).checked;
+            underlineEnabled = newState;
+            extension_settings[EXT_ID].beautify.underlineEnabled = newState;
+            saveSettingsDebounced();
+            logger.info('[Beautify] 文本下划线:', newState);
+
+            // 显示/隐藏子选项
+            if (underlineOptions) {
+                underlineOptions.style.display = newState ? 'block' : 'none';
+            }
+
+            if (newState) {
+                document.body.classList.add('beautify-underline');
+            } else {
+                document.body.classList.remove('beautify-underline');
+            }
+        });
+
+        // 如果已启用，立即应用
+        if (underlineEnabled) {
+            document.body.classList.add('beautify-underline');
+        }
+    }
+
+    // AI下划线颜色
+    bindColorPicker('beautify-underline-ai-color', 'underlineAiColor', underlineAiColor,
+        (color) => document.documentElement.style.setProperty('--beautify-underline-ai-color', color)
+    );
+
+    // 用户下划线颜色
+    bindColorPicker('beautify-underline-user-color', 'underlineUserColor', underlineUserColor,
+        (color) => document.documentElement.style.setProperty('--beautify-underline-user-color', color)
+    );
+
+    // 首字下沉
+    bindCheckboxToggle('beautify-dropcap-enabled', 'dropcapEnabled', dropcapEnabled,
+        () => document.body.classList.add('beautify-dropcap'),
+        () => document.body.classList.remove('beautify-dropcap')
+    );
+
+    // 首行缩进
+    bindCheckboxToggle('beautify-indent-enabled', 'indentEnabled', indentEnabled,
+        () => document.body.classList.add('beautify-indent'),
+        () => document.body.classList.remove('beautify-indent')
+    );
+
+    // 段落间距
+    bindParagraphSpacing();
+
+    // 悬停段落高亮（勾选后显示颜色选择器）
+    const hoverCheckbox = document.getElementById('beautify-hover-highlight-enabled');
+    const hoverColorSetting = document.getElementById('beautify-hover-highlight-color-setting');
+
+    if (hoverCheckbox) {
+        /** @type {HTMLInputElement} */ (hoverCheckbox).checked = hoverHighlightEnabled;
+
+        // 根据初始状态显示/隐藏颜色选择器
+        if (hoverColorSetting) {
+            hoverColorSetting.style.display = hoverHighlightEnabled ? 'block' : 'none';
+        }
+
+        hoverCheckbox.addEventListener('change', function () {
+            const newState = /** @type {HTMLInputElement} */ (this).checked;
+            hoverHighlightEnabled = newState;
+            extension_settings[EXT_ID].beautify.hoverHighlightEnabled = newState;
+            saveSettingsDebounced();
+            logger.info('[Beautify] 悬停段落高亮:', newState);
+
+            // 显示/隐藏颜色选择器
+            if (hoverColorSetting) {
+                hoverColorSetting.style.display = newState ? 'block' : 'none';
+            }
+
+            if (newState) {
+                document.body.classList.add('beautify-hover-highlight');
+            } else {
+                document.body.classList.remove('beautify-hover-highlight');
+            }
+        });
+
+        // 如果已启用，立即应用
+        if (hoverHighlightEnabled) {
+            document.body.classList.add('beautify-hover-highlight');
+        }
+    }
+
+    // 悬停高亮颜色
+    bindColorPicker('beautify-hover-highlight-color', 'hoverHighlightColor', hoverHighlightColor,
+        (color) => document.documentElement.style.setProperty('--beautify-hover-highlight-color', color)
+    );
+
+    // 应用初始颜色值
+    document.documentElement.style.setProperty('--beautify-underline-ai-color', underlineAiColor);
+    document.documentElement.style.setProperty('--beautify-underline-user-color', underlineUserColor);
+    document.documentElement.style.setProperty('--beautify-hover-highlight-color', hoverHighlightColor);
+
+    logger.debug('[Beautify] 阅读辅助功能组已绑定');
+}
+
+/**
+ * 绑定折叠展开功能
+ * @param {string} headerId - 折叠标题元素ID
+ * @param {string} contentId - 折叠内容元素ID
+ */
+function bindCollapsible(headerId, contentId) {
+    const header = document.getElementById(headerId);
+    const content = document.getElementById(contentId);
+
+    if (!header || !content) {
+        logger.warn(`[Beautify] 未找到折叠元素 #${headerId} 或 #${contentId}`);
+        return;
+    }
+
+    // 默认折叠
+    content.style.display = 'none';
+    header.classList.remove('expanded');
+
+    header.addEventListener('click', function () {
+        const isExpanded = content.style.display !== 'none';
+
+        if (isExpanded) {
+            content.style.display = 'none';
+            header.classList.remove('expanded');
+        } else {
+            content.style.display = 'block';
+            header.classList.add('expanded');
+        }
+    });
+}
+
+/**
+ * 绑定聊天行高功能
+ * @description 勾选框 + 滑块，行高同时影响聊天文本和下划线
+ */
+function bindChatLineHeight() {
+    const checkbox = document.getElementById('beautify-chat-line-height-enabled');
+    const settingContainer = document.getElementById('beautify-chat-line-height-setting');
+    const slider = document.getElementById('beautify-chat-line-height');
+    const valueDisplay = document.getElementById('beautify-chat-line-height-value');
+
+    if (!checkbox) {
+        logger.warn('[Beautify] 未找到聊天行高勾选框');
+        return;
+    }
+
+    // 从设置加载初始值
+    const lineHeightEnabled = extension_settings[EXT_ID].beautify.chatLineHeightEnabled || false;
+    const lineHeightValue = extension_settings[EXT_ID].beautify.chatLineHeight || 1.6;
+
+    // 同步勾选框初始状态
+    /** @type {HTMLInputElement} */ (checkbox).checked = lineHeightEnabled;
+
+    // 同步滑块初始值
+    if (slider) {
+        /** @type {HTMLInputElement} */ (slider).value = String(lineHeightValue);
+    }
+    if (valueDisplay) {
+        valueDisplay.textContent = String(lineHeightValue);
+    }
+
+    // 根据启用状态显示/隐藏滑块
+    if (settingContainer) {
+        settingContainer.style.display = lineHeightEnabled ? 'block' : 'none';
+    }
+
+    // 如果已启用，立即应用
+    if (lineHeightEnabled) {
+        document.body.classList.add('beautify-chat-line-height');
+        applyLineHeight(lineHeightValue);
+    }
+
+    // 勾选框事件
+    checkbox.addEventListener('change', function () {
+        const newState = /** @type {HTMLInputElement} */ (this).checked;
+        extension_settings[EXT_ID].beautify.chatLineHeightEnabled = newState;
+        saveSettingsDebounced();
+        logger.info('[Beautify] 聊天行高:', newState);
+
+        // 显示/隐藏滑块
+        if (settingContainer) {
+            settingContainer.style.display = newState ? 'block' : 'none';
+        }
+
+        if (newState) {
+            document.body.classList.add('beautify-chat-line-height');
+            const currentValue = slider ? parseFloat(/** @type {HTMLInputElement} */ (slider).value) : lineHeightValue;
+            applyLineHeight(currentValue);
+        } else {
+            document.body.classList.remove('beautify-chat-line-height');
+        }
+    });
+
+    // 滑块事件
+    if (slider) {
+        slider.addEventListener('input', function () {
+            const value = parseFloat(/** @type {HTMLInputElement} */ (this).value);
+            extension_settings[EXT_ID].beautify.chatLineHeight = value;
+            saveSettingsDebounced();
+
+            if (valueDisplay) {
+                valueDisplay.textContent = String(value);
+            }
+
+            // 只有启用时才应用
+            if (/** @type {HTMLInputElement} */ (checkbox).checked) {
+                applyLineHeight(value);
+            }
+        });
+    }
+}
+
+/**
+ * 应用行高值（同时影响聊天文本和下划线）
+ * @param {number} value - 行高值
+ */
+function applyLineHeight(value) {
+    document.documentElement.style.setProperty('--beautify-chat-line-height', String(value));
+    document.documentElement.style.setProperty('--beautify-underline-line-height', `${value}em`);
+    logger.debug('[Beautify] 行高已应用:', value);
+}
+
+/**
+ * 绑定颜色选择器
+ * @param {string} elementId - 颜色选择器元素ID
+ * @param {string} settingKey - 设置键名
+ * @param {string} initialValue - 初始颜色值
+ * @param {Function} applyFn - 应用颜色的函数
+ */
+function bindColorPicker(elementId, settingKey, initialValue, applyFn) {
+    const colorPicker = document.getElementById(elementId);
+    if (!colorPicker) {
+        logger.warn(`[Beautify] 未找到颜色选择器 #${elementId}`);
+        return;
+    }
+
+    // 设置初始颜色
+    colorPicker.setAttribute('color', initialValue);
+
+    // 监听颜色变化
+    colorPicker.addEventListener('change', function (e) {
+        const color = e.detail?.rgba || initialValue;
+        extension_settings[EXT_ID].beautify[settingKey] = color;
+        saveSettingsDebounced();
+        applyFn(color);
+        logger.debug(`[Beautify] ${settingKey} 颜色变更:`, color);
+    });
+
+    // 立即应用初始颜色
+    applyFn(initialValue);
+}
+
+/**
+ * 绑定段落间距功能
+ * @description 勾选框 + 单选按钮组
+ */
+function bindParagraphSpacing() {
+    const checkbox = document.getElementById('beautify-paragraph-spacing-enabled');
+    const settingContainer = document.getElementById('beautify-paragraph-spacing-setting');
+    const radios = document.querySelectorAll('input[name="beautify-paragraph-spacing"]');
+
+    if (!checkbox) {
+        logger.warn('[Beautify] 未找到段落间距勾选框');
+        return;
+    }
+
+    // 同步勾选框初始状态
+    /** @type {HTMLInputElement} */ (checkbox).checked = paragraphSpacingEnabled;
+
+    // 同步单选按钮初始值
+    radios.forEach(radio => {
+        if (/** @type {HTMLInputElement} */ (radio).value === paragraphSpacingValue) {
+            /** @type {HTMLInputElement} */ (radio).checked = true;
+        }
+    });
+
+    // 根据启用状态显示/隐藏单选按钮组
+    if (settingContainer) {
+        settingContainer.style.display = paragraphSpacingEnabled ? 'block' : 'none';
+    }
+
+    // 如果已启用，立即应用
+    if (paragraphSpacingEnabled) {
+        document.body.classList.add('beautify-paragraph-spacing');
+        document.documentElement.style.setProperty('--beautify-paragraph-spacing', `${paragraphSpacingValue}em`);
+    }
+
+    // 勾选框事件
+    checkbox.addEventListener('change', function () {
+        const newState = /** @type {HTMLInputElement} */ (this).checked;
+        paragraphSpacingEnabled = newState;
+        extension_settings[EXT_ID].beautify.paragraphSpacingEnabled = newState;
+        saveSettingsDebounced();
+        logger.info('[Beautify] 段落间距:', newState);
+
+        // 显示/隐藏单选按钮组
+        if (settingContainer) {
+            settingContainer.style.display = newState ? 'block' : 'none';
+        }
+
+        if (newState) {
+            document.body.classList.add('beautify-paragraph-spacing');
+            document.documentElement.style.setProperty('--beautify-paragraph-spacing', `${paragraphSpacingValue}em`);
+        } else {
+            document.body.classList.remove('beautify-paragraph-spacing');
+        }
+    });
+
+    // 单选按钮事件
+    radios.forEach(radio => {
+        radio.addEventListener('change', function () {
+            const value = /** @type {HTMLInputElement} */ (this).value;
+            paragraphSpacingValue = value;
+            extension_settings[EXT_ID].beautify.paragraphSpacingValue = value;
+            saveSettingsDebounced();
+            document.documentElement.style.setProperty('--beautify-paragraph-spacing', `${value}em`);
+            logger.debug('[Beautify] 段落间距值:', value);
+        });
+    });
 }

@@ -1,13 +1,13 @@
 /**
  * 字体管理器 - UI 界面
- * 
+ *
  * @description
  * 负责字体管理的所有 UI 交互和渲染：
  * - 渲染字体列表（支持搜索、筛选、分页）
  * - 渲染标签管理界面
  * - 处理用户操作（添加、删除、编辑、导入导出）
  * - 监听 FontManager 的事件并刷新 UI
- * 
+ *
  * 采用事件驱动架构，与 FontManager 通过 eventSource 通信
  */
 
@@ -18,11 +18,11 @@ import logger from './logger.js';
 export class FontManagerUI {
   /**
    * 构造函数
-   * 
+   *
    * @description
    * 初始化 UI 管理器并保存 FontManager 实例引用
    * uiState 保存所有 UI 状态（搜索、筛选、分页、展开等）
-   * 
+   *
    * @param {Object} fontManager - 字体管理器核心实例
    */
   constructor(fontManager) {
@@ -53,13 +53,13 @@ export class FontManagerUI {
 
   /**
    * 初始化 UI
-   * 
+   *
    * @description
    * 在指定容器中渲染字体管理界面并绑定事件：
    * 1. 保存容器引用
    * 2. 调用 render() 生成 HTML
    * 3. 调用 bindEvents() 绑定交互事件
-   * 
+   *
    * @async
    * @param {HTMLElement} container - UI 容器元素（由 index.js 传入）
    */
@@ -78,7 +78,7 @@ export class FontManagerUI {
 
   /**
    * 渲染 UI 界面
-   * 
+   *
    * @description
    * 生成完整的字体管理 HTML 结构：
    * - 字体功能开关
@@ -86,7 +86,7 @@ export class FontManagerUI {
    * - 工具栏（搜索、筛选、导入导出）
    * - 字体库列表（可折叠、支持分页）
    * - 标签管理（可折叠、支持分页）
-   * 
+   *
    * 渲染完成后自动调用 refresh 方法更新数据显示
    */
   render() {
@@ -102,7 +102,7 @@ export class FontManagerUI {
             <span class="hint-inline">关闭后将使用系统默认字体设置</span>
           </label>
         </div>
-        
+
         <!-- 添加新字体区域 -->
         <div class="font-add-section">
           <div class="font-add-header" id="font-add-toggle">
@@ -119,16 +119,20 @@ export class FontManagerUI {
                 </a>
               </div>
             </div>
-            
+
             <textarea id="font-input" placeholder='支持多种格式：
-1. 完整字体代码：
+
+1. @import 格式（在线字体服务）：
 @import url("https://fontsapi.zeoseven.com/256/main/result.css");
-body {
-    font-family: "Huiwen-mincho";
+body { font-family: "Huiwen-mincho"; }
+
+2. @font-face 格式（本地/远程字体文件）：
+@font-face {
+  font-family: "MyFont";
+  src: url("https://example.com/font.woff2") format("woff2");
 }
 
-2. 仅@import链接（需填写自定义名称）：
-@import url("https://fontsapi.zeoseven.com/119/main/result.css");' rows="5"></textarea>
+提示：@font-face 支持 .woff、.woff2、.ttf、.otf 格式' rows="5"></textarea>
             <div class="font-add-controls">
               <input type="text" id="font-name-input" placeholder="自定义字体名称（某些格式必填）" class="text_pole">
               <button id="add-font-btn" class="menu_button compact-btn">
@@ -137,7 +141,7 @@ body {
             </div>
           </div>
         </div>
-        
+
         <!-- 工具栏 -->
         <div class="font-toolbar">
           <div class="toolbar-left">
@@ -183,7 +187,7 @@ body {
             `}
           </div>
         </div>
-        
+
         <!-- 字体库 -->
         <div class="font-warehouse-section">
           <div class="font-warehouse-header" id="font-warehouse-toggle">
@@ -201,24 +205,24 @@ body {
                   </label>
                 </div>
               ` : ''}
-              
+
               <div id="font-list" class="font-list">
                 <!-- 字体项会动态生成 -->
               </div>
-              
+
               <!-- 空状态提示 -->
               <div class="font-empty-state" style="display: none;">
                 <i class="fa fa-font fa-2x"></i>
                 <p>还没有添加任何字体</p>
                 <p class="hint">点击上方"添加新字体"开始使用</p>
               </div>
-              
+
               <!-- 字体列表分页导航 -->
               <div id="font-pagination" class="pagination-container"></div>
             </div>
           </div>
         </div>
-        
+
         <!-- 标签管理 -->
         <div class="tag-manager-section-compact">
           <div class="tag-manager-header" id="tag-manager-toggle">
@@ -232,12 +236,12 @@ body {
             <div class="tag-manager-empty" style="display: none;">
               <p class="hint">暂无标签</p>
             </div>
-            
+
             <!-- 标签管理分页导航 -->
             <div id="tag-pagination" class="pagination-container"></div>
           </div>
         </div>
-        
+
         <!-- 隐藏的文件选择器 -->
         <input type="file" id="font-import-file" accept=".json" style="display: none;">
       </div>
@@ -250,7 +254,7 @@ body {
 
   /**
    * 绑定 UI 事件
-   * 
+   *
    * @description
    * 为所有交互元素绑定事件监听器：
    * 1. 字体功能开关（change 事件）
@@ -442,16 +446,16 @@ body {
 
   /**
    * 处理添加字体操作
-   * 
+   *
    * @description
    * 用户点击"添加"按钮后的处理流程：
    * 1. 读取输入框的 CSS 代码和自定义名称
-   * 2. 如果只有 import 没有 font-family，强制要求输入自定义名称
-   * 3. 调用 fontManager.parseFont() 解析字体数据
+   * 2. 调用 fontManager.parseFont() 解析字体数据（自动识别 @import 或 @font-face）
+   * 3. 如果解析失败且没有自定义名称，提示用户填写
    * 4. 调用 fontManager.addFont() 添加到管理器
    * 5. 添加成功后自动应用该字体
    * 6. 清空输入框并刷新列表
-   * 
+   *
    * @async
    */
   async handleAddFont() {
@@ -466,29 +470,40 @@ body {
 
     logger.debug('[FontManagerUI.handleAddFont] 开始添加字体，自定义名称:', customName || '无');
 
-    // 解析字体
-    let fontData = null;
+    // 先尝试解析（自动识别 @import 或 @font-face 格式）
+    let fontData = this.fontManager.parseFont(input, customName);
 
-    // 检查是否只有@import（没有font-family）
-    if (input.includes('@import') && !input.includes('font-family')) {
-      if (!customName) {
-        logger.warn('[FontManagerUI.handleAddFont] 仅包含@import但未提供自定义名称');
-        toastr.warning('检测到仅包含@import链接，请输入自定义字体名称');
-        return;
+    // 如果解析失败，检查是否需要用户提供自定义名称
+    if (!fontData) {
+      // 检查是否是 @import 格式但没有 font-family
+      if (input.includes('@import') && !input.includes('font-family')) {
+        if (!customName) {
+          logger.warn('[FontManagerUI.handleAddFont] 仅包含@import但未提供自定义名称');
+          toastr.warning('检测到仅包含@import链接，请输入自定义字体名称');
+          return;
+        }
+        // 用自定义名称重新解析
+        fontData = this.fontManager.parseFont(input, customName);
+        if (fontData) {
+          fontData.css = `${input}\nbody { font-family: "${customName}"; }`;
+          fontData.fontFamily = customName;
+        }
       }
-
-      fontData = this.fontManager.parseFont(input, customName);
-      if (fontData) {
-        fontData.css = `${input}\nbody { font-family: "${customName}"; }`;
-        fontData.fontFamily = customName;
+      // 检查是否是 @font-face 格式但没有 font-family
+      else if (input.includes('@font-face')) {
+        if (!customName) {
+          logger.warn('[FontManagerUI.handleAddFont] @font-face 中未找到 font-family，需要自定义名称');
+          toastr.warning('无法从代码中提取字体名称，请输入自定义字体名称');
+          return;
+        }
+        // 用自定义名称重新解析
+        fontData = this.fontManager.parseFont(input, customName);
       }
-    } else {
-      fontData = this.fontManager.parseFont(input, customName);
     }
 
     if (!fontData) {
       logger.warn('[FontManagerUI.handleAddFont] 解析字体失败，输入:', input.substring(0, 100) + '...');
-      toastr.error('无法解析字体代码，请检查格式');
+      toastr.error('无法解析字体代码，请检查格式是否正确');
       return;
     }
 
@@ -504,8 +519,13 @@ body {
       await this.fontManager.setCurrentFont(fontData.name);
 
       this.refreshFontList();
-      logger.info('[FontManagerUI.handleAddFont] 字体添加成功:', fontData.name);
-      toastr.success('字体添加成功');
+
+      // 根据字体类型显示不同的成功提示
+      const typeHint = fontData.type === 'fontface'
+        ? `（@font-face，${fontData.fontFaceCount || 1} 个变体）`
+        : '（@import）';
+      logger.info('[FontManagerUI.handleAddFont] 字体添加成功:', fontData.name, typeHint);
+      toastr.success(`字体添加成功 ${typeHint}`);
     } else {
       logger.warn('[FontManagerUI.handleAddFont] 字体添加失败:', fontData.name);
       toastr.error('字体添加失败，可能已存在同名字体');
@@ -514,7 +534,7 @@ body {
 
   /**
    * 处理导入文件操作
-   * 
+   *
    * @description
    * 用户选择 JSON 文件后的处理流程：
    * 1. 读取文件内容
@@ -522,7 +542,7 @@ body {
    * 3. 调用 fontManager.importFonts() 导入
    * 4. 显示导入结果（成功数量和模式）
    * 5. 刷新字体列表
-   * 
+   *
    * @async
    * @param {Event} event - 文件选择事件
    */
@@ -557,7 +577,7 @@ body {
 
   /**
    * 处理导出字体操作
-   * 
+   *
    * @description
    * 将所有字体配置导出为 JSON 文件：
    * 1. 调用 fontManager.exportFonts() 生成 JSON 数据
@@ -586,7 +606,7 @@ body {
 
   /**
    * 刷新字体列表
-   * 
+   *
    * @description
    * 根据当前状态（搜索、筛选、排序、分页）渲染字体列表：
    * 1. 从 fontManager 获取字体数据
@@ -598,7 +618,7 @@ body {
    * 7. 渲染字体项 HTML
    * 8. 绑定字体项事件
    * 9. 渲染分页导航
-   * 
+   *
    * 搜索或筛选时会重置到第1页
    */
   refreshFontList() {
@@ -696,7 +716,7 @@ body {
 
   /**
    * 创建字体项 HTML
-   * 
+   *
    * @description
    * 为单个字体生成完整的 HTML 结构：
    * - 主信息行：字体名称、标签、操作按钮（使用、编辑、删除）
@@ -704,7 +724,7 @@ body {
    *   - 当前标签列表（可删除单个标签）
    *   - 添加新标签（输入框 + 按钮）
    *   - 现有标签复选框（批量添加）
-   * 
+   *
    * @param {Object} font - 字体数据对象
    * @returns {string} 字体项的 HTML 字符串
    */
@@ -737,9 +757,9 @@ body {
       : '<div class="no-tags">暂无标签</div>';
 
     return `
-      <div class="font-item ${isCurrent ? 'current' : ''} ${isExpanded ? 'expanded' : ''} ${this.uiState.batchDeleteMode ? 'batch-mode' : ''}" 
+      <div class="font-item ${isCurrent ? 'current' : ''} ${isExpanded ? 'expanded' : ''} ${this.uiState.batchDeleteMode ? 'batch-mode' : ''}"
            data-font-name="${font.name}">
-        
+
         <!-- 主信息行 -->
         <div class="font-item-main">
           ${this.uiState.batchDeleteMode ? `
@@ -748,7 +768,7 @@ body {
               <input type="checkbox" class="batch-delete-font-checkbox" data-font="${font.name}" ${isSelected ? 'checked' : ''}>
             </label>
           ` : ''}
-          
+
           <div class="font-item-header" data-font="${font.name}" ${this.uiState.batchDeleteMode ? 'style="cursor: default;"' : ''}>
             ${this.uiState.batchDeleteMode ? '' : `<i class="fa fa-chevron-${isExpanded ? 'up' : 'down'} expand-icon"></i>`}
             <span class="font-item-name">
@@ -759,7 +779,7 @@ body {
               ${tagsHtml}
             </div>
           </div>
-          
+
           ${this.uiState.batchDeleteMode ? '' : `
             <div class="font-item-actions">
               <button class="font-action-btn font-use-btn" data-font="${font.name}" title="使用">
@@ -774,7 +794,7 @@ body {
             </div>
           `}
         </div>
-        
+
         <!-- 展开的详情区域（批量删除模式下隐藏） -->
         <div class="font-item-details" style="display: ${!this.uiState.batchDeleteMode && isExpanded ? 'block' : 'none'};">
           <div class="tag-editor">
@@ -784,14 +804,14 @@ body {
                 ${currentTagsList}
               </div>
             </div>
-            
+
             <div class="tag-section">
               <h6>添加标签</h6>
               <div class="tag-input-group">
                 <input type="text" class="tag-new-input" placeholder="输入新标签" data-font="${font.name}">
                 <button class="add-new-tag-btn" data-font="${font.name}">添加</button>
               </div>
-              
+
               ${allTags.length > 0 ? `
                 <div class="existing-tags">
                   ${tagCheckboxes}
@@ -807,7 +827,7 @@ body {
 
   /**
    * 绑定字体项事件
-   * 
+   *
    * @description
    * 为渲染后的字体项绑定交互事件：
    * 1. 展开/折叠详情（点击标题行）
@@ -817,7 +837,7 @@ body {
    * 5. 删除单个标签（点击标签的 × 按钮）
    * 6. 添加新标签（点击添加按钮或按 Enter）
    * 7. 应用选中标签（勾选复选框后点击应用按钮）
-   * 
+   *
    * 所有操作完成后保持展开状态并刷新列表
    */
   bindFontItemEvents() {
@@ -997,7 +1017,7 @@ body {
 
   /**
    * 刷新标签管理器
-   * 
+   *
    * @description
    * 渲染标签管理区域：
    * 1. 从 fontManager 获取所有标签
@@ -1087,13 +1107,13 @@ body {
 
   /**
    * 更新标签筛选器选项
-   * 
+   *
    * @description
    * 重建标签筛选下拉框的选项：
    * 1. 保留"所有标签"和"未分类"选项
    * 2. 添加所有现有标签
    * 3. 恢复之前的选择状态
-   * 
+   *
    * 当标签增删时调用，确保筛选器与实际标签同步
    */
   updateTagFilter() {
@@ -1116,7 +1136,7 @@ body {
 
   /**
    * 刷新整个 UI
-   * 
+   *
    * @description
    * 同时刷新字体列表、标签管理器和标签筛选器
    * 通常在初始化或数据批量变化时调用
@@ -1129,10 +1149,10 @@ body {
 
   /**
    * 通用分页渲染器
-   * 
+   *
    * @description
    * 生成分页控件 HTML 和事件绑定（提取重复逻辑，符合 DRY 原则）
-   * 
+   *
    * @param {Object} config - 分页配置对象
    * @param {string} config.containerId - 分页容器的 CSS 选择器
    * @param {number} config.totalItems - 项目总数
@@ -1227,7 +1247,7 @@ body {
 
   /**
    * 显示使用指南弹窗
-   * 
+   *
    * @description
    * 用户点击"使用指南"按钮（? 图标）后，弹出官方弹窗显示：
    * - 字体添加和使用技巧
@@ -1235,15 +1255,15 @@ body {
    * - 导入模式说明（合并 vs 替换）
    * - 备份和云端用户注意事项
    * - 问题排查方法
-   * 
+   *
    * 使用 callGenericPopup + allowVerticalScrolling 支持内容滚动
-   * 
+   *
    * @async
    */
   async showGuide() {
     const guideContent = `
       <div style="line-height: 2; font-size: 1.05em; max-width: 600px; margin: 0 auto; text-align: left;">
-        
+
         <!-- 卡片1：新手快速上手 -->
         <div style="background: color-mix(in srgb, var(--SmartThemeQuoteColor) 8%, var(--SmartThemeBlurTintColor) 92%); padding: 16px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid var(--SmartThemeQuoteColor);">
           <h3 style="margin: 0 0 12px 0; color: var(--SmartThemeQuoteColor); font-size: 1.15em;">新手快速上手</h3>
@@ -1339,12 +1359,12 @@ body {
 
   /**
    * 切换批量删除模式
-   * 
+   *
    * @description
    * 进入/退出批量删除模式：
    * 1. 进入时：清空选中列表、刷新UI显示勾选框
    * 2. 退出时：清空选中列表、刷新UI恢复普通模式
-   * 
+   *
    * @param {boolean} enable - 是否启用批量删除模式
    */
   toggleBatchDeleteMode(enable) {
@@ -1360,7 +1380,7 @@ body {
 
   /**
    * 执行批量删除
-   * 
+   *
    * @description
    * 删除选中的字体：
    * 1. 检查是否有选中的字体
@@ -1368,7 +1388,7 @@ body {
    * 3. 逐个删除字体
    * 4. 显示删除结果
    * 5. 退出批量删除模式
-   * 
+   *
    * @async
    */
   async executeBatchDelete() {
@@ -1420,7 +1440,7 @@ body {
 
   /**
    * 更新批量删除选中数量显示
-   * 
+   *
    * @description
    * 更新工具栏的"已选中 X 个字体"显示
    */
@@ -1433,7 +1453,7 @@ body {
 
   /**
    * 销毁 UI
-   * 
+   *
    * @description
    * 清空容器 innerHTML，释放 UI 资源
    * 通常在卸载扩展时由 FontManager.destroy() 调用

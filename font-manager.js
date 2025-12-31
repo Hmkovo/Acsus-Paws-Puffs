@@ -1,6 +1,6 @@
 /**
  * 字体管理器 - 核心逻辑
- * 
+ *
  * @description
  * 负责字体的完整生命周期管理：
  * - 添加、删除、切换字体
@@ -8,7 +8,7 @@
  * - 导入导出配置
  * - 应用字体到页面（通过动态插入 style 标签）
  * - 持久化存储到 extension_settings
- * 
+ *
  * 采用事件驱动架构，与 FontManagerUI 通过 eventSource 通信
  */
 
@@ -20,7 +20,7 @@ import logger from './logger.js';
 export class FontManager {
   /**
    * 构造函数
-   * 
+   *
    * @description
    * 初始化字体管理器的内部状态
    * - fonts: Map 结构存储字体数据（键为字体名，值为字体对象）
@@ -48,14 +48,14 @@ export class FontManager {
 
   /**
    * 初始化字体管理器
-   * 
+   *
    * @description
    * 从 extension_settings 加载保存的字体数据和配置：
    * 1. 加载所有字体列表和标签
    * 2. 加载字体功能开关状态
    * 3. 加载当前选中的字体
    * 4. 如果功能已开启且有选中字体，自动应用到页面
-   * 
+   *
    * @async
    */
   async init() {
@@ -97,14 +97,14 @@ export class FontManager {
 
   /**
    * 设置字体功能开关
-   * 
+   *
    * @description
    * 控制字体功能的总开关：
    * - 开启时：应用当前选中的字体
    * - 关闭时：清除页面上应用的字体，恢复默认
-   * 
+   *
    * 会触发 pawsFontEnabledChanged 事件通知其他模块
-   * 
+   *
    * @async
    * @param {boolean} enabled - 是否启用字体功能
    */
@@ -132,21 +132,25 @@ export class FontManager {
 
   /**
    * 应用字体到页面
-   * 
+   *
    * @description
    * 通过动态创建 <style> 标签将字体应用到页面所有元素：
    * 1. 先清除旧的字体样式（删除已存在的 style 标签）
    * 2. 创建新的 style 标签，ID 为 'paws-puffs-font-style'
-   * 3. 生成 CSS 代码：@import 字体链接 + 通配符选择器 + !important
+   * 3. 根据字体类型生成不同的 CSS：
+   *    - import 类型：@import url(...) + font-family 应用
+   *    - fontface 类型：@font-face { ... } + font-family 应用
    * 4. 排除 Font Awesome 图标（避免图标变成方块）
-   * 
+   *
    * 使用 `*:not(...)` 通配符选择器 + `!important` 确保能覆盖任何主题的字体设置
-   * 
+   *
    * 只有在 fontEnabled 为 true 时才会应用
-   * 
+   *
    * @param {Object} font - 字体数据对象
    * @param {string} font.name - 字体名称
-   * @param {string} font.url - 字体链接（Google Fonts、zeoseven 等）
+   * @param {string} [font.type='import'] - 字体类型：'import' 或 'fontface'
+   * @param {string} [font.url] - 字体链接（import 类型使用）
+   * @param {string} [font.css] - 原始 CSS 代码（fontface 类型使用）
    * @param {string} font.fontFamily - CSS font-family 值
    */
   applyFont(font) {
@@ -167,12 +171,22 @@ export class FontManager {
     // 生成CSS代码
     let css = '';
 
-    // 1. 添加字体导入链接
-    if (font.url) {
-      css += `@import url("${font.url}");\n\n`;
+    // 根据字体类型生成不同的 CSS
+    const fontType = font.type || 'import'; // 兼容旧数据（没有 type 字段的默认为 import）
+
+    if (fontType === 'fontface') {
+      // @font-face 类型：直接插入完整的 @font-face CSS
+      if (font.css) {
+        css += `/* @font-face 字体定义 */\n${font.css}\n\n`;
+      }
+    } else {
+      // @import 类型：添加字体导入链接
+      if (font.url) {
+        css += `@import url("${font.url}");\n\n`;
+      }
     }
 
-    // 2. 应用到所有元素（终极简洁版：覆盖所有元素，不遗漏任何弹窗和UI）
+    // 应用到所有元素（两种类型都需要）
     if (font.fontFamily) {
       css += `
       /* 应用到所有元素，但排除Font Awesome图标 */
@@ -183,12 +197,12 @@ export class FontManager {
 
     style.textContent = css;
     document.head.appendChild(style);
-    logger.info('已应用字体:', font.name);
+    logger.info('已应用字体:', font.name, '(类型:', fontType, ')');
   }
 
   /**
    * 清除应用的字体
-   * 
+   *
    * @description
    * 移除页面上由本扩展创建的字体样式标签
    * 恢复为系统默认字体
@@ -203,15 +217,15 @@ export class FontManager {
 
   /**
    * 删除标签
-   * 
+   *
    * @description
    * 从标签系统中删除指定标签，并从所有字体中移除该标签：
    * 1. 遍历所有字体，移除包含此标签的引用
    * 2. 从标签集合中删除
    * 3. 如果当前筛选的是这个标签，重置为"全部"
-   * 
+   *
    * 会触发 pawsFontTagsChanged 事件通知 UI 刷新
-   * 
+   *
    * @async
    * @param {string} tagToDelete - 要删除的标签名
    * @returns {Promise<boolean>} 是否删除成功
@@ -246,18 +260,20 @@ export class FontManager {
 
   /**
    * 解析字体代码
-   * 
+   *
    * @description
-   * 从用户粘贴的 CSS 代码中提取字体信息：
-   * 1. 使用正则匹配 import url(...) 提取字体链接
-   * 2. 使用正则匹配 font-family 提取字体名称
-   * 3. 尝试从 URL 中提取 zeoseven.com 的字体 ID
-   * 4. 生成完整的字体数据对象
-   * 
-   * 支持多种输入格式：
-   * - 完整 CSS（包含 import 和 font-family）
-   * - 仅 import（需要提供 customName）
-   * 
+   * 从用户粘贴的 CSS 代码中提取字体信息，支持两种格式：
+   *
+   * 1. @import 格式（在线字体服务）：
+   *    - 匹配 @import url(...) 提取字体链接
+   *    - 匹配 font-family 提取字体名称
+   *    - 尝试从 URL 中提取 zeoseven.com 的字体 ID
+   *
+   * 2. @font-face 格式（本地/远程字体文件）：
+   *    - 匹配所有 @font-face { ... } 块
+   *    - 从第一个块提取 font-family 作为字体名称
+   *    - 支持多个 @font-face 合并（如 regular + bold）
+   *
    * @param {string} input - 用户输入的 CSS 代码
    * @param {string} [customName=null] - 自定义字体名称（可选）
    * @returns {Object|null} 字体数据对象，解析失败返回 null
@@ -265,11 +281,35 @@ export class FontManager {
   parseFont(input, customName = null) {
     logger.debug('[FontManager.parseFont] 开始解析字体代码');
 
+    // 先尝试解析 @font-face 格式
+    const fontFaceResult = this.parseFontFace(input, customName);
+    if (fontFaceResult) {
+      return fontFaceResult;
+    }
+
+    // 再尝试解析 @import 格式
+    const importResult = this.parseImport(input, customName);
+    if (importResult) {
+      return importResult;
+    }
+
+    // 都解析失败
+    const preview = input.substring(0, 100) + (input.length > 100 ? '...' : '');
+    logger.warn('[FontManager.parseFont] 无法解析字体代码，输入:', preview);
+    return null;
+  }
+
+  /**
+   * 解析 @import 格式的字体代码
+   *
+   * @param {string} input - 用户输入的 CSS 代码
+   * @param {string} [customName=null] - 自定义字体名称
+   * @returns {Object|null} 字体数据对象
+   */
+  parseImport(input, customName = null) {
     // 匹配 @import url(...) 格式
     const importMatch = input.match(/@import\s+url\(["']([^"']+)["']\)/);
     if (!importMatch) {
-      const preview = input.substring(0, 100) + (input.length > 100 ? '...' : '');
-      logger.warn('[FontManager.parseFont] 无法解析字体链接，输入:', preview);
       return null;
     }
 
@@ -289,11 +329,12 @@ export class FontManager {
     // 生成字体名称
     const defaultName = customName || fontFamily || `Font-${Date.now()}`;
 
-    logger.debug('[FontManager.parseFont] 解析成功:', defaultName);
+    logger.debug('[FontManager.parseImport] 解析成功:', defaultName);
 
     return {
       name: defaultName,              // 唯一标识
       displayName: defaultName,       // 显示名称（可编辑）
+      type: 'import',                 // 字体类型：import
       url: url,                       // 字体链接
       fontFamily: fontFamily,         // 字体族名
       fontId: fontId,                 // zeoseven ID
@@ -306,8 +347,65 @@ export class FontManager {
   }
 
   /**
+   * 解析 @font-face 格式的字体代码
+   *
+   * @description
+   * 支持单个或多个 @font-face 块（如 regular + bold + italic）
+   * 多个块会合并成一个字体，浏览器自动根据 font-weight 匹配
+   *
+   * @param {string} input - 用户输入的 CSS 代码
+   * @param {string} [customName=null] - 自定义字体名称
+   * @returns {Object|null} 字体数据对象
+   */
+  parseFontFace(input, customName = null) {
+    // 匹配所有 @font-face { ... } 块（支持多个）
+    const fontFaceRegex = /@font-face\s*\{[^}]+\}/gi;
+    const fontFaceBlocks = input.match(fontFaceRegex);
+
+    if (!fontFaceBlocks || fontFaceBlocks.length === 0) {
+      return null;
+    }
+
+    logger.debug('[FontManager.parseFontFace] 找到', fontFaceBlocks.length, '个 @font-face 块');
+
+    // 从第一个 @font-face 块提取 font-family
+    const firstBlock = fontFaceBlocks[0];
+    const familyMatch = firstBlock.match(/font-family\s*:\s*["']?([^"';]+)["']?/i);
+    const fontFamily = familyMatch ? familyMatch[1].trim() : null;
+
+    // 如果没有 font-family 且没有自定义名称，返回 null（需要用户填写）
+    if (!fontFamily && !customName) {
+      logger.debug('[FontManager.parseFontFace] 未找到 font-family，需要用户提供自定义名称');
+      return null;
+    }
+
+    const finalFontFamily = customName || fontFamily;
+    const defaultName = finalFontFamily || `Font-${Date.now()}`;
+
+    // 合并所有 @font-face 块
+    const combinedCss = fontFaceBlocks.join('\n\n');
+
+    logger.debug('[FontManager.parseFontFace] 解析成功:', defaultName, '(', fontFaceBlocks.length, '个变体)');
+
+    return {
+      name: defaultName,              // 唯一标识
+      displayName: defaultName,       // 显示名称（可编辑）
+      type: 'fontface',               // 字体类型：fontface
+      url: null,                      // @font-face 没有单一 URL
+      fontFamily: finalFontFamily,    // 字体族名
+      fontId: null,                   // 无 ID
+      css: combinedCss,               // 合并后的 @font-face CSS
+      fontFaceCount: fontFaceBlocks.length, // @font-face 块数量（用于显示）
+      tags: [],                       // 标签列表
+      order: Date.now(),              // 排序
+      addedAt: new Date().toISOString(), // 添加时间
+      custom: {}                      // 自定义数据
+    };
+  }
+
+  /**
    * 添加字体到管理器
-   * 
+   *
    * @description
    * 将字体添加到管理器并持久化存储：
    * 1. 如果传入字符串，先调用 parseFont() 解析
@@ -315,11 +413,11 @@ export class FontManager {
    * 3. 添加到 fonts Map 并更新标签集合
    * 4. 保存到 extension_settings
    * 5. 触发 pawsFontAdded 事件通知 UI 刷新
-   * 
+   *
    * @async
    * @param {Object|string} fontData - 字体数据对象或 CSS 字符串
    * @returns {Promise<boolean>} 是否添加成功（false表示字体已存在）
-   * 
+   *
    * @example
    * await fontManager.addFont({
    *   name: 'MyFont',
@@ -358,14 +456,14 @@ export class FontManager {
 
   /**
    * 更新字体信息
-   * 
+   *
    * @description
    * 更新已存在字体的属性（如名称、标签等）：
    * 1. 如果修改了字体名称，需要更新 Map 的键
    * 2. 如果是当前应用的字体，同步更新 currentFont 引用
    * 3. 如果修改了标签，刷新标签列表并触发 pawsFontTagsChanged
    * 4. 触发 pawsFontUpdated 事件通知 UI 刷新
-   * 
+   *
    * @async
    * @param {string} fontName - 要更新的字体名称
    * @param {Object} updates - 更新的属性对象
@@ -414,14 +512,14 @@ export class FontManager {
 
   /**
    * 删除字体
-   * 
+   *
    * @description
    * 从管理器中删除指定字体：
    * 1. 从 fonts Map 中删除
    * 2. 如果删除的是当前应用的字体，清空选择并清除页面样式
    * 3. 刷新标签列表（移除不再使用的标签）
    * 4. 触发 pawsFontRemoved 和可能的 pawsFontChanged 事件
-   * 
+   *
    * @async
    * @param {string} fontName - 要删除的字体名称
    * @returns {Promise<boolean>} 是否删除成功
@@ -455,14 +553,14 @@ export class FontManager {
 
   /**
    * 设置当前字体
-   * 
+   *
    * @description
    * 切换当前应用的字体：
    * 1. 保存选择到 currentFont 和 extension_settings
    * 2. 如果字体功能已开启，调用 applyFont() 应用到页面
    * 3. 如果功能已关闭，仅保存选择不应用
    * 4. 触发 pawsFontChanged 事件通知 UI 更新
-   * 
+   *
    * @async
    * @param {string} fontName - 要设置的字体名称
    * @returns {Promise<boolean>} 是否设置成功
@@ -514,13 +612,13 @@ export class FontManager {
 
   /**
    * 获取所有字体（支持标签筛选）
-   * 
+   *
    * @description
    * 返回字体数组，可选按标签筛选：
    * - tag = null 或 'all'：返回所有字体
    * - tag = 'untagged'：返回未分类的字体
    * - tag = 具体标签名：返回包含该标签的字体
-   * 
+   *
    * @param {string|null} [tag=null] - 筛选标签（可选）
    * @returns {Object[]} 字体数组
    */
@@ -542,15 +640,15 @@ export class FontManager {
 
   /**
    * 按标签分组获取字体
-   * 
+   *
    * @description
    * 返回一个对象，键为标签名，值为字体数组：
    * - all: 所有字体
    * - untagged: 未分类的字体
    * - [标签名]: 包含该标签的字体数组
-   * 
+   *
    * @returns {Object.<string, Object[]>} 分组后的字体对象
-   * 
+   *
    * @example
    * const grouped = fontManager.getFontsByTags();
    * // { all: [...], untagged: [...], serif: [...], ... }
@@ -584,11 +682,11 @@ export class FontManager {
 
   /**
    * 更新字体排序
-   * 
+   *
    * @description
    * 根据用户拖拽排序的结果，更新每个字体的 order 属性
    * 并触发 pawsFontOrderChanged 事件
-   * 
+   *
    * @async
    * @param {string[]} sortedNames - 排序后的字体名称数组
    */
@@ -606,13 +704,13 @@ export class FontManager {
 
   /**
    * 导出字体配置为 JSON
-   * 
+   *
    * @description
    * 将所有字体、标签、当前字体、功能开关状态导出为 JSON 字符串
    * 用于备份或分享字体配置
-   * 
+   *
    * @returns {string} JSON 格式的字体配置字符串
-   * 
+   *
    * @example
    * const jsonData = fontManager.exportFonts();
    * // 保存到文件或分享给其他用户
@@ -632,23 +730,23 @@ export class FontManager {
 
   /**
    * 导入字体配置
-   * 
+   *
    * @description
    * 从 JSON 数据导入字体配置，支持两种模式：
    * - 合并模式（merge=true）：保留现有字体，只添加新的
    * - 替换模式（merge=false）：清空现有字体，完全替换
-   * 
+   *
    * 导入内容包括：
    * 1. 字体列表和标签
    * 2. 当前字体选择
    * 3. 功能开关状态
-   * 
+   *
    * @async
    * @param {string} jsonData - JSON 格式的字体配置字符串
    * @param {boolean} [merge=true] - 导入模式（true=合并，false=替换）
    * @returns {Promise<number>} 成功导入的字体数量
    * @throws {Error} JSON 格式错误或数据无效时
-   * 
+   *
    * @example
    * const count = await fontManager.importFonts(jsonData, true);
    * console.log(`导入了 ${count} 个字体`);
@@ -721,11 +819,11 @@ export class FontManager {
 
   /**
    * 批量添加字体
-   * 
+   *
    * @description
    * 循环调用 addFont() 添加多个字体
    * 统计成功和失败的数量
-   * 
+   *
    * @async
    * @param {Object[]} fontsData - 字体数据对象数组
    * @returns {Promise<number>} 成功添加的字体数量
@@ -750,7 +848,7 @@ export class FontManager {
 
   /**
    * 刷新标签列表
-   * 
+   *
    * @description
    * 从所有字体中重新收集标签，更新 this.tags 集合
    * 当标签被修改或字体被删除后调用，确保标签列表准确
@@ -769,11 +867,11 @@ export class FontManager {
 
   /**
    * 保存字体到 extension_settings
-   * 
+   *
    * @description
    * 将字体数据、标签、当前字体、功能开关持久化保存
    * 调用 saveSettingsDebounced() 防抖保存到磁盘
-   * 
+   *
    * @async
    */
   async saveFonts() {
@@ -791,15 +889,15 @@ export class FontManager {
 
   /**
    * 从 extension_settings 加载字体
-   * 
+   *
    * @description
    * 从持久化存储中恢复字体数据：
    * 1. 恢复 fonts Map（字体列表）
    * 2. 恢复 tags Set（标签集合）
    * 3. 恢复 currentFont（当前字体）
-   * 
+   *
    * 兼容旧版本的数据结构
-   * 
+   *
    * @async
    */
   async loadFonts() {
@@ -841,7 +939,7 @@ export class FontManager {
 
   /**
    * 清理字体样式
-   * 
+   *
    * @description
    * 清除页面上应用的字体，但保留字体数据
    * 通常在禁用扩展时调用
@@ -852,7 +950,7 @@ export class FontManager {
 
   /**
    * 销毁字体管理器
-   * 
+   *
    * @description
    * 清理资源并销毁 UI 实例
    * 通常在卸载扩展时调用
@@ -867,7 +965,7 @@ export class FontManager {
 
   /**
    * 获取统计信息
-   * 
+   *
    * @returns {Object} 统计信息对象包含 fontCount, tagCount, currentFont, enabled
    */
   getStats() {
@@ -881,7 +979,7 @@ export class FontManager {
 
   /**
    * 清空所有字体数据
-   * 
+   *
    * @description
    * 危险操作！删除所有字体和标签：
    * 1. 清空 fonts Map 和 tags Set
@@ -889,9 +987,9 @@ export class FontManager {
    * 3. 清除页面应用的字体样式
    * 4. 删除 extension_settings 中的数据
    * 5. 触发 pawsFontAllCleared 事件
-   * 
+   *
    * 云端酒馆用户在卸载扩展前应该调用此方法
-   * 
+   *
    * @async
    */
   async clearAllFonts() {
@@ -917,11 +1015,11 @@ export class FontManager {
 
   /**
    * 渲染 UI 界面
-   * 
+   *
    * @description
    * 创建 FontManagerUI 实例并初始化到指定容器
    * 由 index.js 调用，传入 #paws-puffs-font-panel 容器
-   * 
+   *
    * @async
    * @param {HTMLElement} container - UI 容器元素
    */

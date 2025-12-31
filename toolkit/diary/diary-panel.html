@@ -32,6 +32,7 @@
         <option value="week">本周</option>
         <option value="month">本月</option>
         <option value="date">日期</option>
+        <option value="dateRange">日期范围</option>
       </select>
     </div>
 
@@ -160,8 +161,8 @@
       <label class="diary-setting-item">
         <span class="diary-setting-label">API 来源：</span>
         <select id="diaryApiSource" class="diary-setting-select">
-          <option value="default">使用酒馆默认 API</option>
-          <option value="custom">使用自定义 API</option>
+          <option value="default">跟随酒馆设置（默认）</option>
+          <option value="custom">自定义 API</option>
         </select>
       </label>
 
@@ -174,110 +175,291 @@
       <!-- 自定义 API 配置区域（默认隐藏） -->
       <div id="diaryCustomApiSettings" class="diary-custom-api-settings" style="display: none;">
 
-        <!-- 配置管理 -->
-        <label class="diary-setting-item">
-          <span class="diary-setting-label">API 配置：</span>
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <select id="diaryApiConfigSelect" class="diary-setting-select" style="flex: 1;">
-              <option value="">新建配置...</option>
-            </select>
-            <button id="diaryApiConfigSave" class="menu_button" title="保存当前配置">
-              <i class="fa-solid fa-save"></i>
-            </button>
-            <button id="diaryApiConfigDelete" class="menu_button" title="删除配置">
-              <i class="fa-solid fa-trash"></i>
-            </button>
-          </div>
-        </label>
-
-        <!-- 配置名称 -->
-        <label class="diary-setting-item">
-          <span class="diary-setting-label">配置名称：</span>
-          <input type="text" id="diaryApiConfigName" placeholder="例如：我的 API 配置" class="text_pole" />
-        </label>
-
-        <!-- API 端点 -->
+        <!-- API 类型选择（完整官方列表） -->
         <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start;">
-          <span class="diary-setting-label">API 端点 (Base URL)：</span>
-          <input type="text" id="diaryApiBaseUrl" placeholder="https://api.openai.com" class="text_pole"
-            style="width: 100%;" />
-          <div style="font-size: 0.85em; color: var(--white50a); margin-top: 4px;">
-            示例：https://api.openai.com 或 https://your-proxy.com
-          </div>
-        </label>
-
-        <!-- API 密钥 -->
-        <label class="diary-setting-item">
-          <span class="diary-setting-label">API 密钥：</span>
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <input type="password" id="diaryApiKey" placeholder="sk-..." class="text_pole" style="flex: 1;" />
-            <button class="menu_button" id="diaryApiKeyToggle" title="显示/隐藏密钥">
-              <i class="fa-solid fa-eye"></i>
-            </button>
-          </div>
-        </label>
-
-        <!-- API 格式 -->
-        <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start;">
-          <span class="diary-setting-label">API 格式：</span>
+          <span class="diary-setting-label">API 类型：</span>
           <select id="diaryApiFormat" class="diary-setting-select" style="width: 100%;">
-            <option value="openai">OpenAI 兼容格式（大部分代理）</option>
-            <option value="claude">Claude (Anthropic)</option>
-            <option value="google">Google AI (Gemini/PaLM)</option>
-            <option value="openrouter">OpenRouter</option>
-            <option value="scale">Scale</option>
-            <option value="ai21">AI21 (Jurassic)</option>
-            <option value="mistral">Mistral AI</option>
-            <option value="custom">自动检测 (实验性)</option>
+            <optgroup label="常用">
+              <option value="openai">OpenAI</option>
+              <option value="claude">Claude (Anthropic)</option>
+              <option value="makersuite">Google AI (Gemini)</option>
+              <option value="openrouter">OpenRouter</option>
+              <option value="deepseek">DeepSeek</option>
+            </optgroup>
+            <optgroup label="其他官方API">
+              <option value="ai21">AI21</option>
+              <option value="aimlapi">AI/ML API</option>
+              <option value="azure_openai">Azure OpenAI</option>
+              <option value="chutes">Chutes</option>
+              <option value="cohere">Cohere</option>
+              <option value="electronhub">Electron Hub</option>
+              <option value="fireworks">Fireworks AI</option>
+              <option value="groq">Groq</option>
+              <option value="mistralai">MistralAI</option>
+              <option value="moonshot">Moonshot AI</option>
+              <option value="nanogpt">NanoGPT</option>
+              <option value="perplexity">Perplexity</option>
+              <option value="pollinations">Pollinations</option>
+              <option value="siliconflow">SiliconFlow</option>
+              <option value="vertexai">Vertex AI</option>
+              <option value="xai">xAI (Grok)</option>
+              <option value="zai">Z.AI (GLM)</option>
+            </optgroup>
+            <optgroup label="通用">
+              <option value="custom">自定义（OpenAI兼容）</option>
+            </optgroup>
           </select>
-          <div style="font-size: 0.85em; color: var(--white50a); margin-top: 4px;">
-            选择你的 API 使用的协议格式。不确定的话选"OpenAI 兼容格式"
-          </div>
         </label>
 
-        <!-- 模型选择 -->
-        <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start;">
-          <span class="diary-setting-label">模型：</span>
-          <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
-            <select id="diaryApiModelSelect" class="diary-setting-select" style="flex: 1; min-width: 0;">
-              <option value="">请选择模型...</option>
-              <option value="gpt-4o-mini">gpt-4o-mini</option>
-              <option value="gpt-4o">gpt-4o</option>
-              <option value="gpt-4-turbo">gpt-4-turbo</option>
-              <option value="claude-3-5-sonnet-20241022">claude-3-5-sonnet-20241022</option>
-              <option value="claude-3-5-haiku-20241022">claude-3-5-haiku-20241022</option>
-              <option value="__manual__">手动输入...</option>
+        <!-- ========== 各 API 类型的配置表单 ========== -->
+
+        <!-- 通用 API 密钥区块 -->
+        <div id="diaryApiKeySection" class="diary-api-section" data-diary-source="openai,claude,makersuite,deepseek,mistralai,cohere,perplexity,groq,xai,ai21,moonshot,fireworks,electronhub,chutes,nanogpt,aimlapi,siliconflow,zai">
+          <label class="diary-setting-item">
+            <span class="diary-setting-label">API 密钥：</span>
+            <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+              <input type="password" id="diaryApiKey" placeholder="sk-..." class="text_pole" style="flex: 1;" />
+              <button class="menu_button" id="diaryApiKeyToggle" title="显示/隐藏密钥">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+          </label>
+          <div class="diary-setting-hint">出于隐私考虑，保存后密钥将被隐藏</div>
+        </div>
+
+        <!-- 反向代理配置（折叠式） -->
+        <div id="diaryReverseProxySection" class="diary-api-section" data-diary-source="openai,claude,mistralai,makersuite,vertexai,deepseek,xai" style="display: none;">
+          <div class="diary-setting-label diary-collapsible-header" id="diaryReverseProxyToggle">
+            <i class="fa-solid fa-chevron-right" id="diaryReverseProxyIcon"></i>
+            <span>反向代理</span>
+          </div>
+          <div id="diaryReverseProxyContent" class="diary-collapsible-content" style="display: none;">
+            <!-- 代理预设选择 -->
+            <div class="diary-setting-row">
+              <select id="diaryProxyPreset" class="diary-setting-select" style="flex: 1;">
+                <option value="">无</option>
+              </select>
+              <button id="diaryProxySave" class="menu_button" title="保存代理">
+                <i class="fa-solid fa-floppy-disk"></i>
+              </button>
+              <button id="diaryProxyDelete" class="menu_button diary-btn-danger" title="删除代理">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+            <!-- 代理服务器 URL -->
+            <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start; margin-top: 8px;">
+              <span class="diary-setting-hint">代理服务器 URL</span>
+              <input type="text" id="diaryReverseProxyUrl" class="text_pole" placeholder="https://api.openai.com/v1" style="width: 100%;" />
+              <div class="diary-setting-hint">备用服务器URL（留空使用默认值）。不行？试试在末尾添加 <code>/v1</code></div>
+            </label>
+            <!-- 代理密码 -->
+            <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start; margin-top: 8px;">
+              <span class="diary-setting-hint">代理密码</span>
+              <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+                <input type="password" id="diaryReverseProxyPassword" class="text_pole" placeholder="将用作代理密码，而不是API密钥" style="flex: 1;" />
+                <button id="diaryReverseProxyPasswordToggle" class="menu_button">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+              </div>
+            </label>
+            <div class="diary-setting-hint diary-warning" style="margin-top: 8px;">
+              <i class="fa-solid fa-exclamation-triangle"></i> 使用非自建代理有数据隐私风险
+            </div>
+          </div>
+        </div>
+
+        <!-- OpenRouter 专用配置 -->
+        <div id="diaryOpenRouterSection" class="diary-api-section" data-diary-source="openrouter" style="display: none;">
+          <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start;">
+            <span class="diary-setting-label">OpenRouter API 密钥</span>
+            <div class="diary-setting-hint" style="margin-bottom: 4px;">
+              点击下方授权或从 <a href="https://openrouter.ai/keys/" target="_blank">OpenRouter</a> 获取密钥。
+              <a href="https://openrouter.ai/account" target="_blank">查看剩余额度</a>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+              <input type="password" id="diaryOpenRouterKey" class="text_pole" placeholder="sk-or-..." style="flex: 1;" />
+              <button id="diaryOpenRouterKeyToggle" class="menu_button">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+          </label>
+          <button id="diaryOpenRouterAuth" class="menu_button diary-btn-primary" style="margin-top: 8px;">
+            <i class="fa-solid fa-key"></i> 授权
+          </button>
+        </div>
+
+        <!-- Custom 专用配置（自定义端点） -->
+        <div id="diaryCustomSection" class="diary-api-section" data-diary-source="custom" style="display: none;">
+          <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start;">
+            <span class="diary-setting-label">自定义端点（Base URL）</span>
+            <input type="text" id="diaryApiBaseUrl" class="text_pole" placeholder="例如：http://localhost:1234/v1" style="width: 100%;" />
+            <div class="diary-setting-hint">不行？试试在URL末尾添加 <code>/v1</code>。<code>/chat/completions</code> 后缀会自动补全。</div>
+          </label>
+          <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start; margin-top: 8px;">
+            <span class="diary-setting-label">自定义 API 密钥 <small style="opacity: 0.7;">（可选）</small></span>
+            <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+              <input type="password" id="diaryCustomApiKey" class="text_pole" placeholder="sk-..." style="flex: 1;" />
+              <button id="diaryCustomApiKeyToggle" class="menu_button">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+          </label>
+          <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start; margin-top: 8px;">
+            <span class="diary-setting-label">输入模型名</span>
+            <input type="text" id="diaryCustomModelId" class="text_pole" list="diaryCustomModelList" placeholder="例如：gpt-4o" style="width: 100%;" />
+            <datalist id="diaryCustomModelList"></datalist>
+          </label>
+          <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start; margin-top: 8px;">
+            <span class="diary-setting-label">可用模型</span>
+            <div class="diary-setting-row">
+              <select id="diaryCustomModelSelect" class="diary-setting-select" style="flex: 1;">
+                <option value="">无</option>
+              </select>
+              <button id="diaryCustomRefreshModels" class="menu_button" title="刷新模型列表">
+                <i class="fa-solid fa-rotate"></i>
+              </button>
+            </div>
+          </label>
+        </div>
+
+        <!-- Vertex AI 专用配置 -->
+        <div id="diaryVertexAISection" class="diary-api-section" data-diary-source="vertexai" style="display: none;">
+          <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start;">
+            <span class="diary-setting-label">认证模式</span>
+            <select id="diaryVertexAuthMode" class="diary-setting-select" style="width: 100%;">
+              <option value="express">Express 模式（API Key）</option>
+              <option value="full">完整版（服务账号）</option>
             </select>
-            <button id="diaryApiRefreshModels" class="menu_button" title="从 API 刷新可用模型" style="flex-shrink: 0;">
-              <i class="fa-solid fa-sync"></i>
-            </button>
+          </label>
+          <!-- Express 模式 -->
+          <div id="diaryVertexExpressConfig" style="margin-top: 8px;">
+            <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start;">
+              <span class="diary-setting-label">API 密钥</span>
+              <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+                <input type="password" id="diaryVertexApiKey" class="text_pole" placeholder="AIza..." style="flex: 1;" />
+                <button id="diaryVertexApiKeyToggle" class="menu_button">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+              </div>
+              <div class="diary-setting-hint"><a href="https://cloud.google.com/vertex-ai/generative-ai/docs/start/express-mode/overview" target="_blank">Express 模式文档</a></div>
+            </label>
+            <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start; margin-top: 8px;">
+              <span class="diary-setting-label">项目 ID <small style="opacity: 0.7;">（可选）</small></span>
+              <input type="text" id="diaryVertexProjectId" class="text_pole" placeholder="your-project-id" style="width: 100%;" />
+              <div class="diary-setting-hint">非 us-central1 区域时需要填写。可在 404 错误信息中找到。</div>
+            </label>
           </div>
-        </label>
-
-        <!-- 手动输入模型（选择"手动输入..."时显示） -->
-        <label class="diary-setting-item" id="diaryApiModelManualWrapper" style="display: none;">
-          <span class="diary-setting-label">手动输入模型名：</span>
-          <input type="text" id="diaryApiModelManual" placeholder="例如：gpt-4o-mini" class="text_pole" />
-        </label>
-
-        <!-- 提示：其他参数使用官方设置 -->
-        <div
-          style="padding: 10px; background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%); border-radius: 8px; font-size: 0.9em; margin-top: 10px;">
-          <div style="margin-bottom: 5px;">
-            <i class="fa-solid fa-info-circle"></i>
-            <strong>Temperature、Max Tokens 等参数使用酒馆主设置</strong>
+          <!-- Full 模式 -->
+          <div id="diaryVertexFullConfig" style="margin-top: 8px; display: none;">
+            <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start;">
+              <span class="diary-setting-label">服务账号 JSON</span>
+              <textarea id="diaryVertexServiceAccount" class="text_pole" rows="4" placeholder='{"type": "service_account", ...}' style="width: 100%; resize: vertical;"></textarea>
+              <div class="diary-setting-hint">粘贴完整的服务账号 JSON 内容。<a href="https://cloud.google.com/vertex-ai/docs/authentication" target="_blank">认证文档</a></div>
+            </label>
           </div>
-          <div style="opacity: 0.8;">
-            在酒馆主界面的"聊天完成来源"中调整这些参数
+          <!-- 区域 -->
+          <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start; margin-top: 8px;">
+            <span class="diary-setting-label">区域</span>
+            <input type="text" id="diaryVertexRegion" class="text_pole" list="diaryVertexRegionList" value="us-central1" placeholder="us-central1" style="width: 100%;" />
+            <datalist id="diaryVertexRegionList">
+              <option value="global">global</option>
+              <option value="us-central1">us-central1</option>
+              <option value="us-east1">us-east1</option>
+              <option value="us-west1">us-west1</option>
+              <option value="europe-west1">europe-west1</option>
+              <option value="europe-west4">europe-west4</option>
+              <option value="asia-northeast1">asia-northeast1</option>
+              <option value="asia-southeast1">asia-southeast1</option>
+            </datalist>
+            <div class="diary-setting-hint"><a href="https://cloud.google.com/vertex-ai/generative-ai/docs/learn/locations" target="_blank">查看可用区域</a></div>
+          </label>
+        </div>
+
+        <!-- Azure OpenAI 专用配置 -->
+        <div id="diaryAzureSection" class="diary-api-section" data-diary-source="azure_openai" style="display: none;">
+          <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start;">
+            <span class="diary-setting-label">Azure Base URL</span>
+            <input type="text" id="diaryAzureBaseUrl" class="text_pole" placeholder="https://your-resource.openai.azure.com/" style="width: 100%;" />
+            <div class="diary-setting-hint">Azure OpenAI 资源的端点 URL</div>
+          </label>
+          <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start; margin-top: 8px;">
+            <span class="diary-setting-label">部署名称</span>
+            <input type="text" id="diaryAzureDeploymentName" class="text_pole" placeholder="your-deployment-name" style="width: 100%;" />
+            <div class="diary-setting-hint">Azure 中模型部署的名称</div>
+          </label>
+          <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start; margin-top: 8px;">
+            <span class="diary-setting-label">API 版本</span>
+            <select id="diaryAzureApiVersion" class="diary-setting-select" style="width: 100%;">
+              <option value="2025-04-01-preview">2025-04-01-preview</option>
+              <option value="2024-10-21">2024-10-21</option>
+              <option value="2024-02-15-preview">2024-02-15-preview</option>
+            </select>
+          </label>
+          <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start; margin-top: 8px;">
+            <span class="diary-setting-label">Azure API 密钥</span>
+            <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+              <input type="password" id="diaryAzureApiKey" class="text_pole" placeholder="your-azure-api-key" style="flex: 1;" />
+              <button id="diaryAzureApiKeyToggle" class="menu_button">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+          </label>
+          <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start; margin-top: 8px;">
+            <span class="diary-setting-label">模型名称</span>
+            <input type="text" id="diaryAzureModelName" class="text_pole" placeholder="gpt-4o" style="width: 100%;" />
+            <div class="diary-setting-hint">部署的底层模型名称（如 gpt-4o、gpt-4-turbo）</div>
+          </label>
+        </div>
+
+        <!-- Pollinations 专用（免费，无需密钥） -->
+        <div id="diaryPollinationsSection" class="diary-api-section" data-diary-source="pollinations" style="display: none;">
+          <div class="diary-setting-hint">
+            <a href="https://pollinations.ai/" target="_blank" rel="noopener noreferrer">由 Pollinations.AI 免费提供</a><br>
+            请避免发送敏感信息。输出可能包含提供商的广告。
+          </div>
+        </div>
+
+        <!-- Chutes 专用配置 -->
+        <div id="diaryChutesSection" class="diary-api-section" data-diary-source="chutes" style="display: none;">
+          <div class="diary-setting-hint">
+            <a href="https://chutes.ai/app/api/billing-balance" target="_blank" rel="noopener noreferrer">查看账单/余额</a>
+          </div>
+        </div>
+
+        <!-- ========== 模型选择（非 Custom API 使用） ========== -->
+        <div id="diaryModelSection" class="diary-api-section" data-diary-source="openai,claude,makersuite,openrouter,deepseek,mistralai,cohere,perplexity,groq,xai,ai21,moonshot,fireworks,electronhub,chutes,nanogpt,aimlapi,siliconflow,zai">
+          <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start;">
+            <span class="diary-setting-label">模型</span>
+            <div class="diary-setting-row">
+              <select id="diaryApiModelSelect" class="diary-setting-select" style="flex: 1;">
+                <option value="">请选择模型...</option>
+                <option value="__manual__">手动输入...</option>
+              </select>
+              <button id="diaryApiRefreshModels" class="menu_button" title="刷新模型列表">
+                <i class="fa-solid fa-rotate"></i>
+              </button>
+            </div>
+          </label>
+          <!-- 手动输入模型 -->
+          <div id="diaryApiModelManualWrapper" style="display: none; margin-top: 8px;">
+            <input type="text" id="diaryApiModelManual" class="text_pole" placeholder="gpt-4o-mini" style="width: 100%;" />
           </div>
         </div>
 
         <!-- 测试连接 -->
-        <button id="diaryApiTest" class="menu_button" style="width: 100%; margin-top: 10px;">
+        <button id="diaryApiTest" class="menu_button" style="width: 100%; margin-top: 12px;">
           <i class="fa-solid fa-flask"></i> 测试连接
         </button>
-        <div style="font-size: 0.85em; color: var(--SmartThemeEmColor); margin-top: 6px; text-align: center;">
-          ⚠️ 测试消息会使用一条回复消息次数
+
+        <!-- 高级参数（折叠式，动态生成） -->
+        <div class="diary-api-section" style="margin-top: 12px;">
+          <div class="diary-setting-label diary-collapsible-header" id="diaryApiParamsToggle">
+            <i class="fa-solid fa-chevron-down" id="diaryApiParamsIcon"></i>
+            <span>高级参数</span>
+          </div>
+          <div id="diaryApiParamsContainer" class="diary-collapsible-content" style="display: block; margin-top: 8px;">
+            <!-- 参数将根据选择的 API 格式动态插入 -->
+          </div>
         </div>
 
       </div>
@@ -317,6 +499,17 @@
   <div class="diary-date-picker-panel" id="diaryDatePickerPanel">
     <input type="date" id="diaryDatePicker" class="diary-date-input" />
     <button class="diary-date-clear-btn" title="清除日期">
+      <span class="fa-solid fa-times"></span>
+    </button>
+  </div>
+
+  <!-- 展开式日期范围选择器（默认隐藏） -->
+  <div class="diary-date-range-panel" id="diaryDateRangePanel">
+    <span class="diary-date-range-label">从</span>
+    <input type="date" id="diaryDateRangeStart" class="diary-date-input" />
+    <span class="diary-date-range-label">到</span>
+    <input type="date" id="diaryDateRangeEnd" class="diary-date-input" />
+    <button class="diary-date-clear-btn" id="diaryDateRangeClear" title="清除日期范围">
       <span class="fa-solid fa-times"></span>
     </button>
   </div>

@@ -1058,9 +1058,30 @@ export class PresetManagerUI {
   // 快速开关相关
   // ========================================
 
+  /** @type {Object<string, boolean>} 快速开关列表中世界书分组的展开状态 */
+  quickToggleGroupExpanded = {};
+
+  /**
+   * 获取世界书条目的显示名称（用于快速开关列表）
+   * @param {Object} toggle - 世界书条目
+   * @returns {string} 显示名称
+   */
+  getWorldInfoDisplayName(toggle) {
+    // 优先使用别名
+    if (toggle.displayAlias) {
+      return toggle.displayAlias;
+    }
+    // 从原始名称中提取条目名（格式：世界书名: 条目名）
+    const colonIndex = toggle.name.indexOf(': ');
+    if (colonIndex !== -1) {
+      return toggle.name.substring(colonIndex + 2);
+    }
+    return toggle.name;
+  }
+
   /**
    * 渲染快速开关列表
-   * @description 根据选中的预设加载快速开关，支持预设条目和世界书条目两种类型，支持按名称搜索过滤
+   * @description 根据选中的预设加载快速开关，预设条目直接显示，世界书条目按世界书分组折叠显示
    */
   renderQuickToggleList() {
     const container = this.container?.querySelector('#quick-toggle-list-container');
@@ -1109,44 +1130,79 @@ export class PresetManagerUI {
       return;
     }
 
-    // 渲染列表（支持预设条目和世界书条目）
-    const listHtml = filteredToggles.map(toggle => {
-      if (toggle.type === 'worldinfo') {
-        // 世界书条目
-        return `
-          <div class="quick-toggle-item quick-toggle-worldinfo"
-               data-world-name="${toggle.worldName}"
-               data-uid="${toggle.uid}">
-            <span class="quick-toggle-name" title="${toggle.name}">${toggle.name}</span>
-            <div class="quick-toggle-actions">
-              <span class="quick-toggle-switch ${toggle.enabled ? 'on' : 'off'}"
-                    title="${toggle.enabled ? '点击关闭' : '点击开启'}">
-                <i class="fa-solid ${toggle.enabled ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
-              </span>
-              <button class="quick-toggle-remove-btn" title="移除">
-                <i class="fa-solid fa-times"></i>
-              </button>
+    // 分离预设条目和世界书条目
+    const presetToggles = filteredToggles.filter(t => t.type === 'preset');
+    const worldInfoToggles = filteredToggles.filter(t => t.type === 'worldinfo');
+
+    let listHtml = '';
+
+    // 渲染预设条目（不分组）
+    if (presetToggles.length > 0) {
+      listHtml += presetToggles.map(toggle => `
+        <div class="quick-toggle-item quick-toggle-preset" data-identifier="${toggle.identifier}">
+          <span class="quick-toggle-name" title="${toggle.name}">${toggle.name}</span>
+          <div class="quick-toggle-actions">
+            <span class="quick-toggle-switch ${toggle.enabled ? 'on' : 'off'}"
+                  title="${toggle.enabled ? '点击关闭' : '点击开启'}">
+              <i class="fa-solid ${toggle.enabled ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
+            </span>
+            <button class="quick-toggle-remove-btn" title="移除">
+              <i class="fa-solid fa-times"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 按世界书分组渲染世界书条目
+    if (worldInfoToggles.length > 0) {
+      // 按世界书名分组
+      const worldInfoGroups = {};
+      worldInfoToggles.forEach(t => {
+        if (!worldInfoGroups[t.worldName]) {
+          worldInfoGroups[t.worldName] = [];
+        }
+        worldInfoGroups[t.worldName].push(t);
+      });
+
+      // 渲染每个世界书分组
+      Object.keys(worldInfoGroups).forEach(worldName => {
+        const entries = worldInfoGroups[worldName];
+        const isExpanded = this.quickToggleGroupExpanded[worldName] !== false; // 默认展开
+        const groupId = `qt-wi-group-${worldName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+
+        listHtml += `
+          <div class="quick-toggle-wi-group" data-world-name="${worldName}">
+            <div class="quick-toggle-wi-header ${isExpanded ? 'expanded' : ''}" data-group-id="${groupId}">
+              <i class="fa-solid ${isExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} wi-group-icon"></i>
+              <span class="wi-group-name">${worldName}</span>
+              <span class="wi-group-count">(${entries.length})</span>
+            </div>
+            <div class="quick-toggle-wi-entries ${isExpanded ? '' : 'collapsed'}" id="${groupId}">
+              ${entries.map(toggle => `
+                <div class="quick-toggle-item quick-toggle-worldinfo"
+                     data-world-name="${toggle.worldName}"
+                     data-uid="${toggle.uid}">
+                  <span class="quick-toggle-name" title="${toggle.name}">${this.getWorldInfoDisplayName(toggle)}</span>
+                  <div class="quick-toggle-actions">
+                    <button class="quick-toggle-edit-btn" title="编辑别名">
+                      <i class="fa-solid fa-pen"></i>
+                    </button>
+                    <span class="quick-toggle-switch ${toggle.enabled ? 'on' : 'off'}"
+                          title="${toggle.enabled ? '点击关闭' : '点击开启'}">
+                      <i class="fa-solid ${toggle.enabled ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
+                    </span>
+                    <button class="quick-toggle-remove-btn" title="移除">
+                      <i class="fa-solid fa-times"></i>
+                    </button>
+                  </div>
+                </div>
+              `).join('')}
             </div>
           </div>
         `;
-      } else {
-        // 预设条目
-        return `
-          <div class="quick-toggle-item quick-toggle-preset" data-identifier="${toggle.identifier}">
-            <span class="quick-toggle-name" title="${toggle.name}">${toggle.name}</span>
-            <div class="quick-toggle-actions">
-              <span class="quick-toggle-switch ${toggle.enabled ? 'on' : 'off'}"
-                    title="${toggle.enabled ? '点击关闭' : '点击开启'}">
-                <i class="fa-solid ${toggle.enabled ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
-              </span>
-              <button class="quick-toggle-remove-btn" title="移除">
-                <i class="fa-solid fa-times"></i>
-              </button>
-            </div>
-          </div>
-        `;
-      }
-    }).join('');
+      });
+    }
 
     container.innerHTML = `
       ${listHtml}
@@ -1161,11 +1217,41 @@ export class PresetManagerUI {
 
   /**
    * 绑定快速开关列表事件
-   * @description 分别为预设条目和世界书条目绑定开关点击和移除按钮事件
+   * @description 绑定分组折叠、开关点击、编辑按钮、移除按钮事件
    */
   bindQuickToggleListEvents() {
     const container = this.container?.querySelector('#quick-toggle-list-container');
     if (!container) return;
+
+    // 世界书分组折叠事件
+    container.querySelectorAll('.quick-toggle-wi-header').forEach(header => {
+      header.addEventListener('click', (e) => {
+        const worldName = header.closest('.quick-toggle-wi-group')?.dataset.worldName;
+        const groupId = header.dataset.groupId;
+        const entriesEl = document.getElementById(groupId);
+        const icon = header.querySelector('.wi-group-icon');
+
+        if (!entriesEl || !worldName) return;
+
+        const isExpanded = header.classList.contains('expanded');
+
+        if (isExpanded) {
+          // 折叠
+          header.classList.remove('expanded');
+          entriesEl.classList.add('collapsed');
+          icon?.classList.remove('fa-chevron-down');
+          icon?.classList.add('fa-chevron-right');
+          this.quickToggleGroupExpanded[worldName] = false;
+        } else {
+          // 展开
+          header.classList.add('expanded');
+          entriesEl.classList.remove('collapsed');
+          icon?.classList.remove('fa-chevron-right');
+          icon?.classList.add('fa-chevron-down');
+          this.quickToggleGroupExpanded[worldName] = true;
+        }
+      });
+    });
 
     // 预设条目开关点击
     container.querySelectorAll('.quick-toggle-preset .quick-toggle-switch').forEach(switchEl => {
@@ -1196,6 +1282,19 @@ export class PresetManagerUI {
       });
     });
 
+    // 世界书条目编辑按钮（编辑别名）
+    container.querySelectorAll('.quick-toggle-worldinfo .quick-toggle-edit-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const item = e.target.closest('.quick-toggle-item');
+        const worldName = item?.dataset.worldName;
+        const uid = parseInt(item?.dataset.uid, 10);
+        if (!worldName || isNaN(uid)) return;
+
+        await this.showEditAliasPopup(worldName, uid);
+      });
+    });
+
     // 预设条目移除按钮
     container.querySelectorAll('.quick-toggle-preset .quick-toggle-remove-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -1222,6 +1321,63 @@ export class PresetManagerUI {
         toastr.info('已移除快速开关');
       });
     });
+  }
+
+  /**
+   * 显示编辑别名弹窗
+   * @description 弹窗让用户修改世界书条目在悬浮菜单中的显示名称，不影响世界书本身
+   * @param {string} worldName - 世界书名称
+   * @param {number} uid - 条目uid
+   */
+  async showEditAliasPopup(worldName, uid) {
+    // 获取当前别名
+    const toggles = quickToggleData.getQuickToggles();
+    const toggle = toggles.find(t => t.type === 'worldinfo' && t.worldName === worldName && t.uid === uid);
+    if (!toggle) return;
+
+    const currentAlias = toggle.displayAlias || '';
+    // 从原始名称中提取条目名
+    const colonIndex = toggle.name.indexOf(': ');
+    const entryName = colonIndex !== -1 ? toggle.name.substring(colonIndex + 2) : toggle.name;
+
+    // 用一个对象来存储输入值，因为弹窗关闭后DOM会被移除
+    let inputValue = currentAlias;
+
+    const popupHtml = `
+      <div class="edit-alias-popup">
+        <p style="margin:0 0 10px 0;font-size:0.9em;opacity:0.8;">
+          <i class="fa-solid fa-info-circle"></i>
+          修改的是悬浮菜单中的显示名称，不会影响世界书条目本身
+        </p>
+        <div style="margin-bottom:8px;">
+          <label style="font-size:0.85em;opacity:0.7;">原始条目名：</label>
+          <div style="padding:6px 10px;background:var(--SmartThemeBlurTintColor);border-radius:4px;font-size:0.9em;">${entryName}</div>
+        </div>
+        <div>
+          <label style="font-size:0.85em;opacity:0.7;">悬浮菜单显示名（留空则显示原始条目名）：</label>
+          <input type="text" class="text_pole" id="edit-alias-input" value="${currentAlias}" placeholder="输入自定义显示名...">
+        </div>
+      </div>
+    `;
+
+    // 在弹窗显示后绑定输入事件，实时记录输入值
+    setTimeout(() => {
+      const input = document.querySelector('#edit-alias-input');
+      if (input) {
+        input.addEventListener('input', (e) => {
+          inputValue = e.target.value;
+        });
+      }
+    }, 100);
+
+    const result = await callGenericPopup(popupHtml, 1, '编辑显示名称');
+
+    if (result) {
+      const newAlias = inputValue.trim();
+      quickToggleData.updateWorldInfoAlias(worldName, uid, newAlias);
+      this.renderQuickToggleList();
+      toastr.success(newAlias ? '已设置显示名称' : '已清除显示名称');
+    }
   }
 
   /**
@@ -1266,7 +1422,11 @@ export class PresetManagerUI {
    * - 预设条目：从当前预设的 prompt_order 获取，点击即可选中/取消
    * - 世界书条目：先用下拉框选择一个世界书，加载该世界书的所有条目（最多显示100条），
    *   搜索框用于实时过滤已加载的条目（匹配名称或内容）
-   * 点击确认后收集两种类型的选中项，保存到快速开关列表。
+   *
+   * 保存逻辑（重要）：
+   * - 收集选中项时，会检查原有列表是否已有该条目，有则保留原有对象（包含别名等属性）
+   * - 如果用户没有切换到世界书标签页，则保留原有的世界书条目不动（避免误删）
+   * - 这样编辑别名后再打开弹窗确认，别名不会丢失
    *
    * @async
    * @returns {Promise<void>}
@@ -1480,26 +1640,53 @@ export class PresetManagerUI {
     const result = await callGenericPopup($html, 1, '添加快速开关');
 
     if (result) {
+      // 保留原有的条目，只更新用户操作过的部分
+      const existingToggles = quickToggleData.getQuickToggles();
       const newToggles = [];
 
-      // 收集预设条目
+      // 收集预设条目（用户在预设标签页操作过，所以用弹窗中的选中状态）
       $html.find('.quick-toggle-select-item[data-type="preset"].selected').each(function () {
-        newToggles.push({
-          type: 'preset',
-          identifier: $(this).data('identifier'),
-          name: $(this).data('name')
-        });
+        const identifier = $(this).data('identifier');
+        // 检查原有列表中是否有这个条目（保留原有属性）
+        const existing = existingToggles.find(t => t.type === 'preset' && t.identifier === identifier);
+        if (existing) {
+          newToggles.push(existing);
+        } else {
+          newToggles.push({
+            type: 'preset',
+            identifier: identifier,
+            name: $(this).data('name')
+          });
+        }
       });
 
-      // 收集世界书条目
-      $html.find('.quick-toggle-select-item[data-type="worldinfo"].selected').each(function () {
-        newToggles.push({
-          type: 'worldinfo',
-          worldName: $(this).data('world-name'),
-          uid: $(this).data('uid'),
-          name: $(this).data('name')
+      // 检查用户是否切换到过世界书标签页
+      const worldInfoTabVisited = $html.find('#quick-toggle-wi-select option').length > 1;
+
+      if (worldInfoTabVisited) {
+        // 用户访问过世界书标签页，使用弹窗中的选中状态
+        $html.find('.quick-toggle-select-item[data-type="worldinfo"].selected').each(function () {
+          const worldName = $(this).data('world-name');
+          const uid = $(this).data('uid');
+          // 检查原有列表中是否有这个条目（保留别名等属性）
+          const existing = existingToggles.find(t => t.type === 'worldinfo' && t.worldName === worldName && t.uid === uid);
+          if (existing) {
+            newToggles.push(existing);
+          } else {
+            newToggles.push({
+              type: 'worldinfo',
+              worldName: worldName,
+              uid: uid,
+              name: $(this).data('name')
+            });
+          }
         });
-      });
+      } else {
+        // 用户没有访问过世界书标签页，保留原有的世界书条目
+        existingToggles.filter(t => t.type === 'worldinfo').forEach(t => {
+          newToggles.push(t);
+        });
+      }
 
       quickToggleData.setQuickToggles(newToggles);
       this.renderQuickToggleList();

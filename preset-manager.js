@@ -197,9 +197,13 @@ export class PresetManagerModule {
 
   /**
    * 监听预设页面出现
-   * @description 使用 MutationObserver 监听 DOM 变化，检测预设页面出现或按钮被删除的情况
+   * @description
+   * 使用两阶段监听策略优化性能：
+   * 1. 初始阶段：监听 #openai_settings 容器，等待预设列表出现
+   * 2. 增强完成后：切换到只监听 .completion_prompt_manager，检测按钮被删除
    */
   observePresetPage() {
+
     this.presetObserver = new MutationObserver((mutations) => {
       const promptList = document.querySelector('#completion_prompt_manager_list, #prompt_manager_list');
       if (!promptList) return;
@@ -208,11 +212,35 @@ export class PresetManagerModule {
       if (!promptList.hasAttribute('data-paws-enhanced')) {
         logger.debug(' 检测到预设列表，开始增强');
         this.enhancePresetPage();
+
+        // 预设列表出现后，切换到只监听 footer（更精准，减少性能开销）
+        this.switchToFooterObserver();
         return;
       }
+    });
 
-      // 检查按钮是否被删除（promptManager.render() 会清空 footer）
-      // 这是解决切换预设后按钮消失问题的关键
+    // 初始监听：只监听 openai_settings 容器，而不是整个 body
+    const settingsContainer = document.querySelector('#openai_settings') || document.body;
+    this.presetObserver.observe(settingsContainer, {
+      childList: true,
+      subtree: true
+    });
+
+    this.checkAndEnhancePresetPage();
+  }
+
+  /**
+   * 切换到只监听 footer 的 Observer
+   * @description 预设页面增强完成后，只需要监听 footer 来检测按钮被删除
+   */
+  switchToFooterObserver() {
+    // 断开原来的全局监听
+    if (this.presetObserver) {
+      this.presetObserver.disconnect();
+    }
+
+    // 创建新的 Observer，只监听 footer
+    this.presetObserver = new MutationObserver((mutations) => {
       const footer = document.querySelector('.completion_prompt_manager_footer');
       if (footer && !footer.querySelector('#paws-save-snapshot-btn')) {
         logger.debug('[PresetManager] 检测到快照按钮被删除，重新添加');
@@ -220,14 +248,15 @@ export class PresetManagerModule {
       }
     });
 
-    if (document.body) {
-      this.presetObserver.observe(document.body, {
+    // 监听 prompt manager 容器（比 body 小很多）
+    const promptManager = document.querySelector('.completion_prompt_manager') ||
+                          document.querySelector('#completion_prompt_manager_list')?.parentElement;
+    if (promptManager) {
+      this.presetObserver.observe(promptManager, {
         childList: true,
         subtree: true
       });
     }
-
-    this.checkAndEnhancePresetPage();
   }
 
   /**

@@ -17,7 +17,9 @@ import { callGenericPopup, POPUP_TYPE } from '../../../../popup.js';
 import {
     setFloatingBtnImage,
     clearFloatingBtnImage,
-    saveFloatingBtnSettings
+    saveFloatingBtnSettings,
+    applyGifAnimationPack,
+    clearGifAnimationPack
 } from './beautify.js';
 
 
@@ -3319,13 +3321,18 @@ function showCssHelpPopup() {
 
 /**
  * 打开悬浮按钮图片设置弹窗
- * @description 复用 beautify-popup 的弹窗风格
+ * @description 复用 beautify-popup 的弹窗风格，支持待机图片、点击动画、等待动画三种模式
  */
 export function openFloatingBtnImagePopup() {
     const settings = extension_settings[EXT_ID]?.beautify?.floatingBtn || {};
     const savedImages = settings.savedImages || [];
     const currentImageUrl = settings.imageUrl || '';
     const imageOpacity = settings.imageOpacity || 1.0;
+    const gifPacks = settings.gifPacks || [];
+    const currentGifPackId = settings.currentGifPackId || '';
+    const waitingPacks = settings.waitingPacks || [];
+    const currentWaitingPackId = settings.currentWaitingPackId || '';
+    const currentTab = settings.lastTab || 'static'; // 记住上次选择的tab
 
     // 创建弹窗 HTML
     const popupHtml = `
@@ -3339,50 +3346,114 @@ export function openFloatingBtnImagePopup() {
                     </button>
                 </div>
 
-                <!-- 内容 -->
+                <!-- Tab切换（三个Tab） -->
+                <div class="floating-btn-tabs">
+                    <button class="floating-btn-tab ${currentTab === 'static' ? 'active' : ''}" data-tab="static">
+                        <i class="fa-solid fa-image"></i> 待机图片
+                    </button>
+                    <button class="floating-btn-tab ${currentTab === 'gif' ? 'active' : ''}" data-tab="gif">
+                        <i class="fa-solid fa-hand-pointer"></i> 点击动画
+                    </button>
+                    <button class="floating-btn-tab ${currentTab === 'waiting' ? 'active' : ''}" data-tab="waiting">
+                        <i class="fa-solid fa-spinner"></i> 等待动画
+                    </button>
+                </div>
+
+                <!-- 内容区域 -->
                 <div class="beautify-popup-content floating-btn-popup-content">
-                    <!-- 当前图片预览 -->
-                    <div class="floating-btn-preview-section">
-                        <div class="floating-btn-preview" id="floating-btn-popup-preview">
-                            ${currentImageUrl ? `<img src="${currentImageUrl}" alt="当前图片">` : '<i class="fa-solid fa-image"></i>'}
+                    <!-- 待机图片Tab内容 -->
+                    <div class="floating-btn-tab-content ${currentTab === 'static' ? 'active' : ''}" data-tab-content="static">
+                        <!-- 当前图片预览 -->
+                        <div class="floating-btn-preview-section">
+                            <div class="floating-btn-preview" id="floating-btn-popup-preview">
+                                ${currentImageUrl ? `<img src="${currentImageUrl}" alt="当前图片">` : '<i class="fa-solid fa-image"></i>'}
+                            </div>
+                            <div class="floating-btn-opacity-control">
+                                <label>
+                                    <i class="fa-solid fa-droplet"></i>
+                                    <span>图片透明度</span>
+                                </label>
+                                <input type="range" id="floating-btn-popup-opacity" min="10" max="100" value="${Math.round(imageOpacity * 100)}">
+                                <span id="floating-btn-popup-opacity-value">${Math.round(imageOpacity * 100)}%</span>
+                            </div>
                         </div>
-                        <div class="floating-btn-opacity-control">
-                            <label>
-                                <i class="fa-solid fa-droplet"></i>
-                                <span>图片透明度</span>
-                            </label>
-                            <input type="range" id="floating-btn-popup-opacity" min="10" max="100" value="${Math.round(imageOpacity * 100)}">
-                            <span id="floating-btn-popup-opacity-value">${Math.round(imageOpacity * 100)}%</span>
+
+                        <!-- 图片来源 -->
+                        <div class="floating-btn-sources">
+                            <button class="beautify-popup-btn" id="floating-btn-upload-local">
+                                <i class="fa-solid fa-upload"></i>
+                                <span>本地上传</span>
+                            </button>
+                            <button class="beautify-popup-btn" id="floating-btn-add-url">
+                                <i class="fa-solid fa-link"></i>
+                                <span>网络链接</span>
+                            </button>
+                            <button class="beautify-popup-btn" id="floating-btn-clear-image">
+                                <i class="fa-solid fa-trash"></i>
+                                <span>清除图片</span>
+                            </button>
+                        </div>
+
+                        <!-- 提示 -->
+                        <div class="floating-btn-hint">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <span>图床链接可能会因为魔法和网络问题导致图标看不见</span>
+                        </div>
+
+                        <!-- 存档列表 -->
+                        <div class="floating-btn-saved-section">
+                            <h4><i class="fa-solid fa-bookmark"></i> 存档</h4>
+                            <div class="floating-btn-saved-grid" id="floating-btn-saved-grid">
+                                ${renderFloatingBtnSavedGrid(savedImages, currentImageUrl)}
+                            </div>
                         </div>
                     </div>
 
-                    <!-- 图片来源 -->
-                    <div class="floating-btn-sources">
-                        <button class="beautify-popup-btn" id="floating-btn-upload-local">
-                            <i class="fa-solid fa-upload"></i>
-                            <span>本地上传</span>
-                        </button>
-                        <button class="beautify-popup-btn" id="floating-btn-add-url">
-                            <i class="fa-solid fa-link"></i>
-                            <span>网络链接</span>
-                        </button>
-                        <button class="beautify-popup-btn" id="floating-btn-clear-image">
-                            <i class="fa-solid fa-trash"></i>
-                            <span>清除图片</span>
-                        </button>
+                    <!-- 点击动画Tab内容（原GIF动画库） -->
+                    <div class="floating-btn-tab-content ${currentTab === 'gif' ? 'active' : ''}" data-tab-content="gif">
+                        <!-- 当前使用的动画库预览 -->
+                        <div class="gif-pack-current-section">
+                            ${renderCurrentGifPack(gifPacks, currentGifPackId)}
+                        </div>
+
+                        <!-- 动画库列表 -->
+                        <div class="gif-pack-list-section">
+                            <div class="gif-pack-list-header">
+                                <h4><i class="fa-solid fa-folder-open"></i> 我的点击动画库</h4>
+                                <div class="gif-pack-actions">
+                                    <input type="text" class="gif-pack-search" id="gif-pack-search" placeholder="搜索...">
+                                    <button class="beautify-popup-btn gif-pack-create-btn" id="gif-pack-create">
+                                        <i class="fa-solid fa-plus"></i> 新建
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="gif-pack-grid" id="gif-pack-grid">
+                                ${renderGifPackGrid(gifPacks, currentGifPackId)}
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- 提示 -->
-                    <div class="floating-btn-hint">
-                        <i class="fa-solid fa-circle-info"></i>
-                        <span>图床链接可能会因为魔法和网络问题导致图标看不见</span>
-                    </div>
+                    <!-- 等待动画Tab内容（新增） -->
+                    <div class="floating-btn-tab-content ${currentTab === 'waiting' ? 'active' : ''}" data-tab-content="waiting">
+                        <!-- 当前使用的等待动画预览 -->
+                        <div class="waiting-pack-current-section">
+                            ${renderCurrentWaitingPack(waitingPacks, currentWaitingPackId)}
+                        </div>
 
-                    <!-- 存档列表 -->
-                    <div class="floating-btn-saved-section">
-                        <h4><i class="fa-solid fa-bookmark"></i> 存档</h4>
-                        <div class="floating-btn-saved-grid" id="floating-btn-saved-grid">
-                            ${renderFloatingBtnSavedGrid(savedImages, currentImageUrl)}
+                        <!-- 等待动画库列表 -->
+                        <div class="waiting-pack-list-section">
+                            <div class="waiting-pack-list-header">
+                                <h4><i class="fa-solid fa-folder-open"></i> 我的等待动画库</h4>
+                                <div class="waiting-pack-actions">
+                                    <input type="text" class="waiting-pack-search" id="waiting-pack-search" placeholder="搜索...">
+                                    <button class="beautify-popup-btn waiting-pack-create-btn" id="waiting-pack-create">
+                                        <i class="fa-solid fa-plus"></i> 新建
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="waiting-pack-grid" id="waiting-pack-grid">
+                                ${renderWaitingPackGrid(waitingPacks, currentWaitingPackId)}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -3446,7 +3517,18 @@ function renderFloatingBtnSavedGrid(savedImages, currentImageUrl) {
 }
 
 /**
- * 绑定弹窗事件
+ * 绑定悬浮按钮设置弹窗的所有事件
+ *
+ * @description
+ * 为悬浮按钮设置弹窗绑定各类交互事件，包括：
+ * - 基础操作：关闭弹窗（点击遮罩/关闭按钮/ESC键）
+ * - Tab切换：在不同标签页之间切换
+ * - 图片设置：透明度调节、本地上传、网络链接、清除图片
+ * - 存档管理：点击存档图片应用/删除
+ * - 点击动画库：新建动画库、搜索过滤、点击应用/编辑/删除
+ * - 等待动画库：新建等待动画库、搜索过滤、点击应用/编辑/删除
+ *
+ * @param {HTMLElement} overlay - 弹窗遮罩层元素
  */
 function bindFloatingBtnPopupEvents(overlay) {
     if (!overlay) return;
@@ -3470,6 +3552,15 @@ function bindFloatingBtnPopupEvents(overlay) {
         }
     };
     document.addEventListener('keydown', handleEsc);
+
+    // Tab切换
+    const tabs = overlay.querySelectorAll('.floating-btn-tab');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabName = tab.getAttribute('data-tab');
+            switchFloatingBtnTab(overlay, tabName);
+        });
+    });
 
     // 透明度滑块
     const opacitySlider = overlay.querySelector('#floating-btn-popup-opacity');
@@ -3509,6 +3600,55 @@ function bindFloatingBtnPopupEvents(overlay) {
     // 存档图片点击
     const savedGrid = overlay.querySelector('#floating-btn-saved-grid');
     savedGrid?.addEventListener('click', (e) => handleFloatingBtnSavedClick(e, overlay));
+
+    // === GIF动画库相关事件 ===
+
+    // 新建动画库按钮
+    const createBtn = overlay.querySelector('#gif-pack-create');
+    createBtn?.addEventListener('click', () => openGifPackEditor(overlay, null));
+
+    // 搜索框
+    const searchInput = overlay.querySelector('#gif-pack-search');
+    searchInput?.addEventListener('input', (e) => {
+        filterGifPacks(overlay, e.target.value);
+    });
+
+    // 动画库网格点击
+    const gifPackGrid = overlay.querySelector('#gif-pack-grid');
+    gifPackGrid?.addEventListener('click', (e) => handleGifPackGridClick(e, overlay));
+
+    // 点击动画库清除按钮（初始绑定）
+    const gifPackClearBtn = overlay.querySelector('#gif-pack-clear-current');
+    gifPackClearBtn?.addEventListener('click', () => {
+        saveFloatingBtnSettings({ currentGifPackId: '' });
+        clearGifAnimationPack();
+        refreshGifPackUI(overlay);
+        logger.info('[BeautifyPopup] 已取消使用动画库');
+    });
+
+    // === 等待动画库相关事件 ===
+
+    // 新建等待动画库按钮
+    const waitingCreateBtn = overlay.querySelector('#waiting-pack-create');
+    waitingCreateBtn?.addEventListener('click', () => openWaitingPackEditor(overlay, null));
+
+    // 等待动画库搜索框
+    const waitingSearchInput = overlay.querySelector('#waiting-pack-search');
+    waitingSearchInput?.addEventListener('input', (e) => {
+        filterWaitingPacks(overlay, e.target.value);
+    });
+
+    // 等待动画库网格点击
+    const waitingPackGrid = overlay.querySelector('#waiting-pack-grid');
+    waitingPackGrid?.addEventListener('click', (e) => handleWaitingPackGridClick(e, overlay));
+
+    // 等待动画库清除按钮（初始绑定）
+    const waitingPackClearBtn = overlay.querySelector('#waiting-pack-clear-current');
+    waitingPackClearBtn?.addEventListener('click', () => {
+        saveFloatingBtnSettings({ currentWaitingPackId: '' });
+        refreshWaitingPackUI(overlay);
+        logger.info('[BeautifyPopup] 已取消使用等待动画库');
+    });
 }
 
 /**
@@ -3737,3 +3877,2191 @@ function refreshFloatingBtnSavedGrid(overlay) {
     const settings = extension_settings[EXT_ID]?.beautify?.floatingBtn || {};
     grid.innerHTML = renderFloatingBtnSavedGrid(settings.savedImages || [], settings.imageUrl || '');
 }
+
+// ==========================================
+// GIF动画库相关函数
+// ==========================================
+
+/**
+ * 切换Tab
+ * @param {Element} overlay - 弹窗元素
+ * @param {string} tabName - Tab名称 ('static' | 'gif')
+ */
+function switchFloatingBtnTab(overlay, tabName) {
+    // 更新Tab按钮状态
+    overlay.querySelectorAll('.floating-btn-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.getAttribute('data-tab') === tabName);
+    });
+
+    // 更新Tab内容显示
+    overlay.querySelectorAll('.floating-btn-tab-content').forEach(content => {
+        content.classList.toggle('active', content.getAttribute('data-tab-content') === tabName);
+    });
+
+    // 保存最后选择的Tab
+    saveFloatingBtnSettings({ lastTab: tabName });
+    logger.debug('[BeautifyPopup] 切换到Tab:', tabName);
+}
+
+/**
+ * 渲染当前使用的GIF动画库预览
+ * @param {Array} gifPacks - 动画库列表
+ * @param {string} currentGifPackId - 当前使用的动画库ID
+ * @returns {string} HTML字符串
+ */
+function renderCurrentGifPack(gifPacks, currentGifPackId) {
+    const currentPack = gifPacks.find(p => p.id === currentGifPackId);
+
+    if (!currentPack) {
+        return `
+            <div class="gif-pack-current-empty">
+                <i class="fa-solid fa-film"></i>
+                <span>未选择动画库</span>
+                <p>点击下方"新建"创建你的第一个GIF动画库</p>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="gif-pack-current">
+            <div class="gif-pack-current-header">
+                <span class="gif-pack-current-name">${currentPack.name}</span>
+                <button class="gif-pack-current-clear" id="gif-pack-clear-current" title="取消使用">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="gif-pack-current-hint">点击 × 取消使用此动画库</div>
+            <div class="gif-pack-current-preview">
+                <div class="gif-pack-preview-item">
+                    <div class="gif-pack-preview-img">
+                        ${currentPack.idle ? `<img src="${currentPack.idle}" alt="待机">` : '<i class="fa-solid fa-image"></i>'}
+                    </div>
+                    <span>待机</span>
+                </div>
+                <div class="gif-pack-preview-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                <div class="gif-pack-preview-item">
+                    <div class="gif-pack-preview-img">
+                        ${currentPack.clickAnim ? `<img src="${currentPack.clickAnim}" alt="点击动画">` : '<i class="fa-solid fa-image"></i>'}
+                    </div>
+                    <span>点击时</span>
+                </div>
+                <div class="gif-pack-preview-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                <div class="gif-pack-preview-item">
+                    <div class="gif-pack-preview-img">
+                        ${currentPack.afterClick ? `<img src="${currentPack.afterClick}" alt="点击后">` : '<i class="fa-solid fa-image"></i>'}
+                    </div>
+                    <span>点击后</span>
+                </div>
+            </div>
+            <div class="gif-pack-current-info">
+                <span><i class="fa-solid fa-clock"></i> ${currentPack.restoreDelay || 0}秒后恢复待机</span>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * 渲染GIF动画库网格
+ * @param {Array} gifPacks - 动画库列表
+ * @param {string} currentGifPackId - 当前使用的动画库ID
+ * @returns {string} HTML字符串
+ */
+function renderGifPackGrid(gifPacks, currentGifPackId) {
+    if (!gifPacks || gifPacks.length === 0) {
+        return '<div class="gif-pack-grid-empty">暂无动画库，点击"新建"创建</div>';
+    }
+
+    return gifPacks.map(pack => `
+        <div class="gif-pack-item ${pack.id === currentGifPackId ? 'active' : ''}" data-pack-id="${pack.id}">
+            <div class="gif-pack-item-preview">
+                ${pack.idle ? `<img src="${pack.idle}" alt="${pack.name}">` : '<i class="fa-solid fa-film"></i>'}
+            </div>
+            <div class="gif-pack-item-info">
+                <span class="gif-pack-item-name">${pack.name}</span>
+            </div>
+            <div class="gif-pack-item-actions">
+                <button class="gif-pack-item-edit" data-pack-id="${pack.id}" title="编辑">
+                    <i class="fa-solid fa-pen"></i>
+                </button>
+                <button class="gif-pack-item-delete" data-pack-id="${pack.id}" title="删除">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+/**
+ * 处理GIF动画库网格点击
+ * @param {Event} e - 点击事件
+ * @param {Element} overlay - 弹窗元素
+ */
+function handleGifPackGridClick(e, overlay) {
+    const target = e.target;
+
+    // 编辑按钮
+    const editBtn = target.closest('.gif-pack-item-edit');
+    if (editBtn) {
+        const packId = editBtn.getAttribute('data-pack-id');
+        const settings = extension_settings[EXT_ID]?.beautify?.floatingBtn || {};
+        const pack = settings.gifPacks?.find(p => p.id === packId);
+        if (pack) {
+            openGifPackEditor(overlay, pack);
+        }
+        return;
+    }
+
+    // 删除按钮
+    const deleteBtn = target.closest('.gif-pack-item-delete');
+    if (deleteBtn) {
+        const packId = deleteBtn.getAttribute('data-pack-id');
+        handleDeleteGifPack(overlay, packId);
+        return;
+    }
+
+    // 点击整个卡片 = 应用该动画库
+    const packItem = target.closest('.gif-pack-item');
+    if (packItem && !target.closest('.gif-pack-item-actions')) {
+        const packId = packItem.getAttribute('data-pack-id');
+        applyGifPack(overlay, packId);
+    }
+}
+
+/**
+ * 应用GIF动画库
+ * @param {Element} overlay - 弹窗元素
+ * @param {string} packId - 动画库ID
+ */
+function applyGifPack(overlay, packId) {
+    const settings = extension_settings[EXT_ID]?.beautify?.floatingBtn || {};
+    const pack = settings.gifPacks?.find(p => p.id === packId);
+
+    if (!pack) {
+        logger.warn('[BeautifyPopup] 找不到动画库:', packId);
+        return;
+    }
+
+    // 保存当前使用的动画库ID
+    saveFloatingBtnSettings({ currentGifPackId: packId });
+
+    // 应用动画库到悬浮按钮
+    applyGifAnimationPack(pack);
+
+    // 刷新UI
+    refreshGifPackUI(overlay);
+
+    logger.info('[BeautifyPopup] 已应用动画库:', pack.name);
+}
+
+/**
+ * 删除GIF动画库
+ * @param {Element} overlay - 弹窗元素
+ * @param {string} packId - 动画库ID
+ */
+async function handleDeleteGifPack(overlay, packId) {
+    const settings = extension_settings[EXT_ID]?.beautify?.floatingBtn || {};
+    const gifPacks = settings.gifPacks || [];
+    const pack = gifPacks.find(p => p.id === packId);
+
+    if (!pack) return;
+    if (!confirm(`确定要删除动画库 "${pack.name}" 吗？\n相关的本地图片文件也会被删除。`)) return;
+
+    // 删除服务器上的本地图片文件（只删除本地上传的，不删除网络链接）
+    const filesToDelete = [pack.idle, pack.clickAnim, pack.afterClick].filter(url => {
+        // 本地上传的文件路径格式：/user/files/xxx 或包含 acsus-paws-puffs 前缀
+        return url && (url.startsWith('/user/files/') || url.includes('acsus-paws-puffs'));
+    });
+
+    for (const fileUrl of filesToDelete) {
+        try {
+            await fetch('/api/files/delete', {
+                method: 'POST',
+                headers: getRequestHeaders(),
+                body: JSON.stringify({ path: fileUrl })
+            });
+            logger.info('[BeautifyPopup] 已删除本地文件:', fileUrl);
+        } catch (error) {
+            logger.warn('[BeautifyPopup] 删除文件失败:', fileUrl, error);
+        }
+    }
+
+    // 从列表中移除
+    const newGifPacks = gifPacks.filter(p => p.id !== packId);
+
+    // 如果删除的是当前使用的动画库，清除当前选择
+    let newCurrentId = settings.currentGifPackId;
+    if (settings.currentGifPackId === packId) {
+        newCurrentId = '';
+        clearGifAnimationPack();
+    }
+
+    saveFloatingBtnSettings({ gifPacks: newGifPacks, currentGifPackId: newCurrentId });
+    refreshGifPackUI(overlay);
+
+    logger.info('[BeautifyPopup] 已删除动画库:', pack.name);
+}
+
+/**
+ * 刷新GIF动画库UI
+ * @param {Element} overlay - 弹窗元素
+ */
+function refreshGifPackUI(overlay) {
+    const settings = extension_settings[EXT_ID]?.beautify?.floatingBtn || {};
+    const gifPacks = settings.gifPacks || [];
+    const currentGifPackId = settings.currentGifPackId || '';
+
+    // 刷新当前使用的动画库预览
+    const currentSection = overlay.querySelector('.gif-pack-current-section');
+    if (currentSection) {
+        currentSection.innerHTML = renderCurrentGifPack(gifPacks, currentGifPackId);
+        // 重新绑定清除按钮事件
+        const clearBtn = currentSection.querySelector('#gif-pack-clear-current');
+        clearBtn?.addEventListener('click', () => {
+            saveFloatingBtnSettings({ currentGifPackId: '' });
+            clearGifAnimationPack();
+            refreshGifPackUI(overlay);
+            logger.info('[BeautifyPopup] 已取消使用动画库');
+        });
+    }
+
+    // 刷新动画库网格
+    const grid = overlay.querySelector('#gif-pack-grid');
+    if (grid) {
+        grid.innerHTML = renderGifPackGrid(gifPacks, currentGifPackId);
+    }
+}
+
+/**
+ * 搜索过滤GIF动画库
+ * @param {Element} overlay - 弹窗元素
+ * @param {string} keyword - 搜索关键词
+ */
+function filterGifPacks(overlay, keyword) {
+    const items = overlay.querySelectorAll('.gif-pack-item');
+    const lowerKeyword = keyword.toLowerCase().trim();
+
+    items.forEach(item => {
+        const name = item.querySelector('.gif-pack-item-name')?.textContent?.toLowerCase() || '';
+        const match = !lowerKeyword || name.includes(lowerKeyword);
+        item.style.display = match ? '' : 'none';
+    });
+}
+
+/**
+ * 打开GIF动画库编辑器
+ * @param {Element} overlay - 主弹窗元素
+ * @param {Object|null} pack - 要编辑的动画库，null表示新建
+ */
+function openGifPackEditor(overlay, pack) {
+    const isNew = !pack;
+    const packData = pack || {
+        id: `gifpack_${Date.now()}`,
+        name: '',
+        idle: '',
+        clickAnim: '',
+        afterClick: '',
+        restoreDelay: 5
+    };
+
+    const editorHtml = `
+        <div class="gif-pack-editor-overlay">
+            <div class="gif-pack-editor">
+                <div class="gif-pack-editor-header">
+                    <h3><i class="fa-solid fa-${isNew ? 'plus' : 'pen'}"></i> ${isNew ? '新建' : '编辑'}动画库</h3>
+                    <button class="gif-pack-editor-close">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="gif-pack-editor-content">
+                    <!-- 库名称 -->
+                    <div class="gif-pack-editor-field">
+                        <label><i class="fa-solid fa-tag"></i> 库名称</label>
+                        <input type="text" id="gif-pack-name" value="${packData.name}" placeholder="给动画库起个名字...">
+                    </div>
+
+                    <!-- 待机图片 -->
+                    <div class="gif-pack-editor-field">
+                        <label><i class="fa-solid fa-image"></i> ① 待机图片（平时显示）</label>
+                        <div class="gif-pack-editor-upload" data-field="idle">
+                            <div class="gif-pack-editor-preview" id="gif-pack-idle-preview">
+                                ${packData.idle ? `<img src="${packData.idle}" alt="待机">` : '<i class="fa-solid fa-image"></i>'}
+                            </div>
+                            <div class="gif-pack-editor-btns">
+                                <button class="beautify-popup-btn gif-pack-upload-btn" data-field="idle">
+                                    <i class="fa-solid fa-upload"></i> 上传
+                                </button>
+                                <button class="beautify-popup-btn gif-pack-url-btn" data-field="idle">
+                                    <i class="fa-solid fa-link"></i>
+                                </button>
+                                <button class="beautify-popup-btn gif-pack-clear-btn" data-field="idle">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                            <input type="hidden" id="gif-pack-idle" value="${packData.idle || ''}">
+                        </div>
+                    </div>
+
+                    <!-- 点击动画 -->
+                    <div class="gif-pack-editor-field">
+                        <label><i class="fa-solid fa-play"></i> ② 点击动画（点击时播放，播放一次）</label>
+                        <div class="gif-pack-editor-upload" data-field="clickAnim">
+                            <div class="gif-pack-editor-preview" id="gif-pack-clickAnim-preview">
+                                ${packData.clickAnim ? `<img src="${packData.clickAnim}" alt="点击动画">` : '<i class="fa-solid fa-film"></i>'}
+                            </div>
+                            <div class="gif-pack-editor-btns">
+                                <button class="beautify-popup-btn gif-pack-upload-btn" data-field="clickAnim">
+                                    <i class="fa-solid fa-upload"></i> 上传
+                                </button>
+                                <button class="beautify-popup-btn gif-pack-url-btn" data-field="clickAnim">
+                                    <i class="fa-solid fa-link"></i>
+                                </button>
+                                <button class="beautify-popup-btn gif-pack-clear-btn" data-field="clickAnim">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                            <input type="hidden" id="gif-pack-clickAnim" value="${packData.clickAnim || ''}">
+                        </div>
+                        <div class="gif-pack-editor-delay" style="margin-top: 8px;">
+                            <span>动画时长：</span>
+                            <input type="number" id="gif-pack-animDuration" value="${packData.animDuration || 2}" min="0.5" max="30" step="0.5">
+                            <span>秒（GIF播放多久后切换到点击后图片）</span>
+                        </div>
+                    </div>
+
+                    <!-- 点击后图片 -->
+                    <div class="gif-pack-editor-field">
+                        <label><i class="fa-solid fa-check"></i> ③ 点击后图片（动画播完后显示）</label>
+                        <div class="gif-pack-editor-upload" data-field="afterClick">
+                            <div class="gif-pack-editor-preview" id="gif-pack-afterClick-preview">
+                                ${packData.afterClick ? `<img src="${packData.afterClick}" alt="点击后">` : '<i class="fa-solid fa-image"></i>'}
+                            </div>
+                            <div class="gif-pack-editor-btns">
+                                <button class="beautify-popup-btn gif-pack-upload-btn" data-field="afterClick">
+                                    <i class="fa-solid fa-upload"></i> 上传
+                                </button>
+                                <button class="beautify-popup-btn gif-pack-url-btn" data-field="afterClick">
+                                    <i class="fa-solid fa-link"></i>
+                                </button>
+                                <button class="beautify-popup-btn gif-pack-clear-btn" data-field="afterClick">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                            <input type="hidden" id="gif-pack-afterClick" value="${packData.afterClick || ''}">
+                        </div>
+                    </div>
+
+                    <!-- 恢复延迟 -->
+                    <div class="gif-pack-editor-field">
+                        <label><i class="fa-solid fa-clock"></i> ④ 恢复延迟</label>
+                        <div class="gif-pack-editor-delay">
+                            <input type="number" id="gif-pack-restoreDelay" value="${packData.restoreDelay || 5}" min="0" max="60">
+                            <span>秒后恢复待机（0 = 不自动恢复）</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="gif-pack-editor-footer">
+                    <div class="gif-pack-editor-footer-row">
+                        <button class="beautify-popup-btn gif-pack-editor-import" id="gif-pack-import" title="导入动画库（ZIP格式）">
+                            <i class="fa-solid fa-file-import"></i> 导入
+                        </button>
+                        <button class="beautify-popup-btn gif-pack-editor-export" id="gif-pack-export" title="导出动画库（ZIP格式，含图片）">
+                            <i class="fa-solid fa-file-export"></i> 导出
+                        </button>
+                    </div>
+                    <div class="gif-pack-editor-footer-row">
+                        <button class="beautify-popup-btn gif-pack-editor-save" id="gif-pack-save">
+                            <i class="fa-solid fa-check"></i> 保存
+                        </button>
+                        ${!isNew ? `
+                            <button class="beautify-popup-btn gif-pack-editor-delete" id="gif-pack-delete">
+                                <i class="fa-solid fa-trash"></i> 删除
+                            </button>
+                        ` : ''}
+                        <button class="beautify-popup-btn gif-pack-editor-cancel" id="gif-pack-cancel">
+                            <i class="fa-solid fa-xmark"></i> 取消
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // 添加到弹窗内
+    overlay.insertAdjacentHTML('beforeend', editorHtml);
+
+    const editorOverlay = overlay.querySelector('.gif-pack-editor-overlay');
+
+    // 显示动画
+    requestAnimationFrame(() => {
+        editorOverlay?.classList.add('show');
+    });
+
+    // 绑定编辑器事件
+    bindGifPackEditorEvents(overlay, editorOverlay, packData, isNew);
+}
+
+/**
+ * 绑定GIF动画库编辑器事件
+ * @param {Element} mainOverlay - 主弹窗元素
+ * @param {Element} editorOverlay - 编辑器弹窗元素
+ * @param {Object} packData - 动画库数据
+ * @param {boolean} isNew - 是否是新建
+ */
+function bindGifPackEditorEvents(mainOverlay, editorOverlay, packData, isNew) {
+    // 关闭按钮
+    const closeBtn = editorOverlay.querySelector('.gif-pack-editor-close');
+    closeBtn?.addEventListener('click', () => closeGifPackEditor(editorOverlay));
+
+    // 取消按钮
+    const cancelBtn = editorOverlay.querySelector('#gif-pack-cancel');
+    cancelBtn?.addEventListener('click', () => closeGifPackEditor(editorOverlay));
+
+    // 点击遮罩关闭
+    editorOverlay.addEventListener('click', (e) => {
+        if (e.target === editorOverlay) {
+            closeGifPackEditor(editorOverlay);
+        }
+    });
+
+    // 上传按钮
+    const uploadBtns = editorOverlay.querySelectorAll('.gif-pack-upload-btn');
+    uploadBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const field = btn.getAttribute('data-field');
+            handleGifPackFieldUpload(editorOverlay, field);
+        });
+    });
+
+    // URL按钮
+    const urlBtns = editorOverlay.querySelectorAll('.gif-pack-url-btn');
+    urlBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const field = btn.getAttribute('data-field');
+            handleGifPackFieldUrl(editorOverlay, field);
+        });
+    });
+
+    // 清除按钮
+    const clearBtns = editorOverlay.querySelectorAll('.gif-pack-clear-btn');
+    clearBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const field = btn.getAttribute('data-field');
+            clearGifPackField(editorOverlay, field);
+        });
+    });
+
+    // 导出按钮
+    const exportBtn = editorOverlay.querySelector('#gif-pack-export');
+    exportBtn?.addEventListener('click', () => {
+        exportGifPack(editorOverlay);
+    });
+
+    // 导入按钮
+    const importBtn = editorOverlay.querySelector('#gif-pack-import');
+    importBtn?.addEventListener('click', () => {
+        importGifPack(editorOverlay);
+    });
+
+    // 保存按钮
+    const saveBtn = editorOverlay.querySelector('#gif-pack-save');
+    saveBtn?.addEventListener('click', () => {
+        saveGifPack(mainOverlay, editorOverlay, packData.id, isNew);
+    });
+
+    // 删除按钮
+    const deleteBtn = editorOverlay.querySelector('#gif-pack-delete');
+    deleteBtn?.addEventListener('click', () => {
+        if (confirm(`确定要删除动画库 "${packData.name}" 吗？`)) {
+            handleDeleteGifPack(mainOverlay, packData.id);
+            closeGifPackEditor(editorOverlay);
+        }
+    });
+}
+
+/**
+ * 关闭GIF动画库编辑器
+ * @param {Element} editorOverlay - 编辑器弹窗元素
+ */
+function closeGifPackEditor(editorOverlay) {
+    editorOverlay.classList.remove('show');
+    setTimeout(() => {
+        editorOverlay.remove();
+    }, 300);
+}
+
+/**
+ * 处理GIF动画库字段上传
+ * @param {Element} editorOverlay - 编辑器弹窗元素
+ * @param {string} field - 字段名 ('idle' | 'clickAnim' | 'afterClick')
+ */
+function handleGifPackFieldUpload(editorOverlay, field) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    // 所有字段都允许上传任意图片格式（包括GIF和静态图）
+    input.accept = 'image/*';
+
+    input.addEventListener('change', async function() {
+        const file = this.files?.[0];
+        if (!file) return;
+
+        // 如果当前字段已有本地文件，先删除旧文件
+        const hiddenInput = editorOverlay.querySelector(`#gif-pack-${field}`);
+        const oldUrl = hiddenInput?.value || '';
+        if (oldUrl && (oldUrl.startsWith('/user/files/') || oldUrl.includes('acsus-paws-puffs'))) {
+            try {
+                await fetch('/api/files/delete', {
+                    method: 'POST',
+                    headers: getRequestHeaders(),
+                    body: JSON.stringify({ path: oldUrl })
+                });
+                logger.debug('[BeautifyPopup] 已删除旧文件:', oldUrl);
+            } catch (error) {
+                logger.warn('[BeautifyPopup] 删除旧文件失败:', oldUrl, error);
+            }
+        }
+
+        try {
+            const base64Data = await fileToBase64(file);
+            const timestamp = Date.now();
+            const ext = file.name.split('.').pop();
+            const fileName = `acsus-paws-puffs_gifpack_${field}_${timestamp}.${ext}`;
+
+            const response = await fetch('/api/files/upload', {
+                method: 'POST',
+                headers: getRequestHeaders(),
+                body: JSON.stringify({
+                    name: fileName,
+                    data: base64Data
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`上传失败（状态码：${response.status}）`);
+            }
+
+            const result = await response.json();
+            const filePath = result.path;
+
+            // 更新预览和隐藏字段
+            const preview = editorOverlay.querySelector(`#gif-pack-${field}-preview`);
+
+            if (preview) {
+                preview.innerHTML = `<img src="${filePath}" alt="${field}">`;
+            }
+            if (hiddenInput) {
+                hiddenInput.value = filePath;
+            }
+
+            logger.info('[BeautifyPopup] GIF动画库图片已上传:', field, filePath);
+
+        } catch (error) {
+            logger.error('[BeautifyPopup] 上传失败:', error);
+            alert('上传失败：' + error.message);
+        }
+    });
+
+    input.click();
+}
+
+/**
+ * 清除GIF动画库字段（同时删除本地文件）
+ * @async
+ * @param {Element} editorOverlay - 编辑器弹窗元素
+ * @param {string} field - 字段名（idle/clickAnim/afterClick）
+ * @returns {Promise<void>}
+ */
+async function clearGifPackField(editorOverlay, field) {
+    const preview = editorOverlay.querySelector(`#gif-pack-${field}-preview`);
+    const hiddenInput = editorOverlay.querySelector(`#gif-pack-${field}`);
+    const currentUrl = hiddenInput?.value || '';
+
+    // 如果是本地上传的文件，删除服务器上的文件
+    if (currentUrl && (currentUrl.startsWith('/user/files/') || currentUrl.includes('acsus-paws-puffs'))) {
+        try {
+            await fetch('/api/files/delete', {
+                method: 'POST',
+                headers: getRequestHeaders(),
+                body: JSON.stringify({ path: currentUrl })
+            });
+            logger.info('[BeautifyPopup] 已删除本地文件:', currentUrl);
+        } catch (error) {
+            logger.warn('[BeautifyPopup] 删除文件失败:', currentUrl, error);
+        }
+    }
+
+    const iconMap = {
+        idle: 'fa-image',
+        clickAnim: 'fa-film',
+        afterClick: 'fa-image'
+    };
+
+    if (preview) {
+        preview.innerHTML = `<i class="fa-solid ${iconMap[field] || 'fa-image'}"></i>`;
+    }
+    if (hiddenInput) {
+        hiddenInput.value = '';
+    }
+}
+
+/**
+ * 保存GIF动画库
+ * @param {Element} mainOverlay - 主弹窗元素
+ * @param {Element} editorOverlay - 编辑器弹窗元素
+ * @param {string} packId - 动画库ID
+ * @param {boolean} isNew - 是否是新建
+ */
+function saveGifPack(mainOverlay, editorOverlay, packId, isNew) {
+    const name = editorOverlay.querySelector('#gif-pack-name')?.value?.trim();
+    const idle = editorOverlay.querySelector('#gif-pack-idle')?.value || '';
+    const clickAnim = editorOverlay.querySelector('#gif-pack-clickAnim')?.value || '';
+    const afterClick = editorOverlay.querySelector('#gif-pack-afterClick')?.value || '';
+    const animDuration = parseFloat(editorOverlay.querySelector('#gif-pack-animDuration')?.value) || 2;
+    const restoreDelay = parseInt(editorOverlay.querySelector('#gif-pack-restoreDelay')?.value) || 0;
+
+    // 验证
+    if (!name) {
+        alert('请输入库名称');
+        return;
+    }
+
+    if (!idle && !clickAnim && !afterClick) {
+        alert('请至少上传一张图片');
+        return;
+    }
+
+    const settings = extension_settings[EXT_ID]?.beautify?.floatingBtn || {};
+    const gifPacks = settings.gifPacks || [];
+
+    const packData = {
+        id: packId,
+        name,
+        idle,
+        clickAnim,
+        afterClick,
+        animDuration,
+        restoreDelay,
+        updatedTime: Date.now()
+    };
+
+    if (isNew) {
+        packData.createdTime = Date.now();
+        gifPacks.push(packData);
+    } else {
+        const index = gifPacks.findIndex(p => p.id === packId);
+        if (index !== -1) {
+            gifPacks[index] = { ...gifPacks[index], ...packData };
+        }
+    }
+
+    saveFloatingBtnSettings({ gifPacks });
+
+    // 如果是当前使用的动画库，重新应用
+    if (settings.currentGifPackId === packId) {
+        applyGifAnimationPack(packData);
+    }
+
+    closeGifPackEditor(editorOverlay);
+    refreshGifPackUI(mainOverlay);
+
+    logger.info('[BeautifyPopup] 动画库已保存:', name);
+}
+
+/**
+ * 处理GIF动画库字段URL输入
+ *
+ * @description
+ * 让用户输入网络图片URL，验证后显示预览并保存到隐藏输入框。
+ * 支持 idle/clickAnim/afterClick 三个字段。
+ *
+ * @param {Element} editorOverlay - 编辑器弹窗元素
+ * @param {string} field - 字段名（idle/clickAnim/afterClick）
+ * @returns {void}
+ * @example
+ * handleGifPackFieldUrl(editorOverlay, 'idle');
+ */
+function handleGifPackFieldUrl(editorOverlay, field) {
+    const url = prompt('请输入图片URL：');
+    if (!url) return;
+
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        alert('请输入有效的URL（以 http:// 或 https:// 开头）');
+        return;
+    }
+
+    // 验证图片
+    const img = new Image();
+    img.onload = () => {
+        const preview = editorOverlay.querySelector(`#gif-pack-${field}-preview`);
+        const hiddenInput = editorOverlay.querySelector(`#gif-pack-${field}`);
+
+        if (preview) {
+            preview.innerHTML = `<img src="${url}" alt="${field}">`;
+        }
+        if (hiddenInput) {
+            hiddenInput.value = url;
+        }
+
+        logger.info('[BeautifyPopup] 已添加网络图片:', field, url);
+    };
+    img.onerror = () => {
+        alert('无法加载图片，请检查URL是否正确');
+    };
+    img.src = url;
+}
+
+/**
+ * 导出GIF动画库为ZIP压缩包（含图片文件）
+ *
+ * @description
+ * 将当前编辑器中的动画库配置导出为ZIP压缩包：
+ * - 网络图片（http/https）保持URL不变，写入config.json
+ * - 本地图片打包成真实文件放入images文件夹
+ * - 导出失败时会尝试用Base64作为降级方案
+ *
+ * @async
+ * @param {Element} editorOverlay - 编辑器弹窗元素
+ * @returns {Promise<void>}
+ * @throws {Error} JSZip加载失败或ZIP生成失败时
+ * @example
+ * await exportGifPack(document.querySelector('.gif-pack-editor-overlay'));
+ */
+async function exportGifPack(editorOverlay) {
+    const name = editorOverlay.querySelector('#gif-pack-name')?.value?.trim() || '未命名动画库';
+    const idle = editorOverlay.querySelector('#gif-pack-idle')?.value || '';
+    const clickAnim = editorOverlay.querySelector('#gif-pack-clickAnim')?.value || '';
+    const afterClick = editorOverlay.querySelector('#gif-pack-afterClick')?.value || '';
+    const animDuration = parseFloat(editorOverlay.querySelector('#gif-pack-animDuration')?.value) || 2;
+    const restoreDelay = parseInt(editorOverlay.querySelector('#gif-pack-restoreDelay')?.value) || 0;
+
+    // 显示加载提示
+    const exportBtn = editorOverlay.querySelector('#gif-pack-export');
+    const originalText = exportBtn?.innerHTML;
+    if (exportBtn) {
+        exportBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 导出中...';
+        exportBtn.disabled = true;
+    }
+
+    try {
+        // 加载JSZip库
+        if (!window.JSZip) {
+            await import('../../../../../../lib/jszip.min.js');
+        }
+
+        const zip = new JSZip();
+        const imagesFolder = zip.folder('images');
+
+        // 配置数据
+        const configData = {
+            name,
+            idle: '',
+            clickAnim: '',
+            afterClick: '',
+            animDuration,
+            restoreDelay,
+            exportTime: Date.now(),
+            version: '1.0'
+        };
+
+        // 处理每个图片字段
+        const fields = [
+            { key: 'idle', url: idle },
+            { key: 'clickAnim', url: clickAnim },
+            { key: 'afterClick', url: afterClick }
+        ];
+
+        for (const field of fields) {
+            if (!field.url) continue;
+
+            // 网络图片保持URL
+            if (field.url.startsWith('http://') || field.url.startsWith('https://')) {
+                configData[field.key] = field.url;
+                continue;
+            }
+
+            // 本地图片转成文件放入ZIP
+            try {
+                const response = await fetch(field.url);
+                const blob = await response.blob();
+
+                // 从URL中提取文件扩展名
+                const ext = field.url.split('.').pop() || 'png';
+                const fileName = `${field.key}.${ext}`;
+
+                imagesFolder.file(fileName, blob);
+                configData[field.key] = `images/${fileName}`;
+
+                logger.debug('[BeautifyPopup] 已添加图片到ZIP:', fileName);
+            } catch (error) {
+                logger.warn('[BeautifyPopup] 获取图片失败:', field.url, error);
+                // 失败时尝试用Base64
+                configData[field.key] = await urlToBase64(field.url);
+            }
+        }
+
+        // 添加配置文件
+        zip.file('config.json', JSON.stringify(configData, null, 2));
+
+        // 生成ZIP并下载
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(zipBlob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `gif-pack_${name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')}_${Date.now()}.zip`;
+        a.click();
+
+        URL.revokeObjectURL(url);
+        logger.info('[BeautifyPopup] 动画库已导出为ZIP:', name);
+
+    } catch (error) {
+        logger.error('[BeautifyPopup] 导出失败:', error);
+        alert('导出失败：' + error.message);
+    } finally {
+        if (exportBtn) {
+            exportBtn.innerHTML = originalText;
+            exportBtn.disabled = false;
+        }
+    }
+}
+
+/**
+ * 导入GIF动画库（支持ZIP和JSON格式）
+ *
+ * @description
+ * 从文件导入动画库配置到编辑器：
+ * - ZIP格式：读取config.json配置，images文件夹中的图片转为Blob URL
+ * - JSON格式：兼容旧版Base64格式的导出文件
+ *
+ * @param {Element} editorOverlay - 编辑器弹窗元素
+ * @returns {void}
+ * @example
+ * importGifPack(document.querySelector('.gif-pack-editor-overlay'));
+ */
+function importGifPack(editorOverlay) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.zip,.json';
+
+    input.addEventListener('change', async function() {
+        const file = this.files?.[0];
+        if (!file) return;
+
+        // 显示加载提示
+        const importBtn = editorOverlay.querySelector('#gif-pack-import');
+        const originalText = importBtn?.innerHTML;
+        if (importBtn) {
+            importBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 导入中...';
+            importBtn.disabled = true;
+        }
+
+        try {
+            let data;
+            let zipFile = null;
+
+            // 判断文件类型
+            if (file.name.endsWith('.zip')) {
+                // ZIP格式
+                if (!window.JSZip) {
+                    await import('../../../../../../lib/jszip.min.js');
+                }
+
+                zipFile = await JSZip.loadAsync(file);
+                const configFile = zipFile.file('config.json');
+                if (!configFile) {
+                    throw new Error('ZIP文件中缺少config.json');
+                }
+                const configText = await configFile.async('string');
+                data = JSON.parse(configText);
+            } else {
+                // JSON格式（向后兼容）
+                const text = await file.text();
+                data = JSON.parse(text);
+            }
+
+            // 验证数据格式
+            if (!data.name && !data.idle && !data.clickAnim && !data.afterClick) {
+                throw new Error('无效的动画库文件');
+            }
+
+            // 填充名称
+            const nameInput = editorOverlay.querySelector('#gif-pack-name');
+            if (nameInput && data.name) {
+                nameInput.value = data.name;
+            }
+
+            // 填充动画时长
+            const animDurationInput = editorOverlay.querySelector('#gif-pack-animDuration');
+            if (animDurationInput && data.animDuration) {
+                animDurationInput.value = data.animDuration;
+            }
+
+            // 填充恢复延迟
+            const restoreDelayInput = editorOverlay.querySelector('#gif-pack-restoreDelay');
+            if (restoreDelayInput && data.restoreDelay !== undefined) {
+                restoreDelayInput.value = data.restoreDelay;
+            }
+
+            // 处理图片
+            if (data.idle) {
+                await importGifPackImage(editorOverlay, 'idle', data.idle, zipFile);
+            }
+            if (data.clickAnim) {
+                await importGifPackImage(editorOverlay, 'clickAnim', data.clickAnim, zipFile);
+            }
+            if (data.afterClick) {
+                await importGifPackImage(editorOverlay, 'afterClick', data.afterClick, zipFile);
+            }
+
+            logger.info('[BeautifyPopup] 动画库已导入:', data.name);
+            alert('导入成功！请检查内容后点击保存。');
+
+        } catch (error) {
+            logger.error('[BeautifyPopup] 导入失败:', error);
+            alert('导入失败：' + error.message);
+        } finally {
+            if (importBtn) {
+                importBtn.innerHTML = originalText;
+                importBtn.disabled = false;
+            }
+        }
+    });
+
+    input.click();
+}
+
+/**
+ * 导入单个图片字段到GIF动画库编辑器
+ *
+ * @description
+ * 根据图片数据类型自动处理：
+ * 1. 网络URL（http/https）→ 直接使用
+ * 2. ZIP内路径（images/xxx）→ 从ZIP读取并上传到服务器
+ * 3. Base64数据 → 上传到服务器
+ *
+ * @async
+ * @param {Element} editorOverlay - 编辑器弹窗元素
+ * @param {string} field - 字段名（idle/clickAnim/afterClick）
+ * @param {string} imageData - 图片数据（Base64、URL或ZIP内路径）
+ * @param {Object|null} [zipFile=null] - JSZip对象（从ZIP导入时传入）
+ * @returns {Promise<void>}
+ * @example
+ * // 导入网络图片
+ * await importGifPackImage(overlay, 'idle', 'https://example.com/img.png');
+ * // 从ZIP导入
+ * await importGifPackImage(overlay, 'idle', 'images/idle.png', zipFile);
+ */
+async function importGifPackImage(editorOverlay, field, imageData, zipFile = null) {
+    const preview = editorOverlay.querySelector(`#gif-pack-${field}-preview`);
+    const hiddenInput = editorOverlay.querySelector(`#gif-pack-${field}`);
+
+    // 如果是URL（网络图片），直接使用
+    if (imageData.startsWith('http://') || imageData.startsWith('https://')) {
+        if (preview) {
+            preview.innerHTML = `<img src="${imageData}" alt="${field}">`;
+        }
+        if (hiddenInput) {
+            hiddenInput.value = imageData;
+        }
+        return;
+    }
+
+    // 如果是ZIP内的图片路径（如 images/idle.png）
+    if (zipFile && imageData.startsWith('images/')) {
+        try {
+            const imageFile = zipFile.file(imageData);
+            if (!imageFile) {
+                throw new Error(`ZIP中找不到图片: ${imageData}`);
+            }
+
+            // 从ZIP中读取图片为Blob
+            const blob = await imageFile.async('blob');
+
+            // 转成Base64上传
+            const base64Data = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const result = reader.result;
+                    // 移除前缀
+                    resolve(result.split(',')[1]);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+
+            // 提取扩展名
+            const ext = imageData.split('.').pop() || 'png';
+            const timestamp = Date.now();
+            const fileName = `acsus-paws-puffs_gifpack_${field}_${timestamp}.${ext}`;
+
+            const response = await fetch('/api/files/upload', {
+                method: 'POST',
+                headers: getRequestHeaders(),
+                body: JSON.stringify({
+                    name: fileName,
+                    data: base64Data
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`上传失败（状态码：${response.status}）`);
+            }
+
+            const result = await response.json();
+            const filePath = result.path;
+
+            if (preview) {
+                preview.innerHTML = `<img src="${filePath}" alt="${field}">`;
+            }
+            if (hiddenInput) {
+                hiddenInput.value = filePath;
+            }
+
+            logger.debug('[BeautifyPopup] ZIP图片已上传:', field, filePath);
+            return;
+
+        } catch (error) {
+            logger.error('[BeautifyPopup] 从ZIP导入图片失败:', field, error);
+            return;
+        }
+    }
+
+    // 如果是Base64，上传到服务器
+    if (imageData.startsWith('data:')) {
+        try {
+            // 提取Base64数据和文件类型
+            const matches = imageData.match(/^data:image\/(\w+);base64,(.+)$/);
+            if (!matches) {
+                throw new Error('无效的图片数据');
+            }
+
+            const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+            const base64Data = matches[2];
+            const timestamp = Date.now();
+            const fileName = `acsus-paws-puffs_gifpack_${field}_${timestamp}.${ext}`;
+
+            const response = await fetch('/api/files/upload', {
+                method: 'POST',
+                headers: getRequestHeaders(),
+                body: JSON.stringify({
+                    name: fileName,
+                    data: base64Data
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`上传失败（状态码：${response.status}）`);
+            }
+
+            const result = await response.json();
+            const filePath = result.path;
+
+            if (preview) {
+                preview.innerHTML = `<img src="${filePath}" alt="${field}">`;
+            }
+            if (hiddenInput) {
+                hiddenInput.value = filePath;
+            }
+
+            logger.debug('[BeautifyPopup] 导入图片已上传:', field, filePath);
+
+        } catch (error) {
+            logger.error('[BeautifyPopup] 导入图片失败:', field, error);
+        }
+    }
+}
+
+/**
+ * 把URL转成Base64（用于导出）
+ * @param {string} url - 图片URL
+ * @returns {Promise<string>} Base64字符串或原URL
+ */
+async function urlToBase64(url) {
+    if (!url) return '';
+
+    // 如果是网络URL，直接返回（不转换）
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+    }
+
+    // 如果是本地文件，转成Base64
+    try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    } catch (error) {
+        logger.warn('[BeautifyPopup] 转换Base64失败:', url, error);
+        return url; // 失败时返回原URL
+    }
+}
+
+// ==========================================
+// 等待动画库相关函数（新增）
+// ==========================================
+
+/**
+ * 渲染当前使用的等待动画预览
+ * @param {Array} waitingPacks - 等待动画库列表
+ * @param {string} currentWaitingPackId - 当前使用的等待动画库ID
+ * @returns {string} HTML字符串
+ */
+function renderCurrentWaitingPack(waitingPacks, currentWaitingPackId) {
+    const currentPack = waitingPacks.find(p => p.id === currentWaitingPackId);
+
+    if (!currentPack) {
+        return `
+            <div class="waiting-pack-current-empty">
+                <i class="fa-solid fa-spinner"></i>
+                <span>未选择等待动画</span>
+                <p>发送消息时将保持待机图片不变</p>
+            </div>
+        `;
+    }
+
+    // 根据是否有开始动画，决定显示2个还是3个预览项
+    const hasStartGif = !!currentPack.startGif;
+
+    return `
+        <div class="waiting-pack-current">
+            <div class="waiting-pack-current-header">
+                <span class="waiting-pack-current-name">${currentPack.name}</span>
+                <button class="waiting-pack-current-clear" id="waiting-pack-clear-current" title="取消使用">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="waiting-pack-current-hint">点击 × 取消使用此动画库</div>
+            <div class="waiting-pack-current-preview ${hasStartGif ? 'has-start' : ''}">>
+                ${hasStartGif ? `
+                    <div class="waiting-pack-preview-item">
+                        <div class="waiting-pack-preview-img">
+                            <img src="${currentPack.startGif}" alt="开始动画">
+                        </div>
+                        <span>开始</span>
+                    </div>
+                    <div class="waiting-pack-preview-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                ` : ''}
+                <div class="waiting-pack-preview-item">
+                    <div class="waiting-pack-preview-img">
+                        ${currentPack.waitingGif ? `<img src="${currentPack.waitingGif}" alt="等待动画">` : '<i class="fa-solid fa-spinner"></i>'}
+                    </div>
+                    <span>等待中</span>
+                </div>
+                <div class="waiting-pack-preview-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                <div class="waiting-pack-preview-item">
+                    <div class="waiting-pack-preview-img">
+                        ${currentPack.completeGif ? `<img src="${currentPack.completeGif}" alt="完成动画">` : '<i class="fa-solid fa-check"></i>'}
+                    </div>
+                    <span>完成</span>
+                </div>
+            </div>
+            <div class="waiting-pack-current-info">
+                ${hasStartGif ? `<span><i class="fa-solid fa-play"></i> 开始 ${currentPack.startDuration || 2}秒</span>` : ''}
+                <span><i class="fa-solid fa-clock"></i> 完成 ${currentPack.completeDuration || 3}秒</span>
+            </div>
+        </div>
+    `;
+}
+
+
+/**
+ * 渲染等待动画库网格
+ * @param {Array} waitingPacks - 等待动画库列表
+ * @param {string} currentWaitingPackId - 当前使用的等待动画库ID
+ * @returns {string} HTML字符串
+ */
+function renderWaitingPackGrid(waitingPacks, currentWaitingPackId) {
+    if (!waitingPacks || waitingPacks.length === 0) {
+        return '<div class="waiting-pack-grid-empty">暂无等待动画库，点击"新建"创建</div>';
+    }
+
+    return waitingPacks.map(pack => `
+        <div class="waiting-pack-item ${pack.id === currentWaitingPackId ? 'active' : ''}" data-pack-id="${pack.id}">
+            <div class="waiting-pack-item-preview">
+                ${pack.waitingGif ? `<img src="${pack.waitingGif}" alt="${pack.name}">` : '<i class="fa-solid fa-spinner"></i>'}
+            </div>
+            <div class="waiting-pack-item-info">
+                <span class="waiting-pack-item-name">${pack.name}</span>
+            </div>
+            <div class="waiting-pack-item-actions">
+                <button class="waiting-pack-item-edit" data-pack-id="${pack.id}" title="编辑">
+                    <i class="fa-solid fa-pen"></i>
+                </button>
+                <button class="waiting-pack-item-delete" data-pack-id="${pack.id}" title="删除">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+
+/**
+ * 处理等待动画库网格点击
+ * @param {Event} e - 点击事件
+ * @param {Element} overlay - 弹窗元素
+ */
+function handleWaitingPackGridClick(e, overlay) {
+    const target = e.target;
+
+    // 编辑按钮
+    const editBtn = target.closest('.waiting-pack-item-edit');
+    if (editBtn) {
+        const packId = editBtn.getAttribute('data-pack-id');
+        const settings = extension_settings[EXT_ID]?.beautify?.floatingBtn || {};
+        const pack = settings.waitingPacks?.find(p => p.id === packId);
+        if (pack) {
+            openWaitingPackEditor(overlay, pack);
+        }
+        return;
+    }
+
+    // 删除按钮
+    const deleteBtn = target.closest('.waiting-pack-item-delete');
+    if (deleteBtn) {
+        const packId = deleteBtn.getAttribute('data-pack-id');
+        handleDeleteWaitingPack(overlay, packId);
+        return;
+    }
+
+    // 点击整个卡片 = 应用该等待动画库
+    const packItem = target.closest('.waiting-pack-item');
+    if (packItem && !target.closest('.waiting-pack-item-actions')) {
+        const packId = packItem.getAttribute('data-pack-id');
+        applyWaitingPack(overlay, packId);
+    }
+}
+
+
+/**
+ * 应用等待动画库
+ * @param {Element} overlay - 弹窗元素
+ * @param {string} packId - 等待动画库ID
+ */
+function applyWaitingPack(overlay, packId) {
+    const settings = extension_settings[EXT_ID]?.beautify?.floatingBtn || {};
+    const pack = settings.waitingPacks?.find(p => p.id === packId);
+
+    if (!pack) {
+        logger.warn('[BeautifyPopup] 找不到等待动画库:', packId);
+        return;
+    }
+
+    // 保存当前使用的等待动画库ID
+    saveFloatingBtnSettings({ currentWaitingPackId: packId });
+
+    // 刷新UI
+    refreshWaitingPackUI(overlay);
+
+    logger.info('[BeautifyPopup] 已应用等待动画库:', pack.name);
+}
+
+/**
+ * 删除等待动画库
+ * @async
+ * @param {Element} overlay - 弹窗元素
+ * @param {string} packId - 等待动画库ID
+ */
+async function handleDeleteWaitingPack(overlay, packId) {
+    const settings = extension_settings[EXT_ID]?.beautify?.floatingBtn || {};
+    const waitingPacks = settings.waitingPacks || [];
+    const pack = waitingPacks.find(p => p.id === packId);
+
+    if (!pack) return;
+    if (!confirm(`确定要删除等待动画库 "${pack.name}" 吗？\n相关的本地图片文件也会被删除。`)) return;
+
+    // 删除服务器上的本地图片文件
+    const filesToDelete = [pack.waitingGif, pack.completeGif].filter(url => {
+        return url && (url.startsWith('/user/files/') || url.includes('acsus-paws-puffs'));
+    });
+
+    for (const fileUrl of filesToDelete) {
+        try {
+            await fetch('/api/files/delete', {
+                method: 'POST',
+                headers: getRequestHeaders(),
+                body: JSON.stringify({ path: fileUrl })
+            });
+            logger.info('[BeautifyPopup] 已删除本地文件:', fileUrl);
+        } catch (error) {
+            logger.warn('[BeautifyPopup] 删除文件失败:', fileUrl, error);
+        }
+    }
+
+
+    // 从列表中移除
+    const newWaitingPacks = waitingPacks.filter(p => p.id !== packId);
+
+    // 如果删除的是当前使用的等待动画库，清除当前选择
+    let newCurrentId = settings.currentWaitingPackId;
+    if (settings.currentWaitingPackId === packId) {
+        newCurrentId = '';
+    }
+
+    saveFloatingBtnSettings({ waitingPacks: newWaitingPacks, currentWaitingPackId: newCurrentId });
+    refreshWaitingPackUI(overlay);
+
+    logger.info('[BeautifyPopup] 已删除等待动画库:', pack.name);
+}
+
+/**
+ * 刷新等待动画库UI
+ * @param {Element} overlay - 弹窗元素
+ */
+function refreshWaitingPackUI(overlay) {
+    const settings = extension_settings[EXT_ID]?.beautify?.floatingBtn || {};
+    const waitingPacks = settings.waitingPacks || [];
+    const currentWaitingPackId = settings.currentWaitingPackId || '';
+
+    // 刷新当前使用的等待动画预览
+    const currentSection = overlay.querySelector('.waiting-pack-current-section');
+    if (currentSection) {
+        currentSection.innerHTML = renderCurrentWaitingPack(waitingPacks, currentWaitingPackId);
+        // 重新绑定清除按钮事件
+        const clearBtn = currentSection.querySelector('#waiting-pack-clear-current');
+        clearBtn?.addEventListener('click', () => {
+            saveFloatingBtnSettings({ currentWaitingPackId: '' });
+            refreshWaitingPackUI(overlay);
+            logger.info('[BeautifyPopup] 已取消使用等待动画库');
+        });
+    }
+
+    // 刷新等待动画库网格
+    const grid = overlay.querySelector('#waiting-pack-grid');
+    if (grid) {
+        grid.innerHTML = renderWaitingPackGrid(waitingPacks, currentWaitingPackId);
+    }
+}
+
+
+/**
+ * 搜索过滤等待动画库
+ * @param {Element} overlay - 弹窗元素
+ * @param {string} keyword - 搜索关键词
+ */
+function filterWaitingPacks(overlay, keyword) {
+    const items = overlay.querySelectorAll('.waiting-pack-item');
+    const lowerKeyword = keyword.toLowerCase().trim();
+
+    items.forEach(item => {
+        const name = item.querySelector('.waiting-pack-item-name')?.textContent?.toLowerCase() || '';
+        const match = !lowerKeyword || name.includes(lowerKeyword);
+        item.style.display = match ? '' : 'none';
+    });
+}
+
+/**
+ * 打开等待动画库编辑器
+ * @param {Element} overlay - 主弹窗元素
+ * @param {Object|null} pack - 要编辑的等待动画库，null表示新建
+ */
+function openWaitingPackEditor(overlay, pack) {
+    const isNew = !pack;
+    const packData = pack || {
+        id: `waitpack_${Date.now()}`,
+        name: '',
+        startGif: '',           // 新增：开始动画
+        startDuration: 2,       // 新增：开始动画时长
+        waitingGif: '',
+        waitingLoop: true,
+        completeGif: '',
+        completeDuration: 3
+    };
+
+    const editorHtml = `
+        <div class="waiting-pack-editor-overlay">
+            <div class="waiting-pack-editor">
+                <div class="waiting-pack-editor-header">
+                    <h3><i class="fa-solid fa-${isNew ? 'plus' : 'pen'}"></i> ${isNew ? '新建' : '编辑'}等待动画</h3>
+                    <button class="waiting-pack-editor-close">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="waiting-pack-editor-content">
+                    <!-- 库名称 -->
+                    <div class="waiting-pack-editor-field">
+                        <label><i class="fa-solid fa-tag"></i> 库名称</label>
+                        <input type="text" id="waiting-pack-name" value="${packData.name}" placeholder="给等待动画库起个名字...">
+                    </div>
+
+                    <!-- 开始动画（新增） -->
+                    <div class="waiting-pack-editor-field">
+                        <label><i class="fa-solid fa-play"></i> ① 开始动画（发送后播放一次）</label>
+                        <div class="waiting-pack-editor-upload" data-field="startGif">
+                            <div class="waiting-pack-editor-preview" id="waiting-pack-startGif-preview">
+                                ${packData.startGif ? `<img src="${packData.startGif}" alt="开始动画">` : '<i class="fa-solid fa-play"></i>'}
+                            </div>
+                            <div class="waiting-pack-editor-btns">
+                                <button class="beautify-popup-btn waiting-pack-upload-btn" data-field="startGif">
+                                    <i class="fa-solid fa-upload"></i> 上传
+                                </button>
+                                <button class="beautify-popup-btn waiting-pack-url-btn" data-field="startGif">
+                                    <i class="fa-solid fa-link"></i>
+                                </button>
+                                <button class="beautify-popup-btn waiting-pack-clear-btn" data-field="startGif">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                            <input type="hidden" id="waiting-pack-startGif" value="${packData.startGif || ''}">
+                        </div>
+                        <div class="waiting-pack-editor-delay">
+                            <span>播放时长：</span>
+                            <input type="number" id="waiting-pack-startDuration" value="${packData.startDuration || 2}" min="0.5" max="10" step="0.5">
+                            <span>秒（播完后切换到等待动画）</span>
+                        </div>
+                    </div>
+
+                    <!-- 等待动画 -->
+                    <div class="waiting-pack-editor-field">
+                        <label><i class="fa-solid fa-spinner"></i> ② 等待动画（开始动画播完后循环）</label>
+                        <div class="waiting-pack-editor-upload" data-field="waitingGif">
+                            <div class="waiting-pack-editor-preview" id="waiting-pack-waitingGif-preview">
+                                ${packData.waitingGif ? `<img src="${packData.waitingGif}" alt="等待动画">` : '<i class="fa-solid fa-spinner"></i>'}
+                            </div>
+                            <div class="waiting-pack-editor-btns">
+                                <button class="beautify-popup-btn waiting-pack-upload-btn" data-field="waitingGif">
+                                    <i class="fa-solid fa-upload"></i> 上传
+                                </button>
+                                <button class="beautify-popup-btn waiting-pack-url-btn" data-field="waitingGif">
+                                    <i class="fa-solid fa-link"></i>
+                                </button>
+                                <button class="beautify-popup-btn waiting-pack-clear-btn" data-field="waitingGif">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                            <input type="hidden" id="waiting-pack-waitingGif" value="${packData.waitingGif || ''}">
+                        </div>
+                    </div>
+
+                    <!-- 完成动画 -->
+                    <div class="waiting-pack-editor-field">
+                        <label><i class="fa-solid fa-check"></i> ③ 完成动画（AI输出完成后播放）</label>
+                        <div class="waiting-pack-editor-upload" data-field="completeGif">
+                            <div class="waiting-pack-editor-preview" id="waiting-pack-completeGif-preview">
+                                ${packData.completeGif ? `<img src="${packData.completeGif}" alt="完成动画">` : '<i class="fa-solid fa-check"></i>'}
+                            </div>
+                            <div class="waiting-pack-editor-btns">
+                                <button class="beautify-popup-btn waiting-pack-upload-btn" data-field="completeGif">
+                                    <i class="fa-solid fa-upload"></i> 上传
+                                </button>
+                                <button class="beautify-popup-btn waiting-pack-url-btn" data-field="completeGif">
+                                    <i class="fa-solid fa-link"></i>
+                                </button>
+                                <button class="beautify-popup-btn waiting-pack-clear-btn" data-field="completeGif">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                            <input type="hidden" id="waiting-pack-completeGif" value="${packData.completeGif || ''}">
+                        </div>
+                        <div class="waiting-pack-editor-delay">
+                            <span>播放时长：</span>
+                            <input type="number" id="waiting-pack-completeDuration" value="${packData.completeDuration || 3}" min="1" max="30" step="1">
+                            <span>秒（播放多久后恢复待机）</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="waiting-pack-editor-footer">
+                    <div class="waiting-pack-editor-footer-row">
+                        <button class="beautify-popup-btn waiting-pack-editor-import" id="waiting-pack-import" title="导入等待动画库（JSON格式）">
+                            <i class="fa-solid fa-file-import"></i> 导入
+                        </button>
+                        <button class="beautify-popup-btn waiting-pack-editor-export" id="waiting-pack-export" title="导出等待动画库（JSON格式）">
+                            <i class="fa-solid fa-file-export"></i> 导出
+                        </button>
+                    </div>
+                    <div class="waiting-pack-editor-footer-row">
+                        <button class="beautify-popup-btn waiting-pack-editor-save" id="waiting-pack-save">
+                            <i class="fa-solid fa-check"></i> 保存
+                        </button>
+                        ${!isNew ? `
+                            <button class="beautify-popup-btn waiting-pack-editor-delete" id="waiting-pack-delete">
+                                <i class="fa-solid fa-trash"></i> 删除
+                            </button>
+                        ` : ''}
+                        <button class="beautify-popup-btn waiting-pack-editor-cancel" id="waiting-pack-cancel">
+                            <i class="fa-solid fa-xmark"></i> 取消
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // 添加到弹窗内
+    overlay.insertAdjacentHTML('beforeend', editorHtml);
+
+    const editorOverlay = overlay.querySelector('.waiting-pack-editor-overlay');
+
+    // 显示动画
+    requestAnimationFrame(() => {
+        editorOverlay?.classList.add('show');
+    });
+
+    // 绑定编辑器事件
+    bindWaitingPackEditorEvents(overlay, editorOverlay, packData, isNew);
+}
+
+
+/**
+ * 绑定等待动画库编辑器事件
+ * @param {Element} mainOverlay - 主弹窗元素
+ * @param {Element} editorOverlay - 编辑器弹窗元素
+ * @param {Object} packData - 等待动画库数据
+ * @param {boolean} isNew - 是否是新建
+ */
+function bindWaitingPackEditorEvents(mainOverlay, editorOverlay, packData, isNew) {
+    // 关闭按钮
+    const closeBtn = editorOverlay.querySelector('.waiting-pack-editor-close');
+    closeBtn?.addEventListener('click', () => closeWaitingPackEditor(editorOverlay));
+
+    // 取消按钮
+    const cancelBtn = editorOverlay.querySelector('#waiting-pack-cancel');
+    cancelBtn?.addEventListener('click', () => closeWaitingPackEditor(editorOverlay));
+
+    // 点击遮罩关闭
+    editorOverlay.addEventListener('click', (e) => {
+        if (e.target === editorOverlay) {
+            closeWaitingPackEditor(editorOverlay);
+        }
+    });
+
+    // 上传按钮
+    const uploadBtns = editorOverlay.querySelectorAll('.waiting-pack-upload-btn');
+    uploadBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const field = btn.getAttribute('data-field');
+            handleWaitingPackFieldUpload(editorOverlay, field);
+        });
+    });
+
+    // URL按钮
+    const urlBtns = editorOverlay.querySelectorAll('.waiting-pack-url-btn');
+    urlBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const field = btn.getAttribute('data-field');
+            handleWaitingPackFieldUrl(editorOverlay, field);
+        });
+    });
+
+    // 清除按钮
+    const clearBtns = editorOverlay.querySelectorAll('.waiting-pack-clear-btn');
+    clearBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const field = btn.getAttribute('data-field');
+            clearWaitingPackField(editorOverlay, field);
+        });
+    });
+
+
+    // 导出按钮
+    const exportBtn = editorOverlay.querySelector('#waiting-pack-export');
+    exportBtn?.addEventListener('click', () => {
+        exportWaitingPack(editorOverlay);
+    });
+
+    // 导入按钮
+    const importBtn = editorOverlay.querySelector('#waiting-pack-import');
+    importBtn?.addEventListener('click', () => {
+        importWaitingPack(editorOverlay);
+    });
+
+    // 保存按钮
+    const saveBtn = editorOverlay.querySelector('#waiting-pack-save');
+    saveBtn?.addEventListener('click', () => {
+        saveWaitingPack(mainOverlay, editorOverlay, packData.id, isNew);
+    });
+
+    // 删除按钮
+    const deleteBtn = editorOverlay.querySelector('#waiting-pack-delete');
+    deleteBtn?.addEventListener('click', () => {
+        if (confirm(`确定要删除等待动画库 "${packData.name}" 吗？`)) {
+            handleDeleteWaitingPack(mainOverlay, packData.id);
+            closeWaitingPackEditor(editorOverlay);
+        }
+    });
+}
+
+/**
+ * 关闭等待动画库编辑器
+ * @param {Element} editorOverlay - 编辑器弹窗元素
+ */
+function closeWaitingPackEditor(editorOverlay) {
+    editorOverlay.classList.remove('show');
+    setTimeout(() => {
+        editorOverlay.remove();
+    }, 300);
+}
+
+
+/**
+ * 处理等待动画库字段上传
+ * @param {Element} editorOverlay - 编辑器弹窗元素
+ * @param {string} field - 字段名 ('waitingGif' | 'completeGif')
+ */
+function handleWaitingPackFieldUpload(editorOverlay, field) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+
+    input.addEventListener('change', async function() {
+        const file = this.files?.[0];
+        if (!file) return;
+
+        // 如果当前字段已有本地文件，先删除旧文件
+        const hiddenInput = editorOverlay.querySelector(`#waiting-pack-${field}`);
+        const oldUrl = hiddenInput?.value || '';
+        if (oldUrl && (oldUrl.startsWith('/user/files/') || oldUrl.includes('acsus-paws-puffs'))) {
+            try {
+                await fetch('/api/files/delete', {
+                    method: 'POST',
+                    headers: getRequestHeaders(),
+                    body: JSON.stringify({ path: oldUrl })
+                });
+                logger.debug('[BeautifyPopup] 已删除旧文件:', oldUrl);
+            } catch (error) {
+                logger.warn('[BeautifyPopup] 删除旧文件失败:', oldUrl, error);
+            }
+        }
+
+        try {
+            const base64Data = await fileToBase64(file);
+            const timestamp = Date.now();
+            const ext = file.name.split('.').pop();
+            const fileName = `acsus-paws-puffs_waitpack_${field}_${timestamp}.${ext}`;
+
+            const response = await fetch('/api/files/upload', {
+                method: 'POST',
+                headers: getRequestHeaders(),
+                body: JSON.stringify({
+                    name: fileName,
+                    data: base64Data
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`上传失败（状态码：${response.status}）`);
+            }
+
+            const result = await response.json();
+            const filePath = result.path;
+
+
+            // 更新预览和隐藏字段
+            const preview = editorOverlay.querySelector(`#waiting-pack-${field}-preview`);
+
+            if (preview) {
+                preview.innerHTML = `<img src="${filePath}" alt="${field}">`;
+            }
+            if (hiddenInput) {
+                hiddenInput.value = filePath;
+            }
+
+            logger.info('[BeautifyPopup] 等待动画库图片已上传:', field, filePath);
+
+        } catch (error) {
+            logger.error('[BeautifyPopup] 上传失败:', error);
+            alert('上传失败：' + error.message);
+        }
+    });
+
+    input.click();
+}
+
+/**
+ * 处理等待动画库字段URL输入
+ * @param {Element} editorOverlay - 编辑器弹窗元素
+ * @param {string} field - 字段名（waitingGif/completeGif）
+ */
+function handleWaitingPackFieldUrl(editorOverlay, field) {
+    const url = prompt('请输入图片URL：');
+    if (!url) return;
+
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        alert('请输入有效的URL（以 http:// 或 https:// 开头）');
+        return;
+    }
+
+    // 验证图片
+    const img = new Image();
+    img.onload = () => {
+        const preview = editorOverlay.querySelector(`#waiting-pack-${field}-preview`);
+        const hiddenInput = editorOverlay.querySelector(`#waiting-pack-${field}`);
+
+        if (preview) {
+            preview.innerHTML = `<img src="${url}" alt="${field}">`;
+        }
+        if (hiddenInput) {
+            hiddenInput.value = url;
+        }
+
+        logger.info('[BeautifyPopup] 已添加网络图片:', field, url);
+    };
+    img.onerror = () => {
+        alert('无法加载图片，请检查URL是否正确');
+    };
+    img.src = url;
+}
+
+
+/**
+ * 清除等待动画库字段（同时删除本地文件）
+ * @async
+ * @param {Element} editorOverlay - 编辑器弹窗元素
+ * @param {string} field - 字段名（waitingGif/completeGif）
+ */
+async function clearWaitingPackField(editorOverlay, field) {
+    const preview = editorOverlay.querySelector(`#waiting-pack-${field}-preview`);
+    const hiddenInput = editorOverlay.querySelector(`#waiting-pack-${field}`);
+    const currentUrl = hiddenInput?.value || '';
+
+    // 如果是本地上传的文件，删除服务器上的文件
+    if (currentUrl && (currentUrl.startsWith('/user/files/') || currentUrl.includes('acsus-paws-puffs'))) {
+        try {
+            await fetch('/api/files/delete', {
+                method: 'POST',
+                headers: getRequestHeaders(),
+                body: JSON.stringify({ path: currentUrl })
+            });
+            logger.info('[BeautifyPopup] 已删除本地文件:', currentUrl);
+        } catch (error) {
+            logger.warn('[BeautifyPopup] 删除文件失败:', currentUrl, error);
+        }
+    }
+
+    const iconMap = {
+        startGif: 'fa-play',
+        waitingGif: 'fa-spinner',
+        completeGif: 'fa-check'
+    };
+
+    if (preview) {
+        preview.innerHTML = `<i class="fa-solid ${iconMap[field] || 'fa-image'}"></i>`;
+    }
+    if (hiddenInput) {
+        hiddenInput.value = '';
+    }
+}
+
+
+/**
+ * 保存等待动画库
+ *
+ * @description
+ * 从编辑器弹窗读取用户填写的内容，验证后保存到 extension_settings。
+ * 新建时添加到数组末尾，编辑时更新对应条目。
+ * 保存成功后关闭编辑器并刷新UI。
+ *
+ * @param {Element} mainOverlay - 主弹窗元素（用于刷新UI）
+ * @param {Element} editorOverlay - 编辑器弹窗元素（用于读取表单值）
+ * @param {string} packId - 等待动画库ID（格式：waitpack_时间戳）
+ * @param {boolean} isNew - 是否是新建（true=新建添加，false=编辑更新）
+ * @returns {void} 验证失败时提前返回，不保存
+ * @example
+ * // 新建等待动画库
+ * saveWaitingPack(mainOverlay, editorOverlay, 'waitpack_1234567890', true);
+ * // 编辑已有动画库
+ * saveWaitingPack(mainOverlay, editorOverlay, existingPack.id, false);
+ */
+function saveWaitingPack(mainOverlay, editorOverlay, packId, isNew) {
+    const name = editorOverlay.querySelector('#waiting-pack-name')?.value?.trim();
+    const startGif = editorOverlay.querySelector('#waiting-pack-startGif')?.value || '';
+    const startDuration = parseFloat(editorOverlay.querySelector('#waiting-pack-startDuration')?.value) || 2;
+    const waitingGif = editorOverlay.querySelector('#waiting-pack-waitingGif')?.value || '';
+    const completeGif = editorOverlay.querySelector('#waiting-pack-completeGif')?.value || '';
+    const completeDuration = parseInt(editorOverlay.querySelector('#waiting-pack-completeDuration')?.value) || 3;
+
+    // 验证
+    if (!name) {
+        alert('请输入库名称');
+        return;
+    }
+
+    if (!startGif && !waitingGif && !completeGif) {
+        alert('请至少上传一张图片');
+        return;
+    }
+
+    const settings = extension_settings[EXT_ID]?.beautify?.floatingBtn || {};
+    const waitingPacks = settings.waitingPacks || [];
+
+    const packData = {
+        id: packId,
+        name,
+        startGif,
+        startDuration,
+        waitingGif,
+        completeGif,
+        completeDuration,
+        updatedTime: Date.now()
+    };
+
+    if (isNew) {
+        packData.createdTime = Date.now();
+        waitingPacks.push(packData);
+    } else {
+        const index = waitingPacks.findIndex(p => p.id === packId);
+        if (index !== -1) {
+            waitingPacks[index] = { ...waitingPacks[index], ...packData };
+        }
+    }
+
+    saveFloatingBtnSettings({ waitingPacks });
+
+    closeWaitingPackEditor(editorOverlay);
+    refreshWaitingPackUI(mainOverlay);
+
+    logger.info('[BeautifyPopup] 等待动画库已保存:', name);
+}
+
+
+/**
+ * 导出等待动画库为ZIP
+ *
+ * @description
+ * 将等待动画库导出为ZIP文件：
+ * - 本地图片打包到images文件夹
+ * - 网络图片保持URL
+ * - 配置信息保存到config.json
+ *
+ * @async
+ * @param {Element} editorOverlay - 编辑器弹窗元素
+ */
+async function exportWaitingPack(editorOverlay) {
+    const name = editorOverlay.querySelector('#waiting-pack-name')?.value?.trim() || '未命名等待动画';
+    const startGif = editorOverlay.querySelector('#waiting-pack-startGif')?.value || '';
+    const startDuration = parseFloat(editorOverlay.querySelector('#waiting-pack-startDuration')?.value) || 2;
+    const waitingGif = editorOverlay.querySelector('#waiting-pack-waitingGif')?.value || '';
+    const completeGif = editorOverlay.querySelector('#waiting-pack-completeGif')?.value || '';
+    const completeDuration = parseInt(editorOverlay.querySelector('#waiting-pack-completeDuration')?.value) || 3;
+
+    const exportBtn = editorOverlay.querySelector('#waiting-pack-export');
+    const originalText = exportBtn?.innerHTML;
+    if (exportBtn) {
+        exportBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 导出中...';
+        exportBtn.disabled = true;
+    }
+
+    try {
+        // 加载JSZip库
+        if (!window.JSZip) {
+            await import('../../../../../../lib/jszip.min.js');
+        }
+
+        const zip = new JSZip();
+        const imagesFolder = zip.folder('images');
+
+        // 配置数据
+        const configData = {
+            name,
+            startGif: '',
+            startDuration,
+            waitingGif: '',
+            completeGif: '',
+            completeDuration,
+            exportTime: Date.now(),
+            version: '2.0',
+            type: 'waiting-pack'
+        };
+
+        // 处理每个图片字段
+        const fields = [
+            { key: 'startGif', url: startGif },
+            { key: 'waitingGif', url: waitingGif },
+            { key: 'completeGif', url: completeGif }
+        ];
+
+        for (const field of fields) {
+            if (!field.url) continue;
+
+            // 网络图片保持URL
+            if (field.url.startsWith('http://') || field.url.startsWith('https://')) {
+                configData[field.key] = field.url;
+                continue;
+            }
+
+            // 本地图片转成文件放入ZIP
+            try {
+                const response = await fetch(field.url);
+                const blob = await response.blob();
+
+                // 从URL中提取文件扩展名
+                const ext = field.url.split('.').pop() || 'gif';
+                const fileName = `${field.key}.${ext}`;
+
+                imagesFolder.file(fileName, blob);
+                configData[field.key] = `images/${fileName}`;
+
+                logger.debug('[BeautifyPopup] 已添加图片到ZIP:', fileName);
+            } catch (error) {
+                logger.warn('[BeautifyPopup] 获取图片失败:', field.url, error);
+                // 失败时尝试用Base64
+                configData[field.key] = await urlToBase64(field.url);
+            }
+        }
+
+        // 添加配置文件
+        zip.file('config.json', JSON.stringify(configData, null, 2));
+
+        // 生成ZIP并下载
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(zipBlob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `waiting-pack_${name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')}_${Date.now()}.zip`;
+        a.click();
+
+        URL.revokeObjectURL(url);
+        logger.info('[BeautifyPopup] 等待动画库已导出为ZIP:', name);
+
+    } catch (error) {
+        logger.error('[BeautifyPopup] 导出失败:', error);
+        alert('导出失败：' + error.message);
+    } finally {
+        if (exportBtn) {
+            exportBtn.innerHTML = originalText;
+            exportBtn.disabled = false;
+        }
+    }
+}
+
+
+/**
+ * 导入等待动画库（支持ZIP和JSON格式）
+ *
+ * @description
+ * 从文件导入等待动画库配置到编辑器：
+ * - ZIP格式：读取config.json配置，images文件夹中的图片转为Blob URL
+ * - JSON格式：兼容旧版Base64格式的导出文件
+ *
+ * @param {Element} editorOverlay - 编辑器弹窗元素
+ */
+function importWaitingPack(editorOverlay) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.zip,.json';
+
+    input.addEventListener('change', async function() {
+        const file = this.files?.[0];
+        if (!file) return;
+
+        const importBtn = editorOverlay.querySelector('#waiting-pack-import');
+        const originalText = importBtn?.innerHTML;
+        if (importBtn) {
+            importBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 导入中...';
+            importBtn.disabled = true;
+        }
+
+        try {
+            let data;
+            let zipFile = null;
+
+            // 判断文件类型
+            if (file.name.endsWith('.zip')) {
+                // ZIP格式
+                if (!window.JSZip) {
+                    await import('../../../../../../lib/jszip.min.js');
+                }
+
+                zipFile = await JSZip.loadAsync(file);
+                const configFile = zipFile.file('config.json');
+                if (!configFile) {
+                    throw new Error('ZIP文件中缺少config.json');
+                }
+                const configText = await configFile.async('string');
+                data = JSON.parse(configText);
+            } else {
+                // JSON格式（向后兼容）
+                const text = await file.text();
+                data = JSON.parse(text);
+            }
+
+            // 验证数据格式
+            if (!data.name && !data.startGif && !data.waitingGif && !data.completeGif) {
+                throw new Error('无效的等待动画库文件');
+            }
+
+            // 填充名称
+            const nameInput = editorOverlay.querySelector('#waiting-pack-name');
+            if (nameInput && data.name) {
+                nameInput.value = data.name;
+            }
+
+            // 填充开始动画时长
+            const startDurationInput = editorOverlay.querySelector('#waiting-pack-startDuration');
+            if (startDurationInput && data.startDuration) {
+                startDurationInput.value = data.startDuration;
+            }
+
+            // 填充完成动画时长
+            const durationInput = editorOverlay.querySelector('#waiting-pack-completeDuration');
+            if (durationInput && data.completeDuration) {
+                durationInput.value = data.completeDuration;
+            }
+
+            // 处理图片
+            if (data.startGif) {
+                await importWaitingPackImage(editorOverlay, 'startGif', data.startGif, zipFile);
+            }
+            if (data.waitingGif) {
+                await importWaitingPackImage(editorOverlay, 'waitingGif', data.waitingGif, zipFile);
+            }
+            if (data.completeGif) {
+                await importWaitingPackImage(editorOverlay, 'completeGif', data.completeGif, zipFile);
+            }
+
+            logger.info('[BeautifyPopup] 等待动画库已导入:', data.name);
+            alert('导入成功！请检查内容后点击保存。');
+
+        } catch (error) {
+            logger.error('[BeautifyPopup] 导入失败:', error);
+            alert('导入失败：' + error.message);
+        } finally {
+            if (importBtn) {
+                importBtn.innerHTML = originalText;
+                importBtn.disabled = false;
+            }
+        }
+    });
+
+    input.click();
+}
+
+
+/**
+ * 导入单个图片字段到等待动画库编辑器
+ *
+ * @description
+ * 处理三种图片来源：
+ * - ZIP内的图片文件：从ZIP读取并上传到服务器
+ * - 网络URL：直接使用
+ * - Base64：上传到服务器（兼容旧版JSON格式）
+ *
+ * @async
+ * @param {Element} editorOverlay - 编辑器弹窗元素
+ * @param {string} field - 字段名（startGif/waitingGif/completeGif）
+ * @param {string} imageData - 图片数据（路径/URL/Base64）
+ * @param {JSZip|null} zipFile - ZIP文件对象（如果是从ZIP导入）
+ */
+async function importWaitingPackImage(editorOverlay, field, imageData, zipFile = null) {
+    const preview = editorOverlay.querySelector(`#waiting-pack-${field}-preview`);
+    const hiddenInput = editorOverlay.querySelector(`#waiting-pack-${field}`);
+
+    // 如果是URL（网络图片），直接使用
+    if (imageData.startsWith('http://') || imageData.startsWith('https://')) {
+        if (preview) {
+            preview.innerHTML = `<img src="${imageData}" alt="${field}">`;
+        }
+        if (hiddenInput) {
+            hiddenInput.value = imageData;
+        }
+        return;
+    }
+
+    // 如果是ZIP内的图片路径
+    if (zipFile && imageData.startsWith('images/')) {
+        try {
+            const imageFile = zipFile.file(imageData);
+            if (!imageFile) {
+                throw new Error(`ZIP中找不到图片: ${imageData}`);
+            }
+
+            const blob = await imageFile.async('blob');
+            const ext = imageData.split('.').pop() || 'gif';
+            const timestamp = Date.now();
+            const fileName = `acsus-paws-puffs_waitpack_${field}_${timestamp}.${ext}`;
+
+            // 转为Base64上传
+            const reader = new FileReader();
+            const base64Promise = new Promise((resolve, reject) => {
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+            });
+            reader.readAsDataURL(blob);
+            const dataUrl = await base64Promise;
+            const base64Data = dataUrl.split(',')[1];
+
+            const response = await fetch('/api/files/upload', {
+                method: 'POST',
+                headers: getRequestHeaders(),
+                body: JSON.stringify({
+                    name: fileName,
+                    data: base64Data
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`上传失败（状态码：${response.status}）`);
+            }
+
+            const result = await response.json();
+            const filePath = result.path;
+
+            if (preview) {
+                preview.innerHTML = `<img src="${filePath}" alt="${field}">`;
+            }
+            if (hiddenInput) {
+                hiddenInput.value = filePath;
+            }
+
+            logger.debug('[BeautifyPopup] ZIP图片已上传:', field, filePath);
+            return;
+
+        } catch (error) {
+            logger.error('[BeautifyPopup] 导入ZIP图片失败:', field, error);
+            return;
+        }
+    }
+
+    // 如果是Base64（兼容旧版JSON格式）
+    if (imageData.startsWith('data:')) {
+        try {
+            const matches = imageData.match(/^data:image\/(\w+);base64,(.+)$/);
+            if (!matches) {
+                throw new Error('无效的图片数据');
+            }
+
+            const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+            const base64Data = matches[2];
+            const timestamp = Date.now();
+            const fileName = `acsus-paws-puffs_waitpack_${field}_${timestamp}.${ext}`;
+
+            const response = await fetch('/api/files/upload', {
+                method: 'POST',
+                headers: getRequestHeaders(),
+                body: JSON.stringify({
+                    name: fileName,
+                    data: base64Data
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`上传失败（状态码：${response.status}）`);
+            }
+
+            const result = await response.json();
+            const filePath = result.path;
+
+            if (preview) {
+                preview.innerHTML = `<img src="${filePath}" alt="${field}">`;
+            }
+            if (hiddenInput) {
+                hiddenInput.value = filePath;
+            }
+
+            logger.debug('[BeautifyPopup] 导入图片已上传:', field, filePath);
+
+        } catch (error) {
+            logger.error('[BeautifyPopup] 导入图片失败:', field, error);
+        }
+    }
+}
+

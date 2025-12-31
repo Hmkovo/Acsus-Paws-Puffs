@@ -556,26 +556,25 @@ body.beautify-hide-scrollbar * {
 }
 
 /* ==========================================
-   关闭导航栏阴影
+   去除阴影 - 预设按钮阴影
    ========================================== */
 
-body.beautify-hide-topbar-shadow #top-bar {
-    box-shadow: none !important;
+body.beautify-remove-preset-shadow .prompt_manager_prompt_controls span,
+body.beautify-remove-preset-shadow .prompt-manager-detach-action,
+body.beautify-remove-preset-shadow .prompt-manager-edit-action,
+body.beautify-remove-preset-shadow .prompt-manager-toggle-action {
+    filter: none !important;
+    text-shadow: none !important;
 }
 
 /* ==========================================
-   关闭预设按钮阴影
+   去除阴影 - 编辑按钮阴影
    ========================================== */
 
-body.beautify-hide-preset-shadow .prompt_manager_prompt_controls span {
+body.beautify-remove-edit-shadow .mes_button,
+body.beautify-remove-edit-shadow .extraMesButtons > div,
+body.beautify-remove-edit-shadow .mes_edit_buttons {
     filter: none !important;
-}
-
-body.beautify-hide-preset-shadow .prompt-manager-detach-action,
-body.beautify-hide-preset-shadow .prompt-manager-edit-action,
-body.beautify-hide-preset-shadow .prompt-manager-toggle-action {
-    filter: none !important;
-    text-shadow: none !important;
 }
 
 /* ==========================================
@@ -600,6 +599,24 @@ body.beautify-preset-toggle-intuitive .prompt-manager-toggle-action.fa-toggle-on
 
 body.beautify-preset-toggle-intuitive .prompt-manager-toggle-action.fa-toggle-off {
     color: var(--SmartThemeEmColor, #888);
+}
+
+/* ==========================================
+   世界书按钮竖排
+   ========================================== */
+
+/* 按钮组容器 - 竖排布局 */
+body.beautify-wi-button-vertical .beautify-wi-btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+/* 按钮组内的按钮样式 */
+body.beautify-wi-button-vertical .beautify-wi-btn-group > i.menu_button {
+    margin: 0 !important;
 }
 
 /* ==========================================
@@ -664,4 +681,213 @@ body.beautify-persona-select-highlight .avatar-container:not(.selected):hover {
     flex: 1;
     min-width: 0;
     margin-top: 0;
+}
+
+/* ==========================================
+   去除阴影 - 分类控制
+   ========================================== */
+
+/* CSS 变量默认值 */
+:root {
+    --beautify-underline-ai-color: rgba(187, 193, 138, 0.5);
+    --beautify-underline-user-color: rgba(170, 192, 199, 0.2);
+    --beautify-hover-highlight-color: rgba(242, 198, 116, 0.15);
+    --beautify-paragraph-spacing: 0.8em;
+    --beautify-underline-line-height: 1.6em;
+    --beautify-chat-line-height: 1.6;
+}
+
+/* 1. 去除全局文字阴影变量 */
+body.beautify-remove-text-shadow {
+    --SmartThemeShadowColor: transparent !important;
+    --shadowWidth: 0 !important;
+}
+
+/* 2. 去除 drop-shadow 滤镜（按钮图标等） */
+body.beautify-remove-filter-shadow .mes_button,
+body.beautify-remove-filter-shadow .extraMesButtons > div,
+body.beautify-remove-filter-shadow .mes_edit_buttons,
+body.beautify-remove-filter-shadow .dragClose,
+body.beautify-remove-filter-shadow .ch_fav_icon,
+body.beautify-remove-filter-shadow .mes_img_swipe_counter,
+body.beautify-remove-filter-shadow .add_avatar,
+body.beautify-remove-filter-shadow #completion_prompt_manager #completion_prompt_manager_list li.completion_prompt_manager_prompt span span span,
+body.beautify-remove-filter-shadow #completion_prompt_manager .completion_prompt_manager_header_advanced span {
+    filter: none !important;
+}
+
+/* 3. 去除弹窗阴影 */
+body.beautify-remove-popup-shadow #bulk_tag_popup,
+body.beautify-remove-popup-shadow #dialogue_popup,
+body.beautify-remove-popup-shadow .popup,
+body.beautify-remove-popup-shadow dialog.popup,
+body.beautify-remove-popup-shadow #select_chat_popup,
+body.beautify-remove-popup-shadow .menu_button.menu_button_default {
+    box-shadow: none !important;
+}
+
+/* 4. 去除弹窗遮罩层 */
+body.beautify-remove-backdrop #shadow_popup,
+body.beautify-remove-backdrop #shadow_select_chat_popup,
+body.beautify-remove-backdrop #shadow_character_popup,
+body.beautify-remove-backdrop #bulk_tag_shadow_popup {
+    background-color: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* 新版 dialog 弹窗的遮罩 */
+body.beautify-remove-backdrop .popup::backdrop,
+body.beautify-remove-backdrop .popup[open]::backdrop,
+body.beautify-remove-backdrop dialog.popup::backdrop {
+    background-color: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* 5. 去除头像阴影 */
+body.beautify-remove-avatar-shadow .add_avatar,
+body.beautify-remove-avatar-shadow .add_avatar:hover,
+body.beautify-remove-avatar-shadow #avatar_div_div,
+body.beautify-remove-avatar-shadow #avatar_div_div:hover,
+body.beautify-remove-avatar-shadow #avatar_load_preview {
+    filter: none !important;
+    box-shadow: none !important;
+}
+
+/* 热切换头像 */
+body.beautify-remove-avatar-shadow .hotswap .inline_avatar img {
+    filter: none !important;
+    box-shadow: none !important;
+}
+
+/* 聊天头像 */
+body.beautify-remove-avatar-shadow .avatar img,
+body.beautify-remove-avatar-shadow .mes .avatar img,
+body.beautify-remove-avatar-shadow .mesAvatarWrapper .avatar img {
+    box-shadow: none !important;
+}
+
+/* 6. 去除菜单阴影 */
+body.beautify-remove-menu-shadow #extensionsMenu,
+body.beautify-remove-menu-shadow #options,
+body.beautify-remove-menu-shadow .options-content,
+body.beautify-remove-menu-shadow .list-group {
+    box-shadow: none !important;
+}
+
+/* 7. 去除背景卡片阴影 */
+body.beautify-remove-bg-shadow .bg_example {
+    box-shadow: none !important;
+}
+
+/* 8. 去除导航栏阴影 */
+body.beautify-remove-topbar-shadow #top-bar {
+    box-shadow: none !important;
+}
+
+/* ==========================================
+   阅读辅助 - 聊天行高
+   ========================================== */
+
+:root {
+    --beautify-chat-line-height: 1.6;
+}
+
+body.beautify-chat-line-height #chat .mes_text {
+    line-height: var(--beautify-chat-line-height) !important;
+}
+
+/* ==========================================
+   阅读辅助 - 文本下划线
+   ========================================== */
+
+/* AI/角色消息的下划线 */
+body.beautify-underline #chat .mes_block .mes_text p {
+    background-image: linear-gradient(
+        to bottom,
+        transparent 90%,
+        var(--beautify-underline-ai-color) calc(100% - 0px),
+        transparent calc(100% - 0px)
+    ) !important;
+    background-size: 100% var(--beautify-underline-line-height) !important;
+    background-position: 0 0em !important;
+    background-repeat: repeat-y !important;
+}
+
+/* 用户消息的下划线（区分颜色） */
+body.beautify-underline #chat .mes[is_user='true'] .mes_block .mes_text p {
+    background-image: linear-gradient(
+        to bottom,
+        transparent 90%,
+        var(--beautify-underline-user-color) calc(100% - 0px),
+        transparent calc(100% - 0px)
+    ) !important;
+}
+
+/* ==========================================
+   阅读辅助 - 首字下沉
+   ========================================== */
+
+/* 让 content 标签变成块级元素 */
+body.beautify-dropcap #chat .mes_text content {
+    display: block !important;
+}
+
+/* 隐藏 content 开头的 br */
+body.beautify-dropcap #chat .mes_text p:first-of-type > content > br:first-child,
+body.beautify-dropcap #chat .mes_text p:first-of-type > content > br:first-child + br {
+    display: none !important;
+}
+
+/* 第一段：无缩进 */
+body.beautify-dropcap #chat .mes_text p:first-of-type {
+    text-indent: 0 !important;
+}
+
+/* 首字下沉 - 直接作用于 p */
+body.beautify-dropcap #chat .mes_text p:first-of-type::first-letter {
+    float: left !important;
+    font-size: 2.2em !important;
+    line-height: 1.1 !important;
+    padding: 0.1em 0.2em !important;
+    margin-right: 0.1em !important;
+    margin-top: 0.05em !important;
+}
+
+/* 首字下沉 - 作用于 content */
+body.beautify-dropcap #chat .mes_text p:first-of-type > content::first-letter {
+    float: left !important;
+    font-size: 2.2em !important;
+    line-height: 1.1 !important;
+    padding: 0.1em 0.2em !important;
+    margin-right: 0.1em !important;
+    margin-top: 0.05em !important;
+}
+
+/* ==========================================
+   阅读辅助 - 首行缩进
+   ========================================== */
+
+/* 后续段落：首行缩进 */
+body.beautify-indent #chat .mes_text p:not(:first-of-type) {
+    text-indent: 1.5em !important;
+}
+
+/* ==========================================
+   阅读辅助 - 段落间距
+   ========================================== */
+
+body.beautify-paragraph-spacing #chat .mes_text p {
+    margin-bottom: var(--beautify-paragraph-spacing) !important;
+}
+
+/* ==========================================
+   阅读辅助 - 悬停段落高亮
+   ========================================== */
+
+body.beautify-hover-highlight #chat .mes_text p:hover {
+    background-color: var(--beautify-hover-highlight-color) !important;
+    border-radius: 2px !important;
+    transition: background-color 0.15s ease !important;
 }

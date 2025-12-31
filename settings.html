@@ -347,15 +347,6 @@
                     <span class="beautify-hint">@Dough 悬停时才显示快捷回复栏</span>
                   </div>
 
-                  <!-- 隐藏编辑按钮阴影 -->
-                  <div class="beautify-setting-item" data-keywords="编辑 按钮 阴影 shadow">
-                    <label class="checkbox_label">
-                      <input type="checkbox" id="beautify-hide-edit-shadow-enabled">
-                      <span>隐藏编辑按钮阴影</span>
-                    </label>
-                    <span class="beautify-hint">去掉消息编辑按钮的 drop-shadow 阴影效果</span>
-                  </div>
-
                   <!-- 修复旧版美化类名 -->
                   <div class="beautify-setting-item" data-keywords="修复 旧版 美化 logo_block backgrounds">
                     <label class="checkbox_label">
@@ -363,24 +354,6 @@
                       <span>修复旧版美化类名</span>
                     </label>
                     <span class="beautify-hint">自动将 #logo_block 替换为 #backgrounds-drawer-toggle（兼容更新前美化）</span>
-                  </div>
-
-                  <!-- 关闭导航栏阴影 -->
-                  <div class="beautify-setting-item" data-keywords="导航栏 阴影 顶部 top-bar shadow">
-                    <label class="checkbox_label">
-                      <input type="checkbox" id="beautify-hide-topbar-shadow-enabled">
-                      <span>关闭导航栏阴影</span>
-                    </label>
-                    <span class="beautify-hint">移除顶部导航栏的阴影效果，让界面更扁平</span>
-                  </div>
-
-                  <!-- 关闭预设按钮阴影 -->
-                  <div class="beautify-setting-item" data-keywords="预设 按钮 阴影 prompt manager">
-                    <label class="checkbox_label">
-                      <input type="checkbox" id="beautify-hide-preset-shadow-enabled">
-                      <span>关闭预设按钮阴影</span>
-                    </label>
-                    <span class="beautify-hint">移除预设管理器中控制按钮的扩散阴影</span>
                   </div>
 
                   <!-- 预设开关直觉优化 -->
@@ -470,6 +443,15 @@
                     </div>
                   </div>
 
+                  <!-- 世界书按钮竖排 -->
+                  <div class="beautify-setting-item" data-keywords="世界书 按钮 竖排 垂直 world info lorebook">
+                    <label class="checkbox_label">
+                      <input type="checkbox" id="beautify-wi-button-vertical-enabled">
+                      <span>世界书按钮竖排</span>
+                    </label>
+                    <span class="beautify-hint">将世界书条目右侧的移动/复制/删除按钮改为竖向排列</span>
+                  </div>
+
                   <!-- 抽屉页面位置调整 -->
                   <div class="beautify-setting-item beautify-slider-item" data-keywords="抽屉 页面 位置 导航 偏移 上下">
                     <div class="beautify-slider-row">
@@ -482,6 +464,256 @@
                     </div>
                     <span class="beautify-hint">调整导航栏展开页面的上下位置（负数上移，正数下移）</span>
                   </div>
+
+                  <!-- ========== 折叠区：去除阴影 ========== -->
+                  <hr class="beautify-divider">
+
+                  <!-- 去除阴影 - 折叠标题 -->
+                  <div class="beautify-setting-item beautify-collapsible-header" data-keywords="阴影 shadow 去除 移除 全部 文字 图标 弹窗 遮罩 头像 菜单 背景" id="beautify-shadow-collapse-header">
+                    <div class="beautify-collapsible-title">
+                      <i class="fa-solid fa-moon"></i>
+                      <span>去除阴影</span>
+                      <i class="fa-solid fa-chevron-down beautify-collapse-icon"></i>
+                    </div>
+                    <span class="beautify-hint">点击展开，可一键或分类去除界面阴影效果</span>
+                  </div>
+
+                  <!-- 去除阴影 - 折叠内容 -->
+                  <div class="beautify-collapsible-content" id="beautify-shadow-collapse-content">
+                    <!-- 一键去除所有阴影 -->
+                    <div class="beautify-setting-item beautify-sub-setting" data-keywords="阴影 shadow 去除 移除 全部 一键">
+                      <label class="checkbox_label">
+                        <input type="checkbox" id="beautify-remove-shadow-all-enabled">
+                        <span>一键去除所有阴影</span>
+                      </label>
+                      <span class="beautify-hint">勾选后去除下方所有类型的阴影</span>
+                    </div>
+
+                    <hr class="beautify-divider-thin">
+
+                    <!-- 去除文字阴影 -->
+                    <div class="beautify-setting-item beautify-sub-setting" data-keywords="文字 阴影 text shadow">
+                      <label class="checkbox_label">
+                        <input type="checkbox" id="beautify-remove-text-shadow-enabled">
+                        <span>去除文字阴影</span>
+                      </label>
+                      <span class="beautify-hint">去除全局文字阴影变量（--SmartThemeShadowColor）</span>
+                    </div>
+
+                    <!-- 去除图标滤镜阴影 -->
+                    <div class="beautify-setting-item beautify-sub-setting" data-keywords="图标 滤镜 drop-shadow filter">
+                      <label class="checkbox_label">
+                        <input type="checkbox" id="beautify-remove-filter-shadow-enabled">
+                        <span>去除图标滤镜阴影</span>
+                      </label>
+                      <span class="beautify-hint">去除按钮图标的 drop-shadow 滤镜效果</span>
+                    </div>
+
+                    <!-- 去除弹窗阴影 -->
+                    <div class="beautify-setting-item beautify-sub-setting" data-keywords="弹窗 popup dialog 阴影">
+                      <label class="checkbox_label">
+                        <input type="checkbox" id="beautify-remove-popup-shadow-enabled">
+                        <span>去除弹窗阴影</span>
+                      </label>
+                      <span class="beautify-hint">去除弹窗、对话框的 box-shadow 阴影</span>
+                    </div>
+
+                    <!-- 去除弹窗遮罩 -->
+                    <div class="beautify-setting-item beautify-sub-setting" data-keywords="弹窗 遮罩 backdrop 背景 模糊">
+                      <label class="checkbox_label">
+                        <input type="checkbox" id="beautify-remove-backdrop-enabled">
+                        <span>去除弹窗遮罩</span>
+                      </label>
+                      <span class="beautify-hint">去除弹窗背后的半透明遮罩和模糊效果</span>
+                    </div>
+
+                    <!-- 去除头像阴影 -->
+                    <div class="beautify-setting-item beautify-sub-setting" data-keywords="头像 avatar 阴影">
+                      <label class="checkbox_label">
+                        <input type="checkbox" id="beautify-remove-avatar-shadow-enabled">
+                        <span>去除头像阴影</span>
+                      </label>
+                      <span class="beautify-hint">去除头像图片的滤镜和阴影效果</span>
+                    </div>
+
+                    <!-- 去除菜单阴影 -->
+                    <div class="beautify-setting-item beautify-sub-setting" data-keywords="菜单 menu 扩展 选项 阴影">
+                      <label class="checkbox_label">
+                        <input type="checkbox" id="beautify-remove-menu-shadow-enabled">
+                        <span>去除菜单阴影</span>
+                      </label>
+                      <span class="beautify-hint">去除扩展菜单、选项菜单的阴影</span>
+                    </div>
+
+                    <!-- 去除背景卡片阴影 -->
+                    <div class="beautify-setting-item beautify-sub-setting" data-keywords="背景 卡片 bg_example 阴影">
+                      <label class="checkbox_label">
+                        <input type="checkbox" id="beautify-remove-bg-shadow-enabled">
+                        <span>去除背景卡片阴影</span>
+                      </label>
+                      <span class="beautify-hint">去除背景选择卡片的阴影</span>
+                    </div>
+
+                    <!-- 去除导航栏阴影 -->
+                    <div class="beautify-setting-item beautify-sub-setting" data-keywords="导航栏 顶部 top-bar 阴影">
+                      <label class="checkbox_label">
+                        <input type="checkbox" id="beautify-remove-topbar-shadow-enabled">
+                        <span>去除导航栏阴影</span>
+                      </label>
+                      <span class="beautify-hint">去除顶部导航栏的阴影效果</span>
+                    </div>
+
+                    <!-- 去除预设按钮阴影 -->
+                    <div class="beautify-setting-item beautify-sub-setting" data-keywords="预设 按钮 prompt manager 阴影">
+                      <label class="checkbox_label">
+                        <input type="checkbox" id="beautify-remove-preset-shadow-enabled">
+                        <span>去除预设按钮阴影</span>
+                      </label>
+                      <span class="beautify-hint">去除预设管理器中控制按钮的扩散阴影</span>
+                    </div>
+
+                    <!-- 去除编辑按钮阴影 -->
+                    <div class="beautify-setting-item beautify-sub-setting" data-keywords="编辑 按钮 消息 阴影">
+                      <label class="checkbox_label">
+                        <input type="checkbox" id="beautify-remove-edit-shadow-enabled">
+                        <span>去除编辑按钮阴影</span>
+                      </label>
+                      <span class="beautify-hint">去除消息编辑按钮的 drop-shadow 阴影效果</span>
+                    </div>
+                  </div>
+
+                  <!-- ========== 折叠区：阅读辅助 ========== -->
+                  <hr class="beautify-divider">
+
+                  <!-- 阅读辅助 - 折叠标题 -->
+                  <div class="beautify-setting-item beautify-collapsible-header" data-keywords="阅读 辅助 下划线 首字 缩进 段落 悬停 高亮" id="beautify-reading-aid-collapse-header">
+                    <div class="beautify-collapsible-title">
+                      <i class="fa-solid fa-book-open-reader"></i>
+                      <span>阅读辅助</span>
+                      <i class="fa-solid fa-chevron-down beautify-collapse-icon"></i>
+                    </div>
+                    <span class="beautify-hint">点击展开，为阅读困难用户提供视觉辅助功能</span>
+                  </div>
+
+                  <!-- 阅读辅助 - 折叠内容 -->
+                  <div class="beautify-collapsible-content" id="beautify-reading-aid-collapse-content">
+                    <!-- 聊天行高（独立功能） -->
+                    <div class="beautify-setting-item beautify-sub-setting" data-keywords="行高 line-height 聊天 文本">
+                      <label class="checkbox_label">
+                        <input type="checkbox" id="beautify-chat-line-height-enabled">
+                        <span>聊天行高调整</span>
+                      </label>
+                      <span class="beautify-hint">调整聊天文本的行高，提升阅读舒适度</span>
+                    </div>
+                    <div class="beautify-setting-item beautify-sub-setting beautify-slider-item beautify-conditional-item" id="beautify-chat-line-height-setting" data-keywords="行高 line-height">
+                      <div class="beautify-slider-row">
+                        <label>
+                          <i class="fa-solid fa-text-height"></i>
+                          <span>行高</span>
+                        </label>
+                        <input type="range" id="beautify-chat-line-height" min="1.2" max="2.5" step="0.1" value="1.6">
+                        <span class="beautify-slider-value" id="beautify-chat-line-height-value">1.6</span>
+                      </div>
+                    </div>
+
+                    <!-- 文本下划线 -->
+                    <div class="beautify-setting-item beautify-sub-setting" data-keywords="下划线 阅读线 辅助线 underline">
+                      <label class="checkbox_label">
+                        <input type="checkbox" id="beautify-underline-enabled">
+                        <span>文本下划线</span>
+                      </label>
+                      <span class="beautify-hint">为段落添加阅读辅助下划线（使用上方行高值）</span>
+                    </div>
+
+                    <!-- 下划线子选项（勾选后显示） -->
+                    <div class="beautify-conditional-group" id="beautify-underline-options">
+                      <!-- AI下划线颜色 -->
+                      <div class="beautify-setting-item beautify-sub-setting beautify-color-setting" data-keywords="下划线 AI 角色 颜色">
+                        <div class="beautify-color-row">
+                          <label>
+                            <i class="fa-solid fa-robot"></i>
+                            <span>AI下划线颜色</span>
+                          </label>
+                          <toolcool-color-picker id="beautify-underline-ai-color" color="rgba(187, 193, 138, 0.5)" popup="true"></toolcool-color-picker>
+                        </div>
+                      </div>
+
+                      <!-- 用户下划线颜色 -->
+                      <div class="beautify-setting-item beautify-sub-setting beautify-color-setting" data-keywords="下划线 用户 颜色">
+                        <div class="beautify-color-row">
+                          <label>
+                            <i class="fa-solid fa-user"></i>
+                            <span>用户下划线颜色</span>
+                          </label>
+                          <toolcool-color-picker id="beautify-underline-user-color" color="rgba(170, 192, 199, 0.2)" popup="true"></toolcool-color-picker>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 首字下沉 -->
+                    <div class="beautify-setting-item beautify-sub-setting" data-keywords="首字 下沉 drop cap 大写">
+                      <label class="checkbox_label">
+                        <input type="checkbox" id="beautify-dropcap-enabled">
+                        <span>首字下沉</span>
+                      </label>
+                      <span class="beautify-hint">段落第一个字放大并下沉，增强阅读起点</span>
+                    </div>
+
+                    <!-- 首行缩进 -->
+                    <div class="beautify-setting-item beautify-sub-setting" data-keywords="首行 缩进 indent 段落">
+                      <label class="checkbox_label">
+                        <input type="checkbox" id="beautify-indent-enabled">
+                        <span>首行缩进</span>
+                      </label>
+                      <span class="beautify-hint">非首段的段落首行缩进1.5em</span>
+                    </div>
+
+                    <!-- 段落间距 -->
+                    <div class="beautify-setting-item beautify-sub-setting" data-keywords="段落 间距 spacing margin">
+                      <label class="checkbox_label">
+                        <input type="checkbox" id="beautify-paragraph-spacing-enabled">
+                        <span>段落间距</span>
+                      </label>
+                      <span class="beautify-hint">增加段落之间的间距，便于区分段落</span>
+                    </div>
+                    <div class="beautify-setting-item beautify-sub-setting beautify-radio-group beautify-conditional-item" id="beautify-paragraph-spacing-setting" data-keywords="段落 间距 spacing">
+                      <div class="beautify-radio-row">
+                        <label class="beautify-radio-label">
+                          <input type="radio" name="beautify-paragraph-spacing" value="0.8" checked>
+                          <span>轻度 (0.8em)</span>
+                        </label>
+                        <label class="beautify-radio-label">
+                          <input type="radio" name="beautify-paragraph-spacing" value="1.2">
+                          <span>中度 (1.2em)</span>
+                        </label>
+                        <label class="beautify-radio-label">
+                          <input type="radio" name="beautify-paragraph-spacing" value="1.6">
+                          <span>重度 (1.6em)</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <!-- 悬停段落高亮 -->
+                    <div class="beautify-setting-item beautify-sub-setting" data-keywords="悬停 高亮 hover highlight 段落">
+                      <label class="checkbox_label">
+                        <input type="checkbox" id="beautify-hover-highlight-enabled">
+                        <span>悬停段落高亮</span>
+                      </label>
+                      <span class="beautify-hint">鼠标悬停时高亮当前段落，便于追踪阅读位置</span>
+                    </div>
+
+                    <!-- 悬停高亮颜色（勾选后显示） -->
+                    <div class="beautify-setting-item beautify-sub-setting beautify-color-setting beautify-conditional-item" id="beautify-hover-highlight-color-setting" data-keywords="悬停 高亮 颜色">
+                      <div class="beautify-color-row">
+                        <label>
+                          <i class="fa-solid fa-highlighter"></i>
+                          <span>高亮颜色</span>
+                        </label>
+                        <toolcool-color-picker id="beautify-hover-highlight-color" color="rgba(242, 198, 116, 0.15)" popup="true"></toolcool-color-picker>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
 
                 <!-- 翻页控制（超过6个时显示） -->

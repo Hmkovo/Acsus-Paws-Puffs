@@ -1,10 +1,10 @@
 /**
  * 日记数据管理器
- * 
+ *
  * @description
  * 负责日记数据的增删改查、持久化存储、时间戳ID生成。
  * 数据存储在 extension_settings 中，按角色卡ID分类。
- * 
+ *
  * @module DiaryDataManager
  */
 
@@ -27,7 +27,7 @@ const MODULE_NAME = 'diary';
 
 /**
  * 日记数据管理器
- * 
+ *
  * @class DiaryDataManager
  */
 export class DiaryDataManager {
@@ -47,7 +47,7 @@ export class DiaryDataManager {
 
   /**
    * 初始化
-   * 
+   *
    * @async
    */
   async init() {
@@ -58,11 +58,11 @@ export class DiaryDataManager {
 
   /**
    * 生成时间戳ID
-   * 
+   *
    * @description
    * 格式：年月日_时分秒 (如 20251013_143020)
    * 保证唯一性，避免并发时重复
-   * 
+   *
    * @returns {string} 时间戳ID
    * @example
    * const id = generateTimestampId();
@@ -85,7 +85,7 @@ export class DiaryDataManager {
 
   /**
    * 获取当前角色ID
-   * 
+   *
    * @returns {string|null}
    */
   getCurrentCharacterId() {
@@ -95,7 +95,7 @@ export class DiaryDataManager {
 
   /**
    * 加载日记（当前角色）
-   * 
+   *
    * @description
    * 根本逻辑：
    * 1. 获取当前角色ID
@@ -162,7 +162,7 @@ export class DiaryDataManager {
 
   /**
    * 创建新日记（草稿）
-   * 
+   *
    * @param {Object} [options={}] - 可选参数
    * @param {string} [options.title] - 标题
    * @param {string} [options.date] - 日期
@@ -208,7 +208,7 @@ export class DiaryDataManager {
 
   /**
    * 获取日记
-   * 
+   *
    * @param {string} id - 日记ID
    * @returns {Object|null}
    */
@@ -218,7 +218,7 @@ export class DiaryDataManager {
 
   /**
    * 更新日记
-   * 
+   *
    * @param {string} id - 日记ID
    * @param {Object} updates - 更新内容
    */
@@ -238,9 +238,9 @@ export class DiaryDataManager {
 
   /**
    * 删除日记
-   * 
+   *
    * @param {string} id - 日记ID
-   * 
+   *
    * @description
    * 根本逻辑：
    * 1. 从内存数组删除
@@ -275,7 +275,7 @@ export class DiaryDataManager {
 
   /**
    * 获取所有日记（当前角色）
-   * 
+   *
    * @param {Object} [filter={}] - 过滤条件
    * @param {string} [filter.author] - 'user' | 'ai'
    * @param {string} [filter.status] - 'draft' | 'archived'
@@ -304,7 +304,7 @@ export class DiaryDataManager {
 
   /**
    * 添加评论到日记
-   * 
+   *
    * @param {string} diaryId - 日记ID
    * @param {Object} comment - 评论对象
    * @param {string} comment.id - 评论ID
@@ -348,7 +348,7 @@ export class DiaryDataManager {
 
   /**
    * 递归查找评论
-   * 
+   *
    * @param {Array<Object>} comments - 评论列表
    * @param {string} commentId - 评论ID
    * @returns {Object|null}
@@ -368,7 +368,7 @@ export class DiaryDataManager {
 
   /**
    * 删除评论
-   * 
+   *
    * @param {string} diaryId - 日记ID
    * @param {string} commentId - 评论ID
    */
@@ -426,7 +426,7 @@ export class DiaryDataManager {
 
   /**
    * 统计所有评论数量（递归）
-   * 
+   *
    * @param {Array<Object>} comments - 评论数组
    * @returns {number} 总评论数
    */
@@ -448,9 +448,9 @@ export class DiaryDataManager {
 
   /**
    * 获取日记设置（完整版）
-   * 
+   *
    * @returns {Object} 设置对象
-   * 
+   *
    * @property {boolean} includePersonaDescription - 包含用户设定
    * @property {boolean} includeCharDescription - 包含角色描述
    * @property {boolean} includeCharPersonality - 包含角色性格
@@ -466,6 +466,8 @@ export class DiaryDataManager {
    * @property {number} passerbyCommentMin - 路人评论最小数量
    * @property {number} passerbyCommentMax - 路人评论最大数量
    * @property {boolean} skipDeleteConfirm - 跳过删除确认
+   * @property {string} dateRangeStart - 日期范围筛选开始日期（持久化）
+   * @property {string} dateRangeEnd - 日期范围筛选结束日期（持久化）
    * @property {Object} visualSettings - 视觉设置对象（卡片透明度、主题色、文本色、背景等）
    * @property {string} visualSettings.cardOpacity - 卡片透明度（0-1）
    * @property {string} visualSettings.themeColor - 主题色
@@ -515,6 +517,10 @@ export class DiaryDataManager {
       // 交互设置
       skipDeleteConfirm: settings.skipDeleteConfirm || false,             // 跳过删除确认（默认false）
 
+      // 筛选设置（持久化）
+      dateRangeStart: settings.dateRangeStart || '',                      // 日期范围开始
+      dateRangeEnd: settings.dateRangeEnd || '',                          // 日期范围结束
+
       // 视觉设置
       visualSettings: settings.visualSettings || {
         cardOpacity: 1.0,                         // 卡片透明度（0-1）
@@ -557,7 +563,7 @@ export class DiaryDataManager {
 
   /**
    * 更新日记设置
-   * 
+   *
    * @param {Object} newSettings - 新设置对象
    * @param {boolean} [newSettings.includePersonaDescription] - 包含用户设定
    * @param {boolean} [newSettings.includeCharDescription] - 包含角色描述

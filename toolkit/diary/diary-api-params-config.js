@@ -1,13 +1,15 @@
 /**
- * AI API参数配置（基于酒馆的data-source规则）
- * @module phone/ai-integration/phone-api-params-config
+ * 日记 API 参数配置（基于酒馆的 data-source 规则）
+ * @module diary/diary-api-params-config
  *
  * @description
- * 定义每种API格式支持的参数及其范围、默认值
- * 用于动态生成参数配置UI和保存/读取配置
+ * 定义每种 API 格式支持的参数及其范围、默认值
+ * 用于动态生成参数配置 UI 和保存/读取配置
+ *
+ * 复制自手机模块，保持一致性
  */
 
-import logger from '../../../logger.js';
+import logger from '../../logger.js';
 
 /**
  * 参数定义表（参数名 -> 配置）
@@ -21,7 +23,7 @@ export const PARAMS_DEFINITIONS = {
     step: 0.01,
     default: 0.8,
     label: '温度',
-    hint: '控制输出的随机性，值越大越随机。(Gemini 3 官方推荐使用默认值 1.0)'
+    hint: '控制输出的随机性，值越大越随机'
   },
   frequency_penalty: {
     min: -2,
@@ -90,17 +92,16 @@ export const PARAMS_DEFINITIONS = {
 };
 
 /**
- * API格式参数映射表（格式 -> 支持的参数列表）
+ * API 格式参数映射表（格式 -> 支持的参数列表）
  *
  * @description
- * 基于酒馆的data-source规则，定义每种API格式支持哪些参数
- * 完整支持所有22个官方API源
- * ✅ 2025-12-29 已与官方 index.html 同步
+ * 基于酒馆的 data-source 规则，定义每种 API 格式支持哪些参数
+ * 完整支持所有 22 个官方 API 源
  *
  * @const {Object.<string, string[]>}
  */
 export const FORMAT_PARAMS_MAP = {
-  // ========== 常用API ==========
+  // ========== 常用 API ==========
   openai: [
     'temperature',
     'frequency_penalty',
@@ -124,7 +125,7 @@ export const FORMAT_PARAMS_MAP = {
     'temperature',
     'frequency_penalty',
     'presence_penalty',
-    'top_k',  // ✅ 官方支持
+    'top_k',
     'top_p',
     'repetition_penalty',
     'min_p',
@@ -139,7 +140,7 @@ export const FORMAT_PARAMS_MAP = {
     'max_tokens'
   ],
 
-  // ========== 其他官方API ==========
+  // ========== 其他官方 API ==========
   mistralai: [
     'temperature',
     'frequency_penalty',
@@ -149,17 +150,17 @@ export const FORMAT_PARAMS_MAP = {
   ],
   cohere: [
     'temperature',
-    'frequency_penalty',  // ✅ 官方支持
-    'presence_penalty',   // ✅ 官方支持
+    'frequency_penalty',
+    'presence_penalty',
     'top_k',
     'top_p',
     'max_tokens'
   ],
   perplexity: [
     'temperature',
-    'frequency_penalty',  // ✅ 官方支持
-    'presence_penalty',   // ✅ 官方支持
-    'top_k',              // ✅ 官方支持
+    'frequency_penalty',
+    'presence_penalty',
+    'top_k',
     'top_p',
     'max_tokens'
   ],
@@ -200,11 +201,11 @@ export const FORMAT_PARAMS_MAP = {
     'temperature',
     'frequency_penalty',
     'presence_penalty',
-    'top_k',              // ✅ 官方支持
+    'top_k',
     'top_p',
     'max_tokens'
   ],
-  chutes: [  // ✅ 1.15.0 新增
+  chutes: [
     'temperature',
     'frequency_penalty',
     'presence_penalty',
@@ -214,7 +215,7 @@ export const FORMAT_PARAMS_MAP = {
     'min_p',
     'max_tokens'
   ],
-  nanogpt: [  // ✅ 1.15.0 更新：新增 top_k, repetition_penalty, min_p, top_a
+  nanogpt: [
     'temperature',
     'frequency_penalty',
     'presence_penalty',
@@ -229,7 +230,7 @@ export const FORMAT_PARAMS_MAP = {
     'temperature',
     'frequency_penalty',
     'presence_penalty',
-    'top_k',              // ✅ 官方支持
+    'top_k',
     'top_p',
     'max_tokens'
   ],
@@ -254,7 +255,7 @@ export const FORMAT_PARAMS_MAP = {
     'top_p',
     'max_tokens'
   ],
-  vertexai: [  // Vertex AI
+  vertexai: [
     'temperature',
     'top_k',
     'top_p',
@@ -274,7 +275,7 @@ export const FORMAT_PARAMS_MAP = {
   ],
 
   // ========== 通用/兼容格式 ==========
-  custom: [  // OpenAI兼容格式（通用）
+  custom: [
     'temperature',
     'frequency_penalty',
     'presence_penalty',
@@ -283,13 +284,13 @@ export const FORMAT_PARAMS_MAP = {
   ],
 
   // ========== 兼容旧配置（别名） ==========
-  google: [  // 旧名称，映射到makersuite
+  google: [
     'temperature',
     'top_k',
     'top_p',
     'max_tokens'
   ],
-  mistral: [  // 旧名称，映射到mistralai
+  mistral: [
     'temperature',
     'frequency_penalty',
     'presence_penalty',
@@ -301,19 +302,19 @@ export const FORMAT_PARAMS_MAP = {
 /**
  * 获取指定格式支持的参数列表
  *
- * @param {string} format - API格式（openai/claude/google等）
+ * @param {string} format - API 格式（openai/claude/makersuite 等）
  * @returns {string[]} 参数名列表
  */
 export function getSupportedParams(format) {
   const params = FORMAT_PARAMS_MAP[format] || FORMAT_PARAMS_MAP.custom;
-  logger.debug('[PhoneAPIParams.getSupportedParams] 格式:', format, '→ 支持参数:', params);
+  logger.debug('[DiaryAPIParams.getSupportedParams] 格式:', format, '→ 支持参数:', params);
   return params;
 }
 
 /**
  * 获取参数的默认值配置对象
  *
- * @param {string} format - API格式
+ * @param {string} format - API 格式
  * @returns {Object.<string, number>} 参数名 -> 默认值的映射
  */
 export function getDefaultParams(format) {
@@ -327,7 +328,7 @@ export function getDefaultParams(format) {
     }
   }
 
-  logger.debug('[PhoneAPIParams.getDefaultParams] 格式:', format, '→ 默认值:', defaults);
+  logger.debug('[DiaryAPIParams.getDefaultParams] 格式:', format, '→ 默认值:', defaults);
   return defaults;
 }
 
@@ -341,7 +342,7 @@ export function getDefaultParams(format) {
 export function validateParamValue(paramName, value) {
   const definition = PARAMS_DEFINITIONS[paramName];
   if (!definition) {
-    logger.warn('[PhoneAPIParams.validateParamValue] 未知参数:', paramName);
+    logger.warn('[DiaryAPIParams.validateParamValue] 未知参数:', paramName);
     return false;
   }
 

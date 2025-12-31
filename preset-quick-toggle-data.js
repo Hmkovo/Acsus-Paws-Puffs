@@ -42,7 +42,8 @@ const DEFAULT_STORAGE = {
  * @property {string} identifier - 预设条目的identifier（type='preset'时）
  * @property {string} [worldName] - 世界书名称（type='worldinfo'时）
  * @property {number} [uid] - 世界书条目uid（type='worldinfo'时）
- * @property {string} name - 条目显示名称
+ * @property {string} name - 条目原始名称（世界书条目格式：世界书名:条目名）
+ * @property {string} [displayAlias] - 悬浮菜单中显示的别名（可选，不设置则只显示条目名）
  */
 
 /**
@@ -178,10 +179,11 @@ export function addQuickToggle(identifier, name) {
  * 添加世界书条目到快速开关
  * @param {string} worldName - 世界书名称
  * @param {number} uid - 条目uid
- * @param {string} name - 显示名称
+ * @param {string} name - 显示名称（格式：世界书名:条目名）
+ * @param {string} [displayAlias] - 悬浮菜单中显示的别名（可选）
  * @returns {boolean} 是否成功
  */
-export function addWorldInfoQuickToggle(worldName, uid, name) {
+export function addWorldInfoQuickToggle(worldName, uid, name, displayAlias) {
     const presetName = getCurrentPresetName();
     const presetData = getPresetData(presetName);
 
@@ -191,7 +193,12 @@ export function addWorldInfoQuickToggle(worldName, uid, name) {
         return false;
     }
 
-    presetData.items.push({ type: 'worldinfo', worldName, uid, name });
+    const item = { type: 'worldinfo', worldName, uid, name };
+    // 只有设置了别名才添加 displayAlias 字段
+    if (displayAlias && displayAlias.trim()) {
+        item.displayAlias = displayAlias.trim();
+    }
+    presetData.items.push(item);
     saveSettingsDebounced();
 
     logger.info('[QuickToggle] 已添加世界书快速开关:', name, '预设:', presetName);
@@ -379,11 +386,11 @@ export function getAvailablePrompts() {
  * 不存在的预设条目会被自动过滤掉。
  *
  * @param {string} [presetName] - 预设名称，默认当前预设
- * @returns {Array<{type: string, identifier?: string, worldName?: string, uid?: number, name: string, enabled: boolean}>} 带状态的列表
+ * @returns {Array<{type: string, identifier?: string, worldName?: string, uid?: number, name: string, displayAlias?: string, enabled: boolean}>} 带状态的列表
  * @example
  * const toggles = getQuickTogglesWithState();
  * // 预设条目: { type: 'preset', identifier: 'main_prompt', name: '主提示词', enabled: true }
- * // 世界书条目: { type: 'worldinfo', worldName: '设定集', uid: 123, name: '角色设定', enabled: true }
+ * // 世界书条目: { type: 'worldinfo', worldName: '设定集', uid: 123, name: '设定集:角色设定', displayAlias: '角色设定', enabled: true }
  */
 export function getQuickTogglesWithState(presetName) {
     const items = getQuickToggles(presetName);
@@ -397,7 +404,8 @@ export function getQuickTogglesWithState(presetName) {
                 worldName: item.worldName,
                 uid: item.uid,
                 name: item.name,
-                enabled: true  // 默认显示为开启，实际状态在点击时检查
+                displayAlias: item.displayAlias || '',  // 传递别名
+                enabled: true  // 默认显示为开启，实际状态需要用 getWorldInfoStateAsync 获取
             };
         } else {
             // 预设条目
@@ -413,4 +421,71 @@ export function getQuickTogglesWithState(presetName) {
             };
         }
     }).filter(item => item !== null);
+}
+
+/**
+ * 异步获取世界书条目的真实启用状态
+ *
+ * @description
+ * 从世界书数据中读取条目的 disable 字段，返回真实的启用状态。
+ * 因为需要调用 loadWorldInfo() 加载世界书数据，所以是异步函数。
+ *
+ * @param {string} worldName - 世界书名称
+ * @param {number} uid - 条目uid
+ * @returns {Promise<boolean>} 是否启用（true=启用，false=禁用）
+ */
+export async function getWorldInfoStateAsync(worldName, uid) {
+    try {
+        const { loadWorldInfo } = await import('../../../world-info.js');
+        const worldData = await loadWorldInfo(worldName);
+
+        if (!worldData || !worldData.entries) {
+            logger.warn('[QuickToggle] 无法加载世界书:', worldName);
+            return true;  // 加载失败时默认显示为启用
+        }
+
+        const entry = worldData.entries[uid] || worldData.entries[String(uid)];
+        if (!entry) {
+            logger.warn('[QuickToggle] 世界书条目不存在:', worldName, 'uid:', uid);
+            return true;  // 条目不存在时默认显示为启用
+        }
+
+        // disable=false 表示启用，disable=true 表示禁用
+        return !entry.disable;
+    } catch (error) {
+        logger.error('[QuickToggle] 获取世界书条目状态失败:', error.message);
+        return true;  // 出错时默认显示为启用
+    }
+}
+
+/**
+ * 更新世界书条目的别名
+ * @param {string} worldName - 世界书名称
+ * @param {number} uid - 条目uid
+ * @param {string} displayAlias - 新的别名（空字符串表示清除别名）
+ * @returns {boolean} 是否成功
+ */
+export function updateWorldInfoAlias(worldName, uid, displayAlias) {
+    const presetName = getCurrentPresetName();
+    const presetData = getPresetData(presetName);
+
+    const item = presetData.items.find(
+        i => i.type === 'worldinfo' && i.worldName === worldName && i.uid === uid
+    );
+
+    if (!item) {
+        logger.warn('[QuickToggle] 未找到世界书条目:', worldName, uid);
+        return false;
+    }
+
+    if (displayAlias && displayAlias.trim()) {
+        item.displayAlias = displayAlias.trim();
+    } else {
+        // 清除别名
+        delete item.displayAlias;
+    }
+
+    saveSettingsDebounced();
+    logger.info('[QuickToggle] 已更新世界书条目别名:', worldName, uid, '→', displayAlias || '(无)');
+    return true;
 }

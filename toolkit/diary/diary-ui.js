@@ -1,13 +1,13 @@
 /**
  * 日记UI渲染器（重构版）
- * 
+ *
  * @description
  * 负责日记面板的核心UI渲染：
  * - 轮播图渲染和翻页
  * - 日记卡片生成
  * - 评论区渲染（递归嵌套）
  * - 评论交互（回复、删除）
- * 
+ *
  * 职责边界：
  * - ✅ 渲染UI、处理DOM
  * - ✅ 翻页、刷新逻辑
@@ -16,7 +16,7 @@
  * - ❌ 不处理面板切换（交给 diary-ui-panels.js）
  * - ❌ 不处理API配置（交给 diary-apiconfig.js）
  * - ❌ 不处理AI预览（交给 diary-preview.js）
- * 
+ *
  * @module DiaryUI
  */
 
@@ -53,13 +53,13 @@ import { DiaryAPIConfig } from './diary-apiconfig.js';
 
 /**
  * 日记UI管理器
- * 
+ *
  * @class DiaryUI
  */
 export class DiaryUI {
   /**
    * 创建UI管理器
-   * 
+   *
    * @param {import('./diary-data.js').DiaryDataManager} dataManager - 数据管理器
    */
   constructor(dataManager) {
@@ -78,7 +78,9 @@ export class DiaryUI {
       searchText: '',
       weekOffset: 0,
       monthOffset: 0,
-      selectedDate: ''
+      selectedDate: '',
+      dateRangeStart: '',
+      dateRangeEnd: ''
     };
 
     this.currentIndex = 0;
@@ -132,7 +134,7 @@ export class DiaryUI {
 
   /**
    * 初始化子模块
-   * 
+   *
    * @description
    * 创建并初始化所有UI子模块实例：
    * - DiaryUIEdit（就地编辑模块）
@@ -140,7 +142,7 @@ export class DiaryUI {
    * - DiaryUIPanels（面板管理模块）
    * - DiaryPreview（AI预览面板）
    * - DiaryAPIConfig（API配置管理）
-   * 
+   *
    * 各模块通过依赖注入获取所需的引用（dataManager、ui等）
    */
   initSubModules() {
@@ -365,6 +367,38 @@ export class DiaryUI {
       });
     }
 
+    // 日期范围选择器（持久化存储）
+    const dateRangeStart = this.panelElement.querySelector('#diaryDateRangeStart');
+    const dateRangeEnd = this.panelElement.querySelector('#diaryDateRangeEnd');
+    const dateRangeClearBtn = this.panelElement.querySelector('#diaryDateRangeClear');
+    if (dateRangeStart) {
+      dateRangeStart.addEventListener('change', (e) => {
+        this.filter.dateRangeStart = /** @type {HTMLInputElement} */ (e.target).value;
+        this.dataManager.updateSettings({ dateRangeStart: this.filter.dateRangeStart });
+        this.refreshDiaries();
+        logger.info('[DiaryUI] 日期范围开始:', this.filter.dateRangeStart);
+      });
+    }
+    if (dateRangeEnd) {
+      dateRangeEnd.addEventListener('change', (e) => {
+        this.filter.dateRangeEnd = /** @type {HTMLInputElement} */ (e.target).value;
+        this.dataManager.updateSettings({ dateRangeEnd: this.filter.dateRangeEnd });
+        this.refreshDiaries();
+        logger.info('[DiaryUI] 日期范围结束:', this.filter.dateRangeEnd);
+      });
+    }
+    if (dateRangeClearBtn) {
+      dateRangeClearBtn.addEventListener('click', () => {
+        if (dateRangeStart) /** @type {HTMLInputElement} */ (dateRangeStart).value = '';
+        if (dateRangeEnd) /** @type {HTMLInputElement} */ (dateRangeEnd).value = '';
+        this.filter.dateRangeStart = '';
+        this.filter.dateRangeEnd = '';
+        this.dataManager.updateSettings({ dateRangeStart: '', dateRangeEnd: '' });
+        this.refreshDiaries();
+        logger.info('[DiaryUI] 已清除日期范围筛选');
+      });
+    }
+
     // 搜索框
     const searchInput = this.panelElement.querySelector('#diarySearchInput');
     if (searchInput) {
@@ -457,12 +491,17 @@ export class DiaryUI {
       return;
     }
 
-    // 重置筛选器
+    // 从设置中恢复日期范围（持久化）
+    const settings = this.dataManager.getSettings();
+
+    // 重置筛选器（日期范围从设置恢复）
     this.filter.type = 'all';
     this.filter.searchText = '';
     this.filter.weekOffset = 0;
     this.filter.monthOffset = 0;
     this.filter.selectedDate = '';
+    this.filter.dateRangeStart = settings.dateRangeStart || '';
+    this.filter.dateRangeEnd = settings.dateRangeEnd || '';
 
     // 重置UI元素
     const filterSelect = this.panelElement.querySelector('#diaryFilterSelect');
@@ -471,6 +510,12 @@ export class DiaryUI {
     const searchToggleBtn = this.panelElement.querySelector('#diarySearchToggleBtn');
     const settingsPanel = this.panelElement.querySelector('#diarySettingsPanel');
     const settingsBtn = this.panelElement.querySelector('#diarySettingsBtn');
+
+    // 恢复日期范围输入框的值
+    const dateRangeStart = this.panelElement.querySelector('#diaryDateRangeStart');
+    const dateRangeEnd = this.panelElement.querySelector('#diaryDateRangeEnd');
+    if (dateRangeStart) /** @type {HTMLInputElement} */ (dateRangeStart).value = this.filter.dateRangeStart;
+    if (dateRangeEnd) /** @type {HTMLInputElement} */ (dateRangeEnd).value = this.filter.dateRangeEnd;
 
     if (filterSelect) /** @type {HTMLSelectElement} */ (filterSelect).value = 'all';
     if (searchInput) /** @type {HTMLInputElement} */ (searchInput).value = '';
@@ -720,7 +765,7 @@ export class DiaryUI {
       if (block.type === 'image' && block.imageUrl) {
         contentHTML = `
             <div class="diary-entry diary-entry-image">
-                <img src="${block.imageUrl}" alt="${block.imageDesc || '日记图片'}" class="diary-image" 
+                <img src="${block.imageUrl}" alt="${block.imageDesc || '日记图片'}" class="diary-image"
                      onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                 <div class="diary-image-fallback" style="display: none;">
                     📷 [图片加载失败：${block.imageDesc || '无描述'}]
@@ -1025,10 +1070,10 @@ export class DiaryUI {
 
   /**
    * 添加评论到当前日记
-   * 
+   *
    * @description
    * 弹出输入框让用户输入评论，保存到当前显示的日记
-   * 
+   *
    * @async
    */
   async addCommentToCurrentDiary() {
@@ -1246,7 +1291,7 @@ export class DiaryUI {
 
   /**
    * 显示选择发送面板
-   * 
+   *
    * @description
    * 显示当前筛选条件下的日记列表，让用户选择要生成评论的日记。
    * 选择后直接触发批量生成，只为这些日记生成评论（一次API调用）。
@@ -1271,8 +1316,8 @@ export class DiaryUI {
 
         return `
           <label class="checkbox_label" style="margin: 8px 0; display: flex; ${isPrivacy ? 'opacity: 0.5;' : ''}">
-            <input type="checkbox" 
-                   data-diary-id="${d.id}" 
+            <input type="checkbox"
+                   data-diary-id="${d.id}"
                    ${isPrivacy ? 'disabled title="隐私日记不可发送"' : ''}>
             <span>
               ${d.date} ${d.title} ${authorBadge} ${privacyMark}
@@ -1290,19 +1335,19 @@ export class DiaryUI {
             <h3 style="margin-top: 0; color: var(--SmartThemeQuoteColor);">
               <i class="fa-solid fa-list-check"></i> 选择要发送给AI的日记
             </h3>
-            
+
             <p style="color: var(--white50a); font-size: 0.9em; margin: 10px 0;">
               勾选的日记将在下次生成评论时作为历史日记上下文，隐私日记（🔒）无法勾选。
             </p>
-            
+
             <hr style="margin: 15px 0; border: none; border-top: 1px solid var(--SmartThemeBorderColor); opacity: 0.3;">
-            
+
             <div style="margin: 15px 0;">
               ${diariesHTML}
             </div>
-            
+
             <p style="color: var(--white50a); font-size: 0.9em; margin-top: 15px;">
-              <i class="fa-solid fa-info-circle"></i> 
+              <i class="fa-solid fa-info-circle"></i>
               提示：选择后将优先使用这些日记，替代"历史日记数量"设置
             </p>
           </div>
@@ -1402,7 +1447,7 @@ export class DiaryUI {
 
   /**
    * 更新AI回复预览内容（委托给子模块）
-   * 
+   *
    * @description
    * 此方法被 diary-api.js 调用，委托给 previewModule 处理
    * 保留是为了向后兼容（不需要修改 API 模块的调用代码）
@@ -1413,7 +1458,7 @@ export class DiaryUI {
 
   /**
    * 清空AI回复预览（委托给子模块）
-   * 
+   *
    * @description
    * 此方法被 completeCurrentDiary 调用，委托给 previewModule 处理
    * 保留是为了向后兼容
