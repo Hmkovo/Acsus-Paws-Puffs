@@ -448,6 +448,20 @@ body.beautify-fullwidth-hide-name #chat .mes .mes_block .ch_name {
     min-height: unset !important;
 }
 
+/* ==========================================
+   全宽模式 - 显示不可见消息提示（小幽灵图标）
+   当消息被设为不可见时（is_system="true"），在左上角显示小幽灵
+   ========================================== */
+
+body.beautify-fullwidth-show-ghost #chat .mes[is_system="true"] .mes_block .ch_name .mes_ghost {
+    display: flex !important;
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    font-size: 14px;
+    opacity: 0.7;
+}
+
 /* 最后一条消息：预留底部空间给翻页栏 */
 body.beautify-fullwidth-mode #chat .mes.last_mes {
     position: relative;

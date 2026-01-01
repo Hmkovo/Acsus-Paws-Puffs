@@ -73,6 +73,9 @@ let fullwidthHideAvatarEnabled = false;
 /** @type {boolean} 全宽模式隐藏名字栏是否启用 */
 let fullwidthHideNameEnabled = false;
 
+/** @type {boolean} 全宽模式显示不可见消息提示是否启用 */
+let fullwidthShowGhostEnabled = false;
+
 /** @type {boolean} 隐藏滚动条是否启用 */
 let hideScrollbarEnabled = false;
 
@@ -249,6 +252,7 @@ function loadSettings() {
         fullwidthWidth: 0,  // 全宽模式宽度（0=最宽，100=最窄）
         fullwidthHideAvatarEnabled: false,  // 全宽模式隐藏头像
         fullwidthHideNameEnabled: false,  // 全宽模式隐藏名字栏
+        fullwidthShowGhostEnabled: false,  // 全宽模式显示不可见消息提示
         hideScrollbarEnabled: false,
         // 便捷小功能
         sliderBrightEnabled: false,
@@ -322,6 +326,7 @@ function loadSettings() {
     fullwidthWidth = extension_settings[EXT_ID].beautify.fullwidthWidth;
     fullwidthHideAvatarEnabled = extension_settings[EXT_ID].beautify.fullwidthHideAvatarEnabled;
     fullwidthHideNameEnabled = extension_settings[EXT_ID].beautify.fullwidthHideNameEnabled;
+    fullwidthShowGhostEnabled = extension_settings[EXT_ID].beautify.fullwidthShowGhostEnabled;
     hideScrollbarEnabled = extension_settings[EXT_ID].beautify.hideScrollbarEnabled;
     // 便捷小功能
     sliderBrightEnabled = extension_settings[EXT_ID].beautify.sliderBrightEnabled;
@@ -2191,12 +2196,15 @@ function enableFullwidthMode() {
     if (fullwidthHideNameEnabled) {
         document.body.classList.add('beautify-fullwidth-hide-name');
     }
+    if (fullwidthShowGhostEnabled) {
+        document.body.classList.add('beautify-fullwidth-show-ghost');
+    }
     logger.info('[Beautify] 全宽文字模式已启用，宽度:', fullwidthWidth, '%');
 }
 
 /**
  * 禁用全宽文字模式
- * @description 移除全宽模式类名，同时清理子选项（隐藏头像、隐藏名字栏）的类名
+ * @description 移除全宽模式类名，同时清理子选项（隐藏头像、隐藏名字栏、显示小幽灵）的类名
  */
 function disableFullwidthMode() {
     fullwidthEnabled = false;
@@ -2204,19 +2212,23 @@ function disableFullwidthMode() {
     // 同时移除子选项的类名
     document.body.classList.remove('beautify-fullwidth-hide-avatar');
     document.body.classList.remove('beautify-fullwidth-hide-name');
+    document.body.classList.remove('beautify-fullwidth-show-ghost');
     logger.info('[Beautify] 全宽文字模式已禁用');
 }
 
 /**
- * 绑定全宽模式子选项（隐藏头像、隐藏名字栏）
+ * 绑定全宽模式子选项（隐藏头像、隐藏名字栏、显示不可见消息提示）
  *
  * @description
- * 为两个子选项勾选框绑定事件：
+ * 为子选项勾选框绑定事件：
  * 1. 初始化时根据保存的设置恢复勾选状态
  * 2. 如果全宽模式已启用且子选项也启用，立即应用对应CSS类名
  * 3. 勾选变更时，只有在全宽模式启用的情况下才会应用/移除CSS类名
+ * 4. "显示不可见消息提示"只有在勾选了"隐藏名字栏"时才显示
  */
 function bindFullwidthSubOptions() {
+    const showGhostSetting = document.getElementById('beautify-fullwidth-show-ghost-setting');
+
     // 隐藏头像子选项
     const hideAvatarCheckbox = document.getElementById('beautify-fullwidth-hide-avatar-enabled');
     if (hideAvatarCheckbox) {
@@ -2250,6 +2262,11 @@ function bindFullwidthSubOptions() {
     if (hideNameCheckbox) {
         /** @type {HTMLInputElement} */ (hideNameCheckbox).checked = fullwidthHideNameEnabled;
 
+        // 根据隐藏名字栏状态显示/隐藏"显示不可见消息提示"选项
+        if (showGhostSetting) {
+            showGhostSetting.style.display = fullwidthHideNameEnabled ? 'block' : 'none';
+        }
+
         // 如果全宽模式和子选项都启用，立即应用
         if (fullwidthEnabled && fullwidthHideNameEnabled) {
             document.body.classList.add('beautify-fullwidth-hide-name');
@@ -2262,12 +2279,47 @@ function bindFullwidthSubOptions() {
             saveSettingsDebounced();
             logger.info('[Beautify] 全宽模式隐藏名字栏状态变更:', newState);
 
+            // 显示/隐藏"显示不可见消息提示"选项
+            if (showGhostSetting) {
+                showGhostSetting.style.display = newState ? 'block' : 'none';
+            }
+
             // 只有全宽模式启用时才应用
             if (fullwidthEnabled) {
                 if (newState) {
                     document.body.classList.add('beautify-fullwidth-hide-name');
                 } else {
                     document.body.classList.remove('beautify-fullwidth-hide-name');
+                    // 取消隐藏名字栏时，也移除小幽灵显示（因为名字栏本身就会显示小幽灵）
+                    document.body.classList.remove('beautify-fullwidth-show-ghost');
+                }
+            }
+        });
+    }
+
+    // 显示不可见消息提示子选项（隐藏名字栏的子选项）
+    const showGhostCheckbox = document.getElementById('beautify-fullwidth-show-ghost-enabled');
+    if (showGhostCheckbox) {
+        /** @type {HTMLInputElement} */ (showGhostCheckbox).checked = fullwidthShowGhostEnabled;
+
+        // 如果全宽模式、隐藏名字栏、显示小幽灵都启用，立即应用
+        if (fullwidthEnabled && fullwidthHideNameEnabled && fullwidthShowGhostEnabled) {
+            document.body.classList.add('beautify-fullwidth-show-ghost');
+        }
+
+        showGhostCheckbox.addEventListener('change', function () {
+            const newState = /** @type {HTMLInputElement} */ (this).checked;
+            fullwidthShowGhostEnabled = newState;
+            extension_settings[EXT_ID].beautify.fullwidthShowGhostEnabled = newState;
+            saveSettingsDebounced();
+            logger.info('[Beautify] 全宽模式显示不可见消息提示状态变更:', newState);
+
+            // 只有全宽模式和隐藏名字栏都启用时才应用
+            if (fullwidthEnabled && fullwidthHideNameEnabled) {
+                if (newState) {
+                    document.body.classList.add('beautify-fullwidth-show-ghost');
+                } else {
+                    document.body.classList.remove('beautify-fullwidth-show-ghost');
                 }
             }
         });
@@ -3393,8 +3445,8 @@ export function initWaitingAnimationListeners() {
     // 监听生成结束事件（AI输出完成后触发）
     eventSource.on(event_types.GENERATION_ENDED, handleGenerationEnded);
 
-    // 监听终止按钮点击
-    $(document).on('click', '.mes_stop', handleGenerationStopped);
+    // 监听生成终止事件（用户点击终止按钮后触发）
+    eventSource.on(event_types.GENERATION_STOPPED, handleGenerationStopped);
 
     logger.info('[Beautify] 等待动画监听器已初始化');
 }
@@ -3402,8 +3454,17 @@ export function initWaitingAnimationListeners() {
 /**
  * 处理生成开始事件
  * @description 用户点击发送后，先播放开始动画（如有），再切换到等待动画
+ * @param {string} type - 生成类型（normal/regenerate/swipe/continue/impersonate/quiet）
+ * @param {Object} params - 生成参数
+ * @param {boolean} dryRun - 是否为干运行（只组装提示词，不实际生成）
  */
-function handleGenerationStarted() {
+function handleGenerationStarted(type, params, dryRun) {
+    // 忽略静默生成（后台生成，不显示终止键）和干运行
+    if (type === 'quiet' || dryRun) {
+        logger.debug('[Beautify] 忽略静默生成或干运行，type:', type, 'dryRun:', dryRun);
+        return;
+    }
+
     // 如果已经在等待状态，忽略
     if (waitingAnimState.isWaiting) return;
 

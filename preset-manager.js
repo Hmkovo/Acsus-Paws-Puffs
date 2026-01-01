@@ -197,29 +197,36 @@ export class PresetManagerModule {
 
   /**
    * 监听预设页面出现
+   *
    * @description
-   * 使用两阶段监听策略优化性能：
-   * 1. 初始阶段：监听 #openai_settings 容器，等待预设列表出现
-   * 2. 增强完成后：切换到只监听 .completion_prompt_manager，检测按钮被删除
+   * 监听 #openai_settings 容器，检测预设列表的出现和重建。
+   *
+   * ⚠️ 重要警告（2025-01-01 修复）：
+   * 禁止使用 switchToFooterObserver() 或类似的"缩小监听范围"优化！
+   *
+   * 原因：SillyTavern 的 promptManager.render() 会执行 innerHTML = ''，
+   * 这会删除整个预设管理器容器的内容（包括我们添加的世界书折叠栏和快照按钮），
+   * 然后重新创建新的 DOM 结构。如果 Observer 只监听被删除的元素，
+   * 它会随着元素被删除而失效，无法检测到新元素的创建。
+   *
+   * 必须持续监听 #openai_settings（或更上层的容器），
+   * 才能在 promptManager.render() 重建 DOM 后重新添加我们的增强功能。
    */
   observePresetPage() {
-
     this.presetObserver = new MutationObserver((mutations) => {
       const promptList = document.querySelector('#completion_prompt_manager_list, #prompt_manager_list');
       if (!promptList) return;
 
-      // 检查是否需要增强页面（首次出现）
+      // 检查是否需要增强页面
+      // 每次 promptManager.render() 都会删除 data-paws-enhanced 标记，所以需要重新增强
       if (!promptList.hasAttribute('data-paws-enhanced')) {
-        logger.debug(' 检测到预设列表，开始增强');
+        logger.debug(' 检测到预设列表需要增强');
         this.enhancePresetPage();
-
-        // 预设列表出现后，切换到只监听 footer（更精准，减少性能开销）
-        this.switchToFooterObserver();
-        return;
       }
     });
 
-    // 初始监听：只监听 openai_settings 容器，而不是整个 body
+    // 监听 openai_settings 容器
+    // ⚠️ 不要切换到更小的监听范围！见上方警告
     const settingsContainer = document.querySelector('#openai_settings') || document.body;
     this.presetObserver.observe(settingsContainer, {
       childList: true,
@@ -227,36 +234,6 @@ export class PresetManagerModule {
     });
 
     this.checkAndEnhancePresetPage();
-  }
-
-  /**
-   * 切换到只监听 footer 的 Observer
-   * @description 预设页面增强完成后，只需要监听 footer 来检测按钮被删除
-   */
-  switchToFooterObserver() {
-    // 断开原来的全局监听
-    if (this.presetObserver) {
-      this.presetObserver.disconnect();
-    }
-
-    // 创建新的 Observer，只监听 footer
-    this.presetObserver = new MutationObserver((mutations) => {
-      const footer = document.querySelector('.completion_prompt_manager_footer');
-      if (footer && !footer.querySelector('#paws-save-snapshot-btn')) {
-        logger.debug('[PresetManager] 检测到快照按钮被删除，重新添加');
-        this.addSnapshotSaveButton();
-      }
-    });
-
-    // 监听 prompt manager 容器（比 body 小很多）
-    const promptManager = document.querySelector('.completion_prompt_manager') ||
-                          document.querySelector('#completion_prompt_manager_list')?.parentElement;
-    if (promptManager) {
-      this.presetObserver.observe(promptManager, {
-        childList: true,
-        subtree: true
-      });
-    }
   }
 
   /**
