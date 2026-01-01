@@ -262,24 +262,73 @@ export class PresetManagerModule {
 
   /**
    * 添加快照保存按钮到预设页面底部
-   * @description 按钮可能被 promptManager.render() 删除，所以每次增强时都要检查并重新添加
+   *
+   * @description
+   * 按钮可能被 promptManager.render() 删除，所以每次增强时都要检查并重新添加。
+   * 采用"先删除旧的，再创建新的"策略，避免 timing 问题导致按钮丢失。
+   *
+   * ⚠️ 重要：SillyTavern 的异步渲染顺序问题
+   * 
+   * SillyTavern 的 promptManager.render() 执行顺序：
+   * 1. innerHTML = '' 清空容器
+   * 2. 创建预设列表（#completion_prompt_manager_list）  ← MutationObserver 在这里触发
+   * 3. 异步创建底部工具栏（.completion_prompt_manager_footer）
+   * 
+   * 问题：MutationObserver 检测到 list 出现就触发 enhancePresetPage()，
+   * 但此时 footer 可能还没创建，所以需要等待 footer 出现。
+   * 
+   * 世界书折叠栏为什么不需要等待？
+   * 因为世界书折叠栏插入到 list 之前（list.parentElement.insertBefore），
+   * 而 list 在 MutationObserver 触发时已经存在，可以立即插入，无延迟。
+   * 
+   * ⚠️ 禁止使用 setTimeout 轮询！
+   * 使用 setTimeout(() => this.addSnapshotSaveButton(), 100) 会导致：
+   * - 固定延迟 100ms，用户能感知到按钮"闪烁"（先消失，100ms 后再出现）
+   * - 世界书折叠栏是立即重建，快照按钮延迟重建，体验不一致
+   * 
+   * 正确做法：使用 MutationObserver 监听 footer 出现，footer 一出现就立即添加按钮。
    */
   addSnapshotSaveButton() {
     const footer = document.querySelector('.completion_prompt_manager_footer');
+
     if (!footer) {
-      logger.debug('[PresetManager] 未找到预设页面底部栏');
+      // footer 还没创建，用 MutationObserver 监听它的出现
+      logger.debug('[PresetManager] footer 未就绪，监听其出现');
+
+      const observer = new MutationObserver(() => {
+        const footer = document.querySelector('.completion_prompt_manager_footer');
+        if (footer) {
+          observer.disconnect();
+          logger.debug('[PresetManager] 检测到 footer 出现，立即添加按钮');
+          this.addSnapshotSaveButton();
+        }
+      });
+
+      // 监听预设管理器容器
+      const container = document.querySelector('.completion_prompt_manager') ||
+        document.querySelector('#openai_settings') ||
+        document.body;
+      observer.observe(container, { childList: true, subtree: true });
+
+      // 超时保护：1秒后仍未出现则停止监听
+      setTimeout(() => {
+        observer.disconnect();
+        if (!document.querySelector('.completion_prompt_manager_footer')) {
+          logger.warn('[PresetManager] footer 超时未出现，停止监听');
+        }
+      }, 1000);
+
       return;
     }
 
-    // 检查是否已添加（避免重复添加）
-    if (footer.querySelector('#paws-save-snapshot-btn')) {
-      // 按钮已存在，只需更新显示状态
-      const existingBtn = footer.querySelector('#paws-save-snapshot-btn');
-      existingBtn.style.display = snapshotData.isEnabled() ? '' : 'none';
-      return;
+    // ✅ 先删除旧按钮（如果存在）
+    const existingBtn = footer.querySelector('#paws-save-snapshot-btn');
+    if (existingBtn) {
+      existingBtn.remove();
+      logger.debug('[PresetManager] 已删除旧的快照按钮');
     }
 
-    // 创建保存按钮
+    // ✅ 创建新按钮
     const saveBtn = document.createElement('a');
     saveBtn.id = 'paws-save-snapshot-btn';
     saveBtn.className = 'menu_button fa-camera fa-solid fa-fw interactable';
