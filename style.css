@@ -28,9 +28,19 @@
 /* ========================================
    导入美化系统CSS
    ======================================== */
+
+/* ========================================
+   导入动态变量CSS
+   ======================================== */
+@import url('variables/variables-v2.css');
 @import url('beautify/beautify.css');
 @import url('beautify/beautify-popup.css');
-@import url('beautify/beautify.css');
+@import url('beautify/beautify-theme-manager.css');
+
+/* ========================================
+   导入聊天记录管理CSS
+   ======================================== */
+@import url('chat-archive/chat-archive.css');
 
 /* ========================================
    预设管理器优化（全局）
@@ -1328,6 +1338,44 @@ select.compact {
   margin-right: 8px;
 }
 
+/* ============================================
+   变量设置页面样式
+   ============================================ */
+
+/* 变量设置容器 - 和 preset-accordion-body 保持一致 */
+.variable-settings-container {
+  padding: 20px;
+  font-size: 0.9em;
+  line-height: 1.6;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 滚动条美化 */
+.variable-settings-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.variable-settings-container::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--SmartThemeBorderColor) 30%, transparent 70%);
+  border-radius: 3px;
+}
+
+.variable-settings-container::-webkit-scrollbar-thumb {
+  background: var(--SmartThemeQuoteColor);
+  border-radius: 3px;
+}
+
+.variable-settings-container p {
+  margin: 0 0 10px 0;
+  color: var(--SmartThemeBodyColor);
+}
+
+.variable-settings-container p:last-child {
+  margin-bottom: 0;
+}
+
 .preset-status-bar {
   margin-top: 15px;
   padding: 8px 12px;
@@ -1495,12 +1543,14 @@ select.compact {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 8px;       /* 条目内边距（和快速开关一致） */
+  padding: 4px 8px;
+  /* 条目内边距（和快速开关一致） */
   margin-bottom: 3px;
   background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 80%, transparent 20%);
   border-radius: 5px;
   transition: background 0.2s ease;
-  font-size: 0.9em;       /* 条目整体字体大小（和快速开关一致） */
+  font-size: 0.9em;
+  /* 条目整体字体大小（和快速开关一致） */
 }
 
 .snapshot-item:hover {
@@ -1519,7 +1569,8 @@ select.compact {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 0.95em;      /* 名称字体大小（和快速开关一致） */
+  font-size: 0.95em;
+  /* 名称字体大小（和快速开关一致） */
 }
 
 /* 快照条目 - 右侧操作区 */
@@ -1531,8 +1582,10 @@ select.compact {
 
 /* 快照条目 - 操作按钮 */
 .snapshot-btn {
-  width: 22px;            /* 按钮宽度 */
-  height: 22px;           /* 按钮高度 */
+  width: 22px;
+  /* 按钮宽度 */
+  height: 22px;
+  /* 按钮高度 */
   border: none;
   border-radius: 4px;
   background: transparent;
@@ -1542,7 +1595,8 @@ select.compact {
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  font-size: 11px;        /* 按钮图标大小 */
+  font-size: 11px;
+  /* 按钮图标大小 */
 }
 
 .snapshot-btn:hover {
@@ -1586,6 +1640,7 @@ select.compact {
     opacity: 0;
     transform: scale(calc(0.95 * var(--snapshot-menu-scale)));
   }
+
   to {
     opacity: 1;
     transform: scale(var(--snapshot-menu-scale));
@@ -2195,7 +2250,8 @@ select.compact {
 /* 快速开关 - 空状态时的添加按钮 */
 .quick-toggle-empty .menu_button {
   width: 100%;
-  font-size: 12px;  /* 按钮文字大小 */
+  font-size: 12px;
+  /* 按钮文字大小 */
 }
 
 /* ===== 快速开关条目 ===== */
@@ -2203,12 +2259,14 @@ select.compact {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 8px;       /* 条目内边距（和快照条目一致） */
+  padding: 4px 8px;
+  /* 条目内边距（和快照条目一致） */
   margin-bottom: 3px;
   background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 80%, transparent 20%);
   border-radius: 5px;
   transition: background 0.2s ease;
-  font-size: 0.9em;       /* 条目整体字体大小（和快照条目一致） */
+  font-size: 0.9em;
+  /* 条目整体字体大小（和快照条目一致） */
 }
 
 .quick-toggle-item:hover {
@@ -2223,7 +2281,8 @@ select.compact {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 0.95em;      /* 名称字体大小 */
+  font-size: 0.95em;
+  /* 名称字体大小 */
 }
 
 /* 快速开关条目 - 右侧操作区 */
@@ -2236,7 +2295,8 @@ select.compact {
 
 /* 快速开关条目 - 开关图标 */
 .quick-toggle-switch {
-  font-size: 15px;        /* 开关图标大小 */
+  font-size: 15px;
+  /* 开关图标大小 */
   cursor: pointer;
   transition: color 0.2s ease;
   padding: 2px 3px;
@@ -2258,8 +2318,10 @@ select.compact {
 /* 快速开关条目 - 删除按钮 */
 /* 快速开关条目 - 删除按钮（续） */
 .quick-toggle-remove-btn {
-  width: 20px;            /* 删除按钮宽度 */
-  height: 20px;           /* 删除按钮高度 */
+  width: 20px;
+  /* 删除按钮宽度 */
+  height: 20px;
+  /* 删除按钮高度 */
   border: none;
   border-radius: 4px;
   background: transparent;
@@ -2270,7 +2332,8 @@ select.compact {
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  font-size: 10px;        /* 删除图标大小 */
+  font-size: 10px;
+  /* 删除图标大小 */
 }
 
 .quick-toggle-remove-btn:hover {
@@ -2283,8 +2346,10 @@ select.compact {
 .quick-toggle-add-inline {
   width: 100%;
   margin-top: 4px;
-  padding: 4px;           /* 按钮内边距 */
-  font-size: 11px;        /* 按钮文字大小 */
+  padding: 4px;
+  /* 按钮内边距 */
+  font-size: 11px;
+  /* 按钮文字大小 */
   opacity: 0.7;
 }
 
@@ -2482,6 +2547,204 @@ select.compact {
 .beautify-floating-btn.long-pressing {
   transform: scale(1.05);
   transition: transform 0.15s ease;
+}
+
+/* ========== 圆柱滚轮样式菜单 ========== */
+
+/* 圆柱滚轮菜单容器 - 整体布局 */
+.snapshot-floating-menu.drum-picker-menu {
+  min-width: auto;
+  max-width: none;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  overflow: visible;
+}
+
+/* 圆柱滚轮容器 - 包含圆弧和列 */
+.drum-picker-container {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  position: relative;
+}
+
+/* 圆弧背景（装饰用） */
+.drum-picker-arc {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: linear-gradient(90deg,
+      color-mix(in srgb, var(--SmartThemeQuoteColor) 15%, transparent 85%) 0%,
+      transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* 列容器 - 横向排列 */
+.drum-picker-columns {
+  display: flex;
+  gap: 8px;
+  margin-left: 20px;
+}
+
+/* 单列 */
+.drum-picker-column {
+  display: flex;
+  flex-direction: column;
+  min-width: 110px;
+  max-width: 150px;
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 92%, black 8%);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* 列标题 */
+.drum-picker-header {
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--SmartThemeQuoteColor);
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 12%, transparent 88%);
+  border-bottom: 1px solid color-mix(in srgb, var(--SmartThemeBorderColor) 30%, transparent 70%);
+  white-space: nowrap;
+}
+
+/* 滚动区域 - 圆柱透视效果 */
+.drum-picker-scroll {
+  height: 200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  perspective: 300px;
+  scroll-behavior: smooth;
+  position: relative;
+  /* 隐藏滚动条 */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.drum-picker-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* 上下渐变遮罩 */
+.drum-picker-scroll::before,
+.drum-picker-scroll::after {
+  content: '';
+  position: sticky;
+  left: 0;
+  right: 0;
+  height: 40px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.drum-picker-scroll::before {
+  top: 0;
+  background: linear-gradient(to bottom,
+      color-mix(in srgb, var(--SmartThemeBlurTintColor) 92%, black 8%) 0%,
+      transparent 100%);
+}
+
+.drum-picker-scroll::after {
+  bottom: 0;
+  background: linear-gradient(to top,
+      color-mix(in srgb, var(--SmartThemeBlurTintColor) 92%, black 8%) 0%,
+      transparent 100%);
+}
+
+/* 条目容器 */
+.drum-picker-items {
+  padding: 60px 6px;
+  transform-style: preserve-3d;
+}
+
+/* 单个条目 - 圆柱上的卡片 */
+.drum-picker-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  margin: 4px 0;
+  background: color-mix(in srgb, var(--SmartThemeBodyColor) 5%, var(--SmartThemeBlurTintColor) 95%);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  transform-origin: center center -150px;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.drum-picker-item:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 18%, var(--SmartThemeBlurTintColor) 82%);
+}
+
+/* 中心项高亮 */
+.drum-picker-item.drum-item-center {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 25%, var(--SmartThemeBlurTintColor) 75%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* 条目名称 */
+.drum-item-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--SmartThemeBodyColor);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 开关图标 */
+.drum-item-switch {
+  font-size: 16px;
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+}
+
+.drum-item-switch.on {
+  color: var(--SmartThemeQuoteColor);
+}
+
+.drum-item-switch.off {
+  color: var(--SmartThemeBodyColor);
+  opacity: 0.4;
+}
+
+/* 快照播放图标 */
+.drum-item-icon {
+  font-size: 11px;
+  color: var(--SmartThemeQuoteColor);
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.drum-picker-item:hover .drum-item-icon {
+  opacity: 1;
+}
+
+/* 圆柱滚轮样式开关行 */
+.drum-picker-row {
+  flex: 0 0 auto;
+  min-width: auto;
+}
+
+.drum-picker-row .checkbox_label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85em;
+  cursor: pointer;
 }
 
 /* ==================== 预设管理样式结束 ==================== */
@@ -4531,9 +4794,11 @@ body.beautify-hide-qr #qr--bar {
   height: 0.1px;
   transition: all 0.5s ease;
 }
+
 body.beautify-hide-qr #send_form:hover #qr--bar:not(:empty) {
   height: 30px;
 }
+
 body.beautify-hide-qr #qr--bar:empty {
   display: none !important;
 }
@@ -5127,7 +5392,8 @@ body.beautify-hide-qr #qr--bar:empty {
 .floating-btn-saved-item {
   position: relative;
   width: 100%;
-  padding-bottom: 100%;  /* 1:1 正方形比例 */
+  padding-bottom: 100%;
+  /* 1:1 正方形比例 */
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
@@ -5150,7 +5416,8 @@ body.beautify-hide-qr #qr--bar:empty {
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;  /* contain 保持图片完整不裁剪 */
+  object-fit: contain;
+  /* contain 保持图片完整不裁剪 */
 }
 
 .floating-btn-saved-name {
@@ -6490,7 +6757,7 @@ body.beautify-hide-qr #qr--bar:empty {
   font-size: 0.9em;
 }
 
-.beautify-collapsible-title > i:first-child {
+.beautify-collapsible-title>i:first-child {
   color: var(--SmartThemeQuoteColor);
   width: 16px;
   text-align: center;
@@ -6626,4 +6893,577 @@ body.beautify-hide-qr #qr--bar:empty {
 .beautify-radio-label input[type="radio"] {
   margin: 0;
   cursor: pointer;
+}
+
+
+/* ========================================
+   预设缝合器样式
+   ======================================== */
+
+/* 收藏库弹窗 */
+.stitch-library-popup {
+  width: 100%;
+  max-width: 600px;
+}
+
+.stitch-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.stitch-header h3 {
+  margin: 0;
+  font-size: 1.1em;
+}
+
+.stitch-item-count {
+  opacity: 0.7;
+  font-size: 0.9em;
+}
+
+/* 工具栏：搜索图标 + 搜索框 + 添加按钮（同一行） */
+.stitch-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.stitch-search-icon {
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.stitch-search-input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 批量操作栏 */
+.stitch-batch-bar {
+  display: flex;
+  flex-direction: row !important;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 15%, transparent 85%);
+  border-radius: 5px;
+}
+
+.stitch-batch-hint {
+  font-size: 0.9em;
+  margin-right: auto;
+  white-space: nowrap;
+}
+
+.stitch-batch-cancel-btn,
+.stitch-batch-confirm-btn {
+  padding: 4px 10px;
+  font-size: 0.85em;
+  white-space: nowrap !important;
+  width: auto !important;
+}
+
+.stitch-batch-confirm-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 批量模式切换按钮 */
+.stitch-batch-toggle-btn {
+  flex-shrink: 0;
+  white-space: nowrap !important;
+}
+
+.stitch-batch-toggle-btn.active {
+  background: var(--SmartThemeQuoteColor);
+}
+
+/* 添加按钮下拉菜单 */
+.stitch-add-dropdown {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.stitch-add-btn {
+  white-space: nowrap;
+}
+
+.stitch-add-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--SmartThemeBlurTintColor);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 5px;
+  z-index: 100;
+  min-width: 160px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+
+.stitch-add-option {
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stitch-add-option:hover {
+  background: var(--SmartThemeQuoteColor);
+  color: var(--SmartThemeBodyColor);
+}
+
+/* 标签筛选栏 */
+.stitch-tag-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 8px;
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%);
+  border-radius: 5px;
+}
+
+.stitch-tag-item {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  cursor: pointer;
+  background: var(--SmartThemeBlurTintColor);
+  transition: all 0.2s;
+}
+
+.stitch-tag-item:hover {
+  background: var(--SmartThemeQuoteColor);
+}
+
+.stitch-tag-item.active {
+  background: var(--SmartThemeQuoteColor);
+  color: var(--SmartThemeBodyColor);
+}
+
+.stitch-tag-add {
+  padding: 4px 8px;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.stitch-tag-add:hover {
+  opacity: 1;
+}
+
+/* 条目列表 */
+.stitch-entry-list {
+  width: 100%;
+  max-height: 350px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+.stitch-empty-state {
+  text-align: center;
+  padding: 2px 10px;
+  opacity: 0.7;
+}
+
+.stitch-empty-state i {
+  font-size: 32px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+
+/* 单个条目 - 简化版 */
+.stitch-entry-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 5px;
+  margin-bottom: 2px;
+  background: var(--SmartThemeBlurTintColor);
+  border-radius: 5px;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+  /* 关键：允许被压缩到小于内容宽度 */
+  min-width: 0;
+  overflow: hidden;
+}
+
+.stitch-entry-item:hover {
+  border-color: var(--SmartThemeBorderColor);
+}
+
+.stitch-entry-item.selected {
+  border-color: var(--SmartThemeQuoteColor);
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%);
+}
+
+/* 批量模式下的勾选框 - 在最左边 */
+.stitch-entry-checkbox {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.stitch-entry-checkbox input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  margin: 0;
+}
+
+/* 条目信息区 - 靠左 */
+.stitch-entry-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stitch-entry-source {
+  opacity: 0.6;
+  font-size: 0.9em;
+  flex-shrink: 0;
+}
+
+.stitch-entry-name {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stitch-entry-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-left: 8px;
+  max-width: 200px;
+  overflow: hidden;
+}
+
+.stitch-entry-tag {
+  font-size: 0.75em;
+  padding: 1px 6px;
+  background: var(--SmartThemeQuoteColor);
+  border-radius: 8px;
+  opacity: 0.8;
+}
+
+/* 条目操作区 - 靠右横排 */
+.stitch-entry-actions {
+  display: flex;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* 操作按钮 - 无边框无背景 */
+.stitch-action-btn {
+  background: none !important;
+  border: none !important;
+  padding: 6px 8px;
+  cursor: pointer;
+  color: var(--SmartThemeBodyColor);
+  opacity: 0.5;
+  transition: all 0.2s;
+  font-size: 0.9em;
+  white-space: nowrap;
+  width: auto !important;
+}
+
+.stitch-action-btn:hover {
+  opacity: 1;
+}
+
+.stitch-delete-btn:hover {
+  color: #e74c3c;
+}
+
+.stitch-edit-btn:hover {
+  color: var(--SmartThemeQuoteColor);
+}
+
+.stitch-insert-btn:hover {
+  color: var(--SmartThemeQuoteColor);
+}
+
+/* 插入位置选择弹窗 */
+.stitch-insert-popup {
+  min-width: 300px;
+}
+
+/* 选择器弹窗 */
+.stitch-picker-popup,
+.stitch-worldbook-popup,
+.stitch-create-form,
+.stitch-edit-form,
+.stitch-batch-popup {
+  min-width: 350px;
+}
+
+.stitch-picker-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 12px 0;
+}
+
+.stitch-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.stitch-picker-item:hover {
+  background: var(--SmartThemeBlurTintColor);
+}
+
+.stitch-picker-footer,
+.stitch-form-footer {
+  margin-top: 12px;
+  text-align: left;
+}
+
+/* 表单和选择器按钮 - 防止换行 */
+.stitch-picker-footer .menu_button,
+.stitch-form-footer .menu_button,
+.stitch-picker-confirm,
+.stitch-edit-save,
+.stitch-create-confirm,
+.stitch-insert-confirm,
+.stitch-batch-confirm {
+  white-space: nowrap !important;
+  width: auto !important;
+  display: inline-flex !important;
+  flex-direction: row !important;
+}
+
+/* 表单样式 */
+.stitch-form-row {
+  margin-bottom: 12px;
+  text-align: left;
+}
+
+.stitch-form-row label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 500;
+  text-align: left;
+}
+
+/* 名称和角色同一行 */
+.stitch-form-row-inline {
+  display: flex;
+  flex-direction: row !important;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.stitch-form-field {
+  flex: 1;
+  text-align: left;
+}
+
+.stitch-form-field label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.stitch-form-field-small {
+  flex: 0 0 120px;
+}
+
+/* 标签选择器 - 横排 */
+.stitch-tag-selector {
+  display: flex;
+  flex-direction: row !important;
+  flex-wrap: wrap;
+  gap: 8px;
+  text-align: left;
+}
+
+.stitch-tag-checkbox {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.stitch-tag-checkbox input {
+  margin: 0;
+}
+
+.stitch-tag-checkbox span {
+  white-space: nowrap;
+}
+
+/* 世界书选择器 */
+.stitch-worldbook-select {
+  margin-bottom: 12px;
+}
+
+.stitch-worldbook-entries {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+
+/* ========================================
+   预设缝合器样式
+   ======================================== */
+
+/* 标签栏 */
+.stitch-tag-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 0;
+  align-items: center;
+}
+
+/* 标签项 */
+.stitch-tag-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 15%, var(--SmartThemeBlurTintColor) 85%);
+  border-radius: 12px;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.stitch-tag-item:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 30%, var(--SmartThemeBlurTintColor) 70%);
+}
+
+.stitch-tag-item.active {
+  background: var(--SmartThemeQuoteColor);
+  color: var(--SmartThemeBlurTintColor);
+}
+
+/* 标签删除按钮（×） */
+.stitch-tag-delete {
+  margin-left: 6px;
+  font-size: 0.75em;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  padding: 2px;
+  border-radius: 50%;
+}
+
+.stitch-tag-item:hover .stitch-tag-delete {
+  opacity: 0.6;
+}
+
+.stitch-tag-delete:hover {
+  opacity: 1 !important;
+  color: #ff6b6b;
+}
+
+/* 添加标签按钮 */
+.stitch-tag-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%);
+  border: 1px dashed var(--SmartThemeQuoteColor);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.8em;
+  color: var(--SmartThemeQuoteColor);
+}
+
+.stitch-tag-add:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 25%, transparent 75%);
+  transform: scale(1.1);
+}
+
+
+/* 预设缝合器表单样式 */
+.stitch-form-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--SmartThemeBorderColor);
+}
+
+.stitch-form-footer .menu_button {
+  white-space: nowrap !important;
+}
+
+.stitch-picker-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--SmartThemeBorderColor);
+}
+
+.stitch-picker-footer .menu_button {
+  white-space: nowrap !important;
+}
+
+
+/* 批量操作栏 */
+.stitch-batch-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, var(--SmartThemeBlurTintColor) 90%);
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.stitch-batch-bar .menu_button {
+  white-space: nowrap !important;
+  flex-direction: row !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  font-size: 0.85em !important;
+  padding: 6px 12px !important;
+  height: auto !important;
+  width: auto !important;
+}
+
+.stitch-batch-bar .menu_button i {
+  margin-right: 4px;
+  font-size: 0.9em;
+}
+
+.stitch-batch-hint {
+  font-size: 0.85em;
+  margin-right: auto;
+}
+
+
+/* 批量操作提示文字 */
+.stitch-batch-tip {
+  font-size: 0.75em;
+  opacity: 0.6;
+  text-align: center;
+  margin: 0 0 8px 0;
 }

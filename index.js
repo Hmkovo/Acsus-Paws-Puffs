@@ -42,6 +42,13 @@ import { VisualEditor } from "./visual-editor/visual-editor.js";
 import { SimulatedLifeModule } from "./simulated-life/simulated-life.js";
 import { initDiarySystem } from "./toolkit/diary/diary.js";
 import { initPhone, openPhoneUI, closePhoneUI, enablePhone, disablePhone } from "./toolkit/phone/index.js";
+// 聊天记录模块暂时禁用，开发中
+// import {
+//   initChatArchive,
+//   getChatArchiveSystem,
+//   enableChatArchive,
+//   disableChatArchive
+// } from "./chat-archive/index.js";
 import {
   initBeautifySystem,
   bindBeautifyToggle,
@@ -50,6 +57,8 @@ import {
   saveFloatingBtnSettings
 } from "./beautify/beautify.js";
 import { openFloatingBtnImagePopup } from "./beautify/beautify-popup.js";
+// 动态变量模块
+import { initVariables, renderVariablesUI } from "./variables/index.js";
 
 
 // ========================================
@@ -108,6 +117,8 @@ let simulatedLife = null;  // 模拟人生模块实例
 let diarySystem = null;  // 日记系统实例
 let phoneSystem = null;  // 手机系统实例（标记已初始化）
 let beautifySystem = null;  // 美化系统实例
+let variablesSystem = null;  // 动态变量系统实例
+// let chatArchiveSystem = null;  // 聊天记录系统实例（暂时禁用）
 
 
 // ========================================
@@ -200,7 +211,30 @@ async function initPawsPuffs() {
       // 不阻断，继续初始化其他模块
     }
 
-    // 5.7 初始化设置面板UI
+    // 5.8 初始化聊天记录系统（暂时禁用，开发中）
+    // try {
+    //   chatArchiveSystem = await initChatArchive();
+    //   logger.debug('[Main] 聊天记录系统初始化成功');
+    // } catch (error) {
+    //   logger.error('[Main] 聊天记录系统初始化失败:', error.message || error);
+    //   // 不阻断，继续初始化其他模块
+    // }
+
+    // 5.9 初始化动态变量系统
+    try {
+      const result = await initVariables();
+      if (result.success) {
+        variablesSystem = true;  // 标记已初始化
+        logger.debug('[Main] 动态变量系统初始化成功');
+      } else {
+        logger.warn('[Main] 动态变量系统初始化返回失败:', result.error);
+      }
+    } catch (error) {
+      logger.error('[Main] 动态变量系统初始化失败:', error.message || error);
+      // 不阻断，继续初始化其他模块
+    }
+
+    // 5.10 初始化设置面板UI
     await initSettingsPanel();
 
     logger.info('[Main] Acsus-Paws-Puffs 初始化完成！');
@@ -300,6 +334,21 @@ async function initSettingsPanel() {
       logger.error('[Main.initSettingsPanel] 可视化编辑器UI渲染失败:', error.message);
     }
 
+    // 8. 渲染动态变量系统UI
+    if (variablesSystem) {
+      try {
+        const variablesPanel = document.getElementById('paws-puffs-variables-panel');
+        if (variablesPanel) {
+          renderVariablesUI(variablesPanel);
+          logger.debug('[Main.initSettingsPanel] 动态变量系统UI渲染成功');
+        } else {
+          logger.warn('[Main.initSettingsPanel] 找不到变量面板容器 #paws-puffs-variables-panel');
+        }
+      } catch (error) {
+        logger.error('[Main.initSettingsPanel] 动态变量系统UI渲染失败:', error.message);
+      }
+    }
+
     logger.info('[Main.initSettingsPanel] 设置面板初始化完成');
   } catch (error) {
     logger.error('[Main.initSettingsPanel] 初始化设置面板失败:', error.message || error);
@@ -384,11 +433,17 @@ function bindSettingsEvents() {
   // 绑定美化说明弹窗
   bindBeautifyInfoPopup();
 
+  // 绑定背景图标签管理说明弹窗
+  bindBgTagInfoPopup();
+
   // 绑定日记功能开关
   bindDiarySettings();
 
   // 绑定手机功能
   bindPhoneSettings();
+
+  // 绑定聊天记录功能（暂时禁用，开发中）
+  // bindChatArchiveSettings();
 
   // 绑定美化功能开关
   bindBeautifyToggle();
@@ -471,23 +526,23 @@ function bindAboutAccordion() {
  * 监听所有 .beautify-accordion-header 元素的点击事件，实现手风琴效果
  */
 function bindBeautifyAccordion() {
-    const beautifyHeaders = document.querySelectorAll('.beautify-accordion-header');
+  const beautifyHeaders = document.querySelectorAll('.beautify-accordion-header');
 
-    beautifyHeaders.forEach(header => {
-        header.addEventListener('click', () => {
-            const clickedCard = /** @type {HTMLElement} */ (header).dataset.card;
-            const allCards = document.querySelectorAll('.beautify-accordion-card');
+  beautifyHeaders.forEach(header => {
+    header.addEventListener('click', () => {
+      const clickedCard = /** @type {HTMLElement} */ (header).dataset.card;
+      const allCards = document.querySelectorAll('.beautify-accordion-card');
 
-            // 切换所有卡片的active状态
-            allCards.forEach(card => {
-                if (/** @type {HTMLElement} */ (card).dataset.card === clickedCard) {
-                    card.classList.add('active');
-                } else {
-                    card.classList.remove('active');
-                }
-            });
-        });
+      // 切换所有卡片的active状态
+      allCards.forEach(card => {
+        if (/** @type {HTMLElement} */ (card).dataset.card === clickedCard) {
+          card.classList.add('active');
+        } else {
+          card.classList.remove('active');
+        }
+      });
     });
+  });
 }
 
 /**
@@ -500,72 +555,72 @@ function bindBeautifyAccordion() {
  * - 设置图片按钮：打开图片选择弹窗
  */
 function bindFloatingBtnSettings() {
-    // 获取设置
-    const settings = extension_settings.pawsPuffs?.beautify?.floatingBtn || {
-        size: 38,
-        color: '',
-        imageUrl: '',
-        imageOpacity: 1.0
-    };
+  // 获取设置
+  const settings = extension_settings.pawsPuffs?.beautify?.floatingBtn || {
+    size: 38,
+    color: '',
+    imageUrl: '',
+    imageOpacity: 1.0
+  };
 
-    // 大小滑块
-    const sizeSlider = document.getElementById('floating-btn-size');
-    const sizeValue = document.getElementById('floating-btn-size-value');
-    if (sizeSlider && sizeValue) {
+  // 大小滑块
+  const sizeSlider = document.getElementById('floating-btn-size');
+  const sizeValue = document.getElementById('floating-btn-size-value');
+  if (sizeSlider && sizeValue) {
         // 初始化值
         /** @type {HTMLInputElement} */ (sizeSlider).value = String(settings.size);
-        sizeValue.textContent = `${settings.size}px`;
+    sizeValue.textContent = `${settings.size}px`;
 
-        sizeSlider.addEventListener('input', function() {
-            const size = parseInt(/** @type {HTMLInputElement} */ (this).value);
-            sizeValue.textContent = `${size}px`;
-            updateFloatingBtnSize(size);
-            saveFloatingBtnSettings({ size });
-        });
+    sizeSlider.addEventListener('input', function () {
+      const size = parseInt(/** @type {HTMLInputElement} */(this).value);
+      sizeValue.textContent = `${size}px`;
+      updateFloatingBtnSize(size);
+      saveFloatingBtnSettings({ size });
+    });
+  }
+
+  // 颜色选择器（使用官方 toolcool-color-picker）
+  const colorPicker = document.getElementById('floating-btn-color');
+  if (colorPicker) {
+    // 初始化值（如果有保存的颜色）
+    if (settings.color) {
+      colorPicker.setAttribute('color', settings.color);
     }
 
-    // 颜色选择器（使用官方 toolcool-color-picker）
-    const colorPicker = document.getElementById('floating-btn-color');
-    if (colorPicker) {
-        // 初始化值（如果有保存的颜色）
-        if (settings.color) {
-            colorPicker.setAttribute('color', settings.color);
-        }
+    // 监听 change 事件获取 RGBA 颜色
+    colorPicker.addEventListener('change', function (e) {
+      const color = e.detail?.rgba || '';
+      updateFloatingBtnColor(color);
+      saveFloatingBtnSettings({ color });
+    });
+  }
 
-        // 监听 change 事件获取 RGBA 颜色
-        colorPicker.addEventListener('change', function(e) {
-            const color = e.detail?.rgba || '';
-            updateFloatingBtnColor(color);
-            saveFloatingBtnSettings({ color });
-        });
-    }
+  // 重置颜色按钮
+  const resetColorBtn = document.getElementById('floating-btn-reset-color');
+  if (resetColorBtn && colorPicker) {
+    resetColorBtn.addEventListener('click', function () {
+      // 重置为默认白色
+      colorPicker.setAttribute('color', 'rgba(255, 255, 255, 1)');
+      updateFloatingBtnColor('');
+      saveFloatingBtnSettings({ color: '' });
+      logger.info('[FloatingBtn] 颜色已重置为主题色');
+    });
+  }
 
-    // 重置颜色按钮
-    const resetColorBtn = document.getElementById('floating-btn-reset-color');
-    if (resetColorBtn && colorPicker) {
-        resetColorBtn.addEventListener('click', function() {
-            // 重置为默认白色
-            colorPicker.setAttribute('color', 'rgba(255, 255, 255, 1)');
-            updateFloatingBtnColor('');
-            saveFloatingBtnSettings({ color: '' });
-            logger.info('[FloatingBtn] 颜色已重置为主题色');
-        });
-    }
+  // 图片预览区初始化
+  updateFloatingBtnImagePreview(settings.imageUrl);
 
-    // 图片预览区初始化
-    updateFloatingBtnImagePreview(settings.imageUrl);
-
-    // 设置图片按钮
-    const setImageBtn = document.getElementById('floating-btn-set-image');
-    if (setImageBtn) {
-        setImageBtn.addEventListener('click', function() {
-            openFloatingBtnImagePopup();
-        });
-    }
+  // 设置图片按钮
+  const setImageBtn = document.getElementById('floating-btn-set-image');
+  if (setImageBtn) {
+    setImageBtn.addEventListener('click', function () {
+      openFloatingBtnImagePopup();
+    });
+  }
 
 
 
-    logger.debug('[FloatingBtn] 设置事件已绑定');
+  logger.debug('[FloatingBtn] 设置事件已绑定');
 }
 
 /**
@@ -573,14 +628,14 @@ function bindFloatingBtnSettings() {
  * @param {string} imageUrl - 图片 URL
  */
 function updateFloatingBtnImagePreview(imageUrl) {
-    const preview = document.getElementById('floating-btn-image-preview');
-    if (!preview) return;
+  const preview = document.getElementById('floating-btn-image-preview');
+  if (!preview) return;
 
-    if (imageUrl) {
-        preview.innerHTML = `<img src="${imageUrl}" alt="预览">`;
-    } else {
-        preview.innerHTML = '<i class="fa-solid fa-image"></i>';
-    }
+  if (imageUrl) {
+    preview.innerHTML = `<img src="${imageUrl}" alt="预览">`;
+  } else {
+    preview.innerHTML = '<i class="fa-solid fa-image"></i>';
+  }
 }
 
 
@@ -598,14 +653,14 @@ function updateFloatingBtnImagePreview(imageUrl) {
  * 显示美化功能的说明和注意事项
  */
 function bindBeautifyInfoPopup() {
-    const infoBtn = document.getElementById('beautify-info-popup-btn');
+  const infoBtn = document.getElementById('beautify-info-popup-btn');
 
-    if (infoBtn) {
-        infoBtn.addEventListener('click', async () => {
-            logger.debug('[bindBeautifyInfoPopup] 用户点击查看美化说明');
+  if (infoBtn) {
+    infoBtn.addEventListener('click', async () => {
+      logger.debug('[bindBeautifyInfoPopup] 用户点击查看美化说明');
 
-            try {
-                const infoContent = `
+      try {
+        const infoContent = `
                     <div style="max-height: 400px; overflow-y: auto; line-height: 1.6; font-size: 0.9em;">
                         <h3 style="color: var(--SmartThemeQuoteColor); margin-top: 0;">
                             <i class="fa-solid fa-cat" style="margin-right: 8px;"></i>猫玩具说明
@@ -635,16 +690,72 @@ function bindBeautifyInfoPopup() {
                     </div>
                 `;
 
-                await callGenericPopup(infoContent, POPUP_TYPE.TEXT, '', {
-                    okButton: '知道了',
-                    wide: false,
-                    large: false
-                });
-            } catch (error) {
-                logger.error('[bindBeautifyInfoPopup] 弹窗显示失败:', error);
-            }
+        await callGenericPopup(infoContent, POPUP_TYPE.TEXT, '', {
+          okButton: '知道了',
+          wide: false,
+          large: false
         });
-    }
+      } catch (error) {
+        logger.error('[bindBeautifyInfoPopup] 弹窗显示失败:', error);
+      }
+    });
+  }
+}
+
+/**
+ * 绑定背景图标签管理说明弹窗按钮的点击事件
+ *
+ * @description
+ * 显示背景图标签管理功能的使用说明
+ */
+function bindBgTagInfoPopup() {
+  const infoBtn = document.getElementById('beautify-bg-tag-info-btn');
+
+  if (infoBtn) {
+    infoBtn.addEventListener('click', async () => {
+      logger.debug('[bindBgTagInfoPopup] 用户点击查看背景图标签管理说明');
+
+      try {
+        const infoContent = `
+                    <div style="max-height: 400px; overflow-y: auto; line-height: 1.6; font-size: 0.9em;">
+                        <h3 style="color: var(--SmartThemeQuoteColor); margin-top: 0;">
+                            <i class="fa-solid fa-tags" style="margin-right: 8px;"></i>背景图标签管理
+                        </h3>
+
+                        <p><strong>这是什么？</strong></p>
+                        <p>在 SIllyTavern 背景图设置中添加自定义标签，分组管理你的背景图并快速筛选切换。</p>
+
+                        <hr style="border: none; border-top: 1px solid var(--SmartThemeBorderColor); margin: 15px 0; opacity: 0.3;">
+
+                        <p><strong>使用方法</strong></p>
+                        <ul style="padding-left: 20px; margin: 10px 0;">
+                            <li>打开背景图抽屉（点击背景图按钮）</li>
+                            <li>点击搜索栏右侧的 <i class="fa-solid fa-plus"></i> 按钮</li>
+                            <li>创建新标签并选择要归类的背景图</li>
+                            <li>创建完成后，点击标签即可筛选显示对应图片</li>
+                        </ul>
+
+                        <hr style="border: none; border-top: 1px solid var(--SmartThemeBorderColor); margin: 15px 0; opacity: 0.3;">
+
+                        <p><strong>注意事项</strong></p>
+                        <ul style="padding-left: 20px; margin: 10px 0;">
+                            <li>不启用时不会在背景图设置中显示任何内容</li>
+                            <li>标签只会整理背景图的显示，不影响原始文件</li>
+                            <li>删除标签不会删除对应的背景图</li>
+                        </ul>
+                    </div>
+                `;
+
+        await callGenericPopup(infoContent, POPUP_TYPE.TEXT, '', {
+          okButton: '知道了',
+          wide: false,
+          large: false
+        });
+      } catch (error) {
+        logger.error('[bindBgTagInfoPopup] 弹窗显示失败:', error);
+      }
+    });
+  }
 }
 
 /**
@@ -731,7 +842,7 @@ function bindTermsPopup() {
  * 占位卡片（.toolbox-card-placeholder）已通过 CSS 禁用点击
  */
 function bindToolboxCards() {
-  const toolboxCards = document.querySelectorAll('.toolbox-card:not(.toolbox-card-placeholder):not([data-tool="diary"]):not([data-tool="mobile"])');
+  const toolboxCards = document.querySelectorAll('.toolbox-card:not(.toolbox-card-placeholder):not([data-tool="diary"]):not([data-tool="mobile"]):not([data-tool="chat-archive"])');
 
   toolboxCards.forEach(card => {
     card.addEventListener('click', async () => {
@@ -1161,6 +1272,169 @@ async function showPhoneSettingsPopup(updateCardStatus) {
         disablePhone();
         toastr.info('手机功能已禁用');
         logger.info('[Settings] 手机功能已禁用');
+      }
+
+      // 更新卡片状态
+      updateCardStatus();
+    });
+  }
+}
+
+/**
+ * 绑定聊天记录功能设置
+ *
+ * @description
+ * 点击聊天记录卡片时弹出官方弹窗，在弹窗内启用/禁用聊天记录功能
+ * 同时绑定聊天标签页中的开关和打开按钮
+ */
+function bindChatArchiveSettings() {
+  // 更新卡片状态的辅助函数
+  const updateCardStatus = () => {
+    const statusEl = document.getElementById('chat-archive-status');
+    if (statusEl && chatArchiveSystem) {
+      statusEl.textContent = chatArchiveSystem.enabled ? '已启用' : '已禁用';
+      statusEl.style.color = chatArchiveSystem.enabled ? 'var(--greenSuccessColor)' : 'var(--redWarningColor)';
+    }
+  };
+
+  // 更新标签页中开关和按钮状态的辅助函数
+  const updateTabUI = () => {
+    const checkbox = /** @type {HTMLInputElement} */ (document.getElementById('chat-archive-enabled'));
+    const openSection = document.getElementById('chat-archive-open-section');
+
+    if (checkbox && chatArchiveSystem) {
+      checkbox.checked = chatArchiveSystem.enabled;
+    }
+    if (openSection && chatArchiveSystem) {
+      openSection.style.display = chatArchiveSystem.enabled ? '' : 'none';
+    }
+  };
+
+  // 初始化卡片状态
+  updateCardStatus();
+
+  // 初始化标签页UI状态
+  updateTabUI();
+
+  // 绑定卡片点击事件，弹出官方弹窗
+  const chatArchiveCard = document.querySelector('.toolbox-card[data-tool="chat-archive"]');
+  if (chatArchiveCard) {
+    chatArchiveCard.addEventListener('click', async () => {
+      await showChatArchiveSettingsPopup(() => {
+        updateCardStatus();
+        updateTabUI();
+      });
+    });
+  }
+
+  // 绑定标签页中的开关
+  const tabCheckbox = /** @type {HTMLInputElement} */ (document.getElementById('chat-archive-enabled'));
+  if (tabCheckbox) {
+    tabCheckbox.addEventListener('change', async function () {
+      const newState = this.checked;
+
+      if (newState) {
+        await enableChatArchive();
+        toastr.success('聊天记录管理已启用');
+        logger.info('[Settings] 聊天记录管理已启用（从标签页）');
+      } else {
+        disableChatArchive();
+        toastr.info('聊天记录管理已禁用');
+        logger.info('[Settings] 聊天记录管理已禁用（从标签页）');
+      }
+
+      updateCardStatus();
+      updateTabUI();
+    });
+  }
+
+  // 绑定标签页中的打开按钮
+  const openBtn = document.getElementById('chat-archive-open-btn');
+  if (openBtn) {
+    openBtn.addEventListener('click', () => {
+      // 动态导入并打开界面
+      import('./chat-archive/index.js').then(({ openArchiveUI }) => {
+        openArchiveUI();
+      });
+    });
+  }
+
+  logger.debug('[Settings] 聊天记录卡片点击事件已绑定');
+}
+
+/**
+ * 显示聊天记录设置弹窗
+ *
+ * @async
+ * @param {Function} updateCardStatus - 更新卡片状态的回调函数
+ */
+async function showChatArchiveSettingsPopup(updateCardStatus) {
+  // 直接从 chatArchiveSystem 实例读取启用状态
+  const isEnabled = chatArchiveSystem ? chatArchiveSystem.enabled : false;
+
+  // 构建弹窗HTML内容
+  const html = `
+    <div class="chat-archive-intro-popup" style="padding: 10px; max-height: 500px; overflow-y: auto; text-align: left;">
+      <!-- 开关 -->
+      <div style="margin-bottom: 15px; padding: 10px; background: var(--black30a); border-radius: 8px;">
+        <label class="checkbox_label" style="display: flex; align-items: center; cursor: pointer;">
+          <input type="checkbox" id="chat-archive-popup-enabled" ${isEnabled ? 'checked' : ''} />
+          <strong style="margin-left: 10px; font-size: 1.1em;">启用聊天记录管理</strong>
+        </label>
+      </div>
+
+      <!-- 功能介绍 -->
+      <div style="margin-bottom: 12px;">
+        <h4 style="margin: 0 0 8px 0; color: var(--SmartThemeQuoteColor);">
+          <i class="fa-solid fa-lightbulb" style="margin-right: 8px;"></i>功能介绍
+        </h4>
+        <p style="margin: 0; line-height: 1.6; opacity: 0.9;">
+          聊天记录管理中心帮助你更好地管理和回顾与 AI 的对话。支持跨角色搜索、收藏精彩片段、添加笔记、小说式阅读。
+        </p>
+      </div>
+
+      <!-- 核心功能 -->
+      <div style="margin-bottom: 12px;">
+        <h4 style="margin: 0 0 8px 0; color: var(--SmartThemeQuoteColor);">
+          <i class="fa-solid fa-star" style="margin-right: 8px;"></i>核心功能
+        </h4>
+        <ul style="margin: 5px 0; padding-left: 20px; line-height: 1.8; opacity: 0.9;">
+          <li><strong>全文搜索：</strong>跨角色搜索所有聊天记录</li>
+          <li><strong>消息收藏：</strong>收藏喜欢的对话片段，支持分组管理</li>
+          <li><strong>笔记系统：</strong>给收藏的消息添加笔记和分类标签</li>
+          <li><strong>阅读模式：</strong>小说式阅读聊天记录，沉浸式回顾</li>
+        </ul>
+      </div>
+
+      <!-- 提示 -->
+      <div style="padding: 10px; background: var(--SmartThemeBlurTintColor); border-left: 3px solid var(--SmartThemeQuoteColor); border-radius: 4px;">
+        <i class="fa-solid fa-info-circle" style="color: var(--SmartThemeQuoteColor); margin-right: 8px;"></i>
+        <span style="opacity: 0.9;">启用后，在扩展菜单中点击「聊天记录」即可打开管理界面。</span>
+      </div>
+    </div>
+  `;
+
+  // 弹出官方弹窗
+  callGenericPopup(html, POPUP_TYPE.TEXT, '聊天记录管理');
+
+  // 等待DOM更新后绑定事件
+  await new Promise(resolve => setTimeout(resolve, 100));
+
+  // 绑定弹窗内的复选框事件
+  const checkbox = /** @type {HTMLInputElement} */ (document.getElementById('chat-archive-popup-enabled'));
+  if (checkbox) {
+    checkbox.addEventListener('change', async function () {
+      const newState = this.checked;
+
+      // 启用或禁用功能
+      if (newState) {
+        await enableChatArchive();
+        toastr.success('聊天记录管理已启用');
+        logger.info('[Settings] 聊天记录管理已启用');
+      } else {
+        disableChatArchive();
+        toastr.info('聊天记录管理已禁用');
+        logger.info('[Settings] 聊天记录管理已禁用');
       }
 
       // 更新卡片状态

@@ -1,0 +1,704 @@
+/**
+ * 美化主题管理样式
+ * @module beautify/beautify-theme-manager.css
+ *
+ * @description
+ * 美化主题管理的样式定义：
+ * - 折叠卡片容器（插入到官方主题下拉框下方）
+ * - 主题列表
+ * - 标签筛选行
+ * - 分页控件
+ */
+
+/* ==========================================
+   折叠卡片容器（使用官方 inline-drawer 结构）
+   ========================================== */
+
+/* 容器 */
+#beautify-theme-manager-container {
+  display: none;
+  margin-top: 3px;
+
+  background: var(--SmartThemeBlurTintColor);
+
+
+}
+
+#beautify-theme-manager-container.enabled {
+  display: block;
+}
+
+/* 折叠头部 - 使用官方结构 */
+.inline-drawer-toggle.beautify-theme-manager-header {
+  padding: 5px 8px;
+  border-radius: 6px;
+}
+
+/* 标题自定义样式 */
+.beautify-theme-manager-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1em;
+  font-weight: 600;
+  color: var(--SmartThemeBodyColor);
+}
+
+/* 图标自定义样式（继承官方样式） */
+.inline-drawer-icon.beautify-theme-icon {
+  font-size: 1.1em;
+  color: var(--SmartThemeEmColor);
+  transition: transform 0.3s;
+}
+
+.beautify-theme-manager-header:hover .inline-drawer-icon {
+  color: var(--SmartThemeBodyColor);
+}
+
+/* 折叠内容区域 */
+.beautify-theme-manager-body {
+  padding-top: 10px;
+}
+
+/* ==========================================
+   工具栏：搜索框 + 删除确认开关
+   ========================================== */
+
+/* 工具栏容器 */
+.beautify-theme-manager-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+/* 搜索框输入容器 */
+.beautify-theme-manager-search-input-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--SmartThemeBlurTintColor);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 6px;
+  transition: border-color 0.2s;
+}
+
+.beautify-theme-manager-search-input-wrap:focus-within {
+  border-color: var(--SmartThemeQuoteColor);
+}
+
+/* 搜索图标 */
+.beautify-theme-manager-search-icon {
+  color: var(--SmartThemeEmColor);
+  font-size: 0.9em;
+  flex-shrink: 0;
+}
+
+/* 搜索输入框 */
+.beautify-theme-manager-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--SmartThemeBodyColor);
+  font-size: 0.9em;
+  min-width: 0;
+}
+
+.beautify-theme-manager-search-input::placeholder {
+  color: var(--SmartThemeEmColor);
+}
+
+/* 清除按钮 */
+.beautify-theme-manager-search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: var(--SmartThemeEmColor);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+
+.beautify-theme-manager-search-clear:hover {
+  background: var(--SmartThemeBorderColor);
+  color: var(--SmartThemeBodyColor);
+}
+
+/* 删除确认开关 */
+.beautify-theme-manager-confirm-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  font-size: 0.8em;
+  color: var(--SmartThemeEmColor);
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.beautify-theme-manager-confirm-toggle input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.beautify-theme-manager-confirm-toggle span {
+  line-height: 1;
+}
+
+/* ==========================================
+   操作栏：搜索框 + 按钮
+   ========================================== */
+
+/* 操作栏 */
+.beautify-theme-manager-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+/* 搜索框 */
+.beautify-theme-manager-search {
+  flex: 1;
+  min-width: 150px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--SmartThemeBlurTintColor);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+}
+
+.beautify-theme-manager-search input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--SmartThemeBodyColor);
+  font-size: 0.9em;
+  outline: none;
+}
+
+.beautify-theme-manager-search input::placeholder {
+  color: var(--SmartThemeEmColor);
+  font-size: 0.85em;
+}
+
+/* 按钮文字不换行 - 解决竖排问题 */
+.beautify-theme-manager-actions .menu_button {
+  white-space: nowrap;
+}
+
+.beautify-theme-manager-actions .menu_button span {
+  font-size: 0.9em;
+  margin-left: 4px;
+}
+
+/* ==========================================
+   标签筛选行
+   ========================================== */
+
+/* 标签筛选行 */
+.beautify-theme-manager-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--SmartThemeBorderColor);
+}
+
+/* 标签chip */
+.beautify-theme-manager-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: var(--SmartThemeBorderColor);
+  border-radius: 10px;
+  font-size: 0.85em;
+  color: var(--SmartThemeBodyColor);
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.beautify-theme-manager-tag:hover {
+  background: var(--SmartThemeBotMesBlurTintColor);
+}
+
+.beautify-theme-manager-tag.active {
+  background: var(--SmartThemeQuoteColor);
+  color: var(--white100);
+}
+
+/* ==========================================
+   主题列表区域
+   ========================================== */
+
+/* 主题列表容器 */
+.beautify-theme-manager-list {
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+/* 主题项 */
+.beautify-theme-manager-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 10px;
+  background: var(--SmartThemeBlurTintColor);
+  border-radius: 4px;
+  margin-bottom: 2px;
+  transition: background 0.2s;
+}
+
+.beautify-theme-manager-item:hover {
+  background: var(--SmartThemeBotMesBlurTintColor);
+}
+
+.beautify-theme-manager-item.current {
+  border-left: 3px solid var(--SmartThemeQuoteColor);
+  padding-left: 7px;
+  /* 抵消左边框宽度 */
+}
+
+/* 主题信息区 - flex 行布局，让标签和名称在同一行 */
+.beautify-theme-manager-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  min-width: 0;
+}
+
+/* 主题名称行 */
+.beautify-theme-manager-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* 当前使用标记 */
+.beautify-theme-manager-current-badge {
+  font-size: 0.7em;
+  padding: 2px 5px;
+  background: var(--SmartThemeQuoteColor);
+  color: var(--white100);
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+/* 主题名称 */
+.beautify-theme-manager-name {
+  font-size: 0.95em;
+  font-weight: 500;
+  color: var(--SmartThemeBodyColor);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1;
+}
+
+/* 主题标签行 - 单行显示 */
+.beautify-theme-manager-item-tags {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+  margin-left: 8px;
+  overflow: hidden;
+}
+
+/* 主题上的小标签 */
+.beautify-theme-manager-item-tag {
+  font-size: 0.75em;
+  padding: 2px 6px;
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 25%, transparent);
+  border-radius: 4px;
+  color: var(--SmartThemeBodyColor);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 操作按钮区 */
+.beautify-theme-manager-actions-row {
+  display: flex;
+  gap: 6px;
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+
+/* 删除按钮 */
+.beautify-theme-manager-delete-btn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 4px;
+  background: var(--SmartThemeBorderColor);
+  color: var(--SmartThemeBodyColor);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.85em;
+}
+
+.beautify-theme-manager-delete-btn:hover:not(.disabled) {
+  background: var(--fullred);
+  color: var(--white100);
+}
+
+.beautify-theme-manager-delete-btn.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* 重命名按钮 */
+.beautify-theme-manager-rename-btn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 4px;
+  background: var(--SmartThemeBorderColor);
+  color: var(--SmartThemeBodyColor);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.8em;
+}
+
+.beautify-theme-manager-rename-btn:hover:not(:disabled) {
+  background: var(--SmartThemeQuoteColor);
+  color: white;
+}
+
+.beautify-theme-manager-rename-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* 批量模式选择框 */
+.beautify-theme-manager-select {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  cursor: pointer;
+}
+
+/* ==========================================
+   分页控件
+   ========================================== */
+
+/* 分页区域 */
+.beautify-theme-manager-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--SmartThemeBorderColor);
+}
+
+/* 分页信息 */
+.beautify-theme-manager-page-info {
+  font-size: 0.85em;
+  color: var(--SmartThemeEmColor);
+}
+
+/* 分页按钮 */
+.beautify-theme-manager-page-btn {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 4px;
+  background: var(--SmartThemeBorderColor);
+  color: var(--SmartThemeBodyColor);
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.beautify-theme-manager-page-btn:hover:not(:disabled) {
+  background: var(--SmartThemeQuoteColor);
+  color: white;
+}
+
+.beautify-theme-manager-page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==========================================
+   空状态
+   ========================================== */
+
+.beautify-theme-manager-empty {
+  text-align: center;
+  padding: 20px;
+  color: var(--SmartThemeEmColor);
+}
+
+.beautify-theme-manager-empty i {
+  font-size: 1.5em;
+  margin-bottom: 6px;
+  opacity: 0.5;
+}
+
+.beautify-theme-manager-empty p {
+  margin: 0;
+  font-size: 0.9em;
+}
+
+/* ==========================================
+   info按钮样式（参考背景图标签管理）
+   ========================================== */
+
+#beautify-theme-manager-info-btn {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 4px !important;
+  margin: 0 !important;
+  min-width: auto !important;
+  width: auto !important;
+  height: auto !important;
+  font-size: inherit !important;
+  line-height: 1 !important;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  vertical-align: middle !important;
+}
+
+#beautify-theme-manager-info-btn:hover {
+  opacity: 1;
+  background: none;
+  box-shadow: none;
+}
+
+#beautify-theme-manager-info-btn i {
+  font-size: 1em;
+  margin: 0;
+}
+
+/* ==========================================
+   说明弹窗样式
+   ========================================== */
+
+.beautify-theme-manager-info-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.beautify-theme-manager-info-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.beautify-theme-manager-info-popup {
+  background: var(--SmartThemeBlurTintColor);
+  border-radius: 8px;
+  max-width: 380px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.beautify-theme-manager-info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--SmartThemeBorderColor);
+}
+
+.beautify-theme-manager-info-header h3 {
+  margin: 0;
+  font-size: 1em;
+  color: var(--SmartThemeBodyColor);
+}
+
+.beautify-theme-manager-info-close {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--SmartThemeEmColor);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9em;
+}
+
+.beautify-theme-manager-info-close:hover {
+  background: var(--SmartThemeBorderColor);
+  color: var(--SmartThemeBodyColor);
+}
+
+.beautify-theme-manager-info-content {
+  padding: 14px;
+}
+
+.beautify-theme-manager-info-content h4 {
+  margin: 12px 0 6px;
+  font-size: 0.95em;
+  color: var(--SmartThemeQuoteColor);
+}
+
+.beautify-theme-manager-info-content h4:first-child {
+  margin-top: 0;
+}
+
+.beautify-theme-manager-info-content p,
+.beautify-theme-manager-info-content li {
+  margin: 0 0 6px;
+  font-size: 0.9em;
+  color: var(--SmartThemeBodyColor);
+  line-height: 1.5;
+}
+
+.beautify-theme-manager-info-content ul {
+  padding-left: 18px;
+  margin: 0 0 12px;
+}
+
+/* ==========================================
+   改名弹窗样式
+   ========================================== */
+
+.beautify-theme-manager-rename-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.beautify-theme-manager-rename-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.beautify-theme-manager-rename-popup {
+  background: var(--SmartThemeBlurTintColor);
+  border-radius: 8px;
+  max-width: 380px;
+  width: 90%;
+  padding: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.beautify-theme-manager-rename-popup h3 {
+  margin: 0 0 12px;
+  font-size: 1em;
+  color: var(--SmartThemeBodyColor);
+}
+
+.beautify-theme-manager-rename-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.beautify-theme-manager-rename-form label {
+  font-size: 0.9em;
+  color: var(--SmartThemeEmColor);
+}
+
+.beautify-theme-manager-rename-form input {
+  padding: 8px 10px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  background: var(--SmartThemeBlurTintColor);
+  color: var(--SmartThemeBodyColor);
+  font-size: 0.9em;
+  outline: none;
+}
+
+.beautify-theme-manager-rename-form input:focus {
+  border-color: var(--SmartThemeQuoteColor);
+}
+
+.beautify-theme-manager-rename-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.beautify-theme-manager-rename-cancel,
+.beautify-theme-manager-rename-confirm {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.beautify-theme-manager-rename-cancel {
+  background: var(--SmartThemeBlurTintColor);
+  color: var(--SmartThemeEmColor);
+}
+
+.beautify-theme-manager-rename-cancel:hover {
+  background: var(--SmartThemeBorderColor);
+  color: var(--SmartThemeBodyColor);
+}
+
+.beautify-theme-manager-rename-confirm {
+  background: var(--SmartThemeQuoteColor);
+  color: var(--white100);
+}
+
+.beautify-theme-manager-rename-confirm:hover {
+  opacity: 0.9;
+}

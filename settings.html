@@ -12,10 +12,13 @@
       <!-- 标签页导航 -->
       <div class="paws-tabs">
         <div class="paws-tab active" data-tab="simulated-life">模拟人生</div>
-        <div class="paws-tab" data-tab="font-manager">字体管理</div>
-        <div class="paws-tab" data-tab="preset-manager">预设管理</div>
+        <div class="paws-tab" data-tab="font-manager">字体</div>
+        <div class="paws-tab" data-tab="preset-manager">预设</div>
+        <div class="paws-tab" data-tab="variables">变量</div>
         <div class="paws-tab" data-tab="visual-editor">可视化</div>
-        <div class="paws-tab" data-tab="toolbox">工具包</div>
+        <!-- 聊天记录模块暂时隐藏，开发中 -->
+        <!-- <div class="paws-tab" data-tab="chat-archive">聊天</div> -->
+        <div class="paws-tab" data-tab="toolbox">工具</div>
         <div class="paws-tab" data-tab="beautify">美化</div>
         <div class="paws-tab" data-tab="about">关于</div>
       </div>
@@ -76,6 +79,13 @@
               <div class="toolbox-card-status">开发中</div>
             </div>
 
+            <!-- 卡片7: 聊天记录（暂时隐藏，开发中） -->
+            <!-- <div class="toolbox-card" data-tool="chat-archive">
+              <i class="toolbox-card-icon fa-solid fa-bookmark"></i>
+              <div class="toolbox-card-title">聊天记录</div>
+              <div class="toolbox-card-status" id="chat-archive-status">已禁用</div>
+            </div> -->
+
             <!-- 占位卡片: 更多 -->
             <div class="toolbox-card toolbox-card-placeholder">
               <i class="toolbox-card-icon fa-solid fa-plus"></i>
@@ -118,6 +128,36 @@
         <div id="paws-puffs-preset-panel"></div>
       </div>
 
+      <div class="paws-tab-content" id="tab-variables">
+        <!-- 变量管理器UI会渲染到这里 -->
+        <div id="paws-puffs-variables-panel"></div>
+      </div>
+
+      <div class="paws-tab-content" id="tab-chat-archive">
+        <!-- 聊天记录管理设置 -->
+        <div id="paws-puffs-chat-archive-panel">
+          <div class="enhanced-section">
+            <!-- 功能开关 -->
+            <div class="beautify-setting-item">
+              <label class="checkbox_label">
+                <input type="checkbox" id="chat-archive-enabled">
+                <span>启用聊天记录管理</span>
+              </label>
+              <span class="beautify-hint">启用后可在扩展菜单中打开聊天记录管理中心</span>
+            </div>
+
+            <!-- 打开按钮 -->
+            <div class="beautify-setting-item" id="chat-archive-open-section" style="display: none;">
+              <button class="menu_button" id="chat-archive-open-btn">
+                <i class="fa-solid fa-bookmark"></i>
+                <span>打开聊天记录管理</span>
+              </button>
+              <span class="beautify-hint">点击打开全屏聊天记录管理界面</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="paws-tab-content" id="tab-beautify">
         <!-- 美化设置面板 -->
         <div id="paws-puffs-beautify-panel">
@@ -128,7 +168,8 @@
               <i class="fa-solid fa-cat" style="color: var(--SmartThemeQuoteColor); margin-right: 8px;"></i>
               猫玩具！不确保适配所有美化主题，可能存在兼容问题
             </div>
-            <button id="beautify-info-popup-btn" class="menu_button compact icon-only interactable" title="查看说明" tabindex="0">
+            <button id="beautify-info-popup-btn" class="menu_button compact icon-only interactable" title="查看说明"
+              tabindex="0">
               <i class="fa fa-question-circle"></i>
             </button>
           </div>
@@ -189,7 +230,8 @@
                 </div>
 
                 <!-- 全宽模式子选项：显示不可见消息提示（隐藏名字栏的子选项） -->
-                <div class="beautify-setting-item beautify-sub-setting" id="beautify-fullwidth-show-ghost-setting" style="display: none;">
+                <div class="beautify-setting-item beautify-sub-setting" id="beautify-fullwidth-show-ghost-setting"
+                  style="display: none;">
                   <label class="checkbox_label">
                     <input type="checkbox" id="beautify-fullwidth-show-ghost-enabled">
                     <span>显示不可见消息提示</span>
@@ -198,7 +240,8 @@
                 </div>
 
                 <!-- 全宽模式宽度调节（仅在全宽模式启用时显示） -->
-                <div class="beautify-setting-item beautify-slider-item beautify-fullwidth-width-setting" id="beautify-fullwidth-width-setting">
+                <div class="beautify-setting-item beautify-slider-item beautify-fullwidth-width-setting"
+                  id="beautify-fullwidth-width-setting">
                   <div class="beautify-slider-row">
                     <label>
                       <i class="fa-solid fa-left-right"></i>
@@ -248,7 +291,8 @@
                       <span>图标颜色</span>
                     </label>
                     <div class="floating-btn-color-wrapper">
-                      <toolcool-color-picker id="floating-btn-color" color="rgba(255, 255, 255, 1)"></toolcool-color-picker>
+                      <toolcool-color-picker id="floating-btn-color"
+                        color="rgba(255, 255, 255, 1)"></toolcool-color-picker>
                       <button class="floating-btn-reset-color" id="floating-btn-reset-color" title="重置为主题色">
                         <i class="fa-solid fa-rotate-left"></i>
                       </button>
@@ -302,6 +346,36 @@
 
                 <!-- 功能列表容器 -->
                 <div class="beautify-misc-list" id="beautify-misc-list">
+                  <!-- 背景图标签管理 -->
+                  <div class="beautify-setting-item" data-keywords="背景 图 标签 管理 自定义">
+                    <div class="beautify-setting-row">
+                      <label class="checkbox_label">
+                        <input type="checkbox" id="beautify-bg-tag-manager-enabled">
+                        <span>背景图标签管理</span>
+                      </label>
+                      <button id="beautify-bg-tag-info-btn" class="menu_button compact icon-only interactable"
+                        title="查看说明" tabindex="0">
+                        <i class="fa-solid fa-info-circle"></i>
+                      </button>
+                    </div>
+                    <span class="beautify-hint">在背景图设置中添加自定义标签，分组管理背景图并快速切换</span>
+                  </div>
+
+                  <!-- 美化主题管理 -->
+                  <div class="beautify-setting-item" data-keywords="美化 主题 管理 整理">
+                    <div class="beautify-setting-row">
+                      <label class="checkbox_label">
+                        <input type="checkbox" id="beautify-theme-manager-enabled">
+                        <span>美化主题管理</span>
+                      </label>
+                      <button id="beautify-theme-manager-info-btn" class="menu_button compact icon-only interactable"
+                        title="查看说明" tabindex="0" role="button">
+                        <i class="fa-solid fa-info-circle"></i>
+                      </button>
+                    </div>
+                    <span class="beautify-hint">管理美化主题：改名、删除、打标签、搜索筛选</span>
+                  </div>
+
                   <!-- 隐藏滚动条 -->
                   <div class="beautify-setting-item" data-keywords="隐藏 滚动条 手机">
                     <label class="checkbox_label">
@@ -400,7 +474,8 @@
                     </label>
                     <span class="beautify-hint">聊天区域使用独立的字体比例，不受官方设置影响</span>
                   </div>
-                  <div class="beautify-setting-item beautify-slider-item beautify-sub-setting" id="beautify-chat-font-scale-setting" data-keywords="聊天 字体 独立 大小 font scale">
+                  <div class="beautify-setting-item beautify-slider-item beautify-sub-setting"
+                    id="beautify-chat-font-scale-setting" data-keywords="聊天 字体 独立 大小 font scale">
                     <div class="beautify-slider-row">
                       <label>
                         <i class="fa-solid fa-text-height"></i>
@@ -422,7 +497,8 @@
                     </label>
                     <span class="beautify-hint">勾选后可调整顶部导航栏图标的透明度（不勾选则使用美化主题设置）</span>
                   </div>
-                  <div class="beautify-setting-item beautify-slider-item beautify-sub-setting" id="beautify-nav-icon-opacity-setting" data-keywords="导航 图标 透明度 顶部">
+                  <div class="beautify-setting-item beautify-slider-item beautify-sub-setting"
+                    id="beautify-nav-icon-opacity-setting" data-keywords="导航 图标 透明度 顶部">
                     <div class="beautify-slider-row">
                       <label>
                         <i class="fa-solid fa-eye"></i>
@@ -441,7 +517,8 @@
                     </label>
                     <span class="beautify-hint">勾选后可调整消息编辑按钮的透明度（不勾选则使用美化主题设置）</span>
                   </div>
-                  <div class="beautify-setting-item beautify-slider-item beautify-sub-setting" id="beautify-edit-btn-opacity-setting" data-keywords="编辑 按钮 透明度 消息">
+                  <div class="beautify-setting-item beautify-slider-item beautify-sub-setting"
+                    id="beautify-edit-btn-opacity-setting" data-keywords="编辑 按钮 透明度 消息">
                     <div class="beautify-slider-row">
                       <label>
                         <i class="fa-solid fa-pen"></i>
@@ -462,23 +539,31 @@
                   </div>
 
                   <!-- 抽屉页面位置调整 -->
-                  <div class="beautify-setting-item beautify-slider-item" data-keywords="抽屉 页面 位置 导航 偏移 上下">
+                  <div class="beautify-setting-item" data-keywords="抽屉 页面 位置 导航 偏移 上下">
+                    <label class="checkbox_label">
+                      <input type="checkbox" id="beautify-drawer-offset-enabled">
+                      <span>抽屉页面位置</span>
+                    </label>
+                    <span class="beautify-hint">勾选后可调整导航栏展开页面的上下位置（负数上移，正数下移）</span>
+                  </div>
+                  <div class="beautify-setting-item beautify-slider-item beautify-sub-setting"
+                    id="beautify-drawer-offset-setting" data-keywords="抽屉 页面 位置 导航 偏移 上下">
                     <div class="beautify-slider-row">
                       <label>
                         <i class="fa-solid fa-arrows-up-down"></i>
-                        <span>抽屉页面位置</span>
+                        <span>偏移量</span>
                       </label>
                       <input type="range" id="beautify-drawer-offset" min="-50" max="50" step="1" value="0">
                       <span class="beautify-slider-value" id="beautify-drawer-offset-value">0px</span>
                     </div>
-                    <span class="beautify-hint">调整导航栏展开页面的上下位置（负数上移，正数下移）</span>
                   </div>
 
                   <!-- ========== 折叠区：去除阴影 ========== -->
                   <hr class="beautify-divider">
 
                   <!-- 去除阴影 - 折叠标题 -->
-                  <div class="beautify-setting-item beautify-collapsible-header" data-keywords="阴影 shadow 去除 移除 全部 文字 图标 弹窗 遮罩 头像 菜单 背景" id="beautify-shadow-collapse-header">
+                  <div class="beautify-setting-item beautify-collapsible-header"
+                    data-keywords="阴影 shadow 去除 移除 全部 文字 图标 弹窗 遮罩 头像 菜单 背景" id="beautify-shadow-collapse-header">
                     <div class="beautify-collapsible-title">
                       <i class="fa-solid fa-moon"></i>
                       <span>去除阴影</span>
@@ -595,7 +680,8 @@
                   <hr class="beautify-divider">
 
                   <!-- 阅读辅助 - 折叠标题 -->
-                  <div class="beautify-setting-item beautify-collapsible-header" data-keywords="阅读 辅助 下划线 首字 缩进 段落 悬停 高亮" id="beautify-reading-aid-collapse-header">
+                  <div class="beautify-setting-item beautify-collapsible-header"
+                    data-keywords="阅读 辅助 下划线 首字 缩进 段落 悬停 高亮" id="beautify-reading-aid-collapse-header">
                     <div class="beautify-collapsible-title">
                       <i class="fa-solid fa-book-open-reader"></i>
                       <span>阅读辅助</span>
@@ -614,7 +700,9 @@
                       </label>
                       <span class="beautify-hint">调整聊天文本的行高，提升阅读舒适度</span>
                     </div>
-                    <div class="beautify-setting-item beautify-sub-setting beautify-slider-item beautify-conditional-item" id="beautify-chat-line-height-setting" data-keywords="行高 line-height">
+                    <div
+                      class="beautify-setting-item beautify-sub-setting beautify-slider-item beautify-conditional-item"
+                      id="beautify-chat-line-height-setting" data-keywords="行高 line-height">
                       <div class="beautify-slider-row">
                         <label>
                           <i class="fa-solid fa-text-height"></i>
@@ -637,24 +725,28 @@
                     <!-- 下划线子选项（勾选后显示） -->
                     <div class="beautify-conditional-group" id="beautify-underline-options">
                       <!-- AI下划线颜色 -->
-                      <div class="beautify-setting-item beautify-sub-setting beautify-color-setting" data-keywords="下划线 AI 角色 颜色">
+                      <div class="beautify-setting-item beautify-sub-setting beautify-color-setting"
+                        data-keywords="下划线 AI 角色 颜色">
                         <div class="beautify-color-row">
                           <label>
                             <i class="fa-solid fa-robot"></i>
                             <span>AI下划线颜色</span>
                           </label>
-                          <toolcool-color-picker id="beautify-underline-ai-color" color="rgba(187, 193, 138, 0.5)" popup="true"></toolcool-color-picker>
+                          <toolcool-color-picker id="beautify-underline-ai-color" color="rgba(187, 193, 138, 0.5)"
+                            popup="true"></toolcool-color-picker>
                         </div>
                       </div>
 
                       <!-- 用户下划线颜色 -->
-                      <div class="beautify-setting-item beautify-sub-setting beautify-color-setting" data-keywords="下划线 用户 颜色">
+                      <div class="beautify-setting-item beautify-sub-setting beautify-color-setting"
+                        data-keywords="下划线 用户 颜色">
                         <div class="beautify-color-row">
                           <label>
                             <i class="fa-solid fa-user"></i>
                             <span>用户下划线颜色</span>
                           </label>
-                          <toolcool-color-picker id="beautify-underline-user-color" color="rgba(170, 192, 199, 0.2)" popup="true"></toolcool-color-picker>
+                          <toolcool-color-picker id="beautify-underline-user-color" color="rgba(170, 192, 199, 0.2)"
+                            popup="true"></toolcool-color-picker>
                         </div>
                       </div>
                     </div>
@@ -685,7 +777,9 @@
                       </label>
                       <span class="beautify-hint">增加段落之间的间距，便于区分段落</span>
                     </div>
-                    <div class="beautify-setting-item beautify-sub-setting beautify-radio-group beautify-conditional-item" id="beautify-paragraph-spacing-setting" data-keywords="段落 间距 spacing">
+                    <div
+                      class="beautify-setting-item beautify-sub-setting beautify-radio-group beautify-conditional-item"
+                      id="beautify-paragraph-spacing-setting" data-keywords="段落 间距 spacing">
                       <div class="beautify-radio-row">
                         <label class="beautify-radio-label">
                           <input type="radio" name="beautify-paragraph-spacing" value="0.8" checked>
@@ -712,13 +806,16 @@
                     </div>
 
                     <!-- 悬停高亮颜色（勾选后显示） -->
-                    <div class="beautify-setting-item beautify-sub-setting beautify-color-setting beautify-conditional-item" id="beautify-hover-highlight-color-setting" data-keywords="悬停 高亮 颜色">
+                    <div
+                      class="beautify-setting-item beautify-sub-setting beautify-color-setting beautify-conditional-item"
+                      id="beautify-hover-highlight-color-setting" data-keywords="悬停 高亮 颜色">
                       <div class="beautify-color-row">
                         <label>
                           <i class="fa-solid fa-highlighter"></i>
                           <span>高亮颜色</span>
                         </label>
-                        <toolcool-color-picker id="beautify-hover-highlight-color" color="rgba(242, 198, 116, 0.15)" popup="true"></toolcool-color-picker>
+                        <toolcool-color-picker id="beautify-hover-highlight-color" color="rgba(242, 198, 116, 0.15)"
+                          popup="true"></toolcool-color-picker>
                       </div>
                     </div>
                   </div>

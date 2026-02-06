@@ -1,0 +1,238 @@
+/**
+ * 聊天记录管理中心 - 样式文件
+ *
+ * 命名规范：所有类名使用 chat-archive- 前缀
+ * 设计风格：参考手机模块，全屏覆盖式界面
+ */
+
+/* ========================================
+   CSS 变量定义
+   ======================================== */
+:root {
+    --archive-primary: #0099ff;
+    --archive-primary-dark: #0e7ab8;
+    --archive-primary-light: #e6f4fb;
+    --archive-bg-main: #f0f0f2;
+    --archive-bg-white: #ffffff;
+    --archive-text-primary: #333333;
+    --archive-text-secondary: #999999;
+    --archive-text-tertiary: #666666;
+    --archive-text-white: #ffffff;
+    --archive-border: #ececec;
+    --archive-danger: #ff4d4f;
+    --archive-success: #4caf50;
+    --archive-warning: #ffc107;
+}
+
+/* ========================================
+   全屏遮罩层（参考手机 .phone-overlay）
+   ======================================== */
+.chat-archive-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    font-size: 16px;
+}
+
+.chat-archive-overlay.closing {
+    animation: archive-fade-out 0.2s ease forwards;
+}
+
+@keyframes archive-fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* ========================================
+   主容器（参考手机 .phone-container）
+   ======================================== */
+.chat-archive-container {
+    position: relative;
+    width: 375px;
+    height: 667px;
+    max-height: 80vh;
+    background: var(--archive-bg-main);
+    border-radius: 0.75em;
+    box-shadow: 0 0.625em 2.5em rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 移动端全屏显示 */
+@media (max-width: 768px) {
+    .chat-archive-overlay {
+        background: transparent;
+    }
+    .chat-archive-container {
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        max-height: 100vh;
+        max-height: 100dvh;
+        border-radius: 0;
+        box-shadow: none;
+    }
+}
+
+
+/* ========================================
+   顶部标题栏
+   ======================================== */
+.chat-archive-header {
+    height: 2.8em;
+    background: var(--archive-bg-white);
+    display: flex;
+    align-items: center;
+    padding: 0 0.75em;
+    flex-shrink: 0;
+}
+
+.chat-archive-header-back {
+    width: 2em;
+    height: 2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--archive-text-primary);
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all 0.2s;
+    background: none;
+    border: none;
+    font-size: 1em;
+}
+
+.chat-archive-header-back:hover {
+    color: var(--archive-primary);
+    background: var(--archive-primary-light);
+}
+
+.chat-archive-header-title {
+    flex: 1;
+    text-align: center;
+    font-size: 1em;
+    font-weight: 500;
+    color: var(--archive-text-primary);
+}
+
+.chat-archive-header-action {
+    width: 2em;
+    height: 2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--archive-text-secondary);
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all 0.2s;
+    background: none;
+    border: none;
+    font-size: 1em;
+}
+
+.chat-archive-header-action:hover {
+    color: var(--archive-primary);
+    background: var(--archive-primary-light);
+}
+
+/* ========================================
+   内容区域
+   ======================================== */
+.chat-archive-content {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+/* ========================================
+   页面通用
+   ======================================== */
+.chat-archive-page {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    background: var(--archive-bg-main);
+    overflow-y: auto;
+}
+
+.chat-archive-page.active {
+    display: flex;
+}
+
+/* ========================================
+   占位符（开发中提示）
+   ======================================== */
+.chat-archive-placeholder {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--archive-text-secondary);
+    gap: 1em;
+}
+
+.chat-archive-placeholder i {
+    font-size: 3em;
+    opacity: 0.5;
+}
+
+.chat-archive-placeholder p {
+    font-size: 0.9em;
+    opacity: 0.7;
+}
+
+/* ========================================
+   底部导航栏
+   ======================================== */
+.chat-archive-nav {
+    height: 3.75em;
+    background: var(--archive-bg-main);
+    border-top: 1px solid var(--archive-border);
+    display: flex;
+    flex-shrink: 0;
+}
+
+.chat-archive-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25em;
+    color: var(--archive-text-secondary);
+    cursor: pointer;
+    transition: color 0.2s;
+    border: none;
+    background: none;
+    font-size: 1em;
+}
+
+.chat-archive-nav-item i {
+    font-size: 1.5em;
+}
+
+.chat-archive-nav-item span {
+    font-size: 0.75em;
+}
+
+.chat-archive-nav-item.active {
+    color: var(--archive-primary);
+}
+
+.chat-archive-nav-item:hover {
+    color: var(--archive-text-tertiary);
+}

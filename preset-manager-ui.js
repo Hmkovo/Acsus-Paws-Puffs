@@ -11,6 +11,7 @@ import logger from './logger.js';
 import * as snapshotData from './preset-snapshot-data.js';
 import * as quickToggleData from './preset-quick-toggle-data.js';
 import * as toggleGroupData from './toggle-group-data.js';
+import * as stitchData from './preset-stitch-data.js';
 
 export class PresetManagerUI {
   // ========================================
@@ -181,6 +182,7 @@ export class PresetManagerUI {
                   <input type="range" id="snapshot-menu-font-scale" min="0.8" max="1.4" step="0.05" value="1">
                   <span id="snapshot-menu-font-scale-value">1.0</span>
                 </div>
+
               </div>
 
               <!-- 统一搜索框 -->
@@ -235,6 +237,67 @@ export class PresetManagerUI {
                   <!-- 选项将动态填充 -->
                 </select>
               </div>
+            </div>
+          </div>
+
+          <!-- 卡片：预设缝合 -->
+          <div class="preset-accordion-card" data-card="stitch">
+            <div class="preset-accordion-header" data-card="stitch">
+              <div class="preset-accordion-tab">
+                <i class="fa-solid fa-puzzle-piece"></i>
+                <strong>预设缝合</strong>
+              </div>
+            </div>
+            <div class="preset-accordion-body">
+              <!-- 功能开关 -->
+              <div class="preset-setting-item">
+                <label class="checkbox_label">
+                  <input type="checkbox" id="preset-stitch-enabled" ${stitchData.isEnabled() ? 'checked' : ''}>
+                  <span>启用预设缝合</span>
+                </label>
+                <span class="preset-hint">在预设页面添加条目收藏库，快速缝合常用条目</span>
+              </div>
+
+              <h4 style="margin-top: 12px; color: var(--SmartThemeQuoteColor);">这是什么功能？</h4>
+              <p>预设缝合就像一个<strong>条目收藏夹</strong>，把你常用的条目存起来，换预设时一键加入。</p>
+
+              <h4 style="color: var(--SmartThemeQuoteColor);">解决什么问题？</h4>
+              <p style="background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%); padding: 10px; border-radius: 5px;">
+                朋友更新了预设，但你之前加的自定义条目没了？用这个功能：
+              </p>
+              <ul class="preset-feature-list">
+                <li><i class="fa-solid fa-bookmark" style="color: var(--SmartThemeQuoteColor);"></i> 把常用条目<strong>收藏到库里</strong></li>
+                <li><i class="fa-solid fa-bolt" style="color: var(--SmartThemeQuoteColor);"></i> 换新预设后，<strong>一键插入</strong>到指定位置</li>
+                <li><i class="fa-solid fa-wand-magic-sparkles" style="color: var(--SmartThemeQuoteColor);"></i> 还能把<strong>世界书条目转成预设条目</strong></li>
+              </ul>
+
+              <h4 style="color: var(--SmartThemeQuoteColor);">怎么使用？</h4>
+              <div style="background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%); padding: 12px; border-radius: 5px; margin-bottom: 10px;">
+                <strong style="color: var(--SmartThemeQuoteColor);">第一步：打开收藏库</strong>
+                <p style="margin: 5px 0 0 0;">打开预设页面，底部工具栏有个<strong>拼图按钮</strong>，点击打开收藏库。</p>
+              </div>
+              <div style="background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%); padding: 12px; border-radius: 5px; margin-bottom: 10px;">
+                <strong style="color: var(--SmartThemeQuoteColor);">第二步：收藏条目</strong>
+                <p style="margin: 5px 0 0 0;">点击"添加条目"，可以从当前预设、世界书添加，或手动创建。</p>
+              </div>
+              <div style="background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%); padding: 12px; border-radius: 5px; margin-bottom: 10px;">
+                <strong style="color: var(--SmartThemeQuoteColor);">第三步：插入到预设</strong>
+                <p style="margin: 5px 0 0 0;">选择插入位置（能看到每个条目是什么），点击插入即可。</p>
+              </div>
+
+              <h4 style="color: var(--SmartThemeQuoteColor);">核心功能</h4>
+              <ul class="preset-feature-list">
+                <li><i class="fa-solid fa-tags" style="color: var(--SmartThemeQuoteColor);"></i> <strong>标签分类</strong>：自定义标签，快速筛选条目</li>
+                <li><i class="fa-solid fa-location-dot" style="color: var(--SmartThemeQuoteColor);"></i> <strong>精准插入</strong>：选择插入到哪个条目之后</li>
+                <li><i class="fa-solid fa-layer-group" style="color: var(--SmartThemeQuoteColor);"></i> <strong>批量操作</strong>：一次插入多个条目</li>
+                <li><i class="fa-solid fa-rotate" style="color: var(--SmartThemeQuoteColor);"></i> <strong>世界书转换</strong>：把世界书条目变成预设条目</li>
+              </ul>
+
+              <h4 style="color: var(--SmartThemeUnderlineColor);">温馨提示</h4>
+              <ul class="preset-feature-list">
+                <li>收藏库是全局的，所有预设共享</li>
+                <li>插入的条目默认是关闭状态，需要手动开启</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -312,6 +375,7 @@ export class PresetManagerUI {
 
     // 绑定快照功能
     this.bindSnapshotToggle();
+    this.bindStitchToggle();  // 绑定缝合器开关
     this.bindPresetSelector();
     this.bindCollapsibleGroups();
     this.renderToggleGroupList();
@@ -1876,6 +1940,34 @@ export class PresetManagerUI {
   }
 
   /**
+   * 绑定缝合器功能开关事件
+   */
+  bindStitchToggle() {
+    const checkbox = this.container?.querySelector('#preset-stitch-enabled');
+    if (!checkbox) return;
+
+    checkbox.addEventListener('change', (e) => {
+      const enabled = e.target.checked;
+      stitchData.setEnabled(enabled);
+      logger.info('[PresetManagerUI] 预设缝合功能:', enabled ? '启用' : '禁用');
+
+      // 更新按钮显示状态
+      if (this.presetManager.stitch) {
+        this.presetManager.stitch.setEnabled(enabled);
+      }
+
+      if (enabled) {
+        toastr.success('预设缝合已启用');
+      } else {
+        toastr.info('预设缝合已禁用');
+      }
+
+      // 触发事件通知其他模块
+      eventSource.emit('pawsStitchEnabledChanged', enabled);
+    });
+  }
+
+  /**
    * 绑定弹窗样式滑块事件
    *
    * @description
@@ -1981,38 +2073,58 @@ export class PresetManagerUI {
    * 显示功能说明弹窗
    *
    * @description
-   * 用 callGenericPopup 显示预设快照的使用说明，
-   * 包括"是什么"和"怎么使用"两部分内容。
+   * 用 callGenericPopup 显示预设快照功能的使用说明，
+   * 包括总开关、快速开关、预设快照三个功能的介绍。
    *
    * @returns {void}
    */
   showInfoPopup() {
     const content = `
-      <div style="max-width: 400px;">
-        <h4 style="margin-top: 0; color: var(--SmartThemeQuoteColor);">预设快照是什么？</h4>
-        <p>预设快照可以<strong>保存当前所有预设条目的开关状态</strong>，方便你在不同场景快速切换。</p>
-        <p style="background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%); padding: 8px; border-radius: 5px;">
-          比如：日常聊天用一套开关、开车用另一套、纯净模式又是一套。保存后，长按悬浮按钮就能一键切换！
-        </p>
+      <div style="max-width: 450px; max-height: 70vh; overflow-y: auto; text-align: left;">
+        <p style="margin-top: 0; opacity: 0.8;">这里提供三种快捷操作方式，都可以通过<strong>长按悬浮按钮</strong>快速访问。</p>
 
-        <h4 style="color: var(--SmartThemeQuoteColor);">怎么使用？</h4>
-        <div style="background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%); padding: 10px; border-radius: 5px; margin-bottom: 8px;">
-          <strong style="color: var(--SmartThemeQuoteColor);">保存快照</strong>
-          <p style="margin: 4px 0 0 0;">在预设页面底部点击 <i class="fa-solid fa-camera"></i> 按钮，输入名称保存当前开关状态。</p>
+        <h4 style="margin-top: 12px; color: var(--SmartThemeQuoteColor);"><i class="fa-solid fa-layer-group"></i> 总开关</h4>
+        <p>把多个条目打包成一个开关组，<strong>一键批量开启或关闭</strong>。</p>
+        <div style="background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%); padding: 8px; border-radius: 5px; margin-bottom: 8px;">
+          <strong>使用场景：</strong>比如把"开车相关"的5个预设条目+3个世界书条目组成一个总开关，需要时一键全开，不需要时一键全关。
         </div>
-        <div style="background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%); padding: 10px; border-radius: 5px;">
-          <strong style="color: var(--SmartThemeQuoteColor);">快捷切换</strong>
-          <p style="margin: 4px 0 0 0;"><strong>长按悬浮按钮（350ms）</strong>弹出快照菜单，点击即可应用。</p>
+        <div style="background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%); padding: 8px; border-radius: 5px;">
+          <strong>怎么用：</strong>在下方"总开关"区域点击添加，创建开关组后添加成员（预设条目或世界书条目），勾选"加入悬浮按钮菜单"即可在悬浮栏快速操作。
         </div>
+
+        <h4 style="margin-top: 16px; color: var(--SmartThemeQuoteColor);"><i class="fa-solid fa-toggle-on"></i> 快速开关</h4>
+        <p>把<strong>单个条目</strong>加入悬浮栏，直接点击开关。</p>
+        <div style="background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%); padding: 8px; border-radius: 5px; margin-bottom: 8px;">
+          <strong>使用场景：</strong>某个预设条目或世界书条目经常需要开关，但不想每次都打开设置页面找。
+        </div>
+        <div style="background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%); padding: 8px; border-radius: 5px;">
+          <strong>怎么用：</strong>在下方"快速开关"区域点击添加，选择预设条目或世界书条目，添加后长按悬浮按钮即可快速开关。
+        </div>
+
+        <h4 style="margin-top: 16px; color: var(--SmartThemeQuoteColor);"><i class="fa-solid fa-camera"></i> 预设快照</h4>
+        <p><strong>保存当前所有预设条目的开关状态</strong>，一键恢复。</p>
+        <div style="background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%); padding: 8px; border-radius: 5px; margin-bottom: 8px;">
+          <strong>使用场景：</strong>日常聊天用一套开关配置、开车用另一套、纯净模式又是一套。保存后随时切换。
+        </div>
+        <div style="background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%); padding: 8px; border-radius: 5px;">
+          <strong>怎么用：</strong>在预设页面底部点击 <i class="fa-solid fa-camera"></i> 按钮保存快照，长按悬浮按钮选择快照即可应用。
+        </div>
+
+        <h4 style="margin-top: 16px; color: var(--SmartThemeUnderlineColor);"><i class="fa-solid fa-lightbulb"></i> 小提示</h4>
+        <ul style="margin: 0; padding-left: 20px; opacity: 0.9;">
+          <li><strong>总开关</strong>适合批量控制一组相关条目</li>
+          <li><strong>快速开关</strong>适合频繁单独开关的条目</li>
+          <li><strong>预设快照</strong>适合保存整套配置方案</li>
+        </ul>
       </div>
     `;
 
     // 使用 SillyTavern 的弹窗
     if (typeof callGenericPopup === 'function') {
-      callGenericPopup(content, 1, '预设快照使用说明');
+      callGenericPopup(content, 1, '快捷操作使用说明');
     } else {
       // 备用：使用 alert
-      alert('预设快照：保存预设开关状态，长按悬浮按钮快捷切换');
+      alert('快捷操作：总开关批量控制、快速开关单个控制、预设快照保存整套配置');
     }
   }
 

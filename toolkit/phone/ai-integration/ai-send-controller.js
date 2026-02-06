@@ -379,13 +379,12 @@ export class PhoneAPI {
         stream: apiSettings.stream
       };
 
+      // ✅ 修复：使用 getCurrentCustomConfig() 读取新的配置结构
       if (apiSettings.source === 'custom') {
-        const currentConfigId = apiSettings.currentConfigId;
-        const customConfigs = apiSettings.customConfigs || [];
-        const currentConfig = customConfigs.find(c => c.id === currentConfigId);
+        const currentConfig = this.getCurrentCustomConfig();
 
-        if (!currentConfig) {
-          logger.error('[PhoneAPI.sendToAI] 未找到当前API配置');
+        if (!currentConfig || !currentConfig.baseUrl) {
+          logger.error('[PhoneAPI.sendToAI] 未找到API配置');
           throw new Error('未找到API配置，请先在设置中保存一个配置');
         }
 
@@ -395,12 +394,11 @@ export class PhoneAPI {
           apiKey: currentConfig.apiKey,
           model: currentConfig.model,
           format: currentConfig.format,
-          params: currentConfig.params || {}  // ← 传递高级参数配置
+          params: currentConfig.params || {}
         };
 
         logger.debug('[PhoneAPI.sendToAI] 使用自定义API配置:', {
-          name: currentConfig.name,
-          baseUrl: currentConfig.baseUrl,
+          baseUrl: currentConfig.baseUrl ? currentConfig.baseUrl.substring(0, 30) + '...' : '',
           model: currentConfig.model,
           format: currentConfig.format || 'openai (默认)',
           params: currentConfig.params ? Object.keys(currentConfig.params).length + '个参数' : '无参数'

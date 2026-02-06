@@ -29,6 +29,7 @@ import { isMobile } from '../../../RossAscends-mods.js';
 // ========================================
 import { PresetManagerUI } from './preset-manager-ui.js';
 import { WorldInfoIntegration } from './preset-manager-worldinfo.js';
+import { PresetStitchModule } from './preset-stitch.js';
 import * as snapshotData from './preset-snapshot-data.js';
 import logger from './logger.js';
 
@@ -47,6 +48,9 @@ export class PresetManagerModule {
 
     // 世界书集成
     this.worldInfo = null;
+
+    // 预设缝合器
+    this.stitch = null;
 
     // 当前活动预设
     this.currentPreset = null;
@@ -67,6 +71,10 @@ export class PresetManagerModule {
     // 初始化世界书集成
     this.worldInfo = new WorldInfoIntegration(this);
     await this.worldInfo.init();
+
+    // 初始化预设缝合器
+    this.stitch = new PresetStitchModule(this);
+    await this.stitch.init();
 
     // 监听预设页面出现
     this.observePresetPage();
@@ -257,6 +265,11 @@ export class PresetManagerModule {
     // 添加快照保存按钮
     this.addSnapshotSaveButton();
 
+    // 添加缝合器按钮
+    if (this.stitch) {
+      this.stitch.addStitchButton();
+    }
+
     logger.debug(' 预设页面增强完成');
   }
 
@@ -268,24 +281,24 @@ export class PresetManagerModule {
    * 采用"先删除旧的，再创建新的"策略，避免 timing 问题导致按钮丢失。
    *
    * ⚠️ 重要：SillyTavern 的异步渲染顺序问题
-   * 
+   *
    * SillyTavern 的 promptManager.render() 执行顺序：
    * 1. innerHTML = '' 清空容器
    * 2. 创建预设列表（#completion_prompt_manager_list）  ← MutationObserver 在这里触发
    * 3. 异步创建底部工具栏（.completion_prompt_manager_footer）
-   * 
+   *
    * 问题：MutationObserver 检测到 list 出现就触发 enhancePresetPage()，
    * 但此时 footer 可能还没创建，所以需要等待 footer 出现。
-   * 
+   *
    * 世界书折叠栏为什么不需要等待？
    * 因为世界书折叠栏插入到 list 之前（list.parentElement.insertBefore），
    * 而 list 在 MutationObserver 触发时已经存在，可以立即插入，无延迟。
-   * 
+   *
    * ⚠️ 禁止使用 setTimeout 轮询！
    * 使用 setTimeout(() => this.addSnapshotSaveButton(), 100) 会导致：
    * - 固定延迟 100ms，用户能感知到按钮"闪烁"（先消失，100ms 后再出现）
    * - 世界书折叠栏是立即重建，快照按钮延迟重建，体验不一致
-   * 
+   *
    * 正确做法：使用 MutationObserver 监听 footer 出现，footer 一出现就立即添加按钮。
    */
   addSnapshotSaveButton() {
@@ -493,6 +506,10 @@ export class PresetManagerModule {
 
     if (this.worldInfo) {
       this.worldInfo.destroy();
+    }
+
+    if (this.stitch) {
+      this.stitch.destroy();
     }
   }
 }
