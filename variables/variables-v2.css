@@ -1968,7 +1968,8 @@
 .var-v2-preview-full-textarea {
   flex: 1;
   width: 100%;
-  padding: 12px;
+  min-height: 500px;
+  padding: 8px;
   font-size: 0.8125em;
   white-space: pre-wrap;
   word-break: break-word;
@@ -1977,7 +1978,7 @@
   background: var(--var-v2-bg-white);
   border: 1px solid var(--var-v2-border);
   border-radius: 8px;
-  resize: none;
+  resize: vertical;
   font-family: inherit;
 }
 

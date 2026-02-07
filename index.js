@@ -687,6 +687,17 @@ function bindBeautifyInfoPopup() {
                             <li><strong>顶栏隐藏按钮</strong> - 可拖动的悬浮按钮，快速切换沉浸模式</li>
                             <li><strong>其他功能</strong> - 作者过去写美化经常使用的整合，懒得缝了</li>
                         </ul>
+
+                        <hr style="border: none; border-top: 1px solid var(--SmartThemeBorderColor); margin: 15px 0; opacity: 0.3;">
+
+                        <p><strong>特别感谢</strong></p>
+                        <p style="line-height: 1.6; opacity: 0.9;">
+                            <a href="https://discord.com/channels/1134557553011998840/1279510975623598201" target="_blank" style="color: var(--SmartThemeQuoteColor); text-decoration: none;">
+                                <i class="fa-solid fa-heart" style="margin-right: 5px; color: #e74c3c;"></i>ℭ𝔬𝔰𝔪𝔦𝔠 𝔏𝔞𝔱𝔱𝔢
+                            </a>
+                            <br>
+                            <span style="font-size: 0.9em; opacity: 0.8;">刚入酒馆时的美化启蒙，永远喜欢！</span>
+                        </p>
                     </div>
                 `;
 
@@ -1169,6 +1180,13 @@ async function showDiarySettingsPopup(updateCardStatus) {
       <div style="padding: 10px; background: var(--SmartThemeBlurTintColor); border-left: 3px solid var(--SmartThemeQuoteColor); border-radius: 4px;">
         <i class="fa-solid fa-info-circle" style="color: var(--SmartThemeQuoteColor); margin-right: 8px;"></i>
         <span style="opacity: 0.9;">更多设置（筛选、预设、视觉、API）请在日记面板内的工具栏配置。</span>
+      </div>
+
+      <!-- 致谢 -->
+      <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid var(--SmartThemeBorderColor); opacity: 0.7;">
+        <p style="margin: 0; font-size: 0.85em; text-align: center;">
+          <i class="fa-solid fa-graduation-cap" style="margin-right: 5px;"></i>(据此二改)日记的轮播效果学习自 B站：<a href="https://www.bilibili.com/video/BV1sD21YbEDT/" target="_blank" style="color: var(--SmartThemeQuoteColor); text-decoration: none;">飞雪前端艺术</a>
+        </p>
       </div>
     </div>
   `;

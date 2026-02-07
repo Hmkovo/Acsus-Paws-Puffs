@@ -358,6 +358,17 @@ function bindEvents() {
   const listContainer = document.getElementById('beautify-theme-manager-list');
   if (listContainer) {
     listContainer.addEventListener('click', async (e) => {
+      // 应用按钮
+      const applyBtn = e.target.closest('.beautify-theme-manager-apply-btn');
+      if (applyBtn && !applyBtn.disabled) {
+        e.stopPropagation();
+        const themeName = applyBtn.getAttribute('data-theme');
+        if (themeName) {
+          await handleApplyTheme(themeName);
+        }
+        return;
+      }
+
       // 删除按钮
       const deleteBtn = e.target.closest('.beautify-theme-manager-delete-btn');
       if (deleteBtn && !deleteBtn.disabled) {
@@ -408,6 +419,44 @@ function handleSearchInput(keyword) {
 
   currentPage = 1;
   renderThemeList();
+}
+
+
+// ==========================================
+// 应用主题
+// ==========================================
+
+/**
+ * 处理应用主题
+ * 通过设置 #themes 下拉框的值并触发 change 事件来切换主题
+ * SillyTavern 的 power-user.js 会监听 change 事件自动完成剩余工作
+ * @param {string} themeName - 要应用的主题名
+ */
+function handleApplyTheme(themeName) {
+  const themesSelect = document.getElementById('themes');
+  if (!themesSelect) {
+    toastr.error('找不到主题下拉框');
+    return;
+  }
+
+  // 检查主题是否存在
+  const option = themesSelect.querySelector(`option[value="${CSS.escape(themeName)}"]`);
+  if (!option) {
+    toastr.error(`主题不存在: ${themeName}`);
+    return;
+  }
+
+  // 设置下拉框值为目标主题
+  themesSelect.value = themeName;
+
+  // 触发 change 事件，SillyTavern 会自动：
+  // 1. 更新 power_user.theme
+  // 2. 调用 applyTheme(themeName) 应用样式
+  // 3. 保存设置
+  themesSelect.dispatchEvent(new Event('change', { bubbles: true }));
+
+  toastr.success(`已切换到主题: ${themeName}`);
+  logger.info('[ThemeManager] 已应用主题:', themeName);
 }
 
 
@@ -918,6 +967,12 @@ function renderThemeList() {
             ` : ''}
           </div>
           <div class="beautify-theme-manager-actions-row">
+            <button class="beautify-theme-manager-apply-btn${isCurrent ? ' disabled' : ''}"
+                    data-theme="${escapeHtml(theme.name)}"
+                    title="${isCurrent ? '当前使用中' : '应用此主题'}"
+                    ${isCurrent ? 'disabled' : ''}>
+              <i class="fa-solid fa-check"></i>
+            </button>
             <button class="beautify-theme-manager-rename-btn"
                     data-theme="${escapeHtml(theme.name)}"
                     title="${isCurrent ? '重命名当前主题' : '请先切换到该主题再重命名'}"
