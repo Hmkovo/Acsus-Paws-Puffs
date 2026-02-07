@@ -13,6 +13,68 @@
   --beautify-avatar-size: 70px;
   --beautify-transition-duration: 0.3s;
   --beautify-msg-bottom-padding: 80px;
+  /* 弹窗按钮变量 */
+  --beautify-popup-bg: var(--SmartThemeBlurTintColor);
+  --beautify-popup-border: var(--SmartThemeBorderColor);
+  --beautify-popup-hover: rgba(255, 255, 255, 0.08);
+  --beautify-popup-primary: var(--SmartThemeQuoteColor);
+  --beautify-popup-text: var(--SmartThemeBodyColor);
+  --beautify-popup-text-muted: color-mix(in srgb, var(--SmartThemeBodyColor) 60%, transparent);
+}
+
+/* ==========================================
+   弹窗按钮样式
+   ========================================== */
+
+/* 按钮组 */
+.beautify-popup-btn-group {
+  display: flex;
+  gap: 0.25em;
+}
+
+/* 基础按钮样式 */
+.beautify-popup-btn {
+  flex: 1;
+  padding: 0.4em 0.5em;
+  border: 1px solid var(--beautify-popup-border);
+  border-radius: 0.4em;
+  background: var(--beautify-popup-hover);
+  color: var(--beautify-popup-text-muted);
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.beautify-popup-btn:hover {
+  border-color: var(--beautify-popup-primary);
+  color: var(--beautify-popup-text);
+}
+
+.beautify-popup-btn.active {
+  background: var(--beautify-popup-primary);
+  border-color: var(--beautify-popup-primary);
+  color: white;
+}
+
+/* 小按钮 */
+.beautify-popup-btn-small {
+  width: 1.8em;
+  height: 1.8em;
+  border: none;
+  border-radius: 0.3em;
+  background: var(--beautify-popup-hover);
+  color: var(--beautify-popup-text-muted);
+  font-size: 0.8em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.beautify-popup-btn-small:hover {
+  background: var(--beautify-popup-primary);
+  color: white;
 }
 
 /* ==========================================

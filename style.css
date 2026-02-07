@@ -4929,13 +4929,13 @@ body.beautify-hide-qr #qr--bar:empty {
   gap: 6px;
 }
 
-.floating-btn-image-actions .menu_button {
+.floating-btn-image-actions .beautify-popup-btn {
   padding: 4px 10px;
   font-size: 0.75em;
   white-space: nowrap;
 }
 
-.floating-btn-image-actions .menu_button i {
+.floating-btn-image-actions .beautify-popup-btn i {
   margin-right: 4px;
 }
 
@@ -4947,6 +4947,16 @@ body.beautify-hide-qr #qr--bar:empty {
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px solid color-mix(in srgb, var(--SmartThemeBorderColor) 30%, transparent 70%);
+}
+
+.floating-btn-reset-section .beautify-popup-btn {
+  padding: 4px 10px;
+  font-size: 0.75em;
+  white-space: nowrap;
+}
+
+.floating-btn-reset-section .beautify-popup-btn i {
+  margin-right: 4px;
 }
 
 .floating-btn-reset-section .beautify-hint {
@@ -5189,8 +5199,9 @@ body.beautify-hide-qr #qr--bar:empty {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(5px);
   z-index: 9999;
@@ -5203,6 +5214,7 @@ body.beautify-hide-qr #qr--bar:empty {
 
 .floating-btn-popup-overlay.show {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .floating-btn-popup {
@@ -5210,16 +5222,19 @@ body.beautify-hide-qr #qr--bar:empty {
   border-radius: 12px;
   width: 90%;
   max-width: 400px;
-  max-height: 80vh;
+  max-height: 90vh;
+  max-height: 90dvh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   transform: scale(0.9);
-  transition: transform 0.3s ease;
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
 }
 
 .floating-btn-popup-overlay.show .floating-btn-popup {
   transform: scale(1);
+  opacity: 1;
 }
 
 .floating-btn-popup .beautify-popup-header {
