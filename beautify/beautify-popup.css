@@ -1,38 +1,607 @@
 /**
- * 聊天界面美化 - 头像布局样式
- * @module beautify/beautify.css
+ * 悬浮栏设置弹窗样式
+ * @module beautify/beautify-popup.css
+ *
+ * @description
+ * 使用 beautify-popup-* 前缀，与手机模块 phone-popup-* 分离
+ * 使用酒馆原生 CSS 变量，自动适配主题
  */
 
 /* ==========================================
-   CSS 变量（继承酒馆主题）
+   CSS 变量（映射到酒馆原生变量）
    ========================================== */
 
 :root {
-  --beautify-header-height: 220px;
-  --beautify-bg-height: 160px;
-  --beautify-avatar-size: 70px;
-  --beautify-transition-duration: 0.3s;
-  --beautify-msg-bottom-padding: 80px;
-  /* 弹窗按钮变量 */
+  /* 弹窗颜色 - 使用酒馆原生变量 */
   --beautify-popup-bg: var(--SmartThemeBlurTintColor);
-  --beautify-popup-border: var(--SmartThemeBorderColor);
-  --beautify-popup-hover: rgba(255, 255, 255, 0.08);
-  --beautify-popup-primary: var(--SmartThemeQuoteColor);
   --beautify-popup-text: var(--SmartThemeBodyColor);
-  --beautify-popup-text-muted: color-mix(in srgb, var(--SmartThemeBodyColor) 60%, transparent);
+  --beautify-popup-text-muted: var(--SmartThemeEmColor);
+  --beautify-popup-border: var(--SmartThemeBorderColor);
+  --beautify-popup-primary: var(--SmartThemeQuoteColor);
+  --beautify-popup-primary-hover: var(--SmartThemeUnderlineColor);
+  --beautify-popup-hover: var(--SmartThemeBotMesBlurTintColor);
 }
 
+
 /* ==========================================
-   弹窗按钮样式
+   遮罩层（透明，不遮挡背景）
    ========================================== */
 
-/* 按钮组 */
+.beautify-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  /* 动态视口高度，移动端关键 */
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.beautify-popup-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+
+/* ==========================================
+   弹窗主体（高度自适应，可拉伸）
+   ========================================== */
+
+.beautify-popup {
+  width: 90%;
+  max-width: 400px;
+  min-height: 200px;
+  max-height: 90vh;
+  background: var(--beautify-popup-bg);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: scale(0.9);
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+  /* 允许用户拖拽调整高度 */
+  resize: vertical;
+}
+
+.beautify-popup-overlay.show .beautify-popup {
+  transform: scale(1);
+  opacity: 1;
+}
+
+
+/* ==========================================
+   头部
+   ========================================== */
+
+.beautify-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 10px;
+  border-bottom: 1px solid var(--beautify-popup-border);
+}
+
+.beautify-popup-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--beautify-popup-text);
+}
+
+.beautify-popup-close {
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: var(--beautify-popup-hover);
+  color: var(--beautify-popup-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+  font-size: 15px;
+}
+
+.beautify-popup-close:hover {
+  background: rgba(255, 0, 0, 0.1);
+  color: #ff4444;
+}
+
+
+/* ==========================================
+   标签页导航
+   ========================================== */
+
+.beautify-popup-tabs {
+  display: flex;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--beautify-popup-border);
+  gap: 4px;
+}
+
+.beautify-popup-tab {
+  flex: 1;
+  padding: 12px 8px;
+  border: none;
+  background: transparent;
+  color: var(--beautify-popup-text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s;
+}
+
+.beautify-popup-tab:hover {
+  color: var(--beautify-popup-text);
+}
+
+.beautify-popup-tab.active {
+  color: var(--beautify-popup-primary);
+  font-weight: 500;
+}
+
+/* 激活状态下划线 */
+.beautify-popup-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: var(--beautify-popup-primary);
+  border-radius: 2px;
+}
+
+
+/* ==========================================
+   内容区
+   ========================================== */
+
+.beautify-popup-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2px 10px;
+}
+
+.beautify-popup-panel {
+  display: none;
+}
+
+.beautify-popup-panel.active {
+  display: block;
+}
+
+.beautify-popup-section {
+  margin-bottom: 5px;
+}
+
+.beautify-popup-section:last-child {
+  margin-bottom: 0;
+}
+
+
+/* ==========================================
+   提示文字
+   ========================================== */
+
+.beautify-popup-hint {
+  font-size: 13px;
+  color: var(--beautify-popup-text-muted);
+  margin-bottom: 12px;
+  padding: 0px 10px;
+  background: var(--beautify-popup-hover);
+  border-radius: 8px;
+}
+
+
+/* ==========================================
+   开关样式
+   ==================== ====================== */
+
+.beautify-popup-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 0px;
+  border-bottom: 1px solid var(--beautify-popup-border);
+  cursor: pointer;
+}
+
+.beautify-popup-switch:last-child {
+  border-bottom: none;
+}
+
+.beautify-popup-switch-label {
+  font-size: 15px;
+  color: var(--beautify-popup-text);
+}
+
+.beautify-popup-switch input[type="checkbox"] {
+  width: 44px;
+  height: 24px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--beautify-popup-border);
+  border-radius: 12px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.beautify-popup-switch input[type="checkbox"]::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.beautify-popup-switch input[type="checkbox"]:checked {
+  background: var(--beautify-popup-primary);
+}
+
+.beautify-popup-switch input[type="checkbox"]:checked::before {
+  transform: translateX(20px);
+}
+
+
+/* ==========================================
+   占位内容
+   ========================================== */
+
+.beautify-popup-placeholder {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--beautify-popup-text-muted);
+}
+
+.beautify-popup-placeholder i {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.beautify-popup-placeholder p {
+  margin: 0;
+  font-size: 14px;
+}
+
+
+/* ==========================================
+   区块标题
+   ========================================== */
+
+.beautify-popup-section-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--beautify-popup-text);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.beautify-popup-value {
+  font-weight: 400;
+  color: var(--beautify-popup-primary);
+}
+
+.beautify-popup-hint-small {
+  font-size: 12px;
+  color: var(--beautify-popup-text-muted);
+  margin-top: 4px;
+}
+
+
+/* ==========================================
+   单选按钮组
+   ========================================== */
+
+.beautify-popup-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.beautify-popup-radio {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px;
+  background: var(--beautify-popup-hover);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.beautify-popup-radio:hover {
+  background: rgba(74, 158, 255, 0.1);
+}
+
+.beautify-popup-radio input[type="radio"] {
+  display: none;
+}
+
+.beautify-popup-radio-mark {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--beautify-popup-border);
+  border-radius: 50%;
+  margin-right: 12px;
+  flex-shrink: 0;
+  position: relative;
+  transition: border-color 0.2s;
+}
+
+.beautify-popup-radio-mark::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: var(--beautify-popup-primary);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.2s;
+}
+
+.beautify-popup-radio input[type="radio"]:checked+.beautify-popup-radio-mark {
+  border-color: var(--beautify-popup-primary);
+}
+
+.beautify-popup-radio input[type="radio"]:checked+.beautify-popup-radio-mark::after {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.beautify-popup-radio-label {
+  font-size: 15px;
+  color: var(--beautify-popup-text);
+  flex: 1;
+}
+
+.beautify-popup-radio-hint {
+  font-size: 12px;
+  color: var(--beautify-popup-text-muted);
+  margin-left: auto;
+}
+
+
+/* ==========================================
+   滑块样式
+   ========================================== */
+
+.beautify-popup-slider {
+  width: 100%;
+  height: 6px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--beautify-popup-border);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.beautify-popup-slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  background: var(--beautify-popup-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+}
+
+.beautify-popup-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+}
+
+.beautify-popup-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: var(--beautify-popup-primary);
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.beautify-popup-slider-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--beautify-popup-text-muted);
+}
+
+
+/* ==========================================
+   悬浮栏信息显示/隐藏控制
+   ========================================== */
+
+/* 隐藏名字 */
+.beautify-sticky-header.hide-name #beautify-name {
+  display: none;
+}
+
+/* 隐藏时间 */
+.beautify-sticky-header.hide-time #beautify-time {
+  display: none;
+}
+
+/* 隐藏 Token 数 */
+.beautify-sticky-header.hide-tokens #beautify-tokens {
+  display: none;
+}
+
+/* 隐藏楼层号 */
+.beautify-sticky-header.hide-mesid #beautify-mesid {
+  display: none;
+}
+
+/* 隐藏头像 */
+.beautify-sticky-header.hide-avatar .beautify-avatar-wrapper {
+  display: none;
+}
+
+
+/* ==========================================
+   悬浮栏布局设置控制
+   ========================================== */
+
+/* CSS 变量默认值 */
+.beautify-sticky-header {
+  /* 1. 头像位置 */
+  --beautify-header-height: 160px;
+  /* 1.5 背景圆角 */
+  --beautify-bg-radius: 0 0 12px 12px;
+  /* 2. 头像边框 */
+  --beautify-avatar-border-width: 3px;
+  --beautify-avatar-border-color: rgba(255, 255, 255, 1);
+  /* 3. 头像阴影 */
+  --beautify-avatar-shadow-color: rgba(0, 0, 0, 0.3);
+  /* 4. 头像偏移 */
+  --beautify-avatar-offset-x: 0px;
+  --beautify-avatar-offset-y: 0px;
+  --beautify-avatar-size: 70px;
+  --beautify-avatar-radius: 50%;
+  /* 5. 信息偏移 */
+  --beautify-info-offset-x: 0px;
+  --beautify-info-offset-y: 0px;
+  --beautify-info-size: 1;
+}
+
+/* 悬浮栏高度 */
+.beautify-sticky-header .beautify-bg-container {
+  height: var(--beautify-header-height);
+}
+
+/* 头像居中模式 */
+.beautify-sticky-header.avatar-center .beautify-info-row {
+  flex-direction: column !important;
+  align-items: center;
+}
+
+.beautify-sticky-header.avatar-center .beautify-message-info {
+  text-align: center !important;
+  align-items: center !important;
+}
+
+/* 居中模式下头像也露出一半 */
+.beautify-sticky-header.avatar-center .beautify-avatar-wrapper {
+  margin-bottom: calc(var(--beautify-avatar-size, 70px) / -2);
+}
+
+/* 头像无边框 */
+.beautify-sticky-header.avatar-no-border .beautify-avatar {
+  border: none !important;
+}
+
+/* 头像无阴影 */
+.beautify-sticky-header.avatar-no-shadow .beautify-avatar {
+  box-shadow: none !important;
+}
+
+/* 头像偏移 + 大小 */
+.beautify-sticky-header .beautify-avatar-wrapper {
+  transform: translate(var(--beautify-avatar-offset-x), var(--beautify-avatar-offset-y));
+}
+
+.beautify-sticky-header .beautify-avatar {
+  width: var(--beautify-avatar-size) !important;
+  height: var(--beautify-avatar-size) !important;
+}
+
+/* 信息偏移（允许超出悬浮栏） */
+.beautify-sticky-header .beautify-message-info {
+  transform: translate(var(--beautify-info-offset-x), var(--beautify-info-offset-y));
+}
+
+
+/* ==========================================
+   下拉框选择器
+   ========================================== */
+
+.beautify-popup-select-wrapper {
+  margin-bottom: 1em;
+}
+
+.beautify-popup-select {
+  width: 100%;
+  padding: 0.6em 0.8em;
+  font-size: 0.9em;
+  border: 1px solid var(--beautify-popup-border);
+  border-radius: 0.5em;
+  background: var(--beautify-popup-hover);
+  color: var(--beautify-popup-text);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.beautify-popup-select:focus {
+  border-color: var(--beautify-popup-primary);
+}
+
+.beautify-popup-select option {
+  background: var(--beautify-popup-bg);
+  color: var(--beautify-popup-text);
+}
+
+/* 布局子面板（下拉框切换显示） */
+.beautify-layout-panel {
+  display: none;
+}
+
+.beautify-layout-panel.active {
+  display: block;
+}
+
+
+/* ==========================================
+   紧凑布局样式（布局标签页专用）
+   ========================================== */
+
+.beautify-popup-row {
+  display: flex;
+  gap: 0.75em;
+  margin-bottom: 0.75em;
+}
+
+.beautify-popup-col {
+  flex: 1;
+  min-width: 0;
+}
+
+.beautify-popup-label {
+  font-size: 0.8em;
+  color: var(--beautify-popup-text-muted);
+  margin-bottom: 0.4em;
+}
+
+/* 按钮组（左右/居中切换） */
 .beautify-popup-btn-group {
   display: flex;
   gap: 0.25em;
 }
 
-/* 基础按钮样式 */
 .beautify-popup-btn {
   flex: 1;
   padding: 0.4em 0.5em;
@@ -56,7 +625,183 @@
   color: white;
 }
 
-/* 小按钮 */
+/* 紧凑开关 */
+.beautify-popup-switch-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 0.85em;
+  color: var(--beautify-popup-text);
+  cursor: pointer;
+  padding: 0.5em 0;
+}
+
+.beautify-popup-switch-compact input[type="checkbox"] {
+  width: 2.2em;
+  height: 1.2em;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--beautify-popup-border);
+  border-radius: 0.6em;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.beautify-popup-switch-compact input[type="checkbox"]::before {
+  content: '';
+  position: absolute;
+  top: 0.1em;
+  left: 0.1em;
+  width: 1em;
+  height: 1em;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.beautify-popup-switch-compact input[type="checkbox"]:checked {
+  background: var(--beautify-popup-primary);
+}
+
+.beautify-popup-switch-compact input[type="checkbox"]:checked::before {
+  transform: translateX(1em);
+}
+
+
+/* ==========================================
+   方向键控制器（D-Pad）
+   ========================================== */
+
+.beautify-popup-dpad {
+  display: grid;
+  grid-template-columns: 1.8em 1.8em 1.8em;
+  grid-template-rows: 1.8em 1.8em 1.8em;
+  gap: 0.15em;
+  justify-content: center;
+}
+
+.dpad-btn {
+  width: 1.8em;
+  height: 1.8em;
+  border: none;
+  border-radius: 0.3em;
+  background: var(--beautify-popup-hover);
+  color: var(--beautify-popup-text-muted);
+  font-size: 0.9em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.dpad-btn:hover {
+  background: var(--beautify-popup-primary);
+  color: white;
+}
+
+.dpad-btn:active {
+  transform: scale(0.9);
+}
+
+/* 方向键位置 */
+.dpad-up {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.dpad-left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.dpad-right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.dpad-down {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.dpad-reset {
+  grid-column: 3;
+  grid-row: 3;
+  font-size: 0.7em;
+}
+
+/* 中间数值显示 */
+.dpad-value {
+  grid-column: 2;
+  grid-row: 2;
+  font-size: 0.65em;
+  color: var(--beautify-popup-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--beautify-popup-bg);
+  border-radius: 0.3em;
+}
+
+
+/* ==========================================
+   紧凑滑块
+   ========================================== */
+
+.beautify-popup-section-compact {
+  margin-bottom: 0.5em;
+}
+
+.beautify-popup-slider-compact {
+  width: 100%;
+  height: 0.3em;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--beautify-popup-border);
+  border-radius: 0.15em;
+  outline: none;
+  cursor: pointer;
+}
+
+.beautify-popup-slider-compact::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1em;
+  height: 1em;
+  background: var(--beautify-popup-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.beautify-popup-slider-compact::-moz-range-thumb {
+  width: 1em;
+  height: 1em;
+  background: var(--beautify-popup-primary);
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+}
+
+
+/* ==========================================
+   颜色选择器包装
+   ========================================== */
+
+.beautify-popup-color-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.beautify-popup-color-wrapper toolcool-color-picker {
+  --tool-cool-color-picker-btn-bg: var(--beautify-popup-hover);
+}
+
+/* 小按钮（重置等） */
 .beautify-popup-btn-small {
   width: 1.8em;
   height: 1.8em;
@@ -77,1804 +822,874 @@
   color: white;
 }
 
+
 /* ==========================================
-   悬浮头像栏容器
+   背景设置面板
    ========================================== */
 
-.beautify-sticky-header {
+/* 背景子面板切换 */
+.beautify-bg-panel {
   display: none;
-  /* 默认隐藏，启用后由 JS 设置为 flex */
-  flex-direction: column;
-  position: sticky;
-  top: 0;
-  width: 100%;
-  z-index: 100;
-  /* 背景由 .beautify-bg 控制，容器本身透明 */
-  background: transparent;
-  border-radius: 0px;
-  overflow: visible;
-  /* 允许头像下半部分溢出 */
-  /* 过渡动画 */
-  transition: top var(--beautify-transition-duration) ease,
-    margin 0.3s ease,
-    width 0.3s ease;
 }
 
-/* ==========================================
-   装饰元素（用户可用CSS贴素材）
-   共10个空div，默认隐藏，用户可通过CSS自定义
-   使用方法：
-   .beautify-deco-1 {
-       display: block;
-       position: absolute;
-       top: 0; left: 0; right: 0; bottom: 0;
-       background-image: url('...');
-       background-size: contain;
-       pointer-events: none;
-   }
-   ========================================== */
-
-.beautify-deco {
-  display: none;
-  /* 默认隐藏，用户通过CSS启用 */
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  /* 不阻挡点击 */
-  z-index: 50;
-  /* 在背景图之上，在信息区域之下 */
+.beautify-bg-panel.active {
+  display: block;
 }
 
-/* 为每个装饰元素设置递增的 z-index，方便用户控制层级 */
-.beautify-deco-1 {
-  z-index: 51;
+/* 背景/装饰条头部行（启用开关 + 预览同一行） */
+.beautify-bg-header-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75em;
+  margin-bottom: 0.5em;
 }
 
-.beautify-deco-2 {
-  z-index: 52;
+.beautify-bg-header-row .beautify-popup-switch-compact {
+  padding: 0;
+  flex-shrink: 0;
 }
 
-.beautify-deco-3 {
-  z-index: 53;
-}
-
-.beautify-deco-4 {
-  z-index: 54;
-}
-
-.beautify-deco-5 {
-  z-index: 55;
-}
-
-.beautify-deco-6 {
-  z-index: 56;
-}
-
-.beautify-deco-7 {
-  z-index: 57;
-}
-
-.beautify-deco-8 {
-  z-index: 58;
-}
-
-.beautify-deco-9 {
-  z-index: 59;
-}
-
-.beautify-deco-10 {
-  z-index: 60;
-}
-
-/* 悬浮栏启用时，最后一条消息添加底部间距 */
-/* 使用 :has() 检测悬浮栏是否显示（display: flex） */
-body:has(.beautify-sticky-header[style*="display: flex"]) #chat .mes.last_mes {
-  margin-bottom: var(--beautify-msg-bottom-padding, 80px) !important;
-}
-
-/* ==========================================
-   沉浸模式：整体布局调整
-   ========================================== */
-
-/* 沉浸模式时，#sheld 往上移动填补导航栏空隙 */
-body:has(#top-bar.beautify-hidden) #sheld {
-  top: 0 !important;
-  height: 100vh !important;
-  height: 100dvh !important;
-  max-height: 100dvh !important;
-  transition: top var(--beautify-transition-duration) ease,
-    height var(--beautify-transition-duration) ease;
-}
-
-/* 沉浸模式时，输入框用绝对定位固定在底部，不跟着移动 */
-body:has(#top-bar.beautify-hidden) #form_sheld {
-  position: absolute !important;
-  bottom: 10px !important;
-  left: 10px !important;
-  right: 10px !important;
-  width: auto !important;
-  z-index: 3100 !important;
-  margin: 0 !important;
-}
-
-/* 沉浸模式时，#chat 撑满 + 底部留白给输入框空间 */
-body:has(#top-bar.beautify-hidden) #chat {
-  max-height: none !important;
-  height: 100% !important;
-  padding-bottom: calc(var(--bottomFormBlockSize) + 35px) !important;
-}
-
-/* 为 #sheld 添加过渡动画（非沉浸模式也需要） */
-#sheld {
-  transition: top var(--beautify-transition-duration) ease,
-    height var(--beautify-transition-duration) ease;
-}
-
-/* ==========================================
-   背景图区域（包含操作按钮和消息信息）
-   ========================================== */
-
-.beautify-bg-container {
+/* 内联预览（紧凑版） */
+.beautify-bg-preview-inline {
+  flex: 1;
+  height: 36px;
+  border-radius: 0.35em;
+  overflow: hidden;
+  background: var(--beautify-popup-hover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
-  width: 100%;
-  height: var(--beautify-bg-height);
-  border-radius: var(--beautify-bg-radius, 0 0 12px 12px);
-  overflow: visible;
-  /* 允许头像溢出 */
 }
 
-.beautify-bg {
+.beautify-bg-preview-inline img {
   width: 100%;
   height: 100%;
-  background-size: cover;
-  background-position: center;
-  background-color: var(--SmartThemeBotMesBlurTintColor, #3a3a3a);
-  cursor: pointer;
-  transition: filter var(--beautify-transition-duration), border-radius 0.2s ease;
-  border-radius: var(--beautify-bg-radius, 0 0 12px 12px);
+  object-fit: cover;
 }
 
-.beautify-bg:hover {
-  filter: brightness(0.9);
+.beautify-bg-preview-placeholder {
+  color: var(--beautify-popup-text-muted);
+  font-size: 0.75em;
 }
 
-/* 右上角锁定按钮 - 低调设计 */
-.beautify-lock-btn {
+/* 装饰条预览稍窄 */
+.beautify-deco-preview-inline {
+  height: 28px;
+}
+
+.beautify-deco-preview-inline img {
+  object-fit: contain;
+}
+
+/* 清除按钮 */
+.beautify-bg-clear-btn {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
+  top: 0.15em;
+  right: 0.15em;
+  width: 1.1em;
+  height: 1.1em;
   border: none;
-  background: transparent;
-  color: var(--SmartThemeBodyColor, #fff);
-  opacity: 0.3;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-size: 0.6em;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity var(--beautify-transition-duration), color var(--beautify-transition-duration);
-  z-index: 10;
+  transition: background 0.2s;
 }
 
-.beautify-lock-btn:hover {
+.beautify-bg-clear-btn:hover {
+  background: rgba(255, 0, 0, 0.8);
+}
+
+/* 来源标签页 */
+.beautify-bg-source-tabs {
+  display: flex;
+  gap: 0.25em;
+  margin-bottom: 0.5em;
+}
+
+.beautify-bg-source-tab {
+  flex: 1;
+  padding: 0.4em 0.3em;
+  border: 1px solid var(--beautify-popup-border);
+  border-radius: 0.3em;
+  background: transparent;
+  color: var(--beautify-popup-text-muted);
+  font-size: 0.75em;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.beautify-bg-source-tab:hover {
+  border-color: var(--beautify-popup-primary);
+  color: var(--beautify-popup-text);
+}
+
+.beautify-bg-source-tab.active {
+  background: var(--beautify-popup-primary);
+  border-color: var(--beautify-popup-primary);
+  color: white;
+}
+
+/* 来源面板 */
+.beautify-bg-source-panel,
+.beautify-deco-source-panel {
+  display: none;
+}
+
+.beautify-bg-source-panel.active,
+.beautify-deco-source-panel.active {
+  display: block;
+}
+
+/* 存档面板提示文字 */
+.beautify-bg-saved-hint {
+  font-size: 0.7em;
+  color: var(--beautify-popup-text-muted);
+  margin-bottom: 0.5em;
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+}
+
+.beautify-bg-saved-hint i {
+  color: var(--beautify-popup-primary);
+}
+
+/* 背景图网格（3列，参考手机端样式） */
+.beautify-bg-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35em;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 0.2em;
+  align-content: start;
+}
+
+/* 单个背景项（使用 padding-bottom 保持 16:9 比例） */
+.beautify-bg-item {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%;
+  /* 16:9 = 9/16 = 56.25% */
+  border-radius: 0.35em;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--beautify-popup-hover);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.beautify-bg-item:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0.15em 0.5em rgba(0, 0, 0, 0.2);
+}
+
+.beautify-bg-item img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 存档图片删除按钮 */
+.beautify-bg-item-delete {
+  position: absolute;
+  top: 0.15em;
+  right: 0.15em;
+  width: 1.2em;
+  height: 1.2em;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-size: 0.55em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
+  z-index: 1;
+}
+
+.beautify-bg-item:hover .beautify-bg-item-delete {
+  opacity: 1;
+}
+
+.beautify-bg-item-delete:hover {
+  background: rgba(255, 0, 0, 0.8);
+}
+
+/* 上传区域 */
+.beautify-bg-upload-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3em;
+  padding: 1em;
+  border: 2px dashed var(--beautify-popup-border);
+  border-radius: 0.5em;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--beautify-popup-text-muted);
+  font-size: 0.85em;
+}
+
+.beautify-bg-upload-area:hover {
+  border-color: var(--beautify-popup-primary);
+  background: rgba(74, 158, 255, 0.05);
+}
+
+.beautify-bg-upload-area i {
+  font-size: 1.5em;
+  color: var(--beautify-popup-primary);
+}
+
+.beautify-bg-upload-area small {
+  font-size: 0.75em;
   opacity: 0.7;
 }
 
-.beautify-lock-btn i {
-  font-size: 12px;
-}
-
-/* 锁定状态：透明度变高 */
-.beautify-sticky-header.is-locked .beautify-lock-btn {
-  color: #fbbf24;
-  opacity: 0.8;
-}
-
-/* ==========================================
-   头像信息区域（在背景图底部，透明背景）
-   ========================================== */
-
-.beautify-info-row {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+/* URL 输入 */
+.beautify-bg-url-input-wrapper {
   display: flex;
-  align-items: flex-end;
-  padding: 8px 16px;
-  gap: 12px;
-  /* 底部渐变遮罩已移除，使用纯净背景 */
-  /* background: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent); */
-  border-radius: var(--beautify-bg-radius, 0 0 12px 12px);
-  /* z-index: 5 确保在装饰条之上 */
-  z-index: 5;
+  gap: 0.3em;
 }
 
-/* 头像容器 - 头像下半部分露出悬浮栏 */
-.beautify-avatar-wrapper {
-  flex-shrink: 0;
-  position: relative;
-  /* 头像一半在悬浮栏内，一半露出 */
-  margin-bottom: calc(var(--beautify-avatar-size) / -2);
+.beautify-bg-url-input {
+  flex: 1;
+  padding: 0.5em 0.6em;
+  border: 1px solid var(--beautify-popup-border);
+  border-radius: 0.4em;
+  background: var(--beautify-popup-hover);
+  color: var(--beautify-popup-text);
+  font-size: 0.85em;
+  outline: none;
 }
 
-.beautify-avatar {
-  width: var(--beautify-avatar-size);
-  height: var(--beautify-avatar-size);
-  border-radius: var(--beautify-avatar-radius, 50%);
-  object-fit: cover;
-  /* 边框：使用 CSS 变量控制 */
-  border: var(--beautify-avatar-border-width, 3px) solid var(--beautify-avatar-border-color, var(--SmartThemeBodyColor, #fff));
-  /* 阴影：使用 CSS 变量控制 */
-  box-shadow: 0 2px 8px var(--beautify-avatar-shadow-color, rgba(0, 0, 0, 0.3));
+.beautify-bg-url-input:focus {
+  border-color: var(--beautify-popup-primary);
+}
+
+.beautify-bg-url-btn {
+  padding: 0.5em 0.8em;
+  border: none;
+  border-radius: 0.4em;
+  background: var(--beautify-popup-primary);
+  color: white;
   cursor: pointer;
-  /* 头像切换过渡 */
-  transition: transform 0.2s ease, opacity 0.4s ease-in-out, border 0.2s ease, box-shadow 0.2s ease, border-radius 0.2s ease;
+  transition: opacity 0.2s;
 }
 
-.beautify-avatar:hover {
-  transform: scale(1.05);
+.beautify-bg-url-btn:hover {
+  opacity: 0.9;
 }
 
-/* 头像切换动画：淡出状态（不缩放，只淡化） */
-.beautify-avatar.switching {
-  opacity: 0;
+/* 空状态和加载状态 */
+.beautify-bg-empty,
+.beautify-bg-loading,
+.beautify-bg-error {
+  text-align: center;
+  padding: 1em;
+  color: var(--beautify-popup-text-muted);
+  font-size: 0.85em;
 }
 
-/* 头像框叠加层 */
-.beautify-avatar-frame {
+.beautify-bg-error {
+  color: #ff6b6b;
+}
+
+/*
+ * 装饰条层级说明：
+ * - .beautify-bg: 背景图 (无z-index，最底层)
+ * - .beautify-border-decoration: CSS边框 (z-index: 1)
+ * - .beautify-decoration: 图片装饰条 (z-index: 2)
+ * - .beautify-info-row: 头像和信息 (z-index: 5，在beautify.css中设置)
+ */
+
+/* 图片装饰条 - z-index: 2 */
+.beautify-decoration {
   position: absolute;
-  top: 50%;
   left: 50%;
-  width: calc(var(--beautify-avatar-size) * 1.3);
-  height: calc(var(--beautify-avatar-size) * 1.3);
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
+  bottom: 0;
+  width: 100%;
   background-size: contain;
-  background-repeat: no-repeat;
+  background-repeat: repeat-x;
   background-position: center;
   pointer-events: none;
   z-index: 2;
 }
 
-/* 头像旋转动画（唱片效果） */
-@keyframes beautify-spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
+/* CSS边框装饰条 - z-index: 1，在图片装饰条之下 */
+.beautify-border-decoration {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 1;
 }
 
-.beautify-sticky-header.avatar-spin .beautify-avatar {
-  animation: beautify-spin 8s linear infinite;
+/* ==========================================
+   轮播设置样式
+   ========================================== */
+
+.beautify-carousel-section {
+  margin: 0.5em 0;
+  padding: 0.5em;
+  background: var(--beautify-popup-hover);
+  border-radius: 0.4em;
 }
 
-.beautify-sticky-header.avatar-spin .beautify-avatar:hover {
-  animation-play-state: paused;
-  transform: scale(1.05);
+.beautify-carousel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4em;
 }
 
-/* 消息信息 */
-.beautify-message-info {
+.beautify-carousel-options {
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+}
+
+.beautify-carousel-select {
+  padding: 0.25em 0.4em;
+  border: 1px solid var(--beautify-popup-border);
+  border-radius: 0.3em;
+  background: var(--beautify-popup-bg);
+  color: var(--beautify-popup-text);
+  font-size: 0.7em;
+  cursor: pointer;
+  outline: none;
+}
+
+.beautify-carousel-select:focus {
+  border-color: var(--beautify-popup-primary);
+}
+
+.beautify-carousel-images {
+  display: flex;
+  gap: 0.3em;
+  min-height: 50px;
+}
+
+.beautify-carousel-empty {
   flex: 1;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-  /* 允许文本截断 */
+  align-items: center;
+  justify-content: center;
+  color: var(--beautify-popup-text-muted);
+  font-size: 0.75em;
+  border: 1px dashed var(--beautify-popup-border);
+  border-radius: 0.3em;
 }
 
-.beautify-name {
-  font-size: calc(1.1em * var(--beautify-info-size, 1));
-  font-weight: 600;
-  color: var(--beautify-info-color, var(--SmartThemeBodyColor, #fff));
+.beautify-carousel-item {
+  position: relative;
+  width: 60px;
+  height: 50px;
+  border-radius: 0.3em;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid var(--beautify-popup-primary);
+}
+
+.beautify-carousel-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.beautify-carousel-index {
+  position: absolute;
+  top: 0.15em;
+  left: 0.15em;
+  width: 1.2em;
+  height: 1.2em;
+  background: var(--beautify-popup-primary);
+  color: white;
+  font-size: 0.6em;
+  font-weight: bold;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.beautify-carousel-remove {
+  position: absolute;
+  top: 0.15em;
+  right: 0.15em;
+  width: 1.1em;
+  height: 1.1em;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-size: 0.55em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.beautify-carousel-item:hover .beautify-carousel-remove {
+  opacity: 1;
+}
+
+.beautify-carousel-remove:hover {
+  background: rgba(255, 0, 0, 0.8);
+}
+
+
+/* ==========================================
+   响应式：手机适配
+   ========================================== */
+
+@media (max-width: 480px) {
+  .beautify-popup {
+    width: 95%;
+    max-height: 85vh;
+    border-radius: 12px;
+  }
+
+  .beautify-popup-header {
+    padding: 14px 16px;
+  }
+
+  .beautify-popup-header h3 {
+    font-size: 16px;
+  }
+
+  .beautify-popup-tabs {
+    padding: 0 12px;
+  }
+
+  .beautify-popup-tab {
+    padding: 10px 6px;
+    font-size: 13px;
+  }
+
+  .beautify-popup-content {
+    padding: 14px 16px;
+  }
+
+  .beautify-popup-switch-label {
+    font-size: 14px;
+  }
+
+  /* 背景网格在手机上也是3列 */
+  .beautify-bg-grid {
+    max-height: 150px;
+  }
+
+  .beautify-bg-source-tab {
+    font-size: 0.7em;
+    padding: 0.35em 0.2em;
+  }
+}
+
+
+/* ==========================================
+   头像框设置样式
+   ========================================== */
+
+/* 头像框预览 */
+.beautify-frame-preview {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--beautify-popup-hover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border: 2px solid var(--beautify-popup-border);
+}
+
+.beautify-frame-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.beautify-frame-preview .beautify-bg-preview-placeholder {
+  font-size: 1.2em;
+  color: var(--beautify-popup-text-muted);
+}
+
+.beautify-frame-preview .beautify-bg-clear-btn {
+  position: absolute;
+  top: -0.3em;
+  right: -0.3em;
+  width: 1.2em;
+  height: 1.2em;
+  font-size: 0.7em;
+}
+
+/* 头像框来源面板 */
+.beautify-frame-source-panel {
+  display: none;
+  margin-top: 0.5em;
+}
+
+.beautify-frame-source-panel.active {
+  display: block;
+}
+
+
+/* ==========================================
+   预设管理样式
+   ========================================== */
+
+/* 预设头部：搜索框 + 保存按钮 */
+.beautify-preset-header {
+  display: flex;
+  gap: 0.5em;
+  margin-bottom: 0.75em;
+}
+
+.beautify-preset-search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.4em 0.6em;
+  background: var(--beautify-popup-hover);
+  border: 1px solid var(--beautify-popup-border);
+  border-radius: 0.4em;
+}
+
+.beautify-preset-search i {
+  color: var(--beautify-popup-text-muted);
+  font-size: 0.8em;
+}
+
+.beautify-preset-search input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--beautify-popup-text);
+  font-size: 0.85em;
+  outline: none;
+}
+
+.beautify-preset-search input::placeholder {
+  color: var(--beautify-popup-text-muted);
+}
+
+.beautify-preset-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+  padding: 0.4em 0.8em;
+  background: var(--beautify-popup-primary);
+  color: white;
+  border: none;
+  border-radius: 0.4em;
+  font-size: 0.8em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.beautify-preset-save-btn:hover {
+  background: var(--beautify-popup-primary-hover, #5a9fd4);
+}
+
+/* 预设列表 */
+.beautify-preset-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.beautify-preset-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  padding: 2em;
+  color: var(--beautify-popup-text-muted);
+  font-size: 0.85em;
+}
+
+.beautify-preset-empty i {
+  font-size: 1.5em;
+}
+
+/* 预设项 */
+.beautify-preset-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5em 0.6em;
+  background: var(--beautify-popup-hover);
+  border: 1px solid var(--beautify-popup-border);
+  border-radius: 0.4em;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.beautify-preset-item:hover {
+  background: var(--beautify-popup-bg);
+  border-color: var(--beautify-popup-primary);
+}
+
+.beautify-preset-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15em;
+  min-width: 0;
+}
+
+.beautify-preset-name {
+  font-size: 0.9em;
+  font-weight: 500;
+  color: var(--beautify-popup-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: font-size 0.2s ease, color 0.2s ease;
 }
 
-.beautify-meta {
+.beautify-preset-time {
+  font-size: 0.7em;
+  color: var(--beautify-popup-text-muted);
+}
+
+.beautify-preset-actions {
   display: flex;
-  gap: 8px;
-  font-size: calc(0.85em * var(--beautify-info-size, 1));
-  color: var(--beautify-info-color, var(--SmartThemeBodyColor, rgba(255, 255, 255, 0.7)));
-  flex-wrap: wrap;
-  transition: font-size 0.2s ease, color 0.2s ease;
+  gap: 0.3em;
 }
 
-.beautify-meta span {
-  white-space: nowrap;
-}
-
-/* ==========================================
-   头像位置动态切换（Char左/User右）
-   ========================================== */
-
-/* User 消息：头像在右边 */
-.beautify-sticky-header.is-user .beautify-info-row {
-  flex-direction: row-reverse;
-}
-
-.beautify-sticky-header.is-user .beautify-message-info {
-  text-align: right;
-  align-items: flex-end;
-}
-
-/* Char 消息：头像在左边（默认） */
-.beautify-sticky-header.is-char .beautify-info-row {
-  flex-direction: row;
-}
-
-.beautify-sticky-header.is-char .beautify-message-info {
-  text-align: left;
-  align-items: flex-start;
-}
-
-/* ==========================================
-   翻页按钮（仅最新 char 消息显示）
-   ========================================== */
-
-.beautify-swipe-controls {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 8px 0 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.beautify-swipe-left,
-.beautify-swipe-right {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+.beautify-preset-load,
+.beautify-preset-delete {
+  width: 1.8em;
+  height: 1.8em;
   border: none;
-  background: var(--SmartThemeBlurTintColor, rgba(255, 255, 255, 0.1));
-  color: var(--SmartThemeBodyColor, #fff);
+  border-radius: 0.3em;
+  background: transparent;
+  color: var(--beautify-popup-text-muted);
+  font-size: 0.75em;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--beautify-transition-duration);
+  transition: background 0.2s, color 0.2s;
 }
 
-.beautify-swipe-left:hover,
-.beautify-swipe-right:hover {
-  background: var(--SmartThemeQuoteColor, rgba(255, 255, 255, 0.2));
-  transform: scale(1.1);
-}
-
-.beautify-swipe-counter {
-  font-size: 0.9em;
-  color: var(--SmartThemeBodyColor, rgba(255, 255, 255, 0.8));
-  min-width: 40px;
-  text-align: center;
-}
-
-/* ==========================================
-   沉浸模式：隐藏顶部导航栏
-   ========================================== */
-
-#top-bar,
-#top-settings-holder {
-  transition: transform var(--beautify-transition-duration) ease,
-    opacity var(--beautify-transition-duration) ease;
-}
-
-#top-bar.beautify-hidden,
-#top-settings-holder.beautify-hidden {
-  transform: translateY(calc(-100% - 10px));
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* ==========================================
-   响应式：已移除，由用户自定义控制
-   ========================================== */
-
-/* ==========================================
-   全宽文字模式
-   隐藏头像/名字栏，文字可调宽度，翻页按钮移到底部
-
-   宽度控制原理：
-   - --beautify-fullwidth-padding 控制左右留白
-   - 0% = padding 10px（最宽，几乎占满）
-   - 100% = padding 25%（最窄，约50%屏幕宽度）
-   - 计算公式：padding = 10px + (滑块值% * 0.25 * 屏幕宽度)
-   - 简化为：padding = calc(10px + var(--beautify-fullwidth-padding))
-   ========================================== */
-
-/* CSS 变量默认值 */
-:root {
-  --beautify-fullwidth-padding: 0%;
-}
-
-/* 消息容器：通过 CSS 变量控制左右留白 */
-body.beautify-fullwidth-mode #chat .mes {
-  padding-left: calc(10px + var(--beautify-fullwidth-padding)) !important;
-  padding-right: calc(10px + var(--beautify-fullwidth-padding)) !important;
-}
-
-/* 消息块占满宽度，去掉padding */
-body.beautify-fullwidth-mode #chat .mes .mes_block {
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  max-width: 100% !important;
-}
-
-/* 消息文字占满宽度，去掉官方的右边30px padding */
-body.beautify-fullwidth-mode #chat .mes .mes_text {
-  max-width: 100% !important;
-  padding-right: 0 !important;
-  padding-left: 0 !important;
-}
-
-/* ==========================================
-   全宽模式 - 隐藏消息头像（独立选项）
-   ========================================== */
-
-body.beautify-fullwidth-hide-avatar #chat .mes .mesAvatarWrapper {
-  display: none !important;
-}
-
-/* ==========================================
-   全宽模式 - 隐藏名字栏（独立选项）
-   ========================================== */
-
-body.beautify-fullwidth-hide-name #chat .mes .mes_block .ch_name .name_text,
-body.beautify-fullwidth-hide-name #chat .mes .mes_block .ch_name .timestamp,
-body.beautify-fullwidth-hide-name #chat .mes .mes_block .ch_name .timestamp-icon,
-body.beautify-fullwidth-hide-name #chat .mes .mes_block .ch_name .mes_ghost {
-  display: none !important;
-}
-
-/* 名字栏只保留操作按钮，调整布局 */
-body.beautify-fullwidth-hide-name #chat .mes .mes_block .ch_name {
-  justify-content: flex-end !important;
-  min-height: unset !important;
-}
-
-/* ==========================================
-   全宽模式 - 显示不可见消息提示（小幽灵图标）
-   当消息被设为不可见时（is_system="true"），在左上角显示小幽灵
-   ========================================== */
-
-body.beautify-fullwidth-show-ghost #chat .mes[is_system="true"] .mes_block .ch_name .mes_ghost {
-  display: flex !important;
-  position: absolute;
-  left: 8px;
-  top: 8px;
-  font-size: 14px;
-  opacity: 0.7;
-}
-
-/* 最后一条消息：预留底部空间给翻页栏 */
-body.beautify-fullwidth-mode #chat .mes.last_mes {
-  position: relative;
-  padding-bottom: 40px;
-}
-
-/* 右侧区块设为static，让子元素能相对于.mes定位 */
-body.beautify-fullwidth-mode #chat .mes.last_mes .swipeRightBlock {
-  position: static;
-}
-
-/* 左箭头移到底部左侧 */
-body.beautify-fullwidth-mode #chat .mes.last_mes .swipe_left {
-  position: absolute;
-  bottom: -15px;
-  left: 10px;
-  top: auto;
-  transform: none;
-  background: transparent;
-}
-
-/* 右箭头移到底部右侧 */
-body.beautify-fullwidth-mode #chat .mes.last_mes .swipe_right {
-  position: absolute;
-  bottom: -15px;
-  right: 10px;
-  top: auto;
-  background: transparent;
-}
-
-/* 页数移到底部居中 */
-body.beautify-fullwidth-mode #chat .mes.last_mes .swipes-counter {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: -12px;
-}
-
-/* 非最后一条消息：隐藏翻页按钮 */
-body.beautify-fullwidth-mode #chat .mes:not(.last_mes) .swipe_left,
-body.beautify-fullwidth-mode #chat .mes:not(.last_mes) .swipeRightBlock {
-  display: none !important;
-}
-
-
-/* ==========================================
-   悬浮按钮（顶栏隐藏按钮）
-   ========================================== */
-
-.beautify-floating-btn {
-  position: fixed;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: transparent;
-  /* 背景透明，只显示图标 */
-  color: var(--SmartThemeBodyColor, #fff);
-  /* 使用主题色 */
-  display: none;
-  /* 默认隐藏 */
-  align-items: center;
-  justify-content: center;
-  cursor: move;
-  z-index: 2999;
-  /* 最高层级 */
-  user-select: none;
-  touch-action: none;
-  /* 硬件加速 */
-  will-change: transform;
-  transform: translate3d(0, 0, 0);
-}
-
-.beautify-floating-btn:active {
-  cursor: grabbing;
-}
-
-.beautify-floating-btn.dragging {
-  cursor: grabbing;
-}
-
-.beautify-floating-btn i {
-  font-size: 18px;
-  pointer-events: none;
-}
-
-/* 手机端优化：已移除悬浮按钮的单独大小，由用户自定义控制 */
-
-
-/* ==========================================
-   隐藏滚动条（手机端使用）
-   ========================================== */
-
-/* Webkit浏览器（Chrome、Edge、Safari） */
-body.beautify-hide-scrollbar *::-webkit-scrollbar {
-  display: none;
-}
-
-/* Firefox */
-body.beautify-hide-scrollbar * {
-  scrollbar-width: none;
-}
-
-/* IE和旧版Edge */
-body.beautify-hide-scrollbar * {
-  -ms-overflow-style: none;
-}
-
-/* ==========================================
-   去除阴影 - 预设按钮阴影
-   ========================================== */
-
-body.beautify-remove-preset-shadow .prompt_manager_prompt_controls span,
-body.beautify-remove-preset-shadow .prompt-manager-detach-action,
-body.beautify-remove-preset-shadow .prompt-manager-edit-action,
-body.beautify-remove-preset-shadow .prompt-manager-toggle-action {
-  filter: none !important;
-  text-shadow: none !important;
-}
-
-/* ==========================================
-   去除阴影 - 编辑按钮阴影
-   ========================================== */
-
-body.beautify-remove-edit-shadow .mes_button,
-body.beautify-remove-edit-shadow .extraMesButtons>div,
-body.beautify-remove-edit-shadow .mes_edit_buttons {
-  filter: none !important;
-}
-
-/* ==========================================
-   预设开关直觉优化
-   ========================================== */
-
-/* 启用状态：正常透明度 */
-body.beautify-preset-toggle-intuitive .completion_prompt_manager_prompt {
-  opacity: 1;
-  transition: opacity 0.2s ease;
-}
-
-/* 禁用状态：降低透明度 */
-body.beautify-preset-toggle-intuitive .completion_prompt_manager_prompt:has(.fa-toggle-off) {
-  opacity: 0.5;
-}
-
-/* 开关图标颜色增强 */
-body.beautify-preset-toggle-intuitive .prompt-manager-toggle-action.fa-toggle-on {
-  color: var(--SmartThemeQuoteColor, #4a9eff);
-}
-
-body.beautify-preset-toggle-intuitive .prompt-manager-toggle-action.fa-toggle-off {
-  color: var(--SmartThemeEmColor, #888);
-}
-
-/* ==========================================
-   世界书按钮竖排
-   ========================================== */
-
-/* 按钮组容器 - 竖排布局 */
-body.beautify-wi-button-vertical .beautify-wi-btn-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-left: 8px;
-  flex-shrink: 0;
-}
-
-/* 按钮组内的按钮样式 */
-body.beautify-wi-button-vertical .beautify-wi-btn-group>i.menu_button {
-  margin: 0 !important;
-}
-
-/* ==========================================
-   聊天字体独立设置
-   ========================================== */
-
-:root {
-  --beautify-chat-font-scale: 1;
-}
-
-body.beautify-chat-font-independent #chat {
-  font-size: calc(var(--beautify-chat-font-scale) * var(--mainFontSize, 15px)) !important;
-}
-
-body.beautify-chat-font-independent #chat .mes_text {
-  font-size: inherit !important;
-}
-
-/* ==========================================
-   人设选中状态优化
-   ========================================== */
-
-body.beautify-persona-select-highlight .avatar-container.selected {
-  border: 3px solid var(--SmartThemeQuoteColor, #4a9eff) !important;
-  transition: border 0.2s ease;
-}
-
-body.beautify-persona-select-highlight .avatar-container:not(.selected) {
-  border: 3px solid transparent !important;
-  opacity: 0.7;
-  transition: opacity 0.2s ease, border 0.2s ease;
-}
-
-body.beautify-persona-select-highlight .avatar-container:not(.selected):hover {
-  opacity: 1;
-}
-
-
-/* ==========================================
-   人设输入框显示头像
-   ========================================== */
-
-.beautify-persona-preview-wrapper {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.beautify-persona-preview-avatar {
-  width: 80px;
-  min-width: 80px;
-  height: 120px;
-  object-fit: cover;
-  border-radius: 0px;
-  flex-shrink: 0;
-  align-self: flex-start;
-  background: var(--SmartThemeBlurTintColor, rgba(0, 0, 0, 0.2));
-}
-
-.beautify-persona-preview-wrapper #persona_description {
-  flex: 1;
-  min-width: 0;
-  margin-top: 0;
-}
-
-/* ==========================================
-   去除阴影 - 分类控制
-   ========================================== */
-
-/* CSS 变量默认值 */
-:root {
-  --beautify-underline-ai-color: rgba(187, 193, 138, 0.5);
-  --beautify-underline-user-color: rgba(170, 192, 199, 0.2);
-  --beautify-hover-highlight-color: rgba(242, 198, 116, 0.15);
-  --beautify-paragraph-spacing: 0.8em;
-  --beautify-underline-line-height: 1.6em;
-  --beautify-chat-line-height: 1.6;
-}
-
-/* 1. 去除全局文字阴影变量 */
-body.beautify-remove-text-shadow {
-  --SmartThemeShadowColor: transparent !important;
-  --shadowWidth: 0 !important;
-}
-
-/* 2. 去除 drop-shadow 滤镜（按钮图标等） */
-body.beautify-remove-filter-shadow .mes_button,
-body.beautify-remove-filter-shadow .extraMesButtons>div,
-body.beautify-remove-filter-shadow .mes_edit_buttons,
-body.beautify-remove-filter-shadow .dragClose,
-body.beautify-remove-filter-shadow .ch_fav_icon,
-body.beautify-remove-filter-shadow .mes_img_swipe_counter,
-body.beautify-remove-filter-shadow .add_avatar,
-body.beautify-remove-filter-shadow #completion_prompt_manager #completion_prompt_manager_list li.completion_prompt_manager_prompt span span span,
-body.beautify-remove-filter-shadow #completion_prompt_manager .completion_prompt_manager_header_advanced span {
-  filter: none !important;
-}
-
-/* 3. 去除弹窗阴影 */
-body.beautify-remove-popup-shadow #bulk_tag_popup,
-body.beautify-remove-popup-shadow #dialogue_popup,
-body.beautify-remove-popup-shadow .popup,
-body.beautify-remove-popup-shadow dialog.popup,
-body.beautify-remove-popup-shadow #select_chat_popup,
-body.beautify-remove-popup-shadow .menu_button.menu_button_default {
-  box-shadow: none !important;
-}
-
-/* 4. 去除弹窗遮罩层 */
-body.beautify-remove-backdrop #shadow_popup,
-body.beautify-remove-backdrop #shadow_select_chat_popup,
-body.beautify-remove-backdrop #shadow_character_popup,
-body.beautify-remove-backdrop #bulk_tag_shadow_popup {
-  background-color: transparent !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-/* 新版 dialog 弹窗的遮罩 */
-body.beautify-remove-backdrop .popup::backdrop,
-body.beautify-remove-backdrop .popup[open]::backdrop,
-body.beautify-remove-backdrop dialog.popup::backdrop {
-  background-color: transparent !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-/* 5. 去除头像阴影 */
-body.beautify-remove-avatar-shadow .add_avatar,
-body.beautify-remove-avatar-shadow .add_avatar:hover,
-body.beautify-remove-avatar-shadow #avatar_div_div,
-body.beautify-remove-avatar-shadow #avatar_div_div:hover,
-body.beautify-remove-avatar-shadow #avatar_load_preview {
-  filter: none !important;
-  box-shadow: none !important;
-}
-
-/* 热切换头像 */
-body.beautify-remove-avatar-shadow .hotswap .inline_avatar img {
-  filter: none !important;
-  box-shadow: none !important;
-}
-
-/* 聊天头像 */
-body.beautify-remove-avatar-shadow .avatar img,
-body.beautify-remove-avatar-shadow .mes .avatar img,
-body.beautify-remove-avatar-shadow .mesAvatarWrapper .avatar img {
-  box-shadow: none !important;
-}
-
-/* 6. 去除菜单阴影 */
-body.beautify-remove-menu-shadow #extensionsMenu,
-body.beautify-remove-menu-shadow #options,
-body.beautify-remove-menu-shadow .options-content,
-body.beautify-remove-menu-shadow .list-group {
-  box-shadow: none !important;
-}
-
-/* 7. 去除背景卡片阴影 */
-body.beautify-remove-bg-shadow .bg_example {
-  box-shadow: none !important;
-}
-
-/* 8. 去除导航栏阴影 */
-body.beautify-remove-topbar-shadow #top-bar {
-  box-shadow: none !important;
-}
-
-/* ==========================================
-   阅读辅助 - 聊天行高
-   ========================================== */
-
-:root {
-  --beautify-chat-line-height: 1.6;
-}
-
-body.beautify-chat-line-height #chat .mes_text {
-  line-height: var(--beautify-chat-line-height) !important;
-}
-
-/* ==========================================
-   阅读辅助 - 文本下划线
-   ========================================== */
-
-/* AI/角色消息的下划线 */
-body.beautify-underline #chat .mes_block .mes_text p {
-  background-image: linear-gradient(to bottom,
-      transparent 90%,
-      var(--beautify-underline-ai-color) calc(100% - 0px),
-      transparent calc(100% - 0px)) !important;
-  background-size: 100% var(--beautify-underline-line-height) !important;
-  background-position: 0 0em !important;
-  background-repeat: repeat-y !important;
-}
-
-/* 用户消息的下划线（区分颜色） */
-body.beautify-underline #chat .mes[is_user='true'] .mes_block .mes_text p {
-  background-image: linear-gradient(to bottom,
-      transparent 90%,
-      var(--beautify-underline-user-color) calc(100% - 0px),
-      transparent calc(100% - 0px)) !important;
-}
-
-/* ==========================================
-   阅读辅助 - 首字下沉
-   ========================================== */
-
-/* 让 content 标签变成块级元素 */
-body.beautify-dropcap #chat .mes_text content {
-  display: block !important;
-}
-
-/* 隐藏 content 开头的 br */
-body.beautify-dropcap #chat .mes_text p:first-of-type>content>br:first-child,
-body.beautify-dropcap #chat .mes_text p:first-of-type>content>br:first-child+br {
-  display: none !important;
-}
-
-/* 第一段：无缩进 */
-body.beautify-dropcap #chat .mes_text p:first-of-type {
-  text-indent: 0 !important;
-}
-
-/* 首字下沉 - 直接作用于 p */
-body.beautify-dropcap #chat .mes_text p:first-of-type::first-letter {
-  float: left !important;
-  font-size: 2.2em !important;
-  line-height: 1.1 !important;
-  padding: 0.1em 0.2em !important;
-  margin-right: 0.1em !important;
-  margin-top: 0.05em !important;
-}
-
-/* 首字下沉 - 作用于 content */
-body.beautify-dropcap #chat .mes_text p:first-of-type>content::first-letter {
-  float: left !important;
-  font-size: 2.2em !important;
-  line-height: 1.1 !important;
-  padding: 0.1em 0.2em !important;
-  margin-right: 0.1em !important;
-  margin-top: 0.05em !important;
-}
-
-/* ==========================================
-   阅读辅助 - 首行缩进
-   ========================================== */
-
-/* 后续段落：首行缩进 */
-body.beautify-indent #chat .mes_text p:not(:first-of-type) {
-  text-indent: 1.5em !important;
-}
-
-/* ==========================================
-   阅读辅助 - 段落间距
-   ========================================== */
-
-body.beautify-paragraph-spacing #chat .mes_text p {
-  margin-bottom: var(--beautify-paragraph-spacing) !important;
-}
-
-/* ==========================================
-   阅读辅助 - 悬停段落高亮
-   ========================================== */
-
-body.beautify-hover-highlight #chat .mes_text p:hover {
-  background-color: var(--beautify-hover-highlight-color) !important;
-  border-radius: 2px !important;
-  transition: background-color 0.15s ease !important;
-}
-
-/* ==========================================
-   背景图标签管理
-   ========================================== */
-
-/* 标签容器（搜索栏下方） */
-.beautify-bg-tag-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-  margin-left: 8px;
-}
-
-/* 标签芯片样式 */
-.beautify-bg-tag-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  background: var(--SmartThemeBlurTintColor);
-  border: 1px solid var(--SmartThemeBorderColor);
-  border-radius: 12px;
-  cursor: pointer;
-  font-size: 1em;
-  color: var(--SmartThemeBodyColor);
-  transition: all 0.2s;
-}
-
-.beautify-bg-tag-chip:hover {
-  background: var(--SmartThemeBotMesBlurTintColor);
-  border-color: var(--SmartThemeQuoteColor);
-}
-
-.beautify-bg-tag-chip.active {
-  background: var(--SmartThemeQuoteColor);
-  border-color: var(--SmartThemeQuoteColor);
+.beautify-preset-load:hover {
+  background: var(--beautify-popup-primary);
   color: white;
 }
 
-.beautify-bg-tag-chip .beautify-bg-tag-name {
-  font-weight: 500;
-}
-
-/* +号按钮样式 */
-#beautify-bg-tag-add-btn {
-  margin-left: 8px;
-}
-
-/* 标签页样式 */
-.beautify-bg-tag-tab {
-  margin-left: 4px;
-}
-
-.beautify-bg-tag-tab a {
-  color: var(--SmartThemeBodyColor);
-  text-decoration: none;
-}
-
-.beautify-bg-tag-tab:hover {
-  background: var(--SmartThemeBlurTintColor);
-}
-
-.beautify-bg-tag-tab.ui-state-active {
-  background: var(--SmartThemeQuoteColor);
-}
-
-.beautify-bg-tag-tab.ui-state-active a {
-  color: white;
-}
-
-/* 弹窗样式 */
-.beautify-bg-tag-popup {
-  padding: 10px;
-}
-
-.beautify-bg-tag-popup-header {
-  margin-bottom: 15px;
-}
-
-.beautify-bg-tag-create-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background: var(--SmartThemeQuoteColor);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: opacity 0.2s;
-}
-
-.beautify-bg-tag-create-btn:hover {
-  opacity: 0.9;
-}
-
-.beautify-bg-tag-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.beautify-bg-tag-item {
-  background: var(--SmartThemeBlurTintColor);
-  border-radius: 8px;
-  padding: 12px;
-}
-
-.beautify-bg-tag-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.beautify-bg-tag-name {
-  font-weight: 500;
-  color: var(--SmartThemeBodyColor);
-}
-
-.beautify-bg-tag-count {
-  font-size: 12px;
-  color: var(--SmartThemeEmColor);
-}
-
-.beautify-bg-tag-actions {
-  margin-left: auto;
-  display: flex;
-  gap: 4px;
-}
-
-.beautify-bg-tag-edit,
-.beautify-bg-tag-delete {
-  width: 28px;
-  height: 28px;
-  border: none;
-  border-radius: 6px;
-  background: var(--SmartThemeBotMesBlurTintColor);
-  color: var(--SmartThemeEmColor);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.beautify-bg-tag-edit:hover {
-  background: var(--SmartThemeQuoteColor);
-  color: white;
-}
-
-.beautify-bg-tag-delete:hover {
+.beautify-preset-delete:hover {
   background: #e74c3c;
   color: white;
 }
 
-.beautify-bg-tag-empty {
-  text-align: center;
-  padding: 30px;
-  color: var(--SmartThemeEmColor);
-  font-size: 14px;
-}
-
-/* 创建/编辑表单样式 */
-.beautify-bg-tag-create-form,
-.beautify-bg-tag-edit-form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.beautify-bg-tag-form-row {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.beautify-bg-tag-form-row label {
-  font-size: 13px;
-  color: var(--SmartThemeEmColor);
-}
-
-.beautify-bg-tag-form-row input[type="text"] {
-  padding: 10px 12px;
-  border: 1px solid var(--SmartThemeBorderColor);
-  border-radius: 6px;
-  background: var(--SmartThemeBlurTintColor);
-  color: var(--SmartThemeBodyColor);
-  font-size: 14px;
-  outline: none;
-}
-
-.beautify-bg-tag-form-row input[type="text"]:focus {
-  border-color: var(--SmartThemeQuoteColor);
-}
-
-/* 背景图选择器 - 网格布局 */
-.beautify-bg-tag-selector-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-  gap: 8px;
-  max-height: 300px;
-  overflow-y: auto;
-  padding: 8px;
-  background: var(--SmartThemeBlurTintColor);
-  border-radius: 8px;
-}
-
-/* 背景图选择器 - 列表布局（备用） */
-.beautify-bg-tag-selector {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  max-height: 300px;
-  overflow-y: auto;
-  padding: 8px;
-  background: var(--SmartThemeBlurTintColor);
-  border-radius: 8px;
-}
-
-/* 背景图选项（网格布局时使用列布局） */
-.beautify-bg-tag-option {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 6px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.2s;
-  position: relative;
-  border: 2px solid transparent;
-}
-
-.beautify-bg-tag-option:hover {
-  background: var(--SmartThemeBotMesBlurTintColor);
-}
-
-.beautify-bg-tag-option.selected {
-  background: rgba(74, 158, 255, 0.15);
-  border-color: var(--SmartThemeQuoteColor);
-}
-
-.beautify-bg-tag-option-check {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 18px;
-  height: 18px;
+/* 翻页控制 */
+.beautify-preset-pagination {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--SmartThemeQuoteColor);
-  background: var(--SmartThemeBlurTintColor);
-  border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  z-index: 1;
+  gap: 0.5em;
+  margin-top: 0.75em;
+  padding-top: 0.5em;
+  border-top: 1px solid var(--beautify-popup-border);
 }
 
-/* 背景图缩略图 */
-.beautify-bg-tag-option-img {
-  width: 100%;
-  aspect-ratio: 16 / 10;
-  background-size: cover;
-  background-position: center;
-  border-radius: 4px;
-  background-color: var(--SmartThemeBlurTintColor);
-}
-
-/* 背景图文件名 */
-.beautify-bg-tag-option-name {
-  font-size: 11px;
-  color: var(--SmartThemeBodyColor);
-  text-align: center;
-  width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* ==========================================
-   背景图标签管理弹窗（参考 beautify-popup.css 样式）
-   ========================================== */
-
-/* 弹窗遮罩 */
-.beautify-bg-tag-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  height: 100dvh;
-  /* 动态视口高度，移动端关键 */
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-
-.beautify-bg-tag-overlay.show {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* 弹窗容器 */
-.beautify-bg-tag-popup-container {
-  width: 90%;
-  max-width: 400px;
-  min-height: 200px;
-  max-height: 90vh;
-  background: var(--beautify-popup-bg, var(--SmartThemeBlurTintColor));
-  border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  transform: scale(0.9);
-  opacity: 0;
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
-}
-
-.beautify-bg-tag-overlay.show .beautify-bg-tag-popup-container {
-  transform: scale(1);
-  opacity: 1;
-}
-
-/* 标题栏 */
-.beautify-bg-tag-popup-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 4px 10px;
-  border-bottom: 1px solid var(--SmartThemeBorderColor);
-}
-
-.beautify-bg-tag-popup-header h3 {
-  margin: 0;
-  font-size: 1em;
-  font-weight: 600;
-  color: var(--SmartThemeBodyColor);
-}
-
-.beautify-bg-tag-close {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: transparent;
-  border-radius: 6px;
+.beautify-preset-page-btn {
+  width: 2em;
+  height: 2em;
+  border: 1px solid var(--beautify-popup-border);
+  border-radius: 0.3em;
+  background: var(--beautify-popup-hover);
+  color: var(--beautify-popup-text);
+  font-size: 0.8em;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--SmartThemeEmColor);
-  transition: background 0.2s;
+  transition: background 0.2s, border-color 0.2s;
 }
 
-.beautify-bg-tag-close:hover {
-  background: var(--SmartThemeBlurTintColor);
-  color: var(--SmartThemeBodyColor);
-}
-
-/* 内容区 */
-.beautify-bg-tag-popup-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-}
-
-/* 空状态 */
-.beautify-bg-tag-empty {
-  text-align: center;
-  padding: 2px 10px;
-  color: var(--SmartThemeEmColor);
-}
-
-.beautify-bg-tag-empty i {
-  font-size: 48px;
-  margin-bottom: 16px;
-  opacity: 0.5;
-}
-
-.beautify-bg-tag-empty p {
-  margin: 0;
-  font-size: 14px;
-}
-
-/* 标签列表 */
-.beautify-bg-tag-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-/* 标签项 */
-.beautify-bg-tag-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 2px 10px;
-  background: var(--SmartThemeBlurTintColor);
-  border-radius: 8px;
-  transition: background 0.2s;
-}
-
-.beautify-bg-tag-item:hover {
-  background: var(--SmartThemeBotMesBlurTintColor);
-}
-
-/* 标签信息 */
-.beautify-bg-tag-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.beautify-bg-tag-name {
-  font-size: 0.95em;
-  font-weight: 500;
-  color: var(--SmartThemeBodyColor);
-}
-
-.beautify-bg-tag-count {
-  font-size: 12px;
-  color: var(--SmartThemeEmColor);
-  background: var(--SmartThemeBorderColor);
-  padding: 2px 8px;
-  border-radius: 10px;
-}
-
-/* 标签操作按钮 */
-.beautify-bg-tag-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.beautify-bg-tag-edit,
-.beautify-bg-tag-delete {
-  width: 28px;
-  height: 28px;
-  border: none;
-  background: transparent;
-  border-radius: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--SmartThemeEmColor);
-  transition: all 0.2s;
-}
-
-.beautify-bg-tag-edit:hover {
-  background: rgba(74, 158, 255, 0.15);
-  color: #4a9eff;
-}
-
-.beautify-bg-tag-delete:hover {
-  background: rgba(255, 82, 82, 0.15);
-  color: #ff5252;
-}
-
-/* 底部按钮区 */
-.beautify-bg-tag-popup-footer {
-  display: flex;
-  justify-content: center;
-  padding: 16px 20px;
-  border-top: 1px solid var(--SmartThemeBorderColor);
-}
-
-/* 新建标签按钮 */
-.beautify-bg-tag-create {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 24px;
-  background: var(--SmartThemeQuoteColor);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.beautify-bg-tag-create:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-/* 表单按钮 */
-.beautify-bg-tag-cancel,
-.beautify-bg-tag-confirm {
-  padding: 10px 24px;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.beautify-bg-tag-cancel {
-  background: var(--SmartThemeBlurTintColor);
-  color: var(--SmartThemeEmColor);
-  margin-right: 12px;
-}
-
-.beautify-bg-tag-cancel:hover {
-  background: var(--SmartThemeBorderColor);
-  color: var(--SmartThemeBodyColor);
-}
-
-.beautify-bg-tag-confirm {
-  background: var(--SmartThemeQuoteColor);
+.beautify-preset-page-btn:hover:not(:disabled) {
+  background: var(--beautify-popup-primary);
+  border-color: var(--beautify-popup-primary);
   color: white;
 }
 
-.beautify-bg-tag-confirm:hover {
-  opacity: 0.9;
+.beautify-preset-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
-/* 背景图标签管理说明按钮 - 融入设置行 */
-#beautify-bg-tag-info-btn {
-  background: none !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 4px !important;
-  margin: 0 !important;
-  min-width: auto !important;
-  width: auto !important;
-  height: auto !important;
-  font-size: inherit !important;
-  line-height: 1 !important;
-  opacity: 0.7;
-  transition: opacity 0.2s;
-  white-space: nowrap !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  vertical-align: middle !important;
+.beautify-preset-page-info {
+  font-size: 0.8em;
+  color: var(--beautify-popup-text-muted);
+  min-width: 3em;
+  text-align: center;
 }
 
-#beautify-bg-tag-info-btn:hover {
-  opacity: 1;
-  background: none;
-  box-shadow: none;
+
+/* 自定义CSS输入框样式已移至下方CSS区域样式部分，避免重复定义 */
+
+
+/* ==========================================
+   方案管理样式
+   ========================================== */
+
+.beautify-scheme-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin-bottom: 0.75em;
+  padding-bottom: 0.5em;
+  border-bottom: 1px solid var(--beautify-popup-border);
 }
 
-#beautify-bg-tag-info-btn i {
-  font-size: 1em;
-  margin: 0;
+.beautify-scheme-select {
+  flex: 1;
+  padding: 0.4em 0.6em;
+  border: 1px solid var(--beautify-popup-border);
+  border-radius: 0.4em;
+  background: var(--beautify-popup-hover);
+  color: var(--beautify-popup-text);
+  font-size: 0.85em;
+  cursor: pointer;
+  outline: none;
+}
+
+.beautify-scheme-select:focus {
+  border-color: var(--beautify-popup-primary);
+}
+
+.beautify-scheme-actions {
+  display: flex;
+  gap: 0.25em;
+}
+
+.beautify-scheme-btn {
+  width: 1.8em;
+  height: 1.8em;
+  border: none;
+  border-radius: 0.3em;
+  background: var(--beautify-popup-hover);
+  color: var(--beautify-popup-text-muted);
+  font-size: 0.85em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.beautify-scheme-btn:hover {
+  background: var(--beautify-popup-primary);
+  color: white;
 }
 
 /* ==========================================
-   主题标签管理弹窗（使用与背景图标签相同的样式变量）
+   显示设置折叠样式
    ========================================== */
 
-/* 弹窗遮罩 */
-.beautify-theme-tag-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  height: 100dvh;
-  background: transparent;
+.beautify-display-details {
+  margin-bottom: 0.75em;
+}
+
+.beautify-display-summary {
   display: flex;
   align-items: center;
-  justify-content: center;
-  z-index: 10000;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-
-.beautify-theme-tag-overlay.show {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* 弹窗容器 */
-.beautify-theme-tag-popup-container {
-  width: 90%;
-  max-width: 400px;
-  min-height: 200px;
-  max-height: 90vh;
-  background: var(--beautify-popup-bg, var(--SmartThemeBlurTintColor));
-  border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  transform: scale(0.9);
-  opacity: 0;
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
-}
-
-.beautify-theme-tag-overlay.show .beautify-theme-tag-popup-container {
-  transform: scale(1);
-  opacity: 1;
-}
-
-/* 标题栏 */
-.beautify-theme-tag-popup-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 2px 10px;
-  border-bottom: 1px solid var(--SmartThemeBorderColor);
-}
-
-.beautify-theme-tag-popup-header h3 {
-  margin: 0;
-  font-size: 1em;
-  font-weight: 600;
-  color: var(--SmartThemeBodyColor);
-}
-
-.beautify-theme-tag-close {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: transparent;
-  border-radius: 6px;
+  gap: 0.5em;
+  padding: 0.5em 0.75em;
+  background: var(--beautify-popup-hover);
+  border-radius: 0.4em;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--SmartThemeEmColor);
+  font-size: 0.85em;
+  color: var(--beautify-popup-text);
+  user-select: none;
   transition: background 0.2s;
 }
 
-.beautify-theme-tag-close:hover {
-  background: var(--SmartThemeBlurTintColor);
-  color: var(--SmartThemeBodyColor);
+.beautify-display-summary:hover {
+  background: var(--beautify-popup-bg);
 }
 
-/* 内容区 */
-.beautify-theme-tag-popup-content {
+.beautify-display-summary i {
+  color: var(--beautify-popup-primary);
+}
+
+.beautify-display-switches {
+  padding: 0.5em 0;
+}
+
+/* ==========================================
+   CSS输入区域样式（更新）
+   ========================================== */
+
+.beautify-css-section {
   flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-}
-
-/* 空状态 */
-.beautify-theme-tag-empty {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--SmartThemeEmColor);
-}
-
-.beautify-theme-tag-empty i {
-  font-size: 48px;
-  margin-bottom: 16px;
-  opacity: 0.5;
-}
-
-.beautify-theme-tag-empty p {
-  margin: 0;
-  font-size: 14px;
-}
-
-/* 标签列表 */
-.beautify-theme-tag-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 
-/* 标签项 */
-.beautify-theme-tag-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  background: var(--SmartThemeBlurTintColor);
-  border-radius: 8px;
-  transition: background 0.2s;
+.beautify-css-section .beautify-popup-hint-small {
+  margin-bottom: 0.5em;
 }
 
-.beautify-theme-tag-item:hover {
-  background: color-mix(in srgb, var(--SmartThemeBorderColor) 30%, transparent);
-}
-
-.beautify-theme-tag-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  min-width: 0;
-}
-
-.beautify-theme-tag-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--SmartThemeBodyColor);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.beautify-theme-tag-count {
-  font-size: 12px;
-  color: var(--SmartThemeEmColor);
-  flex-shrink: 0;
-}
-
-.beautify-theme-tag-actions {
-  display: flex;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.beautify-theme-tag-actions button {
-  width: 28px;
-  height: 28px;
-  border: none;
-  background: transparent;
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--SmartThemeEmColor);
-  transition: all 0.2s;
-}
-
-.beautify-theme-tag-actions button:hover {
-  background: var(--SmartThemeQuoteColor);
-  color: var(--SmartThemeBodyColor);
-}
-
-.beautify-theme-tag-actions button:last-child:hover {
-  color: #d32f2f;
-}
-
-/* 底部按钮区 */
-.beautify-theme-tag-popup-footer {
-  padding: 16px 20px;
-  border-top: 1px solid var(--SmartThemeBorderColor);
-  display: flex;
-  justify-content: center;
-}
-
-.beautify-theme-tag-create {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  background: var(--SmartThemeQuoteColor);
-  color: var(--SmartThemeBodyColor);
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-
-.beautify-theme-tag-create:hover {
-  opacity: 0.9;
-}
-
-/* 表单样式 */
-.beautify-theme-tag-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.beautify-theme-tag-form-row {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.beautify-theme-tag-form-row label {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--SmartThemeBodyColor);
-}
-
-.beautify-theme-tag-form-row input[type="text"] {
-  padding: 10px 12px;
-  border: 1px solid var(--SmartThemeBorderColor);
-  border-radius: 8px;
-  background: var(--SmartThemeBlurTintColor);
-  color: var(--SmartThemeBodyColor);
-  font-size: 14px;
-}
-
-.beautify-theme-tag-form-row input[type="text"]:focus {
+.beautify-custom-css-input {
+  width: 100%;
+  min-height: 150px;
+  padding: 0.6em;
+  border: 1px solid var(--beautify-popup-border);
+  border-radius: 0.4em;
+  background: var(--beautify-popup-hover);
+  color: var(--beautify-popup-text);
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.8em;
+  line-height: 1.4;
+  resize: vertical;
   outline: none;
-  border-color: var(--SmartThemeQuoteColor);
+  transition: border-color 0.2s;
 }
 
-/* 主题选择列表 */
-.beautify-theme-tag-selector-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-height: 300px;
-  overflow-y: auto;
-  padding: 8px;
-  background: var(--SmartThemeBlurTintColor);
-  border-radius: 8px;
+.beautify-custom-css-input:focus {
+  border-color: var(--beautify-popup-primary);
 }
 
-.beautify-theme-tag-option {
+.beautify-custom-css-input::placeholder {
+  color: var(--beautify-popup-text-muted);
+  opacity: 0.6;
+}
+
+/* CSS区域头部（标题+帮助按钮） */
+.beautify-css-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 10px 12px;
-  background: var(--SmartThemeBlurTintColor);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.2s;
+  justify-content: space-between;
+  margin-bottom: 0.5em;
 }
 
-.beautify-theme-tag-option:hover {
-  background: color-mix(in srgb, var(--SmartThemeBorderColor) 30%, transparent);
-}
-
-.beautify-theme-tag-option.selected {
-  background: var(--SmartThemeQuoteColor);
-  color: var(--SmartThemeBodyColor);
-}
-
-.beautify-theme-tag-option-name {
-  font-size: 14px;
-  color: var(--SmartThemeBodyColor);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.beautify-theme-tag-option.selected .beautify-theme-tag-option-name {
-  color: var(--SmartThemeBodyColor);
-}
-
-.beautify-theme-tag-option-check {
-  font-size: 16px;
-  color: var(--SmartThemeEmColor);
-  flex-shrink: 0;
-}
-
-.beautify-theme-tag-option.selected .beautify-theme-tag-option-check {
-  color: var(--SmartThemeBodyColor);
-}
-
-/* 表单按钮 */
-.beautify-theme-tag-cancel,
-.beautify-theme-tag-confirm {
-  padding: 10px 24px;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-
-.beautify-theme-tag-cancel {
-  background: var(--SmartThemeBlurTintColor);
-  color: var(--SmartThemeBodyColor);
-  border: 1px solid var(--SmartThemeBorderColor);
-}
-
-.beautify-theme-tag-confirm {
-  background: var(--SmartThemeQuoteColor);
-  color: var(--SmartThemeBodyColor);
-}
-
-.beautify-theme-tag-cancel:hover,
-.beautify-theme-tag-confirm:hover {
-  opacity: 0.9;
+.beautify-css-header .beautify-popup-hint-small {
+  margin: 0;
 }

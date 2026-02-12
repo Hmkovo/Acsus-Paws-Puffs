@@ -6959,10 +6959,10 @@ body.beautify-hide-qr #qr--bar:empty {
 /* 批量操作栏 */
 .stitch-batch-bar {
   display: flex;
-  flex-direction: row !important;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 8px;
   padding: 8px 10px;
   background: color-mix(in srgb, var(--SmartThemeQuoteColor) 15%, transparent 85%);
@@ -6972,7 +6972,7 @@ body.beautify-hide-qr #qr--bar:empty {
 .stitch-batch-hint {
   font-size: 0.9em;
   margin-right: auto;
-  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .stitch-batch-cancel-btn,
@@ -7445,8 +7445,9 @@ body.beautify-hide-qr #qr--bar:empty {
 /* 批量操作栏 */
 .stitch-batch-bar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   padding: 8px;
   background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, var(--SmartThemeBlurTintColor) 90%);
   border-radius: 6px;
@@ -7459,7 +7460,7 @@ body.beautify-hide-qr #qr--bar:empty {
   display: inline-flex !important;
   align-items: center !important;
   font-size: 0.85em !important;
-  padding: 6px 12px !important;
+  padding: 6px 10px !important;
   height: auto !important;
   width: auto !important;
 }
@@ -7472,6 +7473,8 @@ body.beautify-hide-qr #qr--bar:empty {
 .stitch-batch-hint {
   font-size: 0.85em;
   margin-right: auto;
+  flex-shrink: 0;
+  max-width: 100%;
 }
 
 

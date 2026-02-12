@@ -477,6 +477,33 @@
   cursor: not-allowed;
 }
 
+/* 每页数量选择器 */
+.beautify-theme-manager-page-size {
+  display: flex;
+  align-items: center;
+}
+
+.beautify-theme-manager-size-select {
+  padding: 2px 4px;
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  background: var(--SmartThemeBgColor);
+  color: var(--SmartThemeBodyColor);
+  font-size: 0.85em;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.beautify-theme-manager-size-select:hover {
+  border-color: var(--SmartThemeQuoteColor);
+}
+
+.beautify-theme-manager-size-select:focus {
+  border-color: var(--SmartThemeQuoteColor);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
 /* ==========================================
    空状态
    ========================================== */

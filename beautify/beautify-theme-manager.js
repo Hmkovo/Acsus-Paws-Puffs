@@ -27,7 +27,8 @@ const EXT_ID = 'pawsPuffs';
 // 常量定义
 // ==========================================
 
-const ITEMS_PER_PAGE = 10;
+/** @type {number} 每页显示数量 */
+let itemsPerPage = 10;
 
 // ==========================================
 // 模块状态
@@ -98,10 +99,33 @@ export function getThemeTags() {
 // ==========================================
 
 /**
+ * 获取每页显示数量
+ * @returns {number}
+ */
+function getItemsPerPage() {
+  return extension_settings[EXT_ID]?.beautify?.themeManagerItemsPerPage || 10;
+}
+
+/**
+ * 设置每页显示数量
+ * @param {number} value
+ */
+function setItemsPerPage(value) {
+  if (!extension_settings[EXT_ID].beautify) {
+    extension_settings[EXT_ID].beautify = {};
+  }
+  extension_settings[EXT_ID].beautify.themeManagerItemsPerPage = value;
+  saveSettingsDebounced();
+}
+
+/**
  * 初始化主题管理
  */
 function initThemeManager() {
   if (initialized) return;
+
+  // 从设置中读取每页显示数量
+  itemsPerPage = getItemsPerPage();
 
   logger.info('[ThemeManager] 开始初始化...');
 
@@ -933,12 +957,12 @@ function renderThemeList() {
   }
 
   // 分页
-  const totalPages = Math.ceil(filteredThemes.length / ITEMS_PER_PAGE) || 1;
+  const totalPages = Math.ceil(filteredThemes.length / itemsPerPage) || 1;
   if (currentPage > totalPages) currentPage = totalPages;
   if (currentPage < 1) currentPage = 1;
 
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const pageThemes = filteredThemes.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const pageThemes = filteredThemes.slice(startIndex, startIndex + itemsPerPage);
 
   // 渲染
   if (pageThemes.length === 0) {
@@ -1005,14 +1029,25 @@ function renderPagination(totalItems) {
   const pagination = document.getElementById('beautify-theme-manager-pagination');
   if (!pagination) return;
 
-  if (totalItems <= ITEMS_PER_PAGE) {
+  if (totalItems <= itemsPerPage) {
     pagination.innerHTML = '';
     return;
   }
 
-  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  // 每页数量选项
+  const pageSizeOptions = [5, 10, 20, 30, 40, 50];
+  const optionsHtml = pageSizeOptions.map(size =>
+    `<option value="${size}" ${itemsPerPage === size ? 'selected' : ''}>${size} / 页</option>`
+  ).join('');
 
   pagination.innerHTML = `
+    <div class="beautify-theme-manager-page-size">
+      <select class="beautify-theme-manager-size-select" id="beautify-tm-page-size">
+        ${optionsHtml}
+      </select>
+    </div>
     <button class="beautify-theme-manager-page-btn" id="beautify-tm-prev" ${currentPage <= 1 ? 'disabled' : ''}>上一页</button>
     <span class="beautify-theme-manager-page-info">第 ${currentPage} / ${totalPages} 页（共 ${totalItems} 个）</span>
     <button class="beautify-theme-manager-page-btn" id="beautify-tm-next" ${currentPage >= totalPages ? 'disabled' : ''}>下一页</button>
@@ -1020,6 +1055,19 @@ function renderPagination(totalItems) {
 
   const prevBtn = document.getElementById('beautify-tm-prev');
   const nextBtn = document.getElementById('beautify-tm-next');
+  const sizeSelect = document.getElementById('beautify-tm-page-size');
+
+  // 每页数量变更事件
+  if (sizeSelect) {
+    sizeSelect.addEventListener('change', () => {
+      const newSize = parseInt(sizeSelect.value, 10);
+      itemsPerPage = newSize;
+      setItemsPerPage(newSize);
+      currentPage = 1; // 重置到第一页
+      renderThemeList();
+      scrollListToTop();
+    });
+  }
 
   if (prevBtn && !prevBtn.disabled) {
     prevBtn.addEventListener('click', () => { currentPage--; renderThemeList(); scrollListToTop(); });
