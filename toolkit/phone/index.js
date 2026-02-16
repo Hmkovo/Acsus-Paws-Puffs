@@ -29,7 +29,7 @@ const EXT_ID = 'acsusPawsPuffs';
  * @returns {Promise<Object>} 返回 PhoneSystem 实例
  */
 export async function initPhone() {
-  logger.info('[Phone] 开始初始化手机系统');
+  logger.info('phone','[Phone] 开始初始化手机系统');
 
   try {
     // 初始化 PhoneSystem（完全照搬日记）
@@ -43,10 +43,10 @@ export async function initPhone() {
       registerMenuEntry();
     }
 
-    logger.info('[Phone] 手机系统初始化完成');
+    logger.info('phone','[Phone] 手机系统初始化完成');
     return system;
   } catch (error) {
-    logger.error('[Phone] 手机系统初始化失败:', error);
+    logger.error('phone','[Phone] 手机系统初始化失败:', error);
     throw error;
   }
 }
@@ -64,15 +64,15 @@ function registerMacrosOnReady(shouldRegister) {
   eventSource.on(event_types.APP_READY, async () => {
     try {
       if (shouldRegister) {
-        logger.debug('[Phone] APP_READY事件触发，开始注册酒馆宏');
+        logger.debug('phone','[Phone] APP_READY事件触发，开始注册酒馆宏');
         const { registerPhoneMacros } = await import('./utils/tavern-macros.js');
         await registerPhoneMacros();
-        logger.info('[Phone] ✅ 酒馆宏注册完成（时机：APP_READY）');
+        logger.info('phone','[Phone] ✅ 酒馆宏注册完成（时机：APP_READY）');
       } else {
-        logger.debug('[Phone] 功能未启用，跳过宏注册');
+        logger.debug('phone','[Phone] 功能未启用，跳过宏注册');
       }
     } catch (error) {
-      logger.error('[Phone] 宏注册失败:', error);
+      logger.error('phone','[Phone] 宏注册失败:', error);
     }
   });
 }
@@ -88,12 +88,12 @@ function registerMacrosOnReady(shouldRegister) {
 function registerMenuEntry() {
   eventSource.on(event_types.APP_READY, () => {
     try {
-      logger.debug('[Phone] 注册扩展菜单入口');
+      logger.debug('phone','[Phone] 注册扩展菜单入口');
 
       // 获取扩展菜单容器
       const extensionsMenu = document.querySelector('#extensionsMenu');
       if (!extensionsMenu) {
-        logger.warn('[Phone] 找不到扩展菜单容器');
+        logger.warn('phone','[Phone] 找不到扩展菜单容器');
         return;
       }
 
@@ -108,7 +108,7 @@ function registerMenuEntry() {
 
       // 绑定点击事件
       menuItem.addEventListener('click', () => {
-        logger.info('[Phone] 用户从扩展菜单打开手机');
+        logger.info('phone','[Phone] 用户从扩展菜单打开手机');
         openPhoneUI();
       });
 
@@ -121,9 +121,9 @@ function registerMenuEntry() {
         menuItem.style.display = 'none';
       }
 
-      logger.info('[Phone] 扩展菜单入口已注册');
+      logger.info('phone','[Phone] 扩展菜单入口已注册');
     } catch (error) {
-      logger.error('[Phone] 注册扩展菜单失败:', error);
+      logger.error('phone','[Phone] 注册扩展菜单失败:', error);
     }
   });
 }
@@ -138,12 +138,12 @@ function registerMenuEntry() {
  * @returns {void}
  */
 export function openPhoneUI() {
-  logger.info('[Phone] 打开手机界面');
+  logger.info('phone','[Phone] 打开手机界面');
 
   // 检查是否已经打开
   const existingOverlay = document.querySelector('.phone-overlay');
   if (existingOverlay) {
-    logger.warn('[Phone] 手机界面已经打开，忽略重复调用');
+    logger.warn('phone','[Phone] 手机界面已经打开，忽略重复调用');
     return;
   }
 
@@ -154,9 +154,9 @@ export function openPhoneUI() {
     // 添加到页面
     document.body.appendChild(phoneOverlay);
 
-    logger.info('[Phone] 手机界面已打开');
+    logger.info('phone','[Phone] 手机界面已打开');
   } catch (error) {
-    logger.error('[Phone] 打开手机界面失败:', error);
+    logger.error('phone','[Phone] 打开手机界面失败:', error);
     throw error;
   }
 }
@@ -170,7 +170,7 @@ export function openPhoneUI() {
  * @returns {void}
  */
 export function closePhoneUI() {
-  logger.info('[Phone] 关闭手机界面（从主入口调用）');
+  logger.info('phone','[Phone] 关闭手机界面（从主入口调用）');
   closeUI();
 }
 
@@ -182,7 +182,7 @@ export function closePhoneUI() {
 export async function enablePhone() {
   const system = getPhoneSystem();
   if (!system) {
-    logger.error('[Phone] 手机系统未初始化');
+    logger.error('phone','[Phone] 手机系统未初始化');
     return;
   }
 
@@ -194,13 +194,13 @@ export async function enablePhone() {
   try {
     const { registerPhoneMacros } = await import('./utils/tavern-macros.js');
     await registerPhoneMacros();
-    logger.info('[Phone] ✅ 宏已注册（功能启用）');
+    logger.info('phone','[Phone] ✅ 宏已注册（功能启用）');
   } catch (error) {
-    logger.error('[Phone] 宏注册失败:', error);
+    logger.error('phone','[Phone] 宏注册失败:', error);
   }
 
   showMenuEntry();
-  logger.info('[Phone] 手机系统已启用');
+  logger.info('phone','[Phone] 手机系统已启用');
 }
 
 /**
@@ -209,7 +209,7 @@ export async function enablePhone() {
 export function disablePhone() {
   const system = getPhoneSystem();
   if (!system) {
-    logger.error('[Phone] 手机系统未初始化');
+    logger.error('phone','[Phone] 手机系统未初始化');
     return;
   }
 
@@ -221,10 +221,10 @@ export function disablePhone() {
   try {
     import('./utils/tavern-macros.js').then(({ unregisterPhoneMacros }) => {
       unregisterPhoneMacros();
-      logger.info('[Phone] ✅ 宏已注销（功能禁用）');
+      logger.info('phone','[Phone] ✅ 宏已注销（功能禁用）');
     });
   } catch (error) {
-    logger.error('[Phone] 宏注销失败:', error);
+    logger.error('phone','[Phone] 宏注销失败:', error);
   }
 
   // 关闭手机界面（如果已打开）
@@ -234,7 +234,7 @@ export function disablePhone() {
   }
 
   hideMenuEntry();
-  logger.info('[Phone] 手机系统已禁用');
+  logger.info('phone','[Phone] 手机系统已禁用');
 }
 
 /**
@@ -251,12 +251,12 @@ export function showMenuEntry() {
     const menuItem = document.getElementById('phone-menu-entry');
     if (menuItem) {
       menuItem.style.display = '';
-      logger.debug('[Phone] 扩展菜单图标已显示');
+      logger.debug('phone','[Phone] 扩展菜单图标已显示');
     } else {
-      logger.debug('[Phone] 菜单项尚未创建，跳过显示操作');
+      logger.debug('phone','[Phone] 菜单项尚未创建，跳过显示操作');
     }
   } catch (error) {
-    logger.error('[Phone] 显示菜单图标失败:', error);
+    logger.error('phone','[Phone] 显示菜单图标失败:', error);
   }
 }
 
@@ -274,12 +274,12 @@ export function hideMenuEntry() {
     const menuItem = document.getElementById('phone-menu-entry');
     if (menuItem) {
       menuItem.style.display = 'none';
-      logger.debug('[Phone] 扩展菜单图标已隐藏');
+      logger.debug('phone','[Phone] 扩展菜单图标已隐藏');
     } else {
-      logger.debug('[Phone] 菜单项尚未创建，跳过隐藏操作');
+      logger.debug('phone','[Phone] 菜单项尚未创建，跳过隐藏操作');
     }
   } catch (error) {
-    logger.error('[Phone] 隐藏菜单图标失败:', error);
+    logger.error('phone','[Phone] 隐藏菜单图标失败:', error);
   }
 }
 

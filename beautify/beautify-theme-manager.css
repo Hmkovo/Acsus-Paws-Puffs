@@ -584,74 +584,35 @@
   pointer-events: auto;
 }
 
-.beautify-theme-manager-info-popup {
-  background: var(--SmartThemeBlurTintColor);
-  border-radius: 8px;
-  max-width: 380px;
-  width: 90%;
-  max-height: 80vh;
-  overflow-y: auto;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+/* 使用SillyTavern标准弹窗样式 */
+.beautify-theme-manager-info-inner h3 {
+  color: var(--SmartThemeQuoteColor);
+  margin-top: 0;
+  margin-bottom: 15px;
 }
 
-.beautify-theme-manager-info-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--SmartThemeBorderColor);
-}
-
-.beautify-theme-manager-info-header h3 {
-  margin: 0;
-  font-size: 1em;
-  color: var(--SmartThemeBodyColor);
-}
-
-.beautify-theme-manager-info-close {
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.beautify-theme-manager-info-inner hr {
   border: none;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--SmartThemeEmColor);
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.9em;
+  border-top: 1px solid var(--SmartThemeBorderColor);
+  margin: 15px 0;
+  opacity: 0.3;
 }
 
-.beautify-theme-manager-info-close:hover {
-  background: var(--SmartThemeBorderColor);
-  color: var(--SmartThemeBodyColor);
-}
-
-.beautify-theme-manager-info-content {
-  padding: 14px;
-}
-
-.beautify-theme-manager-info-content h4 {
+.beautify-theme-manager-info-inner h4 {
   margin: 12px 0 6px;
   font-size: 0.95em;
   color: var(--SmartThemeQuoteColor);
 }
 
-.beautify-theme-manager-info-content h4:first-child {
-  margin-top: 0;
-}
-
-.beautify-theme-manager-info-content p,
-.beautify-theme-manager-info-content li {
+.beautify-theme-manager-info-inner p,
+.beautify-theme-manager-info-inner li {
   margin: 0 0 6px;
   font-size: 0.9em;
   color: var(--SmartThemeBodyColor);
   line-height: 1.5;
 }
 
-.beautify-theme-manager-info-content ul {
+.beautify-theme-manager-info-inner ul {
   padding-left: 18px;
   margin: 0 0 12px;
 }

@@ -1816,3 +1816,689 @@ body.beautify-hover-highlight #chat .mes_text p:hover {
 .beautify-theme-tag-confirm:hover {
   opacity: 0.9;
 }
+
+/* ==========================================
+   防窥模式
+   ========================================== */
+
+/* 防窥遮罩层 */
+#beautify-privacy-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  min-width: 100vw;
+  min-height: 100vh;
+  z-index: 99999;
+  /* 背景色由 JS 设置（获取官方变量并去掉 alpha） */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: 15vh;
+  cursor: default;
+  user-select: none;
+}
+
+.privacy-overlay-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25em;
+}
+
+.privacy-overlay-icon {
+  font-size: 2.5em;
+  color: var(--SmartThemeBodyColor);
+  opacity: 0.3;
+}
+
+.privacy-overlay-text {
+  font-size: 1.125em;
+  color: var(--SmartThemeBodyColor);
+  opacity: 0.6;
+  letter-spacing: 0.125em;
+}
+
+/* 滑块容器 */
+.privacy-slider-container {
+  position: relative;
+  width: 17.5em;
+  height: 3.5em;
+  background: var(--SmartThemeBorderColor);
+  border-radius: 1.75em;
+  padding: 0.375em;
+  box-sizing: border-box;
+}
+
+/* 滑块填充 */
+.privacy-slider-track {
+  position: absolute;
+  left: 0.375em;
+  top: 0.375em;
+  right: 0.375em;
+  bottom: 0.375em;
+  border-radius: 1.5em;
+  overflow: hidden;
+}
+
+.privacy-slider-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 0;
+  background: var(--SmartThemeEmColor);
+  border-radius: 1.5em;
+  transition: width 0.05s linear;
+}
+
+/* 滑块按钮 */
+.privacy-slider-knob {
+  position: absolute;
+  left: 0.25em;
+  top: 0.2em;
+  width: 2.9em;
+  height: 2.9em;
+  background: var(--SmartThemeBlurTintColor);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  box-shadow: 0 0.125em 0.5em rgba(0, 0, 0, 0.3);
+  transition: transform 0.05s linear;
+  z-index: 1;
+}
+
+.privacy-slider-knob:active,
+.privacy-slider-knob.dragging {
+  cursor: grabbing;
+  transform: scale(1.05);
+}
+
+.privacy-slider-knob i {
+  font-size: 1.125em;
+  color: var(--SmartThemeEmColor);
+}
+
+/* ==========================================
+   防窥模式编辑弹窗
+   ========================================== */
+
+/* 编辑按钮 */
+.beautify-setting-edit-btn {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 4px !important;
+  margin: 0 !important;
+  min-width: auto !important;
+  width: auto !important;
+  height: auto !important;
+  font-size: inherit !important;
+  line-height: 1 !important;
+  color: var(--theme-secondary-color);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.beautify-setting-edit-btn:hover {
+  opacity: 1;
+  color: var(--theme-primary-color);
+  background: none;
+  box-shadow: none;
+}
+
+.beautify-setting-edit-btn i {
+  font-size: 1em;
+  margin: 0;
+}
+
+/* 弹窗头部（与现有样式保持一致） */
+.beautify-popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 10px;
+  border-bottom: 1px solid var(--beautify-popup-border);
+}
+
+.beautify-popup-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--theme-text-color);
+}
+
+.beautify-popup-close {
+  background: none;
+  border: none;
+  color: var(--theme-secondary-color);
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px;
+}
+
+.beautify-popup-close:hover {
+  color: var(--theme-text-color);
+}
+
+/* 标签页 */
+.beautify-popup-tabs {
+  display: flex;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--beautify-popup-border);
+}
+
+.beautify-popup-tab {
+  padding: 2px 5px;
+  background: none;
+  border: none;
+  color: var(--theme-secondary-color);
+  cursor: pointer;
+  font-size: 14px;
+  position: relative;
+  transition: color 0.2s;
+}
+
+.beautify-popup-tab:hover {
+  color: var(--theme-text-color, #fff);
+}
+
+.beautify-popup-tab.active {
+  color: var(--theme-primary-color, #6c5ce7);
+}
+
+.beautify-popup-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--theme-primary-color, #6c5ce7);
+}
+
+/* 弹窗主体 */
+.beautify-popup-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  position: relative;
+}
+
+.beautify-popup-tab-content {
+  display: none;
+}
+
+.beautify-popup-tab-content.active {
+  display: block;
+}
+
+/* 表单元素 */
+.beautify-popup-label {
+  display: block;
+  font-size: 13px;
+  color: var(--theme-secondary-color, #aaa);
+  margin-bottom: 8px;
+}
+
+.beautify-popup-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: var(--theme-text-color, #fff);
+  font-size: 14px;
+}
+
+.beautify-popup-input:focus {
+  outline: none;
+  border-color: var(--theme-primary-color, #6c5ce7);
+}
+
+.beautify-popup-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.beautify-popup-col {
+  flex: 1;
+}
+
+.beautify-popup-btn-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.beautify-popup-btn {
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: var(--theme-text-color, #fff);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.beautify-popup-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.beautify-popup-btn.active {
+  background: var(--theme-primary-color, #6c5ce7);
+  border-color: var(--theme-primary-color, #6c5ce7);
+}
+
+.beautify-popup-btn-small {
+  padding: 6px 12px;
+  background: var(--theme-primary-color, #6c5ce7);
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  transition: opacity 0.2s;
+}
+
+.beautify-popup-btn-small:hover {
+  opacity: 0.9;
+}
+
+/* 颜色选择器包装 */
+.beautify-popup-color-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 标签页1：解锁文字 */
+.beautify-privacy-text-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.beautify-privacy-text-current {
+  flex: 1;
+}
+
+.beautify-privacy-text-presets {
+  flex: 1;
+}
+
+.beautify-privacy-presets-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.beautify-privacy-presets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.beautify-privacy-preset-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--theme-primary-color, #6c5ce7);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.beautify-privacy-preset-item:hover {
+  opacity: 0.9;
+}
+
+.beautify-privacy-preset-text {
+  font-size: 13px;
+  color: #fff;
+}
+
+.beautify-privacy-preset-delete {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  padding: 4px;
+  font-size: 12px;
+}
+
+.beautify-privacy-preset-delete:hover {
+  color: #fff;
+}
+
+/* 标签页2：自定义CSS - 方案管理 */
+.beautify-privacy-css-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 方案头部 */
+.beautify-preset-header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.beautify-preset-search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--beautify-popup-border);
+  border-radius: 6px;
+}
+
+.beautify-preset-search i {
+  color: var(--theme-secondary-color, #888);
+}
+
+.beautify-preset-search input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--theme-text-color, #fff);
+  font-size: 13px;
+  outline: none;
+}
+
+.beautify-preset-search input::placeholder {
+  color: var(--theme-secondary-color, #888);
+}
+
+.beautify-preset-save-btn {
+  padding: 8px 12px;
+  background: var(--theme-primary-color, #6c5ce7);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.beautify-preset-save-btn:hover {
+  opacity: 0.9;
+}
+
+/* 方案列表 */
+.beautify-preset-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.beautify-preset-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--beautify-popup-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.beautify-preset-item:hover {
+  border-color: var(--theme-primary-color, #6c5ce7);
+}
+
+.beautify-preset-item.active {
+  border-color: var(--theme-primary-color, #6c5ce7);
+  background: rgba(108, 92, 231, 0.1);
+}
+
+.beautify-preset-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.beautify-preset-name {
+  font-size: 13px;
+  color: var(--theme-text-color, #fff);
+}
+
+.beautify-preset-time {
+  font-size: 11px;
+  color: var(--theme-secondary-color, #888);
+}
+
+.beautify-preset-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.beautify-preset-load,
+.beautify-preset-delete {
+  background: none;
+  border: none;
+  color: var(--theme-secondary-color, #888);
+  cursor: pointer;
+  padding: 4px;
+  font-size: 12px;
+}
+
+.beautify-preset-load:hover {
+  color: var(--theme-primary-color, #6c5ce7);
+}
+
+.beautify-preset-delete:hover {
+  color: #e74c3c;
+}
+
+/* 空方案提示 */
+.beautify-preset-empty {
+  text-align: center;
+  color: var(--theme-secondary-color, #888);
+  padding: 16px;
+  font-size: 13px;
+}
+
+/* 操作按钮行 */
+.beautify-css-actions-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.beautify-css-actions-row .beautify-scheme-btn {
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--beautify-popup-border);
+  border-radius: 6px;
+  color: var(--theme-text-color, #fff);
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.beautify-css-actions-row .beautify-scheme-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--theme-primary-color, #6c5ce7);
+}
+
+/* CSS输入框 */
+.beautify-custom-css-input {
+  width: 100%;
+  min-height: 200px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--beautify-popup-border);
+  border-radius: 6px;
+  color: var(--theme-text-color, #fff);
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.beautify-custom-css-input:focus {
+  outline: none;
+  border-color: var(--theme-primary-color, #6c5ce7);
+}
+
+.beautify-scheme-btn {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--theme-text-color, #fff);
+  cursor: pointer;
+  padding: 6px 10px;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.beautify-scheme-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--theme-primary-color, #6c5ce7);
+}
+
+/* 标签页3：背景设置 */
+.beautify-privacy-bg-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.beautify-privacy-bg-type {
+  margin-bottom: 8px;
+}
+
+.beautify-privacy-bg-panel {
+  display: none;
+}
+
+.beautify-privacy-bg-panel.active {
+  display: block;
+}
+
+/* 背景网格 */
+.beautify-privacy-bg-grid,
+.beautify-privacy-saved-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+  max-height: 250px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.beautify-bg-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.beautify-bg-item:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.beautify-bg-item.active {
+  border-color: var(--theme-primary-color, #6c5ce7);
+}
+
+.beautify-bg-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.beautify-bg-item-delete {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.beautify-bg-item:hover .beautify-bg-item-delete {
+  opacity: 1;
+}
+
+.beautify-bg-item-delete:hover {
+  background: #e74c3c;
+}
+
+.beautify-bg-empty {
+  text-align: center;
+  color: var(--theme-secondary-color, #888);
+  padding: 20px;
+  font-size: 13px;
+}
+
+/* 上传区域 */
+.beautify-bg-upload-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.beautify-bg-upload-area:hover {
+  border-color: var(--theme-primary-color, #6c5ce7);
+  background: rgba(108, 92, 231, 0.1);
+}
+
+.beautify-bg-upload-area i {
+  font-size: 32px;
+  color: var(--theme-secondary-color, #888);
+  margin-bottom: 8px;
+}
+
+.beautify-bg-upload-area span {
+  font-size: 14px;
+  color: var(--theme-text-color, #fff);
+}
+
+.beautify-bg-upload-area small {
+  font-size: 12px;
+  color: var(--theme-secondary-color, #888);
+  margin-top: 4px;
+}
+
+.beautify-privacy-saved-section {
+  margin-top: 16px;
+}

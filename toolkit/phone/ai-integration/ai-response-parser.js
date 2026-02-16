@@ -45,7 +45,7 @@ import { extension_settings } from '../../../../../../extensions.js';
  * // ]
  */
 export async function parseAIResponse(response, contactId, messageNumberMap) {
-  logger.info('[ResponseParser] 开始解析AI回复，长度:', response.length, '编号映射表大小:', messageNumberMap?.size || 0);
+  logger.info('phone','[ResponseParser] 开始解析AI回复，长度:', response.length, '编号映射表大小:', messageNumberMap?.size || 0);
 
   const messages = [];
 
@@ -54,13 +54,13 @@ export async function parseAIResponse(response, contactId, messageNumberMap) {
 
   roleBlocks.forEach(block => {
     const { roleName, content } = block;
-    logger.debug('[ResponseParser] 解析角色区块:', roleName);
+    logger.debug('phone','[ResponseParser] 解析角色区块:', roleName);
 
     // 第二步：提取消息内容
     const messagesContent = extractMessagesContent(content);
 
     if (!messagesContent) {
-      logger.warn('[ResponseParser] 未找到[消息]标签，跳过该角色');
+      logger.warn('phone','[ResponseParser] 未找到[消息]标签，跳过该角色');
       return;
     }
 
@@ -93,7 +93,7 @@ export async function parseAIResponse(response, contactId, messageNumberMap) {
       }
     });
 
-    logger.debug('[ResponseParser] 该角色提取到', bubbles.length, '条消息');
+    logger.debug('phone','[ResponseParser] 该角色提取到', bubbles.length, '条消息');
   });
 
   // 第四步：处理好友申请消息（✅保留在消息列表，同时也保存到申请数据）
@@ -104,9 +104,9 @@ export async function parseAIResponse(response, contactId, messageNumberMap) {
       const contactId = `tavern_${request.role}`;
       // ✅ 传入消息ID（用于回退处理）
       await addReapplyMessage(contactId, request.content, request.time, request.id);
-      logger.info('[ResponseParser] 已保存好友申请消息:', request.role, request.content.substring(0, 20));
+      logger.info('phone','[ResponseParser] 已保存好友申请消息:', request.role, request.content.substring(0, 20));
     } catch (error) {
-      logger.error('[ResponseParser] 保存好友申请消息失败:', error);
+      logger.error('phone','[ResponseParser] 保存好友申请消息失败:', error);
     }
   }
   // ✅ 不再过滤好友申请消息，让它们显示在聊天记录中
@@ -116,7 +116,7 @@ export async function parseAIResponse(response, contactId, messageNumberMap) {
   await processQuotePlaceholders(regularMessages, contactId, messageNumberMap);
   await processPlanResponsePlaceholders(regularMessages, contactId, messageNumberMap);
 
-  logger.info('[ResponseParser] 解析完成，共', regularMessages.length, '条消息，', friendRequests.length, '条好友申请');
+  logger.info('phone','[ResponseParser] 解析完成，共', regularMessages.length, '条消息，', friendRequests.length, '条好友申请');
   return regularMessages;
 }
 
@@ -152,7 +152,7 @@ async function processQuotePlaceholders(messages, contactId, messageNumberMap) {
           content: `[引用]#${msg.refNumber}[回复]${msg.replyContent}`
         };
 
-        logger.warn('[ResponseParser] 引用编号不存在:', msg.refNumber, '降级为文字消息');
+        logger.warn('phone','[ResponseParser] 引用编号不存在:', msg.refNumber, '降级为文字消息');
         continue;
       }
 
@@ -184,7 +184,7 @@ async function processQuotePlaceholders(messages, contactId, messageNumberMap) {
           replyContent: msg.replyContent
         };
 
-        logger.info('[ResponseParser] 引用消息已转换，编号#', msg.refNumber, '→ ID:', quotedMsgId.substring(0, 20));
+        logger.info('phone','[ResponseParser] 引用消息已转换，编号#', msg.refNumber, '→ ID:', quotedMsgId.substring(0, 20));
       } else {
         // 原消息ID存在但找不到数据（可能被删除），降级为文字消息
         messages[i] = {
@@ -196,7 +196,7 @@ async function processQuotePlaceholders(messages, contactId, messageNumberMap) {
           content: `[引用]#${msg.refNumber}[回复]${msg.replyContent}`
         };
 
-        logger.warn('[ResponseParser] 引用消息的原消息已被删除，编号#', msg.refNumber, '降级为文字消息');
+        logger.warn('phone','[ResponseParser] 引用消息的原消息已被删除，编号#', msg.refNumber, '降级为文字消息');
       }
     }
   }
@@ -235,7 +235,7 @@ async function processPlanResponsePlaceholders(messages, contactId, messageNumbe
           content: `[回复]#${msg.refNumber} ${msg.content}`
         };
 
-        logger.warn('[ResponseParser] 计划响应编号不存在:', msg.refNumber, '降级为文字消息');
+        logger.warn('phone','[ResponseParser] 计划响应编号不存在:', msg.refNumber, '降级为文字消息');
         continue;
       }
 
@@ -253,7 +253,7 @@ async function processPlanResponsePlaceholders(messages, contactId, messageNumbe
           content: msg.content
         };
 
-        logger.warn('[ResponseParser] 引用的不是计划消息，降级为文字消息');
+        logger.warn('phone','[ResponseParser] 引用的不是计划消息，降级为文字消息');
         continue;
       }
 
@@ -298,7 +298,7 @@ async function processPlanResponsePlaceholders(messages, contactId, messageNumbe
             content: `[约定计划已完成]${plan.title}`
           });
 
-          logger.info('[ResponseParser] 角色接受计划，自动掷骰子并默认勾选内心印象+过程记录:', diceResult, outcome);
+          logger.info('phone','[ResponseParser] 角色接受计划，自动掷骰子并默认勾选内心印象+过程记录:', diceResult, outcome);
         }
       } else if (isRejected) {
         // 角色拒绝计划：更新状态
@@ -307,7 +307,7 @@ async function processPlanResponsePlaceholders(messages, contactId, messageNumbe
 
         if (plan) {
           updatePlanStatus(contactId, plan.id, 'rejected');
-          logger.info('[ResponseParser] 角色拒绝计划:', plan.title);
+          logger.info('phone','[ResponseParser] 角色拒绝计划:', plan.title);
         }
       }
 
@@ -322,7 +322,7 @@ async function processPlanResponsePlaceholders(messages, contactId, messageNumbe
         quotedPlanId: planMsgId  // 标记关联的计划消息ID
       };
 
-      logger.info('[ResponseParser] 计划响应已处理，编号#', msg.refNumber, '→', isAccepted ? '接受' : '拒绝');
+      logger.info('phone','[ResponseParser] 计划响应已处理，编号#', msg.refNumber, '→', isAccepted ? '接受' : '拒绝');
     }
   }
 }
@@ -462,7 +462,7 @@ function parseMessageBubble(bubble, roleName) {
 
     // 每行是一条独立的好友申请消息
     if (messages.length === 1) {
-      logger.debug('[ResponseParser] 好友申请消息:', messages[0].substring(0, 20));
+      logger.debug('phone','[ResponseParser] 好友申请消息:', messages[0].substring(0, 20));
       return {
         role: roleName,
         sender: 'contact',
@@ -470,7 +470,7 @@ function parseMessageBubble(bubble, roleName) {
         content: messages[0]
       };
     } else {
-      logger.debug(`[ResponseParser] 好友申请消息（${messages.length}条）`);
+      logger.debug('phone',`[ResponseParser] 好友申请消息（${messages.length}条）`);
       return messages.map(msg => ({
         role: roleName,
         sender: 'contact',
@@ -482,7 +482,7 @@ function parseMessageBubble(bubble, roleName) {
 
   // 2. 戳一戳消息：[戳一戳]
   if (bubble.trim() === '[戳一戳]') {
-    logger.debug('[ResponseParser] 戳一戳消息');
+    logger.debug('phone','[ResponseParser] 戳一戳消息');
     return {
       role: roleName,
       sender: 'contact',
@@ -502,7 +502,7 @@ function parseMessageBubble(bubble, roleName) {
       ? (months === 1 ? 10 : 108)   // VIP: 月付10，年付108
       : (months === 1 ? 20 : 216);  // SVIP: 月付20，年付216
     
-    logger.debug('[ResponseParser] 送会员消息:', { membershipType, months, duration, price });
+    logger.debug('phone','[ResponseParser] 送会员消息:', { membershipType, months, duration, price });
     
     return {
       role: roleName,
@@ -528,7 +528,7 @@ function parseMessageBubble(bubble, roleName) {
       ? (months === 1 ? 10 : 108)   // VIP: 月付10，年付108
       : (months === 1 ? 20 : 216);  // SVIP: 月付20，年付216
     
-    logger.debug('[ResponseParser] 开会员消息:', { membershipType, months, duration, price });
+    logger.debug('phone','[ResponseParser] 开会员消息:', { membershipType, months, duration, price });
     
     return {
       role: roleName,
@@ -547,7 +547,7 @@ function parseMessageBubble(bubble, roleName) {
   if (recallMatch) {
     const originalContent = recallMatch[1].trim();
 
-    logger.debug('[ResponseParser] 撤回消息:', originalContent.substring(0, 20));
+    logger.debug('phone','[ResponseParser] 撤回消息:', originalContent.substring(0, 20));
 
     // 返回撤回消息占位符（需要先显示原消息，再变成撤回提示）
     return {
@@ -567,7 +567,7 @@ function parseMessageBubble(bubble, roleName) {
     const refNumber = parseInt(planResponseMatch[1]);
     const responseContent = planResponseMatch[2].trim();
 
-    logger.debug('[ResponseParser] 约定计划响应（引用格式）:', { refNumber, responseContent });
+    logger.debug('phone','[ResponseParser] 约定计划响应（引用格式）:', { refNumber, responseContent });
 
     // 返回计划响应占位符（需要在后续处理中关联计划）
     return {
@@ -585,7 +585,7 @@ function parseMessageBubble(bubble, roleName) {
     const refNumber = parseInt(quoteNumberMatch[1]);
     const replyContent = quoteNumberMatch[2].trim();
 
-    logger.debug('[ResponseParser] 引用消息（编号格式）:', { refNumber, replyContent });
+    logger.debug('phone','[ResponseParser] 引用消息（编号格式）:', { refNumber, replyContent });
 
     // 返回引用消息占位符（需要在processQuotePlaceholders中查找原消息）
     return {
@@ -602,7 +602,7 @@ function parseMessageBubble(bubble, roleName) {
     const quotedContent = quoteTextMatch[1].trim();
     const replyContent = quoteTextMatch[2].trim();
 
-    logger.warn('[ResponseParser] 检测到旧格式引用消息（无编号），降级为文字消息');
+    logger.warn('phone','[ResponseParser] 检测到旧格式引用消息（无编号），降级为文字消息');
 
     // 直接降级为文字消息（不支持旧格式）
     return {
@@ -620,7 +620,7 @@ function parseMessageBubble(bubble, roleName) {
 
     if (emoji) {
       // 找到表情包：存储ID（与用户发送格式一致）
-      logger.debug('[ResponseParser] 表情消息（已转换）:', emojiName, '→ ID:', emoji.id.substring(0, 20));
+      logger.debug('phone','[ResponseParser] 表情消息（已转换）:', emojiName, '→ ID:', emoji.id.substring(0, 20));
       return {
         role: roleName,
         content: emoji.id,  // 存储ID
@@ -629,7 +629,7 @@ function parseMessageBubble(bubble, roleName) {
       };
     } else {
       // 表情包不存在：只存储名称，渲染时会显示"(已删除)"
-      logger.warn('[ResponseParser] 表情包不存在:', emojiName);
+      logger.warn('phone','[ResponseParser] 表情包不存在:', emojiName);
       return {
         role: roleName,
         content: emojiName,  // 存储名称（降级）
@@ -646,7 +646,7 @@ function parseMessageBubble(bubble, roleName) {
 
     // 检查字数限制（80字符）
     if (newSignature.length > 80) {
-      logger.warn('[ResponseParser] 个签超过80字符限制，截断:', newSignature.length);
+      logger.warn('phone','[ResponseParser] 个签超过80字符限制，截断:', newSignature.length);
       return {
         role: roleName,
         sender: 'contact',
@@ -655,7 +655,7 @@ function parseMessageBubble(bubble, roleName) {
       };
     }
 
-    logger.debug('[ResponseParser] 个签更新消息:', newSignature.substring(0, 20));
+    logger.debug('phone','[ResponseParser] 个签更新消息:', newSignature.substring(0, 20));
     return {
       role: roleName,
       sender: 'contact',
@@ -674,12 +674,12 @@ function parseMessageBubble(bubble, roleName) {
     const amountMatch = rest.match(/^¥?\s*(\d+(?:\.\d+)?)/);
     if (!amountMatch) {
       // 格式错误，降级为普通文本
-      logger.warn('[ResponseParser] 红包格式错误，降级为文本:', bubble);
+      logger.warn('phone','[ResponseParser] 红包格式错误，降级为文本:', bubble);
       return { role: roleName, content: bubble, type: 'text' };
     }
 
     const amount = parseFloat(amountMatch[1]);
-    logger.debug('[ResponseParser] 红包消息:', amount);
+    logger.debug('phone','[ResponseParser] 红包消息:', amount);
     return {
       role: roleName,
       amount,
@@ -705,7 +705,7 @@ function parseMessageBubble(bubble, roleName) {
     const amountMatch = rest.match(/^¥?\s*(\d+(?:\.\d+)?)/);
     if (!amountMatch) {
       // 格式错误（[转账]后面不是数字），降级为普通文本
-      logger.warn('[ResponseParser] 转账格式错误，降级为文本:', bubble);
+      logger.warn('phone','[ResponseParser] 转账格式错误，降级为文本:', bubble);
       return { role: roleName, content: bubble, type: 'text' };
     }
 
@@ -716,7 +716,7 @@ function parseMessageBubble(bubble, roleName) {
     // 如果开头是 | 或 - 或空格，去掉
     message = message.replace(/^[|\-\s]+/, '');
 
-    logger.debug('[ResponseParser] 转账消息:', amount, message || '(无留言)');
+    logger.debug('phone','[ResponseParser] 转账消息:', amount, message || '(无留言)');
     return {
       role: roleName,
       amount,
@@ -732,7 +732,7 @@ function parseMessageBubble(bubble, roleName) {
     const description = parts[0].trim();
     const imageUrl = parts[1] ? parts[1].trim() : undefined;
 
-    logger.debug('[ResponseParser] 图片消息:', { description, imageUrl });
+    logger.debug('phone','[ResponseParser] 图片消息:', { description, imageUrl });
 
     const result = {
       role: roleName,
@@ -751,7 +751,7 @@ function parseMessageBubble(bubble, roleName) {
   // 9. 视频消息：[视频]描述
   const videoMatch = bubble.match(/^\[视频\](.+)$/);
   if (videoMatch) {
-    logger.debug('[ResponseParser] 视频消息:', videoMatch[1]);
+    logger.debug('phone','[ResponseParser] 视频消息:', videoMatch[1]);
     return {
       role: roleName,
       description: videoMatch[1].trim(),
@@ -762,7 +762,7 @@ function parseMessageBubble(bubble, roleName) {
   // 10. 文件消息：[文件]文件名|大小
   const fileMatch = bubble.match(/^\[文件\](.+?)\|(.+)$/);
   if (fileMatch) {
-    logger.debug('[ResponseParser] 文件消息:', fileMatch[1], fileMatch[2]);
+    logger.debug('phone','[ResponseParser] 文件消息:', fileMatch[1], fileMatch[2]);
     return {
       role: roleName,
       filename: fileMatch[1].trim(),
@@ -772,7 +772,7 @@ function parseMessageBubble(bubble, roleName) {
   }
 
   // 11. 普通文字消息
-  logger.debug('[ResponseParser] 文字消息:', bubble.substring(0, 20) + '...');
+  logger.debug('phone','[ResponseParser] 文字消息:', bubble.substring(0, 20) + '...');
   return {
     role: roleName,
     content: bubble,
@@ -791,7 +791,7 @@ export function validateAIResponse(response) {
   const hasRoleTag = /\[角色-.+?\]/.test(response);
 
   if (!hasRoleTag) {
-    logger.warn('[ResponseParser] 格式错误：缺少[角色-XXX]标签');
+    logger.warn('phone','[ResponseParser] 格式错误：缺少[角色-XXX]标签');
     return false;
   }
 
@@ -799,7 +799,7 @@ export function validateAIResponse(response) {
   const hasMessageTag = /\[消息\]/.test(response);
 
   if (!hasMessageTag) {
-    logger.warn('[ResponseParser] 格式错误：缺少[消息]标签');
+    logger.warn('phone','[ResponseParser] 格式错误：缺少[消息]标签');
     return false;
   }
 
@@ -825,7 +825,7 @@ export function matchContactId(roleName, contacts) {
   contact = contacts.find(c => c.name.replace(/\s/g, '') === roleName.replace(/\s/g, ''));
 
   if (contact) {
-    logger.debug('[ResponseParser] 模糊匹配成功:', roleName, '→', contact.name);
+    logger.debug('phone','[ResponseParser] 模糊匹配成功:', roleName, '→', contact.name);
     return contact.id;
   }
 
@@ -841,21 +841,21 @@ export function matchContactId(roleName, contacts) {
       // 按显示名匹配
       const exactByName = aiAwareList.find(r => r.contactName === roleName);
       if (exactByName) {
-        logger.debug('[ResponseParser] 存储匹配(aiAware)成功(精确):', roleName, '→', exactByName.contactId);
+        logger.debug('phone','[ResponseParser] 存储匹配(aiAware)成功(精确):', roleName, '→', exactByName.contactId);
         return exactByName.contactId;
       }
       // 去空格模糊匹配
       const simple = (s) => (s || '').replace(/\s/g, '');
       const fuzzyByName = aiAwareList.find(r => simple(r.contactName) === simple(roleName));
       if (fuzzyByName) {
-        logger.debug('[ResponseParser] 存储匹配(aiAware)成功(模糊):', roleName, '→', fuzzyByName.contactId);
+        logger.debug('phone','[ResponseParser] 存储匹配(aiAware)成功(模糊):', roleName, '→', fuzzyByName.contactId);
         return fuzzyByName.contactId;
       }
       // 以ID后缀匹配（约定 tavern_角色名）
       const suffix = `_${roleName}`;
       const bySuffix = aiAwareList.find(r => (r.contactId || '').endsWith(suffix));
       if (bySuffix) {
-        logger.debug('[ResponseParser] 存储匹配(aiAware)成功(后缀):', roleName, '→', bySuffix.contactId);
+        logger.debug('phone','[ResponseParser] 存储匹配(aiAware)成功(后缀):', roleName, '→', bySuffix.contactId);
         return bySuffix.contactId;
       }
     }
@@ -869,7 +869,7 @@ export function matchContactId(roleName, contacts) {
       if (exactByName) {
         const id = exactByName.id || exactByName.contactId;
         if (id) {
-          logger.debug('[ResponseParser] 存储匹配(pending)成功(精确):', roleName, '→', id);
+          logger.debug('phone','[ResponseParser] 存储匹配(pending)成功(精确):', roleName, '→', id);
           return id;
         }
       }
@@ -878,7 +878,7 @@ export function matchContactId(roleName, contacts) {
       if (fuzzyByName) {
         const id = fuzzyByName.id || fuzzyByName.contactId;
         if (id) {
-          logger.debug('[ResponseParser] 存储匹配(pending)成功(模糊):', roleName, '→', id);
+          logger.debug('phone','[ResponseParser] 存储匹配(pending)成功(模糊):', roleName, '→', id);
           return id;
         }
       }
@@ -887,18 +887,18 @@ export function matchContactId(roleName, contacts) {
       if (bySuffix) {
         const id = bySuffix.id || bySuffix.contactId;
         if (id) {
-          logger.debug('[ResponseParser] 存储匹配(pending)成功(后缀):', roleName, '→', id);
+          logger.debug('phone','[ResponseParser] 存储匹配(pending)成功(后缀):', roleName, '→', id);
           return id;
         }
       }
     }
   } catch (err) {
-    logger.error('[ResponseParser] 存储兜底匹配失败:', err);
+    logger.error('phone','[ResponseParser] 存储兜底匹配失败:', err);
   }
 
   // 3) 最后兜底：按约定生成ID，确保消息不被丢弃
   const fallbackId = `tavern_${roleName}`;
-  logger.warn('[ResponseParser] 未在联系人与存储中找到匹配，使用约定式ID兜底:', roleName, '→', fallbackId);
+  logger.warn('phone','[ResponseParser] 未在联系人与存储中找到匹配，使用约定式ID兜底:', roleName, '→', fallbackId);
   return fallbackId;
 }
 

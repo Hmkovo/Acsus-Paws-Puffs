@@ -45,14 +45,14 @@ export class VariableManagerV2 {
      */
     async init() {
         if (this.initialized) {
-            logger.debug('[VariableManagerV2] 已初始化，跳过');
+            logger.debug('variable', '[VariableManagerV2] 已初始化，跳过');
             return;
         }
 
-        logger.info('[VariableManagerV2] 开始初始化...');
+        logger.info('variable', '[VariableManagerV2] 开始初始化...');
         this.variables = await storage.getDefinitionsV2();
         this.initialized = true;
-        logger.info('[VariableManagerV2] 初始化完成，已加载', Object.keys(this.variables).length, '个变量');
+        logger.info('variable', '[VariableManagerV2] 初始化完成，已加载', Object.keys(this.variables).length, '个变量');
     }
 
     // ========================================
@@ -199,7 +199,7 @@ export class VariableManagerV2 {
         // 同步注册全局宏
         registerVariableMacro(variable.name);
 
-        logger.info('[VariableManagerV2] 创建变量:', variable.name, '模式:', variable.mode);
+        logger.info('variable', '[VariableManagerV2] 创建变量:', variable.name, '模式:', variable.mode);
 
         return { success: true, variable };
     }
@@ -231,7 +231,7 @@ export class VariableManagerV2 {
 
         variable.updatedAt = Date.now();
         await this._save();
-        logger.info('[VariableManagerV2] 更新变量:', variable.name);
+        logger.info('variable', '[VariableManagerV2] 更新变量:', variable.name);
 
         return { success: true };
     }
@@ -258,7 +258,7 @@ export class VariableManagerV2 {
         // 同步注销全局宏
         unregisterVariableMacro(name);
 
-        logger.info('[VariableManagerV2] 删除变量:', name);
+        logger.info('variable', '[VariableManagerV2] 删除变量:', name);
         return { success: true };
     }
 
@@ -307,7 +307,7 @@ export class VariableManagerV2 {
         value.nextEntryId++;
 
         await storage.setValueV2(variableId, chatId, value);
-        logger.debug('[VariableManagerV2] 添加条目:', variableId, '楼层范围:', floorRange);
+        logger.debug('variable', '[VariableManagerV2] 添加条目:', variableId, '楼层范围:', floorRange);
 
         return entry;
     }
@@ -331,7 +331,7 @@ export class VariableManagerV2 {
 
         entry.content = content;
         await storage.setValueV2(variableId, chatId, value);
-        logger.debug('[VariableManagerV2] 更新条目:', variableId, 'entryId:', entryId);
+        logger.debug('variable', '[VariableManagerV2] 更新条目:', variableId, 'entryId:', entryId);
 
         return { success: true };
     }
@@ -354,7 +354,7 @@ export class VariableManagerV2 {
 
         value.entries.splice(index, 1);
         await storage.setValueV2(variableId, chatId, value);
-        logger.debug('[VariableManagerV2] 删除条目:', variableId, 'entryId:', entryId);
+        logger.debug('variable', '[VariableManagerV2] 删除条目:', variableId, 'entryId:', entryId);
 
         return { success: true };
     }
@@ -377,7 +377,7 @@ export class VariableManagerV2 {
 
         entry.hidden = !entry.hidden;
         await storage.setValueV2(variableId, chatId, value);
-        logger.debug('[VariableManagerV2] 切换条目可见性:', variableId, 'hidden:', entry.hidden);
+        logger.debug('variable', '[VariableManagerV2] 切换条目可见性:', variableId, 'hidden:', entry.hidden);
 
         return { success: true, hidden: entry.hidden };
     }
@@ -431,7 +431,7 @@ export class VariableManagerV2 {
         value.entries = newOrder.map(id => entryMap.get(id));
 
         await storage.setValueV2(variableId, chatId, value);
-        logger.debug('[VariableManagerV2] 重排条目:', variableId, '新顺序:', newOrder);
+        logger.debug('variable', '[VariableManagerV2] 重排条目:', variableId, '新顺序:', newOrder);
 
         return { success: true };
     }
@@ -494,7 +494,7 @@ export class VariableManagerV2 {
         value.historyIndex = -1;  // 重置为当前值
 
         await storage.setValueV2(variableId, chatId, value);
-        logger.debug('[VariableManagerV2] 设置值:', variableId, '楼层范围:', floorRange);
+        logger.debug('variable', '[VariableManagerV2] 设置值:', variableId, '楼层范围:', floorRange);
     }
 
     /**
@@ -582,7 +582,7 @@ export class VariableManagerV2 {
         value.historyIndex = -1;
 
         await storage.setValueV2(variableId, chatId, value);
-        logger.info('[VariableManagerV2] 应用历史版本:', variableId, '索引:', historyIndex);
+        logger.info('variable', '[VariableManagerV2] 应用历史版本:', variableId, '索引:', historyIndex);
 
         return { success: true };
     }
@@ -683,7 +683,7 @@ export class VariableManagerV2 {
     async refresh() {
         storage.invalidateCacheV2();
         this.variables = await storage.getDefinitionsV2();
-        logger.debug('[VariableManagerV2] 数据已刷新');
+        logger.debug('variable', '[VariableManagerV2] 数据已刷新');
     }
 
     /**

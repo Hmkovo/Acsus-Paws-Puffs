@@ -93,7 +93,7 @@ export class DiaryAPI {
    */
   setPresetManager(presetManager) {
     this.presetManager = presetManager;
-    logger.debug('[DiaryAPI.setPresetManager] 预设管理器已设置');
+    logger.debug('diary', '[DiaryAPI.setPresetManager] 预设管理器已设置');
   }
 
   /**
@@ -106,7 +106,7 @@ export class DiaryAPI {
       this.isGenerating = false;
 
       showInfoToast('已中止生成');
-      logger.info('[DiaryAPI.abort] 已中止后台生成');
+      logger.info('diary', '[DiaryAPI.abort] 已中止后台生成');
 
       if (this.ui) {
         this.ui.updateSendButtonState(false);
@@ -118,8 +118,8 @@ export class DiaryAPI {
    * 初始化
    */
   async init() {
-    logger.info('[DiaryAPI] 开始初始化');
-    logger.info('[DiaryAPI] 初始化完成');
+    logger.info('diary', '[DiaryAPI] 开始初始化');
+    logger.info('diary', '[DiaryAPI] 初始化完成');
   }
 
   /**
@@ -160,8 +160,8 @@ export class DiaryAPI {
       onClick: () => { }  // 点击后仅关闭通知，不触发其他操作
     });
 
-    logger.info('[DiaryAPI.requestCommentAsync] 后台生成已启动, diaryId:', diaryId);
-    logger.debug('[DiaryAPI.requestCommentAsync] 使用加载文案:', randomLoadingMsg);
+    logger.info('diary', '[DiaryAPI.requestCommentAsync] 后台生成已启动, diaryId:', diaryId);
+    logger.debug('diary', '[DiaryAPI.requestCommentAsync] 使用加载文案:', randomLoadingMsg);
 
     // 通知UI更新按钮状态
     if (this.ui) {
@@ -172,7 +172,7 @@ export class DiaryAPI {
     this.backgroundGenerate(diaryId, charName, this.currentAbortController.signal)
       .then(response => {
         if (!response) {
-          logger.info('[DiaryAPI.requestCommentAsync] 生成已中止');
+          logger.info('diary', '[DiaryAPI.requestCommentAsync] 生成已中止');
           notificationHandle.dismiss();
           return;
         }
@@ -206,13 +206,13 @@ export class DiaryAPI {
         }
 
         // 添加调试日志
-        logger.info('[DiaryAPI.requestCommentAsync] 提取结果:', {
+        logger.info('diary', '[DiaryAPI.requestCommentAsync] 提取结果:', {
           diaryCount: result.diaries?.length || 0,
           commentCount: result.comments?.length || 0,
           savedComments: diary?.comments?.length || 0,
           previewLength: commentPreview.length
         });
-        logger.debug('[DiaryAPI.requestCommentAsync] 评论预览内容:', commentPreview.substring(0, 100));
+        logger.debug('diary', '[DiaryAPI.requestCommentAsync] 评论预览内容:', commentPreview.substring(0, 100));
 
         // 随机选择成功文案（4种）
         const successTitles = [
@@ -224,7 +224,7 @@ export class DiaryAPI {
         const randomIndex = Math.floor(Math.random() * successTitles.length);
         const randomTitle = successTitles[randomIndex];
 
-        logger.debug('[DiaryAPI.requestCommentAsync] 使用成功文案:', randomTitle, '(方案', String.fromCharCode(65 + randomIndex) + ')');
+        logger.debug('diary', '[DiaryAPI.requestCommentAsync] 使用成功文案:', randomTitle, '(方案', String.fromCharCode(65 + randomIndex) + ')');
 
         // 更新通知为成功状态
         notificationHandle.update({
@@ -245,17 +245,17 @@ export class DiaryAPI {
           this.ui.refreshDiaries(true);
         }
 
-        logger.info('[DiaryAPI.requestCommentAsync] 后台生成完成');
+        logger.info('diary', '[DiaryAPI.requestCommentAsync] 后台生成完成');
       })
       .catch(error => {
         // 关闭通知
         notificationHandle.dismiss();
 
         if (error.name === 'AbortError') {
-          logger.info('[DiaryAPI.requestCommentAsync] 用户中止生成');
+          logger.info('diary', '[DiaryAPI.requestCommentAsync] 用户中止生成');
           showInfoToast('已取消，可以重新发送');
         } else {
-          logger.error('[DiaryAPI.requestCommentAsync] 生成失败:', error);
+          logger.error('diary', '[DiaryAPI.requestCommentAsync] 生成失败:', error);
           showErrorToast('出了点小问题，试试重新发送或检查网络连接');
         }
       })
@@ -283,7 +283,7 @@ export class DiaryAPI {
     const ctx = getContext();
 
     if (signal.aborted) {
-      logger.info('[DiaryAPI.backgroundGenerate] 生成已在开始前中止');
+      logger.info('diary', '[DiaryAPI.backgroundGenerate] 生成已在开始前中止');
       return null;
     }
 
@@ -320,9 +320,9 @@ export class DiaryAPI {
 
       if (this.presetManager) {
         messages = this.presetManager.buildMessagesArray(contextContents);
-        logger.debug('[DiaryAPI.backgroundGenerate] 使用预设构建messages，共', messages.length, '条');
+        logger.debug('diary', '[DiaryAPI.backgroundGenerate] 使用预设构建messages，共', messages.length, '条');
       } else {
-        logger.warn('[DiaryAPI.backgroundGenerate] 预设管理器未初始化，使用简单方式');
+        logger.warn('diary', '[DiaryAPI.backgroundGenerate] 预设管理器未初始化，使用简单方式');
         // 将所有上下文内容合并成一个系统消息
         let combinedContent = Object.values(contextContents).join('\n\n');
         messages = [{ role: 'system', content: combinedContent }];
@@ -334,21 +334,21 @@ export class DiaryAPI {
           role: 'system',  // ← 修复：改为 system，让评论任务和日记保持在一起
           content: commentTask
         });
-        logger.debug('[DiaryAPI.backgroundGenerate] 已添加评论任务');
+        logger.debug('diary', '[DiaryAPI.backgroundGenerate] 已添加评论任务');
       }
 
       if (signal.aborted) {
-        logger.info('[DiaryAPI.backgroundGenerate] 构建完成后检测到中止');
+        logger.info('diary', '[DiaryAPI.backgroundGenerate] 构建完成后检测到中止');
         return null;
       }
 
       // 步骤5：获取 API 配置（使用新的配置结构）
       const apiSettings = settings.apiConfig || { source: 'default', stream: false };
 
-      logger.debug('[DiaryAPI.backgroundGenerate] ========== 发送给AI的messages ==========');
+      logger.debug('diary', '[DiaryAPI.backgroundGenerate] ========== 发送给AI的messages ==========');
       logger.debug(JSON.stringify(messages, null, 2));
-      logger.debug('[DiaryAPI.backgroundGenerate] ========== messages结束 ==========');
-      logger.debug('[DiaryAPI.backgroundGenerate] API配置源:', apiSettings.source, '流式:', apiSettings.stream);
+      logger.debug('diary', '[DiaryAPI.backgroundGenerate] ========== messages结束 ==========');
+      logger.debug('diary', '[DiaryAPI.backgroundGenerate] API配置源:', apiSettings.source, '流式:', apiSettings.stream);
 
       // 步骤6：获取完整的自定义配置
       const customConfig = this.getCurrentCustomConfig(apiSettings);
@@ -356,17 +356,17 @@ export class DiaryAPI {
       // 步骤7：调用API
       let response;
 
-      logger.info('[DiaryAPI.backgroundGenerate] ========== API调用配置 ==========');
-      logger.info('[DiaryAPI.backgroundGenerate] API配置源:', apiSettings.source);
-      logger.info('[DiaryAPI.backgroundGenerate] 酒馆当前API源:', oai_settings.chat_completion_source);
-      logger.info('[DiaryAPI.backgroundGenerate] 酒馆max_tokens配置:', oai_settings.openai_max_tokens);
+      logger.info('diary', '[DiaryAPI.backgroundGenerate] ========== API调用配置 ==========');
+      logger.info('diary', '[DiaryAPI.backgroundGenerate] API配置源:', apiSettings.source);
+      logger.info('diary', '[DiaryAPI.backgroundGenerate] 酒馆当前API源:', oai_settings.chat_completion_source);
+      logger.info('diary', '[DiaryAPI.backgroundGenerate] 酒馆max_tokens配置:', oai_settings.openai_max_tokens);
 
       if (apiSettings.source === 'custom' && customConfig) {
         // ========================================
         // 自定义API模式：通过事件拦截注入自定义配置
         // ========================================
-        logger.info('[DiaryAPI.backgroundGenerate] 使用自定义API模式，通过事件拦截注入配置');
-        logger.debug('[DiaryAPI.backgroundGenerate] 自定义配置:', {
+        logger.info('diary', '[DiaryAPI.backgroundGenerate] 使用自定义API模式，通过事件拦截注入配置');
+        logger.debug('diary', '[DiaryAPI.backgroundGenerate] 自定义配置:', {
           format: customConfig.format,
           model: customConfig.model,
           hasApiKey: !!customConfig.apiKey,
@@ -405,7 +405,7 @@ export class DiaryAPI {
             }
           }
 
-          logger.debug('[DiaryAPI] 事件拦截注入自定义配置完成:', {
+          logger.debug('diary', '[DiaryAPI] 事件拦截注入自定义配置完成:', {
             reverse_proxy: data.reverse_proxy,
             model: data.model,
             temperature: data.temperature
@@ -424,32 +424,32 @@ export class DiaryAPI {
           throw err;
         }
 
-        logger.info('[DiaryAPI.backgroundGenerate] sendOpenAIRequest调用完成');
+        logger.info('diary', '[DiaryAPI.backgroundGenerate] sendOpenAIRequest调用完成');
       } else {
         // ========================================
         // 默认API模式：直接使用酒馆设置
         // ========================================
-        logger.info('[DiaryAPI.backgroundGenerate] 使用默认API（generateRaw）');
+        logger.info('diary', '[DiaryAPI.backgroundGenerate] 使用默认API（generateRaw）');
         response = await generateRaw({
           prompt: messages
         });
-        logger.info('[DiaryAPI.backgroundGenerate] generateRaw调用完成');
+        logger.info('diary', '[DiaryAPI.backgroundGenerate] generateRaw调用完成');
       }
 
-      logger.info('[DiaryAPI.backgroundGenerate] ========== API调用完成 ==========');
+      logger.info('diary', '[DiaryAPI.backgroundGenerate] ========== API调用完成 ==========');
 
       // 确保 response 是字符串
       if (typeof response !== 'string') {
         response = extractMessageFromData(response);
       }
 
-      logger.debug('[DiaryAPI.backgroundGenerate] AI回复:', response?.substring(0, 100) || '');
+      logger.debug('diary', '[DiaryAPI.backgroundGenerate] AI回复:', response?.substring(0, 100) || '');
 
       return response;
 
     } catch (error) {
       if (error.name === 'AbortError' || signal.aborted) {
-        logger.info('[DiaryAPI.backgroundGenerate] 生成被中止');
+        logger.info('diary', '[DiaryAPI.backgroundGenerate] 生成被中止');
         return null;
       }
 
@@ -465,12 +465,12 @@ export class DiaryAPI {
    */
   async callAPIWithStreaming(messages, apiConfig, signal) {
     // 🔍 调试日志：记录传入的完整 apiConfig
-    logger.debug('[DiaryAPI.callAPIWithStreaming] === 自定义API调试开始 ===');
-    logger.debug('[DiaryAPI.callAPIWithStreaming] 传入的 apiConfig:', JSON.stringify(apiConfig, null, 2));
-    logger.debug('[DiaryAPI.callAPIWithStreaming] apiConfig.source:', apiConfig.source);
-    logger.debug('[DiaryAPI.callAPIWithStreaming] apiConfig.baseUrl:', `"${apiConfig.baseUrl}"`, '(类型:', typeof apiConfig.baseUrl, ', 长度:', apiConfig.baseUrl?.length || 0, ')');
-    logger.debug('[DiaryAPI.callAPIWithStreaming] apiConfig.model:', apiConfig.model);
-    logger.debug('[DiaryAPI.callAPIWithStreaming] apiConfig.apiKey:', apiConfig.apiKey ? '已设置(已隐藏)' : '未设置');
+    logger.debug('diary', '[DiaryAPI.callAPIWithStreaming] === 自定义API调试开始 ===');
+    logger.debug('diary', '[DiaryAPI.callAPIWithStreaming] 传入的 apiConfig:', JSON.stringify(apiConfig, null, 2));
+    logger.debug('diary', '[DiaryAPI.callAPIWithStreaming] apiConfig.source:', apiConfig.source);
+    logger.debug('diary', '[DiaryAPI.callAPIWithStreaming] apiConfig.baseUrl:', `"${apiConfig.baseUrl}"`, '(类型:', typeof apiConfig.baseUrl, ', 长度:', apiConfig.baseUrl?.length || 0, ')');
+    logger.debug('diary', '[DiaryAPI.callAPIWithStreaming] apiConfig.model:', apiConfig.model);
+    logger.debug('diary', '[DiaryAPI.callAPIWithStreaming] apiConfig.apiKey:', apiConfig.apiKey ? '已设置(已隐藏)' : '未设置');
 
     // 获取用户当前使用的 API 源
     // ✅ 方案1：自定义API使用用户在扩展中选择的格式
@@ -493,29 +493,29 @@ export class DiaryAPI {
       if (userFormat === 'custom') {
         // 自动检测：使用酒馆当前设置
         currentSource = oai_settings.chat_completion_source || chat_completion_sources.OPENAI;
-        logger.debug('[DiaryAPI.callAPIWithStreaming] 自定义API - 自动检测模式，使用酒馆API源:', currentSource);
+        logger.debug('diary', '[DiaryAPI.callAPIWithStreaming] 自定义API - 自动检测模式，使用酒馆API源:', currentSource);
       } else {
         currentSource = formatMap[userFormat] || chat_completion_sources.CUSTOM;
-        logger.debug('[DiaryAPI.callAPIWithStreaming] 自定义API - 用户选择格式:', userFormat, '→ 映射到:', currentSource);
+        logger.debug('diary', '[DiaryAPI.callAPIWithStreaming] 自定义API - 用户选择格式:', userFormat, '→ 映射到:', currentSource);
       }
     } else {
       currentSource = oai_settings.chat_completion_source || chat_completion_sources.OPENAI;
-      logger.debug('[DiaryAPI.callAPIWithStreaming] 使用酒馆API源:', currentSource);
+      logger.debug('diary', '[DiaryAPI.callAPIWithStreaming] 使用酒馆API源:', currentSource);
     }
 
     let model = apiConfig.model;
     if (!model) {
       model = oai_settings.openai_model || 'gpt-4o-mini';
-      logger.warn('[DiaryAPI.callAPIWithStreaming] 未设置模型，使用官方默认:', model);
+      logger.warn('diary', '[DiaryAPI.callAPIWithStreaming] 未设置模型，使用官方默认:', model);
     }
-    logger.debug('[DiaryAPI.callAPIWithStreaming] 最终使用的 model:', model);
+    logger.debug('diary', '[DiaryAPI.callAPIWithStreaming] 最终使用的 model:', model);
 
     // 读取 max_tokens 配置
     const maxTokensRaw = oai_settings.openai_max_tokens;
     const maxTokensNumber = Number(maxTokensRaw);
     const maxTokensFinal = maxTokensNumber || 2000;
 
-    logger.info('[DiaryAPI.callAPIWithStreaming] max_tokens读取详情:');
+    logger.info('diary', '[DiaryAPI.callAPIWithStreaming] max_tokens读取详情:');
     logger.info('  - 原始值 (oai_settings.openai_max_tokens):', maxTokensRaw, '类型:', typeof maxTokensRaw);
     logger.info('  - Number转换后:', maxTokensNumber);
     logger.info('  - 最终使用值:', maxTokensFinal, maxTokensFinal === 2000 ? '(使用默认值)' : '(使用用户配置)');
@@ -537,46 +537,46 @@ export class DiaryAPI {
     };
 
     if (apiConfig.source === 'custom') {
-      logger.debug('[DiaryAPI.callAPIWithStreaming] 🔍 进入自定义API分支');
-      logger.debug('[DiaryAPI.callAPIWithStreaming] 检查前 - apiConfig.baseUrl:', `"${apiConfig.baseUrl}"`, ', trim后:', `"${apiConfig.baseUrl?.trim()}"`);
-      logger.debug('[DiaryAPI.callAPIWithStreaming] 检查前 - apiConfig.model:', `"${apiConfig.model}"`, ', trim后:', `"${apiConfig.model?.trim()}"`);
+      logger.debug('diary', '[DiaryAPI.callAPIWithStreaming] 🔍 进入自定义API分支');
+      logger.debug('diary', '[DiaryAPI.callAPIWithStreaming] 检查前 - apiConfig.baseUrl:', `"${apiConfig.baseUrl}"`, ', trim后:', `"${apiConfig.baseUrl?.trim()}"`);
+      logger.debug('diary', '[DiaryAPI.callAPIWithStreaming] 检查前 - apiConfig.model:', `"${apiConfig.model}"`, ', trim后:', `"${apiConfig.model?.trim()}"`);
 
       // ✅ 修复：检查必填字段，避免传递空值导致 Invalid URL
       if (!apiConfig.baseUrl || !apiConfig.baseUrl.trim()) {
         const error = new Error('自定义API配置错误：缺少 API 端点 (Base URL)');
-        logger.error('[DiaryAPI.callAPIWithStreaming]', error.message);
-        logger.error('[DiaryAPI.callAPIWithStreaming] baseUrl 值:', apiConfig.baseUrl, ', 类型:', typeof apiConfig.baseUrl);
+        logger.error('diary', '[DiaryAPI.callAPIWithStreaming]', error.message);
+        logger.error('diary', '[DiaryAPI.callAPIWithStreaming] baseUrl 值:', apiConfig.baseUrl, ', 类型:', typeof apiConfig.baseUrl);
         throw error;
       }
       if (!apiConfig.model || !apiConfig.model.trim()) {
         const error = new Error('自定义API配置错误：缺少模型名称');
-        logger.error('[DiaryAPI.callAPIWithStreaming]', error.message);
-        logger.error('[DiaryAPI.callAPIWithStreaming] model 值:', apiConfig.model, ', 类型:', typeof apiConfig.model);
+        logger.error('diary', '[DiaryAPI.callAPIWithStreaming]', error.message);
+        logger.error('diary', '[DiaryAPI.callAPIWithStreaming] model 值:', apiConfig.model, ', 类型:', typeof apiConfig.model);
         throw error;
       }
 
-      logger.debug('[DiaryAPI.callAPIWithStreaming] ✅ 验证通过，开始设置 API 端点');
+      logger.debug('diary', '[DiaryAPI.callAPIWithStreaming] ✅ 验证通过，开始设置 API 端点');
 
       // 🔧 修复：chat_completion_source 为 "custom" 时，后端读取 custom_url 而不是 reverse_proxy
       // 所以需要同时设置两个字段
       body.reverse_proxy = apiConfig.baseUrl.trim();
       body.custom_url = apiConfig.baseUrl.trim();  // ← 关键：custom 源需要 custom_url
-      logger.debug('[DiaryAPI.callAPIWithStreaming] body.reverse_proxy 已设置为:', `"${body.reverse_proxy}"`);
-      logger.debug('[DiaryAPI.callAPIWithStreaming] body.custom_url 已设置为:', `"${body.custom_url}"`);
+      logger.debug('diary', '[DiaryAPI.callAPIWithStreaming] body.reverse_proxy 已设置为:', `"${body.reverse_proxy}"`);
+      logger.debug('diary', '[DiaryAPI.callAPIWithStreaming] body.custom_url 已设置为:', `"${body.custom_url}"`);
 
       if (apiConfig.apiKey) {
         body.proxy_password = apiConfig.apiKey.trim();
-        logger.debug('[DiaryAPI.callAPIWithStreaming] body.proxy_password 已设置');
+        logger.debug('diary', '[DiaryAPI.callAPIWithStreaming] body.proxy_password 已设置');
       }
     } else {
-      logger.debug('[DiaryAPI.callAPIWithStreaming] 跳过自定义API分支 (source !== "custom")');
+      logger.debug('diary', '[DiaryAPI.callAPIWithStreaming] 跳过自定义API分支 (source !== "custom")');
     }
 
     // 🔍 最终检查：记录 body 中的 reverse_proxy
-    logger.debug('[DiaryAPI.callAPIWithStreaming] 最终 body.reverse_proxy:', body.reverse_proxy);
-    logger.debug('[DiaryAPI.callAPIWithStreaming] 完整 body 对象:', JSON.stringify(body, null, 2));
+    logger.debug('diary', '[DiaryAPI.callAPIWithStreaming] 最终 body.reverse_proxy:', body.reverse_proxy);
+    logger.debug('diary', '[DiaryAPI.callAPIWithStreaming] 完整 body 对象:', JSON.stringify(body, null, 2));
 
-    logger.info('[DiaryAPI.callAPIWithStreaming] 最终请求配置:', {
+    logger.info('diary', '[DiaryAPI.callAPIWithStreaming] 最终请求配置:', {
       扩展API配置源: apiConfig.source,
       酒馆API源: currentSource,
       流式传输: body.stream,
@@ -595,7 +595,7 @@ export class DiaryAPI {
 
     if (!response.ok) {
       const errorText = await response.text();
-      logger.error('[DiaryAPI.callAPIWithStreaming] API调用失败:', response.status, errorText);
+      logger.error('diary', '[DiaryAPI.callAPIWithStreaming] API调用失败:', response.status, errorText);
       throw new Error(`API调用失败: ${response.status} ${errorText}`);
     }
 
@@ -623,19 +623,19 @@ export class DiaryAPI {
     let fullText = '';
     const state = { reasoning: '', image: '' };
 
-    logger.debug('[DiaryAPI.handleStreamResponse] 使用API源解析流式响应:', currentSource);
+    logger.debug('diary', '[DiaryAPI.handleStreamResponse] 使用API源解析流式响应:', currentSource);
 
     try {
       while (true) {
         if (signal.aborted) {
-          logger.info('[DiaryAPI.handleStreamResponse] 流式生成被中止');
+          logger.info('diary', '[DiaryAPI.handleStreamResponse] 流式生成被中止');
           break;
         }
 
         const { done, value } = await reader.read();
 
         if (done || !value?.data || value.data === '[DONE]') {
-          logger.debug('[DiaryAPI.handleStreamResponse] 流式生成完成');
+          logger.debug('diary', '[DiaryAPI.handleStreamResponse] 流式生成完成');
           break;
         }
 
@@ -643,7 +643,7 @@ export class DiaryAPI {
         try {
           parsed = JSON.parse(value.data);
         } catch (error) {
-          logger.warn('[DiaryAPI.handleStreamResponse] 解析SSE数据失败:', error);
+          logger.warn('diary', '[DiaryAPI.handleStreamResponse] 解析SSE数据失败:', error);
           continue;
         }
 
@@ -659,7 +659,7 @@ export class DiaryAPI {
             this.ui.updateAiPreview(fullText);
           }
 
-          logger.debug('[DiaryAPI.handleStreamResponse] 收到文本块，当前长度:', fullText.length);
+          logger.debug('diary', '[DiaryAPI.handleStreamResponse] 收到文本块，当前长度:', fullText.length);
         }
       }
 
@@ -667,7 +667,7 @@ export class DiaryAPI {
 
     } catch (error) {
       if (error.name === 'AbortError' || signal.aborted) {
-        logger.info('[DiaryAPI.handleStreamResponse] 流式生成被中止，返回部分文本');
+        logger.info('diary', '[DiaryAPI.handleStreamResponse] 流式生成被中止，返回部分文本');
         return fullText;
       }
 
@@ -677,7 +677,7 @@ export class DiaryAPI {
       try {
         reader.releaseLock?.();
       } catch (error) {
-        logger.warn('[DiaryAPI.handleStreamResponse] 释放读取器失败:', error);
+        logger.warn('diary', '[DiaryAPI.handleStreamResponse] 释放读取器失败:', error);
       }
     }
   }
@@ -710,7 +710,7 @@ export class DiaryAPI {
 
     this.parser.extractAndSave(content);
 
-    logger.debug('[DiaryAPI.extractFromMessage] 已提取消息:', messageId);
+    logger.debug('diary', '[DiaryAPI.extractFromMessage] 已提取消息:', messageId);
   }
 
   /**
@@ -731,7 +731,7 @@ export class DiaryAPI {
     const ctx = getContext();
     const charName = ctx.name2 || 'AI';
 
-    logger.info('[DiaryAPI.requestCommentForSelectedDiaries] 开始为', diaryIds.length, '篇日记生成评论');
+    logger.info('diary', '[DiaryAPI.requestCommentForSelectedDiaries] 开始为', diaryIds.length, '篇日记生成评论');
 
     // 检查是否正在生成
     if (this.isGenerating) {
@@ -761,7 +761,7 @@ export class DiaryAPI {
         notificationHandle.dismiss();
 
         if (!response) {
-          logger.warn('[DiaryAPI.requestCommentForSelectedDiaries] 生成被中止或无结果');
+          logger.warn('diary', '[DiaryAPI.requestCommentForSelectedDiaries] 生成被中止或无结果');
           return;
         }
 
@@ -775,16 +775,16 @@ export class DiaryAPI {
 
         // 显示成功提示
         showSuccessToast(`已为 ${diaryIds.length} 篇日记`);
-        logger.info('[DiaryAPI.requestCommentForSelectedDiaries] 批量生成完成');
+        logger.info('diary', '[DiaryAPI.requestCommentForSelectedDiaries] 批量生成完成');
       })
       .catch(error => {
         notificationHandle.dismiss();
 
         if (error.name === 'AbortError') {
-          logger.info('[DiaryAPI.requestCommentForSelectedDiaries] 用户中止生成');
+          logger.info('diary', '[DiaryAPI.requestCommentForSelectedDiaries] 用户中止生成');
           showInfoToast('已中止生成');
         } else {
-          logger.error('[DiaryAPI.requestCommentForSelectedDiaries] 生成失败:', error);
+          logger.error('diary', '[DiaryAPI.requestCommentForSelectedDiaries] 生成失败:', error);
           showErrorToast('评论失败：' + error.message);
         }
       })
@@ -811,7 +811,7 @@ export class DiaryAPI {
     const settings = this.dataManager.getSettings();
 
     if (signal.aborted) {
-      logger.info('[DiaryAPI.backgroundGenerateForSelected] 生成已在开始前中止');
+      logger.info('diary', '[DiaryAPI.backgroundGenerateForSelected] 生成已在开始前中止');
       return null;
     }
 
@@ -825,7 +825,7 @@ export class DiaryAPI {
         throw new Error('没有可发送的日记');
       }
 
-      logger.debug('[DiaryAPI.backgroundGenerateForSelected] 将发送', selectedDiaries.length, '篇日记');
+      logger.debug('diary', '[DiaryAPI.backgroundGenerateForSelected] 将发送', selectedDiaries.length, '篇日记');
 
       // 【重构】使用专门的批量评论上下文构建方法
       // 1. 构建通用上下文（不包含日记）
@@ -845,8 +845,8 @@ export class DiaryAPI {
 
       // 保存临时编号映射到parser
       this.parser.setTempIdMaps(tempIdMap, tempCommentIdMap);
-      logger.debug('[DiaryAPI.backgroundGenerateForSelected] 临时日记编号映射:', tempIdMap);
-      logger.debug('[DiaryAPI.backgroundGenerateForSelected] 临时评论编号映射:', tempCommentIdMap);
+      logger.debug('diary', '[DiaryAPI.backgroundGenerateForSelected] 临时日记编号映射:', tempIdMap);
+      logger.debug('diary', '[DiaryAPI.backgroundGenerateForSelected] 临时评论编号映射:', tempCommentIdMap);
 
       // 手动构建评论任务（使用选中的日记）
       const commentTask = this.builder.buildCommentTask(selectedDiaries, charName, settings);
@@ -855,9 +855,9 @@ export class DiaryAPI {
       let messages;
       if (this.presetManager) {
         messages = this.presetManager.buildMessagesArray(contextContents);
-        logger.debug('[DiaryAPI.backgroundGenerateForSelected] 使用预设构建messages，共', messages.length, '条');
+        logger.debug('diary', '[DiaryAPI.backgroundGenerateForSelected] 使用预设构建messages，共', messages.length, '条');
       } else {
-        logger.warn('[DiaryAPI.backgroundGenerateForSelected] 预设管理器未初始化，使用简单方式');
+        logger.warn('diary', '[DiaryAPI.backgroundGenerateForSelected] 预设管理器未初始化，使用简单方式');
         let combinedContent = Object.values(contextContents).join('\n\n');
         messages = [{ role: 'system', content: combinedContent }];
       }
@@ -865,17 +865,17 @@ export class DiaryAPI {
       // 添加评论任务
       if (commentTask) {
         messages.push({ role: 'system', content: commentTask });  // ← 修复：改为 system，保持正确顺序
-        logger.debug('[DiaryAPI.backgroundGenerateForSelected] 已添加评论任务');
+        logger.debug('diary', '[DiaryAPI.backgroundGenerateForSelected] 已添加评论任务');
       }
 
       // 打印完整的messages（调试用）
-      logger.debug('[DiaryAPI.backgroundGenerateForSelected] ========== 发送给AI的messages ==========');
+      logger.debug('diary', '[DiaryAPI.backgroundGenerateForSelected] ========== 发送给AI的messages ==========');
       logger.debug(JSON.stringify(messages, null, 2));
-      logger.debug('[DiaryAPI.backgroundGenerateForSelected] ========== messages结束 ==========');
+      logger.debug('diary', '[DiaryAPI.backgroundGenerateForSelected] ========== messages结束 ==========');
 
       // 获取API配置（使用新的配置结构）
       const apiSettings = settings.apiConfig || { source: 'default', stream: false };
-      logger.debug('[DiaryAPI.backgroundGenerateForSelected] API配置源:', apiSettings.source || 'default', '流式:', apiSettings.stream || false);
+      logger.debug('diary', '[DiaryAPI.backgroundGenerateForSelected] API配置源:', apiSettings.source || 'default', '流式:', apiSettings.stream || false);
 
       // 获取完整的自定义配置
       const customConfig = this.getCurrentCustomConfig(apiSettings);
@@ -886,8 +886,8 @@ export class DiaryAPI {
         // ========================================
         // 自定义API模式：通过事件拦截注入自定义配置
         // ========================================
-        logger.info('[DiaryAPI.backgroundGenerateForSelected] 使用自定义API模式');
-        logger.debug('[DiaryAPI.backgroundGenerateForSelected] 自定义配置:', {
+        logger.info('diary', '[DiaryAPI.backgroundGenerateForSelected] 使用自定义API模式');
+        logger.debug('diary', '[DiaryAPI.backgroundGenerateForSelected] 自定义配置:', {
           format: customConfig.format,
           model: customConfig.model,
           hasApiKey: !!customConfig.apiKey,
@@ -919,7 +919,7 @@ export class DiaryAPI {
             }
           }
 
-          logger.debug('[DiaryAPI] 事件拦截注入配置完成');
+          logger.debug('diary', '[DiaryAPI] 事件拦截注入配置完成');
         };
         eventSource.once(event_types.CHAT_COMPLETION_SETTINGS_READY, eventHandler);
 
@@ -933,7 +933,7 @@ export class DiaryAPI {
         }
       } else {
         // 使用默认API（复用酒馆设置）
-        logger.info('[DiaryAPI.backgroundGenerateForSelected] 使用默认API（generateRaw）');
+        logger.info('diary', '[DiaryAPI.backgroundGenerateForSelected] 使用默认API（generateRaw）');
         response = await generateRaw({
           prompt: messages
         });
@@ -945,11 +945,11 @@ export class DiaryAPI {
       }
 
       if (signal.aborted) {
-        logger.info('[DiaryAPI.backgroundGenerateForSelected] 生成已被中止');
+        logger.info('diary', '[DiaryAPI.backgroundGenerateForSelected] 生成已被中止');
         return null;
       }
 
-      logger.debug('[DiaryAPI.backgroundGenerateForSelected] AI回复:', response?.substring(0, 100) || '');
+      logger.debug('diary', '[DiaryAPI.backgroundGenerateForSelected] AI回复:', response?.substring(0, 100) || '');
 
       // 更新预览
       if (this.ui) {
@@ -959,7 +959,7 @@ export class DiaryAPI {
       return response;
     } catch (error) {
       if (signal.aborted || error.name === 'AbortError') {
-        logger.info('[DiaryAPI.backgroundGenerateForSelected] 生成已被中止');
+        logger.info('diary', '[DiaryAPI.backgroundGenerateForSelected] 生成已被中止');
         return null;
       }
       throw error;
@@ -977,7 +977,7 @@ export class DiaryAPI {
    */
   setSelectedDiaryIds(diaryIds) {
     this.selectedDiaryIds = diaryIds;
-    logger.info('[DiaryAPI.setSelectedDiaryIds] 已设置选中的日记:', diaryIds.length, '篇');
+    logger.info('diary', '[DiaryAPI.setSelectedDiaryIds] 已设置选中的日记:', diaryIds.length, '篇');
   }
 
   /**
@@ -988,7 +988,7 @@ export class DiaryAPI {
    */
   clearSelectedDiaryIds() {
     this.selectedDiaryIds = null;
-    logger.debug('[DiaryAPI.clearSelectedDiaryIds] 已清除选中状态');
+    logger.debug('diary', '[DiaryAPI.clearSelectedDiaryIds] 已清除选中状态');
   }
 
   /**
@@ -1049,7 +1049,7 @@ export class DiaryAPI {
       }
     }
 
-    logger.debug('[DiaryAPI.getCurrentCustomConfig] 配置:', {
+    logger.debug('diary', '[DiaryAPI.getCurrentCustomConfig] 配置:', {
       format: config.format,
       model: config.model,
       hasApiKey: !!config.apiKey,

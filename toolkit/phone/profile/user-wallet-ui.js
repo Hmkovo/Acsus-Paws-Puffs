@@ -33,7 +33,7 @@ let currentFilter = 'all';
 export async function renderUserWallet(params) {
   const { container } = params;
 
-  logger.debug('[WalletUI] 开始渲染钱包页面');
+  logger.debug('phone','[WalletUI] 开始渲染钱包页面');
 
   // 创建页面HTML
   container.innerHTML = createWalletHTML();
@@ -153,7 +153,7 @@ function bindEvents(container) {
   // 返回按钮
   const backBtn = container.querySelector('.wallet-btn-back');
   backBtn?.addEventListener('click', async () => {
-    logger.debug('[WalletUI] 点击返回按钮');
+    logger.debug('phone','[WalletUI] 点击返回按钮');
     const { hidePage } = await import('../phone-main-ui.js');
     const overlayElement = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
     if (overlayElement) {
@@ -197,9 +197,9 @@ async function loadAndRenderWalletData(container) {
     // 渲染账单列表
     await renderTransactionsList(container, currentFilter);
 
-    logger.info('[WalletUI] 钱包数据已加载，余额:', balance, '收入:', income, '支出:', expense);
+    logger.info('phone','[WalletUI] 钱包数据已加载，余额:', balance, '收入:', income, '支出:', expense);
   } catch (error) {
-    logger.error('[WalletUI] 加载钱包数据失败:', error.message);
+    logger.error('phone','[WalletUI] 加载钱包数据失败:', error.message);
   }
 }
 
@@ -266,7 +266,7 @@ async function renderTransactionsList(container, filter) {
   const itemsHTML = transactions.map(t => createTransactionItem(t, contacts));
   listElement.innerHTML = itemsHTML.join('');
 
-  logger.debug('[WalletUI] 已渲染', transactions.length, '条记录，筛选:', filter);
+  logger.debug('phone','[WalletUI] 已渲染', transactions.length, '条记录，筛选:', filter);
 }
 
 /**
@@ -344,7 +344,7 @@ async function handleFilterChange(container, filter) {
   // 重新渲染列表
   await renderTransactionsList(container, filter);
 
-  logger.debug('[WalletUI] 筛选切换:', filter);
+  logger.debug('phone','[WalletUI] 筛选切换:', filter);
 }
 
 /**
@@ -359,18 +359,18 @@ function bindWalletChangeListener(container) {
   
   // 订阅钱包数据变化
   stateManager.subscribe(pageId, 'wallet', async (meta) => {
-    logger.debug('[WalletUI] 收到钱包数据变化通知', meta);
+    logger.debug('phone','[WalletUI] 收到钱包数据变化通知', meta);
     
     // 检查页面是否还存在
     if (!document.contains(container)) {
-      logger.debug('[WalletUI] 页面已关闭，跳过刷新');
+      logger.debug('phone','[WalletUI] 页面已关闭，跳过刷新');
       return;
     }
     
     // 读取最新数据
     const walletData = await stateManager.get('wallet');
     if (!walletData) {
-      logger.warn('[WalletUI] 钱包数据为空，跳过刷新');
+      logger.warn('phone','[WalletUI] 钱包数据为空，跳过刷新');
       return;
     }
     
@@ -384,7 +384,7 @@ function bindWalletChangeListener(container) {
     // 重新渲染列表
     await renderTransactionsList(container, currentFilter);
     
-    logger.debug('[WalletUI] 钱包数据已自动更新');
+    logger.debug('phone','[WalletUI] 钱包数据已自动更新');
   });
   
   // 监听页面移除，自动清理订阅
@@ -394,7 +394,7 @@ function bindWalletChangeListener(container) {
         if (node === container) {
           stateManager.unsubscribeAll(pageId);
           observer.disconnect();
-          logger.debug('[WalletUI] 页面已关闭，已清理订阅');
+          logger.debug('phone','[WalletUI] 页面已关闭，已清理订阅');
           return;
         }
       }
@@ -405,7 +405,7 @@ function bindWalletChangeListener(container) {
     observer.observe(container.parentNode, { childList: true });
   }
   
-  logger.debug('[WalletUI] 已订阅钱包数据变化');
+  logger.debug('phone','[WalletUI] 已订阅钱包数据变化');
 }
 
 /**
@@ -430,7 +430,7 @@ function bindDeleteActions(container) {
       const transactionId = /** @type {HTMLElement} */ (deleteBtn).dataset.transactionId;
       if (!transactionId) return;
 
-      logger.debug('[WalletUI] 点击删除按钮，转账ID:', transactionId);
+      logger.debug('phone','[WalletUI] 点击删除按钮，转账ID:', transactionId);
       await handleDeleteTransaction(container, transactionId);
       return;
     }
@@ -438,7 +438,7 @@ function bindDeleteActions(container) {
     // 点击记录项显示删除按钮（不包括按钮区域）
     if (billItem && !target.closest('.wallet-bill-actions') && !target.closest('button')) {
       const transactionId = /** @type {HTMLElement} */ (billItem).dataset.transactionId;
-      logger.debug('[WalletUI] 点击记录项，显示删除按钮 ID:', transactionId);
+      logger.debug('phone','[WalletUI] 点击记录项，显示删除按钮 ID:', transactionId);
 
       // 阻止事件冒泡
       e.stopPropagation();
@@ -446,13 +446,13 @@ function bindDeleteActions(container) {
       // 隐藏之前的按钮
       if (activeItem && activeItem !== billItem) {
         activeItem.classList.remove('show-actions');
-        logger.debug('[WalletUI] 隐藏之前的删除按钮');
+        logger.debug('phone','[WalletUI] 隐藏之前的删除按钮');
       }
 
       // 显示当前记录的按钮
       billItem.classList.add('show-actions');
       activeItem = billItem;
-      logger.debug('[WalletUI] 显示当前删除按钮 ID:', transactionId);
+      logger.debug('phone','[WalletUI] 显示当前删除按钮 ID:', transactionId);
 
       // 手机端3秒后自动隐藏
       if (window.innerWidth <= 768) {
@@ -462,7 +462,7 @@ function bindDeleteActions(container) {
           if (activeItem === billItem) {
             activeItem = null;
           }
-          logger.debug('[WalletUI] 手机端自动隐藏删除按钮 ID:', transactionId);
+          logger.debug('phone','[WalletUI] 手机端自动隐藏删除按钮 ID:', transactionId);
         }, 3000);
       }
     }
@@ -476,7 +476,7 @@ function bindDeleteActions(container) {
         activeItem.classList.remove('show-actions');
         activeItem = null;
         clearTimeout(hideTimer);
-        logger.debug('[WalletUI] 点击外部区域，隐藏删除按钮');
+        logger.debug('phone','[WalletUI] 点击外部区域，隐藏删除按钮');
       }
     }
   });
@@ -498,7 +498,7 @@ async function handleDeleteTransaction(container, transactionId) {
     // 查找转账记录（获取关联的消息ID和联系人ID）
     const transaction = await findTransactionById(transactionId);
     if (!transaction) {
-      logger.warn('[WalletUI] 转账记录不存在:', transactionId);
+      logger.warn('phone','[WalletUI] 转账记录不存在:', transactionId);
       return;
     }
 
@@ -514,7 +514,7 @@ async function handleDeleteTransaction(container, transactionId) {
     );
 
     if (!confirmed) {
-      logger.debug('[WalletUI] 用户取消删除');
+      logger.debug('phone','[WalletUI] 用户取消删除');
       return;
     }
 
@@ -525,7 +525,7 @@ async function handleDeleteTransaction(container, transactionId) {
       const beforeCount = chatHistory.length;
       const newHistory = chatHistory.filter(msg => msg.id !== transaction.messageId);
       await saveChatHistory(transaction.contactId, newHistory);
-      logger.debug('[WalletUI] 持久化数据已更新:', beforeCount, '→', newHistory.length);
+      logger.debug('phone','[WalletUI] 持久化数据已更新:', beforeCount, '→', newHistory.length);
 
       // 1.2 从DOM中删除（如果聊天页面正在显示）
       const chatPage = document.querySelector(`#page-chat-${transaction.contactId.replace(/\s+/g, '_')}`);
@@ -533,21 +533,21 @@ async function handleDeleteTransaction(container, transactionId) {
         const messageElement = chatPage.querySelector(`[data-msg-id="${transaction.messageId}"]`);
         if (messageElement) {
           messageElement.remove();
-          logger.debug('[WalletUI] 已从DOM删除转账消息:', transaction.messageId);
+          logger.debug('phone','[WalletUI] 已从DOM删除转账消息:', transaction.messageId);
         } else {
-          logger.debug('[WalletUI] DOM中未找到该消息（可能已滚动出视野）:', transaction.messageId);
+          logger.debug('phone','[WalletUI] DOM中未找到该消息（可能已滚动出视野）:', transaction.messageId);
         }
       } else {
-        logger.debug('[WalletUI] 聊天页面未打开，无需更新DOM');
+        logger.debug('phone','[WalletUI] 聊天页面未打开，无需更新DOM');
       }
 
-      logger.info('[WalletUI] 已删除关联的聊天消息:', transaction.messageId);
+      logger.info('phone','[WalletUI] 已删除关联的聊天消息:', transaction.messageId);
     }
 
     // 2. 删除转账记录
     const success = await deleteTransaction(transactionId);
     if (success) {
-      logger.info('[WalletUI] 转账记录已删除:', transactionId);
+      logger.info('phone','[WalletUI] 转账记录已删除:', transactionId);
       const toastr = window.toastr;
       if (toastr) {
         toastr.success('转账记录已删除');
@@ -556,7 +556,7 @@ async function handleDeleteTransaction(container, transactionId) {
 
     // 3. 重新渲染列表（由事件监听器自动触发）
   } catch (error) {
-    logger.error('[WalletUI] 删除转账记录失败:', error.message);
+    logger.error('phone','[WalletUI] 删除转账记录失败:', error.message);
     const toastr = window.toastr;
     if (toastr) {
       toastr.error('删除失败: ' + error.message);

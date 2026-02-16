@@ -14,6 +14,7 @@ import logger from '../logger.js';
 import { extension_settings, getContext } from '../../../../extensions.js';
 import { eventSource, event_types, saveSettingsDebounced, getThumbnailUrl, chat } from '../../../../../script.js';
 import { openBeautifyPopup, initBeautifyPopup, applyDisplaySettings } from './beautify-popup.js';
+import { openPrivacyEditPopup, initPrivacyPopup } from './beautify-privacy-popup.js';
 import { timestampToMoment } from '../../../../utils.js';
 import { getTokenCountAsync } from '../../../../tokenizers.js';
 
@@ -82,6 +83,9 @@ let hideScrollbarEnabled = false;
 /** @type {boolean} 背景图标签管理是否启用 */
 let bgTagManagerEnabled = false;
 
+/** @type {boolean} 防窥模式是否启用 */
+let privacyModeEnabled = false;
+
 /** @type {boolean} 滑块变亮是否启用 */
 let sliderBrightEnabled = false;
 
@@ -96,6 +100,15 @@ let hideProxyWarnEnabled = false;
 
 /** @type {boolean} 快捷回复隐藏是否启用 */
 let hideQrEnabled = false;
+
+/** @type {boolean} 快捷回复固定高度是否启用 */
+let qrHeightEnabled = false;
+
+/** @type {number} 快捷回复高度值（悬停显示时的高度，默认30px） */
+let qrHeight = 30;
+
+/** @type {boolean} 快捷回复高度是否自适应 */
+let qrHeightAuto = false;
 
 /** @type {boolean} 导航栏图标透明度是否启用自定义 */
 let navIconOpacityEnabled = false;
@@ -216,11 +229,11 @@ let hoverHighlightColor = 'rgba(242, 198, 116, 0.15)';
  */
 export async function initBeautifySystem() {
   if (initialized) {
-    logger.warn('[Beautify] 已经初始化过了');
+    logger.warn('beautify', '[Beautify] 已经初始化过了');
     return;
   }
 
-  logger.info('[Beautify] 开始初始化...');
+  logger.info('beautify', '[Beautify] 开始初始化...');
 
   try {
     // 第一步：加载设置
@@ -233,13 +246,13 @@ export async function initBeautifySystem() {
     if (enabled) {
       await fullInitialize();
     } else {
-      logger.info('[Beautify] 功能未启用，跳过完整初始化');
+      logger.info('beautify', '[Beautify] 功能未启用，跳过完整初始化');
     }
 
     initialized = true;
-    logger.info('[Beautify] 初始化完成');
+    logger.info('beautify', '[Beautify] 初始化完成');
   } catch (error) {
-    logger.error('[Beautify] 初始化失败:', error);
+    logger.error('beautify', '[Beautify] 初始化失败:', error);
     throw error;
   }
 }
@@ -261,6 +274,22 @@ function loadSettings() {
     fullwidthShowGhostEnabled: false,  // 全宽模式显示不可见消息提示
     hideScrollbarEnabled: false,
     bgTagManagerEnabled: false,  // 背景图标签管理
+    privacyModeEnabled: false,  // 防窥模式
+    // 防窥模式详细设置
+    privacy: {
+      unlockText: '滑动解锁',  // 当前解锁文字
+      textPresets: [  // 解锁文字预设
+        '滑动解锁',
+        '向右滑动',
+        ' swipe to unlock',
+        '👆滑动解锁'
+      ],
+      customCss: '',  // 自定义CSS
+      cssPresets: [],  // CSS方案列表 { id, name, css, savedTime }
+      currentCssPresetId: null,  // 当前选中的方案ID
+      bgImage: '',  // 背景图URL
+      savedBgImages: []  // 上传的背景图存档 { id, name, url, type, addedTime }
+    },
     bgTags: [],  // 自定义标签列表 { id, name, backgrounds: [] }
     // 便捷小功能
     sliderBrightEnabled: false,
@@ -338,12 +367,16 @@ function loadSettings() {
   fullwidthShowGhostEnabled = extension_settings[EXT_ID].beautify.fullwidthShowGhostEnabled;
   hideScrollbarEnabled = extension_settings[EXT_ID].beautify.hideScrollbarEnabled;
   bgTagManagerEnabled = extension_settings[EXT_ID].beautify.bgTagManagerEnabled;
+  privacyModeEnabled = extension_settings[EXT_ID].beautify.privacyModeEnabled;
   // 便捷小功能
   sliderBrightEnabled = extension_settings[EXT_ID].beautify.sliderBrightEnabled;
   hideCopyBtnEnabled = extension_settings[EXT_ID].beautify.hideCopyBtnEnabled;
   hideNameEnabled = extension_settings[EXT_ID].beautify.hideNameEnabled;
   hideProxyWarnEnabled = extension_settings[EXT_ID].beautify.hideProxyWarnEnabled;
   hideQrEnabled = extension_settings[EXT_ID].beautify.hideQrEnabled;
+  qrHeightEnabled = extension_settings[EXT_ID].beautify.qrHeightEnabled;
+  qrHeight = extension_settings[EXT_ID].beautify.qrHeight;
+  qrHeightAuto = extension_settings[EXT_ID].beautify.qrHeightAuto;
   navIconOpacityEnabled = extension_settings[EXT_ID].beautify.navIconOpacityEnabled;
   navIconOpacity = extension_settings[EXT_ID].beautify.navIconOpacity;
   editBtnOpacityEnabled = extension_settings[EXT_ID].beautify.editBtnOpacityEnabled;
@@ -378,7 +411,7 @@ function loadSettings() {
   paragraphSpacingValue = extension_settings[EXT_ID].beautify.paragraphSpacingValue;
   hoverHighlightEnabled = extension_settings[EXT_ID].beautify.hoverHighlightEnabled;
   hoverHighlightColor = extension_settings[EXT_ID].beautify.hoverHighlightColor;
-  logger.debug('[Beautify] 设置已加载');
+  logger.debug('beautify', '[Beautify] 设置已加载');
 }
 
 /**
@@ -400,19 +433,19 @@ export function bindBeautifyToggle() {
   // 头像布局开关
   const checkbox = document.getElementById('beautify-avatar-layout-enabled');
   if (!checkbox) {
-    logger.warn('[Beautify] 未找到开关元素 #beautify-avatar-layout-enabled');
+    logger.warn('beautify', '[Beautify] 未找到开关元素 #beautify-avatar-layout-enabled');
     return;
   }
 
     // 同步初始状态
     /** @type {HTMLInputElement} */ (checkbox).checked = enabled;
-  logger.debug('[Beautify] 开关初始状态:', enabled);
+  logger.debug('beautify', '[Beautify] 开关初始状态:', enabled);
 
   checkbox.addEventListener('change', async function () {
     const newState = /** @type {HTMLInputElement} */ (this).checked;
     extension_settings[EXT_ID].beautify.enabled = newState;
     saveSettingsDebounced();
-    logger.info('[Beautify] 开关状态变更:', newState);
+    logger.info('beautify', '[Beautify] 开关状态变更:', newState);
 
     if (newState) {
       await enableBeautify();
@@ -426,26 +459,26 @@ export function bindBeautifyToggle() {
   if (openPopupBtn) {
     openPopupBtn.addEventListener('click', () => {
       openBeautifyPopup();
-      logger.debug('[Beautify] 从设置按钮打开弹窗');
+      logger.debug('beautify', '[Beautify] 从设置按钮打开弹窗');
     });
   }
 
   // 悬浮按钮开关
   const floatingBtnCheckbox = document.getElementById('beautify-floating-btn-enabled');
   if (!floatingBtnCheckbox) {
-    logger.warn('[Beautify] 未找到悬浮按钮开关元素 #beautify-floating-btn-enabled');
+    logger.warn('beautify', '[Beautify] 未找到悬浮按钮开关元素 #beautify-floating-btn-enabled');
     return;
   }
 
     // 同步初始状态
     /** @type {HTMLInputElement} */ (floatingBtnCheckbox).checked = floatingBtnEnabled;
-  logger.debug('[Beautify] 悬浮按钮开关初始状态:', floatingBtnEnabled);
+  logger.debug('beautify', '[Beautify] 悬浮按钮开关初始状态:', floatingBtnEnabled);
 
   floatingBtnCheckbox.addEventListener('change', function () {
     const newState = /** @type {HTMLInputElement} */ (this).checked;
     extension_settings[EXT_ID].beautify.floatingBtnEnabled = newState;
     saveSettingsDebounced();
-    logger.info('[Beautify] 悬浮按钮开关状态变更:', newState);
+    logger.info('beautify', '[Beautify] 悬浮按钮开关状态变更:', newState);
 
     if (newState) {
       enableFloatingBtn();
@@ -469,13 +502,13 @@ export function bindBeautifyToggle() {
   const fullwidthCheckbox = document.getElementById('beautify-fullwidth-enabled');
   const fullwidthWidthSetting = document.getElementById('beautify-fullwidth-width-setting');
   if (!fullwidthCheckbox) {
-    logger.warn('[Beautify] 未找到全宽模式开关元素 #beautify-fullwidth-enabled');
+    logger.warn('beautify', '[Beautify] 未找到全宽模式开关元素 #beautify-fullwidth-enabled');
     return;
   }
 
     // 同步初始状态
     /** @type {HTMLInputElement} */ (fullwidthCheckbox).checked = fullwidthEnabled;
-  logger.debug('[Beautify] 全宽模式开关初始状态:', fullwidthEnabled);
+  logger.debug('beautify', '[Beautify] 全宽模式开关初始状态:', fullwidthEnabled);
 
   // 根据开关状态显示/隐藏宽度滑块
   if (fullwidthWidthSetting) {
@@ -486,7 +519,7 @@ export function bindBeautifyToggle() {
     const newState = /** @type {HTMLInputElement} */ (this).checked;
     extension_settings[EXT_ID].beautify.fullwidthEnabled = newState;
     saveSettingsDebounced();
-    logger.info('[Beautify] 全宽模式开关状态变更:', newState);
+    logger.info('beautify', '[Beautify] 全宽模式开关状态变更:', newState);
 
     // 显示/隐藏宽度滑块
     if (fullwidthWidthSetting) {
@@ -514,19 +547,19 @@ export function bindBeautifyToggle() {
   // 隐藏滚动条开关
   const hideScrollbarCheckbox = document.getElementById('beautify-hide-scrollbar-enabled');
   if (!hideScrollbarCheckbox) {
-    logger.warn('[Beautify] 未找到隐藏滚动条开关元素 #beautify-hide-scrollbar-enabled');
+    logger.warn('beautify', '[Beautify] 未找到隐藏滚动条开关元素 #beautify-hide-scrollbar-enabled');
     return;
   }
 
     // 同步初始状态
     /** @type {HTMLInputElement} */ (hideScrollbarCheckbox).checked = hideScrollbarEnabled;
-  logger.debug('[Beautify] 隐藏滚动条开关初始状态:', hideScrollbarEnabled);
+  logger.debug('beautify', '[Beautify] 隐藏滚动条开关初始状态:', hideScrollbarEnabled);
 
   hideScrollbarCheckbox.addEventListener('change', function () {
     const newState = /** @type {HTMLInputElement} */ (this).checked;
     extension_settings[EXT_ID].beautify.hideScrollbarEnabled = newState;
     saveSettingsDebounced();
-    logger.info('[Beautify] 隐藏滚动条开关状态变更:', newState);
+    logger.info('beautify', '[Beautify] 隐藏滚动条开关状态变更:', newState);
 
     if (newState) {
       enableHideScrollbar();
@@ -542,6 +575,12 @@ export function bindBeautifyToggle() {
 
   // 背景图标签管理开关
   bindBgTagManagerToggle();
+
+  // 防窥模式开关
+  bindPrivacyModeToggle();
+
+  // 防窥模式编辑弹窗
+  bindPrivacyEditPopup();
 
   // 美化主题管理开关
   bindThemeManagerToggle();
@@ -583,6 +622,9 @@ function bindMiscFeatures() {
     () => document.body.classList.add('beautify-hide-qr'),
     () => document.body.classList.remove('beautify-hide-qr')
   );
+
+  // 快捷回复高度设置（固定高度 + 自适应，互斥）
+  bindQrHeightOptions();
 
   // 预设开关直觉优化
   bindCheckboxToggle('beautify-preset-toggle-intuitive-enabled', 'presetToggleIntuitiveEnabled', presetToggleIntuitiveEnabled,
@@ -646,7 +688,7 @@ function bindMiscFeatures() {
   // 阅读辅助功能组
   bindReadingAidGroup();
 
-  logger.debug('[Beautify] 便捷小功能已绑定');
+  logger.debug('beautify', '[Beautify] 便捷小功能已绑定');
 }
 
 /**
@@ -660,7 +702,7 @@ function bindMiscFeatures() {
 function bindCheckboxToggle(elementId, settingKey, initialValue, enableFn, disableFn) {
   const checkbox = document.getElementById(elementId);
   if (!checkbox) {
-    logger.warn(`[Beautify] 未找到元素 #${elementId}`);
+    logger.warn('beautify', `[Beautify] 未找到元素 #${elementId}`);
     return;
   }
 
@@ -670,7 +712,7 @@ function bindCheckboxToggle(elementId, settingKey, initialValue, enableFn, disab
     const newState = /** @type {HTMLInputElement} */ (this).checked;
     extension_settings[EXT_ID].beautify[settingKey] = newState;
     saveSettingsDebounced();
-    logger.info(`[Beautify] ${settingKey} 状态变更:`, newState);
+    logger.info('beautify', `[Beautify] ${settingKey} 状态变更:`, newState);
 
     if (newState) {
       enableFn();
@@ -696,7 +738,7 @@ function bindOpacitySlider(elementId, settingKey, initialValue, applyFn) {
   const slider = document.getElementById(elementId);
   const valueDisplay = document.getElementById(`${elementId}-value`);
   if (!slider) {
-    logger.warn(`[Beautify] 未找到滑块元素 #${elementId}`);
+    logger.warn('beautify', `[Beautify] 未找到滑块元素 #${elementId}`);
     return;
   }
 
@@ -745,7 +787,7 @@ function bindOpacityWithToggle(checkboxId, sliderId, settingContainerId, enabled
   const valueDisplay = document.getElementById(`${sliderId}-value`);
 
   if (!checkbox) {
-    logger.warn(`[Beautify] 未找到勾选框 #${checkboxId}`);
+    logger.warn('beautify', `[Beautify] 未找到勾选框 #${checkboxId}`);
     return;
   }
 
@@ -775,7 +817,7 @@ function bindOpacityWithToggle(checkboxId, sliderId, settingContainerId, enabled
     const newState = /** @type {HTMLInputElement} */ (this).checked;
     extension_settings[EXT_ID].beautify[enabledKey] = newState;
     saveSettingsDebounced();
-    logger.info(`[Beautify] ${enabledKey} 状态变更:`, newState);
+    logger.info('beautify', `[Beautify] ${enabledKey} 状态变更:`, newState);
 
     // 显示/隐藏滑块容器
     if (settingContainer) {
@@ -819,7 +861,7 @@ function applyNavIconOpacity(value) {
   document.querySelectorAll('.drawer-icon.closedIcon').forEach(el => {
         /** @type {HTMLElement} */ (el).style.setProperty('opacity', String(value), 'important');
   });
-  logger.debug('[Beautify] 导航栏图标透明度已应用:', value);
+  logger.debug('beautify', '[Beautify] 导航栏图标透明度已应用:', value);
 }
 
 /**
@@ -829,7 +871,7 @@ function clearNavIconOpacity() {
   document.querySelectorAll('.drawer-icon.closedIcon').forEach(el => {
         /** @type {HTMLElement} */ (el).style.removeProperty('opacity');
   });
-  logger.debug('[Beautify] 导航栏图标透明度已清除');
+  logger.debug('beautify', '[Beautify] 导航栏图标透明度已清除');
 }
 
 /**
@@ -840,7 +882,7 @@ function applyEditBtnOpacity(value) {
   document.querySelectorAll('.mes_button.extraMesButtonsHint, .mes_button.mes_edit').forEach(el => {
         /** @type {HTMLElement} */ (el).style.setProperty('opacity', String(value), 'important');
   });
-  logger.debug('[Beautify] 编辑按钮透明度已应用:', value);
+  logger.debug('beautify', '[Beautify] 编辑按钮透明度已应用:', value);
 }
 
 /**
@@ -850,7 +892,7 @@ function clearEditBtnOpacity() {
   document.querySelectorAll('.mes_button.extraMesButtonsHint, .mes_button.mes_edit').forEach(el => {
         /** @type {HTMLElement} */ (el).style.removeProperty('opacity');
   });
-  logger.debug('[Beautify] 编辑按钮透明度已清除');
+  logger.debug('beautify', '[Beautify] 编辑按钮透明度已清除');
 }
 
 /**
@@ -864,7 +906,7 @@ function bindDrawerOffset() {
   const valueDisplay = document.getElementById('beautify-drawer-offset-value');
 
   if (!checkbox) {
-    logger.warn('[Beautify] 未找到抽屉页面位置勾选框 #beautify-drawer-offset-enabled');
+    logger.warn('beautify', '[Beautify] 未找到抽屉页面位置勾选框 #beautify-drawer-offset-enabled');
     return;
   }
 
@@ -895,7 +937,7 @@ function bindDrawerOffset() {
     drawerOffsetEnabled = newState;
     extension_settings[EXT_ID].beautify.drawerOffsetEnabled = newState;
     saveSettingsDebounced();
-    logger.info('[Beautify] 抽屉页面位置调整状态变更:', newState);
+    logger.info('beautify', '[Beautify] 抽屉页面位置调整状态变更:', newState);
 
     // 显示/隐藏滑块容器
     if (settingContainer) {
@@ -926,7 +968,7 @@ function bindDrawerOffset() {
       if (drawerOffsetEnabled) {
         document.documentElement.style.setProperty('--beautify-drawer-offset', `${value}px`);
       }
-      logger.debug('[Beautify] 抽屉页面偏移:', value);
+      logger.debug('beautify', '[Beautify] 抽屉页面偏移:', value);
     });
   }
 }
@@ -942,7 +984,7 @@ function bindChatFontIndependent() {
   const valueDisplay = document.getElementById('beautify-chat-font-scale-value');
 
   if (!checkbox) {
-    logger.warn('[Beautify] 未找到聊天字体独立设置勾选框 #beautify-chat-font-independent-enabled');
+    logger.warn('beautify', '[Beautify] 未找到聊天字体独立设置勾选框 #beautify-chat-font-independent-enabled');
     return;
   }
 
@@ -974,7 +1016,7 @@ function bindChatFontIndependent() {
     chatFontIndependentEnabled = newState;
     extension_settings[EXT_ID].beautify.chatFontIndependentEnabled = newState;
     saveSettingsDebounced();
-    logger.info('[Beautify] 聊天字体独立设置状态变更:', newState);
+    logger.info('beautify', '[Beautify] 聊天字体独立设置状态变更:', newState);
 
     // 显示/隐藏滑块容器
     if (settingContainer) {
@@ -1017,7 +1059,7 @@ function bindChatFontIndependent() {
  */
 function applyChatFontScale(value) {
   document.documentElement.style.setProperty('--beautify-chat-font-scale', String(value));
-  logger.debug('[Beautify] 聊天字体比例已应用:', value);
+  logger.debug('beautify', '[Beautify] 聊天字体比例已应用:', value);
 }
 
 /**
@@ -1025,7 +1067,7 @@ function applyChatFontScale(value) {
  */
 function clearChatFontScale() {
   document.documentElement.style.setProperty('--beautify-chat-font-scale', '1');
-  logger.debug('[Beautify] 聊天字体比例已清除');
+  logger.debug('beautify', '[Beautify] 聊天字体比例已清除');
 }
 
 /**
@@ -1035,7 +1077,7 @@ function clearChatFontScale() {
 function bindPersonaAvatarPreview() {
   const checkbox = document.getElementById('beautify-persona-avatar-preview-enabled');
   if (!checkbox) {
-    logger.warn('[Beautify] 未找到人设头像预览勾选框 #beautify-persona-avatar-preview-enabled');
+    logger.warn('beautify', '[Beautify] 未找到人设头像预览勾选框 #beautify-persona-avatar-preview-enabled');
     return;
   }
 
@@ -1051,7 +1093,7 @@ function bindPersonaAvatarPreview() {
     personaAvatarPreviewEnabled = newState;
     extension_settings[EXT_ID].beautify.personaAvatarPreviewEnabled = newState;
     saveSettingsDebounced();
-    logger.info('[Beautify] 人设头像预览状态变更:', newState);
+    logger.info('beautify', '[Beautify] 人设头像预览状态变更:', newState);
 
     if (newState) {
       createPersonaAvatarPreview();
@@ -1068,7 +1110,7 @@ function bindPersonaAvatarPreview() {
 function createPersonaAvatarPreview() {
   const textarea = document.getElementById('persona_description');
   if (!textarea) {
-    logger.warn('[Beautify] 未找到 #persona_description 输入框');
+    logger.warn('beautify', '[Beautify] 未找到 #persona_description 输入框');
     return;
   }
 
@@ -1113,7 +1155,7 @@ function createPersonaAvatarPreview() {
   // 注册事件监听（事件会一直存在，但 handler 会检查 wrapper 是否存在）
   eventSource.on(event_types.SETTINGS_UPDATED, updateHandler);
 
-  logger.info('[Beautify] 人设头像预览已创建');
+  logger.info('beautify', '[Beautify] 人设头像预览已创建');
 }
 
 /**
@@ -1133,9 +1175,9 @@ function updatePersonaAvatarPreview(avatarEl) {
       avatarEl.src = 'img/ai4.png';
       avatarEl.style.display = 'block';
     }
-    logger.debug('[Beautify] 人设头像已更新:', user_avatar || '默认');
+    logger.debug('beautify', '[Beautify] 人设头像已更新:', user_avatar || '默认');
   }).catch(err => {
-    logger.error('[Beautify] 导入 personas.js 失败:', err);
+    logger.error('beautify', '[Beautify] 导入 personas.js 失败:', err);
   });
 }
 
@@ -1161,7 +1203,150 @@ function removePersonaAvatarPreview() {
   // 移除包装容器
   wrapper.remove();
 
-  logger.info('[Beautify] 人设头像预览已移除');
+  logger.info('beautify', '[Beautify] 人设头像预览已移除');
+}
+
+/**
+ * 绑定快捷回复高度选项（固定高度 + 自适应，互斥）
+ * @description 两个选项只能选一个，依赖"快捷回复隐藏"开关
+ */
+function bindQrHeightOptions() {
+  const fixedCheckbox = document.getElementById('beautify-qr-height-enabled');
+  const autoCheckbox = document.getElementById('beautify-qr-height-auto');
+  const fixedSetting = document.getElementById('beautify-qr-height-setting');
+  const autoSetting = document.getElementById('beautify-qr-height-auto-setting');
+  const sliderSetting = document.getElementById('beautify-qr-height-slider-setting');
+  const slider = document.getElementById('beautify-qr-height');
+  const sliderValue = document.getElementById('beautify-qr-height-value');
+  const hideQrCheckbox = document.getElementById('beautify-hide-qr-enabled');
+
+  // 检查主开关是否存在
+  if (!hideQrCheckbox) {
+    logger.warn('beautify', '[Beautify] 未找到快捷回复隐藏开关 #beautify-hide-qr-enabled');
+    return;
+  }
+
+  // 根据主开关状态显示/隐藏子选项
+  function updateSubSettingsVisibility() {
+    const isHidden = !hideQrCheckbox.checked;
+    if (fixedSetting) {
+      fixedSetting.style.display = isHidden ? 'none' : 'block';
+    }
+    if (autoSetting) {
+      autoSetting.style.display = isHidden ? 'none' : 'block';
+    }
+    // 滑块也要隐藏
+    if (sliderSetting) {
+      sliderSetting.style.display = isHidden ? 'none' : 'block';
+    }
+  }
+
+  // 初始化显示状态
+  updateSubSettingsVisibility();
+
+  // 监听主开关变化
+  hideQrCheckbox.addEventListener('change', updateSubSettingsVisibility);
+
+  // 滑块：设置初始值
+  if (slider) {
+    /** @type {HTMLInputElement} */ (slider).value = String(qrHeight);
+  }
+  if (sliderValue) {
+    sliderValue.textContent = `${qrHeight}px`;
+  }
+
+  // 根据固定高度勾选框状态显示/隐藏滑块
+  function updateSliderVisibility() {
+    if (sliderSetting) {
+      sliderSetting.style.display = qrHeightEnabled ? 'block' : 'none';
+    }
+  }
+  updateSliderVisibility();
+
+  // 固定高度勾选框
+  if (fixedCheckbox) {
+    /** @type {HTMLInputElement} */ (fixedCheckbox).checked = qrHeightEnabled;
+
+    fixedCheckbox.addEventListener('change', function () {
+      const newState = /** @type {HTMLInputElement} */ (this).checked;
+      qrHeightEnabled = newState;
+      extension_settings[EXT_ID].beautify.qrHeightEnabled = newState;
+      saveSettingsDebounced();
+      logger.info('beautify', '[Beautify] 快捷回复固定高度状态变更:', newState);
+
+      // 显示/隐藏滑块
+      updateSliderVisibility();
+
+      // 互斥：取消自适应
+      if (newState && autoCheckbox) {
+        autoCheckbox.checked = false;
+        qrHeightAuto = false;
+        extension_settings[EXT_ID].beautify.qrHeightAuto = false;
+        document.body.classList.remove('beautify-qr-height-auto');
+      }
+
+      // 应用/移除固定高度样式
+      if (newState) {
+        document.body.style.setProperty('--beautify-qr-height', `${qrHeight}px`);
+      }
+    });
+  }
+
+  // 滑块变化监听
+  if (slider) {
+    slider.addEventListener('input', function () {
+      const value = parseInt(/** @type {HTMLInputElement} */(this).value, 10);
+      qrHeight = value;
+      extension_settings[EXT_ID].beautify.qrHeight = value;
+      saveSettingsDebounced();
+
+      if (sliderValue) {
+        sliderValue.textContent = `${value}px`;
+      }
+
+      // 应用高度
+      if (qrHeightEnabled) {
+        document.body.style.setProperty('--beautify-qr-height', `${value}px`);
+      }
+    });
+  }
+
+  // 自适应高度勾选框
+  if (autoCheckbox) {
+    /** @type {HTMLInputElement} */ (autoCheckbox).checked = qrHeightAuto;
+
+    autoCheckbox.addEventListener('change', function () {
+      const newState = /** @type {HTMLInputElement} */ (this).checked;
+      qrHeightAuto = newState;
+      extension_settings[EXT_ID].beautify.qrHeightAuto = newState;
+      saveSettingsDebounced();
+      logger.info('beautify', '[Beautify] 快捷回复高度自适应状态变更:', newState);
+
+      // 互斥：取消固定高度
+      if (newState && fixedCheckbox) {
+        fixedCheckbox.checked = false;
+        qrHeightEnabled = false;
+        extension_settings[EXT_ID].beautify.qrHeightEnabled = false;
+        // 同时隐藏滑块
+        updateSliderVisibility();
+      }
+
+      // 应用/移除自适应样式
+      if (newState) {
+        document.body.classList.add('beautify-qr-height-auto');
+      } else {
+        document.body.classList.remove('beautify-qr-height-auto');
+      }
+    });
+  }
+
+  // 立即应用初始状态
+  if (qrHeightEnabled) {
+    document.body.style.setProperty('--beautify-qr-height', `${qrHeight}px`);
+  }
+  if (qrHeightAuto) {
+    document.body.classList.add('beautify-qr-height-auto');
+  }
 }
 
 /**
@@ -1172,7 +1357,7 @@ function bindFullwidthWidthSlider() {
   const slider = document.getElementById('beautify-fullwidth-width');
   const valueDisplay = document.getElementById('beautify-fullwidth-width-value');
   if (!slider) {
-    logger.warn('[Beautify] 未找到全宽宽度滑块 #beautify-fullwidth-width');
+    logger.warn('beautify', '[Beautify] 未找到全宽宽度滑块 #beautify-fullwidth-width');
     return;
   }
 
@@ -1209,7 +1394,7 @@ function applyFullwidthWidth(value) {
   // 将滑块值（0-100）转换为 padding 百分比（0%-25%）
   const paddingPercent = (value / 100) * 25;
   document.documentElement.style.setProperty('--beautify-fullwidth-padding', `${paddingPercent}%`);
-  logger.debug('[Beautify] 全宽模式宽度:', value, '% → padding:', paddingPercent, '%');
+  logger.debug('beautify', '[Beautify] 全宽模式宽度:', value, '% → padding:', paddingPercent, '%');
 }
 
 /**
@@ -1251,7 +1436,7 @@ function bindMiscSearch() {
 function bindFixOldCss() {
   const checkbox = document.getElementById('beautify-fix-old-css-enabled');
   if (!checkbox) {
-    logger.warn('[Beautify] 未找到修复旧版美化开关 #beautify-fix-old-css-enabled');
+    logger.warn('beautify', '[Beautify] 未找到修复旧版美化开关 #beautify-fix-old-css-enabled');
     return;
   }
 
@@ -1264,7 +1449,7 @@ function bindFixOldCss() {
     fixOldCssEnabled = newState;
     extension_settings[EXT_ID].beautify.fixOldCssEnabled = newState;
     saveSettingsDebounced();
-    logger.info('[Beautify] 修复旧版美化类名状态变更:', newState);
+    logger.info('beautify', '[Beautify] 修复旧版美化类名状态变更:', newState);
 
     if (newState) {
       applyCompatCSS();
@@ -1300,13 +1485,13 @@ function applyCompatCSS() {
   // 读取官方的 custom-style
   const customStyle = document.getElementById('custom-style');
   if (!customStyle) {
-    logger.warn('[Beautify] 未找到官方 #custom-style 标签');
+    logger.warn('beautify', '[Beautify] 未找到官方 #custom-style 标签');
     return;
   }
 
   const originalCSS = customStyle.innerHTML || '';
   if (!originalCSS) {
-    logger.debug('[Beautify] 官方 CSS 为空，跳过兼容处理');
+    logger.debug('beautify', '[Beautify] 官方 CSS 为空，跳过兼容处理');
     removeCompatCSS();
     return;
   }
@@ -1316,7 +1501,7 @@ function applyCompatCSS() {
 
   // 检查是否有变化（如果没有旧类名，不需要注入）
   if (compatCSS === originalCSS) {
-    logger.debug('[Beautify] CSS 中没有 #logo_block，无需兼容处理');
+    logger.debug('beautify', '[Beautify] CSS 中没有 #logo_block，无需兼容处理');
     removeCompatCSS();
     return;
   }
@@ -1331,7 +1516,7 @@ function applyCompatCSS() {
   }
   compatStyleEl.innerHTML = compatCSS;
 
-  logger.info('[Beautify] 已应用旧版美化兼容CSS');
+  logger.info('beautify', '[Beautify] 已应用旧版美化兼容CSS');
 }
 
 /**
@@ -1341,7 +1526,7 @@ function removeCompatCSS() {
   const compatStyleEl = document.getElementById('beautify-compat-style');
   if (compatStyleEl) {
     compatStyleEl.remove();
-    logger.info('[Beautify] 已移除旧版美化兼容CSS');
+    logger.info('beautify', '[Beautify] 已移除旧版美化兼容CSS');
   }
 }
 
@@ -1354,7 +1539,7 @@ function removeCompatCSS() {
 function bindWiButtonVertical() {
   const checkbox = document.getElementById('beautify-wi-button-vertical-enabled');
   if (!checkbox) {
-    logger.warn('[Beautify] 未找到世界书按钮竖排开关 #beautify-wi-button-vertical-enabled');
+    logger.warn('beautify', '[Beautify] 未找到世界书按钮竖排开关 #beautify-wi-button-vertical-enabled');
     return;
   }
 
@@ -1372,7 +1557,7 @@ function bindWiButtonVertical() {
     wiButtonVerticalEnabled = newState;
     extension_settings[EXT_ID].beautify.wiButtonVerticalEnabled = newState;
     saveSettingsDebounced();
-    logger.info('[Beautify] 世界书按钮竖排状态变更:', newState);
+    logger.info('beautify', '[Beautify] 世界书按钮竖排状态变更:', newState);
 
     if (newState) {
       document.body.classList.add('beautify-wi-button-vertical');
@@ -1391,7 +1576,7 @@ function bindWiButtonVertical() {
       // 延迟执行，等待世界书DOM加载完成
       setTimeout(wrapWiButtons, 300);
     });
-    logger.debug('[Beautify] 已绑定世界书图标点击事件');
+    logger.debug('beautify', '[Beautify] 已绑定世界书图标点击事件');
   }
 }
 
@@ -1421,7 +1606,7 @@ function wrapWiButtons() {
 
       // 添加到 header 末尾
       header.appendChild(wrapper);
-      logger.debug('[Beautify] 已包裹世界书按钮');
+      logger.debug('beautify', '[Beautify] 已包裹世界书按钮');
     }
   });
 }
@@ -1442,7 +1627,7 @@ function unwrapWiButtons() {
       wrapper.remove();
     }
   });
-  logger.debug('[Beautify] 已解除世界书按钮包裹');
+  logger.debug('beautify', '[Beautify] 已解除世界书按钮包裹');
 }
 
 /**
@@ -1451,7 +1636,7 @@ function unwrapWiButtons() {
  * @async
  */
 async function fullInitialize() {
-  logger.debug('[Beautify] 开始完整初始化');
+  logger.debug('beautify', '[Beautify] 开始完整初始化');
 
   // 创建悬浮头像栏
   createStickyHeader();
@@ -1471,7 +1656,7 @@ async function fullInitialize() {
   // 显示悬浮栏
   showStickyHeader();
 
-  logger.debug('[Beautify] 完整初始化完成');
+  logger.debug('beautify', '[Beautify] 完整初始化完成');
 }
 
 
@@ -1494,7 +1679,7 @@ async function enableBeautify() {
 
   // 检查是否需要补充初始化
   if (!stickyHeader) {
-    logger.info('[Beautify] 检测到未完整初始化，开始加载');
+    logger.info('beautify', '[Beautify] 检测到未完整初始化，开始加载');
     await fullInitialize();
   } else {
     // 已初始化，但需要确保悬浮栏在当前 #chat 中
@@ -1507,7 +1692,7 @@ async function enableBeautify() {
     initializeFirstMessage();
   }
 
-  logger.info('[Beautify] 功能已启用');
+  logger.info('beautify', '[Beautify] 功能已启用');
 }
 
 /**
@@ -1524,7 +1709,7 @@ function disableBeautify() {
     exitImmersiveMode();
   }
 
-  logger.info('[Beautify] 功能已禁用');
+  logger.info('beautify', '[Beautify] 功能已禁用');
 }
 
 
@@ -1593,7 +1778,7 @@ function createStickyHeader() {
   // 绑定悬浮栏事件
   bindStickyHeaderEvents();
 
-  logger.debug('[Beautify] 悬浮头像栏已创建');
+  logger.debug('beautify', '[Beautify] 悬浮头像栏已创建');
 }
 
 /**
@@ -1609,14 +1794,14 @@ function ensureStickyHeaderInDOM() {
 
   const chatElement = document.getElementById('chat');
   if (!chatElement) {
-    logger.warn('[Beautify] #chat 不存在，无法插入悬浮栏');
+    logger.warn('beautify', '[Beautify] #chat 不存在，无法插入悬浮栏');
     return false;
   }
 
   // 检查悬浮栏是否已在 #chat 中
   if (!chatElement.contains(stickyHeader)) {
     chatElement.insertBefore(stickyHeader, chatElement.firstChild);
-    logger.debug('[Beautify] 悬浮栏已重新插入 #chat');
+    logger.debug('beautify', '[Beautify] 悬浮栏已重新插入 #chat');
   }
 
   return true;
@@ -1647,7 +1832,7 @@ function bindStickyHeaderEvents() {
  */
 function showStickyHeader() {
   if (!stickyHeader) {
-    logger.debug('[Beautify] showStickyHeader: 悬浮栏不存在');
+    logger.debug('beautify', '[Beautify] showStickyHeader: 悬浮栏不存在');
     return;
   }
 
@@ -1655,10 +1840,10 @@ function showStickyHeader() {
   const chatElement = document.getElementById('chat');
   const hasMessages = chatElement && chatElement.querySelector('.mes');
 
-  logger.debug('[Beautify] showStickyHeader: chatElement存在=', !!chatElement, ', hasMessages=', !!hasMessages);
+  logger.debug('beautify', '[Beautify] showStickyHeader: chatElement存在=', !!chatElement, ', hasMessages=', !!hasMessages);
 
   if (!hasMessages) {
-    logger.debug('[Beautify] 未检测到聊天消息，不显示悬浮栏');
+    logger.debug('beautify', '[Beautify] 未检测到聊天消息，不显示悬浮栏');
     stickyHeader.style.display = 'none';
     // 移除消息间距class
     document.getElementById('chat')?.classList.remove('beautify-msg-spacing');
@@ -1668,7 +1853,7 @@ function showStickyHeader() {
   stickyHeader.style.display = 'flex';
   // 添加消息间距class
   document.getElementById('chat')?.classList.add('beautify-msg-spacing');
-  logger.debug('[Beautify] 悬浮栏已显示 (display: flex)');
+  logger.debug('beautify', '[Beautify] 悬浮栏已显示 (display: flex)');
 }
 
 /**
@@ -1712,7 +1897,7 @@ function hideStickyHeader() {
 function setupMessageObserver() {
   const chatElement = document.getElementById('chat');
   if (!chatElement) {
-    logger.warn('[Beautify] 未找到 #chat 元素');
+    logger.warn('beautify', '[Beautify] 未找到 #chat 元素');
     return;
   }
 
@@ -1748,13 +1933,13 @@ function setupMessageObserver() {
 
       // 调试：打印每条消息的位置（只打印在视口内的消息，减少日志量）
       if (messageBottom > 0 && messageTop < window.innerHeight) {
-        logger.debug(`[Beautify] 消息#${mesId}: top=${Math.round(messageTop)}${isUser ? `(扩展后=${Math.round(effectiveTop)})` : ''}, bottom=${Math.round(messageBottom)}, 检测线=${Math.round(stickyHeaderBottom)}`);
+        logger.debug('beautify', `[Beautify] 消息#${mesId}: top=${Math.round(messageTop)}${isUser ? `(扩展后=${Math.round(effectiveTop)})` : ''}, bottom=${Math.round(messageBottom)}, 检测线=${Math.round(stickyHeaderBottom)}`);
       }
 
       // 检测线穿过这条消息：消息顶部 <= 检测线 <= 消息底部
       // user 消息使用扩展后的顶部位置
       if (effectiveTop <= stickyHeaderBottom && messageBottom >= stickyHeaderBottom) {
-        logger.debug(`[Beautify] → 检测线穿过消息#${mesId}${isUser ? '(user扩展检测)' : ''}`);
+        logger.debug('beautify', `[Beautify] → 检测线穿过消息#${mesId}${isUser ? '(user扩展检测)' : ''}`);
         targetMessage = mes;
       }
 
@@ -1775,10 +1960,10 @@ function setupMessageObserver() {
     if (finalMessage) {
       const mesId = finalMessage.getAttribute('mesid');
       const isUser = finalMessage.getAttribute('is_user') === 'true';
-      logger.debug(`[Beautify] 最终选择消息#${mesId} (isUser=${isUser}, 方式=${targetMessage ? '穿过' : '最近'})`);
+      logger.debug('beautify', `[Beautify] 最终选择消息#${mesId} (isUser=${isUser}, 方式=${targetMessage ? '穿过' : '最近'})`);
       updateStickyHeaderFromMessage(finalMessage);
     } else {
-      logger.debug('[Beautify] 没有找到合适的消息');
+      logger.debug('beautify', '[Beautify] 没有找到合适的消息');
     }
   }, {
     root: null,  // 监视整个视口
@@ -1792,7 +1977,7 @@ function setupMessageObserver() {
   // 初始化时获取首条可见消息的信息
   initializeFirstMessage();
 
-  logger.debug('[Beautify] 消息观察器已设置');
+  logger.debug('beautify', '[Beautify] 消息观察器已设置');
 }
 
 /**
@@ -1800,16 +1985,16 @@ function setupMessageObserver() {
  */
 function observeAllMessages() {
   if (!messageObserver) {
-    logger.warn('[Beautify] observeAllMessages: messageObserver 不存在');
+    logger.warn('beautify', '[Beautify] observeAllMessages: messageObserver 不存在');
     return;
   }
 
   const messages = document.querySelectorAll('#chat .mes');
-  logger.debug('[Beautify] observeAllMessages: 找到', messages.length, '条消息');
+  logger.debug('beautify', '[Beautify] observeAllMessages: 找到', messages.length, '条消息');
 
   messages.forEach(mes => {
     const mesId = mes.getAttribute('mesid');
-    logger.debug('[Beautify] 开始观察消息:', mesId);
+    logger.debug('beautify', '[Beautify] 开始观察消息:', mesId);
     messageObserver.observe(mes);
   });
 }
@@ -1827,7 +2012,7 @@ function initializeFirstMessage() {
     const firstMessage = document.querySelector('#chat .mes');
     if (firstMessage) {
       updateStickyHeaderFromMessage(firstMessage);
-      logger.debug('[Beautify] 初始化首条消息头像');
+      logger.debug('beautify', '[Beautify] 初始化首条消息头像');
     }
   }, 100);
 }
@@ -1944,7 +2129,7 @@ function updateStickyHeaderFromMessage(mesElement) {
   // 记录当前消息 ID，用于事件委托
   stickyHeader.dataset.currentMesId = mesId;
 
-  logger.debug('[Beautify] 悬浮栏已更新，mesId:', mesId, 'isUser:', isUser);
+  logger.debug('beautify', '[Beautify] 悬浮栏已更新，mesId:', mesId, 'isUser:', isUser);
 }
 
 /**
@@ -1996,7 +2181,7 @@ function toggleLock() {
     stickyHeader.classList.toggle('is-locked', isLocked);
   }
 
-  logger.info('[Beautify] 悬浮栏锁定状态:', isLocked);
+  logger.info('beautify', '[Beautify] 悬浮栏锁定状态:', isLocked);
 }
 
 /**
@@ -2033,7 +2218,7 @@ function enterImmersiveMode() {
     btn.className = 'fa-solid fa-bars'; // 切换为菜单图标
   }
 
-  logger.info('[Beautify] 进入沉浸模式');
+  logger.info('beautify', '[Beautify] 进入沉浸模式');
 }
 
 /**
@@ -2059,7 +2244,7 @@ function exitImmersiveMode() {
     btn.className = 'fa-solid fa-circle'; // 切换为圆点图标
   }
 
-  logger.info('[Beautify] 退出沉浸模式');
+  logger.info('beautify', '[Beautify] 退出沉浸模式');
 }
 
 
@@ -2154,13 +2339,13 @@ function bindGlobalEvents() {
   eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, () => {
     // 如果功能未启用，不执行
     if (!enabled) return;
-    logger.debug('[Beautify] 检测到角色消息渲染，重新观察消息');
+    logger.debug('beautify', '[Beautify] 检测到角色消息渲染，重新观察消息');
     observeAllMessages();
   });
   eventSource.on(event_types.USER_MESSAGE_RENDERED, () => {
     // 如果功能未启用，不执行
     if (!enabled) return;
-    logger.debug('[Beautify] 检测到用户消息渲染，重新观察消息');
+    logger.debug('beautify', '[Beautify] 检测到用户消息渲染，重新观察消息');
     observeAllMessages();
   });
 
@@ -2181,7 +2366,7 @@ function bindGlobalEvents() {
     });
   }
 
-  logger.debug('[Beautify] 全局事件已绑定');
+  logger.debug('beautify', '[Beautify] 全局事件已绑定');
 }
 
 
@@ -2209,7 +2394,7 @@ function enableFloatingBtn() {
   // 显示悬浮按钮
   if (floatingBtn) {
     floatingBtn.style.display = 'flex';
-    logger.info('[Beautify] 悬浮按钮已启用');
+    logger.info('beautify', '[Beautify] 悬浮按钮已启用');
   }
 }
 
@@ -2222,7 +2407,7 @@ function disableFloatingBtn() {
   // 隐藏悬浮按钮
   if (floatingBtn) {
     floatingBtn.style.display = 'none';
-    logger.info('[Beautify] 悬浮按钮已禁用');
+    logger.info('beautify', '[Beautify] 悬浮按钮已禁用');
   }
 
   // 如果沉浸模式开启，退出
@@ -2258,7 +2443,7 @@ function enableFullwidthMode() {
   if (fullwidthShowGhostEnabled) {
     document.body.classList.add('beautify-fullwidth-show-ghost');
   }
-  logger.info('[Beautify] 全宽文字模式已启用，宽度:', fullwidthWidth, '%');
+  logger.info('beautify', '[Beautify] 全宽文字模式已启用，宽度:', fullwidthWidth, '%');
 }
 
 /**
@@ -2272,7 +2457,7 @@ function disableFullwidthMode() {
   document.body.classList.remove('beautify-fullwidth-hide-avatar');
   document.body.classList.remove('beautify-fullwidth-hide-name');
   document.body.classList.remove('beautify-fullwidth-show-ghost');
-  logger.info('[Beautify] 全宽文字模式已禁用');
+  logger.info('beautify', '[Beautify] 全宽文字模式已禁用');
 }
 
 /**
@@ -2303,7 +2488,7 @@ function bindFullwidthSubOptions() {
       fullwidthHideAvatarEnabled = newState;
       extension_settings[EXT_ID].beautify.fullwidthHideAvatarEnabled = newState;
       saveSettingsDebounced();
-      logger.info('[Beautify] 全宽模式隐藏头像状态变更:', newState);
+      logger.info('beautify', '[Beautify] 全宽模式隐藏头像状态变更:', newState);
 
       // 只有全宽模式启用时才应用
       if (fullwidthEnabled) {
@@ -2336,7 +2521,7 @@ function bindFullwidthSubOptions() {
       fullwidthHideNameEnabled = newState;
       extension_settings[EXT_ID].beautify.fullwidthHideNameEnabled = newState;
       saveSettingsDebounced();
-      logger.info('[Beautify] 全宽模式隐藏名字栏状态变更:', newState);
+      logger.info('beautify', '[Beautify] 全宽模式隐藏名字栏状态变更:', newState);
 
       // 显示/隐藏"显示不可见消息提示"选项
       if (showGhostSetting) {
@@ -2371,7 +2556,7 @@ function bindFullwidthSubOptions() {
       fullwidthShowGhostEnabled = newState;
       extension_settings[EXT_ID].beautify.fullwidthShowGhostEnabled = newState;
       saveSettingsDebounced();
-      logger.info('[Beautify] 全宽模式显示不可见消息提示状态变更:', newState);
+      logger.info('beautify', '[Beautify] 全宽模式显示不可见消息提示状态变更:', newState);
 
       // 只有全宽模式和隐藏名字栏都启用时才应用
       if (fullwidthEnabled && fullwidthHideNameEnabled) {
@@ -2397,7 +2582,7 @@ function bindFullwidthSubOptions() {
 function enableHideScrollbar() {
   hideScrollbarEnabled = true;
   document.body.classList.add('beautify-hide-scrollbar');
-  logger.info('[Beautify] 隐藏滚动条已启用');
+  logger.info('beautify', '[Beautify] 隐藏滚动条已启用');
 }
 
 /**
@@ -2406,7 +2591,7 @@ function enableHideScrollbar() {
 function disableHideScrollbar() {
   hideScrollbarEnabled = false;
   document.body.classList.remove('beautify-hide-scrollbar');
-  logger.info('[Beautify] 隐藏滚动条已禁用');
+  logger.info('beautify', '[Beautify] 隐藏滚动条已禁用');
 }
 
 
@@ -2444,7 +2629,7 @@ function createFloatingBtn() {
   // 应用自定义设置（大小、颜色、透明度、图片）
   applyFloatingBtnSettings();
 
-  logger.debug('[Beautify] 悬浮按钮已创建');
+  logger.debug('beautify', '[Beautify] 悬浮按钮已创建');
 }
 
 /**
@@ -2481,7 +2666,7 @@ function constrainFloatingBtnPosition() {
  */
 export function resetFloatingBtnPosition() {
   if (!floatingBtn) {
-    logger.warn('[Beautify] 悬浮按钮不存在，无法复位');
+    logger.warn('beautify', '[Beautify] 悬浮按钮不存在，无法复位');
     return;
   }
 
@@ -2501,7 +2686,7 @@ export function resetFloatingBtnPosition() {
   };
   saveSettingsDebounced();
 
-  logger.info('[Beautify] 悬浮按钮位置已复位:', defaultX, defaultY);
+  logger.info('beautify', '[Beautify] 悬浮按钮位置已复位:', defaultX, defaultY);
   toastr.success('悬浮按钮已复位到屏幕右上角');
 }
 
@@ -2671,7 +2856,7 @@ function bindFloatingBtnEvents() {
         y: currentY
       };
       saveSettingsDebounced();
-      logger.debug('[Beautify] 悬浮按钮位置已保存:', currentX, currentY);
+      logger.debug('beautify', '[Beautify] 悬浮按钮位置已保存:', currentX, currentY);
     }
 
     // 延迟重置标志，避免触发点击
@@ -2708,7 +2893,7 @@ function bindFloatingBtnEvents() {
     // 恢复到拖动前的位置
     floatingBtn.style.transform = '';
 
-    logger.debug('[Beautify] 拖动被取消');
+    logger.debug('beautify', '[Beautify] 拖动被取消');
   });
 }
 
@@ -2901,6 +3086,17 @@ async function showSnapshotMenu(x, y) {
     menuHtml += snapshotsHtml;
   }
 
+  // 防窥模式按钮（如果启用）
+  if (privacyModeEnabled) {
+    menuHtml += `
+      <div class="snapshot-menu-divider"></div>
+      <div class="snapshot-menu-toggle privacy-mode-btn" id="snapshot-menu-privacy-btn">
+        <i class="fa-solid fa-eye-slash"></i>
+        <span class="menu-toggle-name">防窥</span>
+      </div>
+    `;
+  }
+
   snapshotMenu.innerHTML = menuHtml;
 
   // 定位并显示菜单
@@ -3032,13 +3228,28 @@ async function showSnapshotMenu(x, y) {
     });
   });
 
+  // 绑定防窥模式按钮事件
+  if (privacyModeEnabled) {
+    const privacyBtn = document.getElementById('snapshot-menu-privacy-btn');
+    if (privacyBtn) {
+      privacyBtn.addEventListener('click', () => {
+        logger.info('beautify', '[Beautify] 用户点击防窥按钮');
+        hideSnapshotMenu();
+        // 延迟一点执行，让菜单关闭后再显示遮罩
+        setTimeout(() => {
+          showPrivacyOverlay();
+        }, 100);
+      });
+    }
+  }
+
   // 点击外部关闭菜单
   setTimeout(() => {
     document.addEventListener('click', handleOutsideClick);
     document.addEventListener('pointerdown', handleOutsideClick);
   }, 100);
 
-  logger.debug('[Beautify] 快照菜单已显示，总开关:', toggleGroups.length, '快速开关:', quickToggles.length, '快照:', snapshots.length);
+  logger.debug('beautify', '[Beautify] 快照菜单已显示，总开关:', toggleGroups.length, '快速开关:', quickToggles.length, '快照:', snapshots.length);
 }
 
 /**
@@ -3079,6 +3290,189 @@ function hideSnapshotMenu() {
   }
   document.removeEventListener('click', handleOutsideClick);
   document.removeEventListener('pointerdown', handleOutsideClick);
+}
+
+// ==========================================
+// 防窥模式
+// ==========================================
+
+/** @type {HTMLElement|null} 防窥遮罩元素 */
+let privacyOverlay = null;
+
+/**
+ * 显示防窥遮罩
+ * @description 创建一个全屏遮罩，带滑块解锁功能
+ */
+function showPrivacyOverlay() {
+  // 如果已存在，先移除
+  hidePrivacyOverlay();
+
+  logger.info('beautify', '[Beautify] 显示防窥遮罩');
+
+  // 获取防窥设置
+  const settings = getPrivacySettings();
+
+  // 计算背景
+  let backgroundValue = '';
+
+  // 检查是否启用背景图
+  const isBgEnabled = settings.bgEnabled === true;
+  const bgImage = settings.bgImage;
+
+  if (isBgEnabled && bgImage) {
+    // 启用了背景图（直接使用，不加遮罩）
+    // 使用 backgroundImage + 单引号包裹，和悬浮栏设置保持一致
+    backgroundValue = `url('${bgImage}')`;
+  } else {
+    // 默认使用官方变量
+    const blurTintColor = getComputedStyle(document.documentElement)
+      .getPropertyValue('--SmartThemeBlurTintColor').trim();
+    if (blurTintColor) {
+      const match = blurTintColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)/);
+      if (match) {
+        backgroundValue = `rgb(${match[1]}, ${match[2]}, ${match[3]})`;
+      }
+    }
+    // 如果官方变量解析失败，使用一个较浅的颜色作为默认
+    if (!backgroundValue) {
+      backgroundValue = 'rgb(40, 40, 40)';
+    }
+  }
+
+  // 创建遮罩
+  privacyOverlay = document.createElement('div');
+  privacyOverlay.id = 'beautify-privacy-overlay';
+
+  // 设置背景（使用 backgroundImage，和悬浮栏一致）
+  if (isBgEnabled && bgImage) {
+    privacyOverlay.style.backgroundImage = backgroundValue;
+    privacyOverlay.style.backgroundSize = 'cover';
+    privacyOverlay.style.backgroundPosition = 'center';
+  } else {
+    // 没有背景图时使用默认颜色
+    privacyOverlay.style.background = backgroundValue;
+  }
+
+  // 获取解锁文字
+  const unlockText = settings.unlockText || '滑动解锁';
+
+  privacyOverlay.innerHTML = `
+    <div class="privacy-overlay-content">
+      <div class="privacy-slider-container">
+        <div class="privacy-slider-track">
+          <div class="privacy-slider-fill"></div>
+        </div>
+        <div class="privacy-slider-knob">
+          <i class="fa-solid fa-chevron-right"></i>
+        </div>
+      </div>
+      <div class="privacy-overlay-text">${unlockText}</div>
+    </div>
+  `;
+
+  document.body.appendChild(privacyOverlay);
+
+  // 应用自定义CSS
+  if (settings.customCss) {
+    const styleEl = document.createElement('style');
+    styleEl.id = 'beautify-privacy-custom-style';
+    styleEl.textContent = settings.customCss;
+    privacyOverlay.appendChild(styleEl);
+  }
+
+  // 绑定滑块事件
+  bindPrivacySliderEvents();
+
+  logger.info('beautify', '[Beautify] 防窥遮罩已显示');
+}
+
+/**
+ * 绑定防窥滑块事件
+ */
+function bindPrivacySliderEvents() {
+  if (!privacyOverlay) return;
+
+  const container = privacyOverlay.querySelector('.privacy-slider-container');
+  const knob = privacyOverlay.querySelector('.privacy-slider-knob');
+  const fill = privacyOverlay.querySelector('.privacy-slider-fill');
+
+  if (!container || !knob || !fill) return;
+
+  let isDragging = false;
+  let startX = 0;
+  let currentX = 0;
+  const containerWidth = container.offsetWidth;
+  const knobWidth = knob.offsetWidth;
+  const maxMove = containerWidth - knobWidth - 8; // 左右各4px padding
+
+  const startDrag = (e) => {
+    e.preventDefault();
+    isDragging = true;
+    startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+    knob.classList.add('dragging');
+  };
+
+  const doDrag = (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+
+    const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+    currentX = Math.max(0, Math.min(clientX - startX, maxMove));
+
+    knob.style.transform = `translateX(${currentX}px`;
+    fill.style.width = `${currentX + knobWidth}px`;
+  };
+
+  const endDrag = () => {
+    if (!isDragging) return;
+    isDragging = false;
+    knob.classList.remove('dragging');
+
+    // 检查是否解锁（滑块移动超过 80%）
+    if (currentX >= maxMove * 0.8) {
+      logger.info('beautify', '[Beautify] 用户解锁防窥模式');
+
+      // 添加解锁动画类
+      container.classList.add('unlocked');
+
+      // 等待动画完成后再隐藏遮罩（600ms 动画时间）
+      setTimeout(() => {
+        hidePrivacyOverlay();
+        toastr.success('已解锁');
+      }, 600);
+    } else {
+      // 未解锁，重置位置
+      knob.style.transition = 'transform 0.2s ease';
+      fill.style.transition = 'width 0.2s ease';
+      knob.style.transform = 'translateX(0)';
+      fill.style.width = '0';
+      setTimeout(() => {
+        knob.style.transition = '';
+        fill.style.transition = '';
+      }, 200);
+    }
+  };
+
+  // 鼠标事件
+  knob.addEventListener('mousedown', startDrag);
+  document.addEventListener('mousemove', doDrag);
+  document.addEventListener('mouseup', endDrag);
+
+  // 触摸事件
+  knob.addEventListener('touchstart', startDrag, { passive: false });
+  document.addEventListener('touchmove', doDrag, { passive: false });
+  document.addEventListener('touchend', endDrag);
+}
+
+/**
+ * 隐藏防窥遮罩
+ */
+function hidePrivacyOverlay() {
+  if (privacyOverlay) {
+    privacyOverlay.remove();
+    privacyOverlay = null;
+    logger.info('beautify', '[Beautify] 防窥遮罩已隐藏');
+  }
 }
 
 /**
@@ -3127,7 +3521,7 @@ export function applyFloatingBtnSettings() {
     const pack = settings.gifPacks.find(p => p.id === settings.currentGifPackId);
     if (pack) {
       applyGifAnimationPack(pack);
-      logger.debug('[Beautify] 悬浮按钮已应用GIF动画库:', pack.name);
+      logger.debug('beautify', '[Beautify] 悬浮按钮已应用GIF动画库:', pack.name);
       return;
     }
   }
@@ -3139,7 +3533,7 @@ export function applyFloatingBtnSettings() {
     clearFloatingBtnImage();
   }
 
-  logger.debug('[Beautify] 悬浮按钮设置已应用');
+  logger.debug('beautify', '[Beautify] 悬浮按钮设置已应用');
 }
 
 /**
@@ -3168,7 +3562,7 @@ export function updateFloatingBtnSize(size) {
     img.style.height = `${size * 0.8}px`;
   }
 
-  logger.debug('[Beautify] 悬浮按钮大小已更新:', size);
+  logger.debug('beautify', '[Beautify] 悬浮按钮大小已更新:', size);
 }
 
 /**
@@ -3184,7 +3578,7 @@ export function updateFloatingBtnColor(color) {
     icon.style.color = color || '';
   }
 
-  logger.debug('[Beautify] 悬浮按钮颜色已更新:', color || '主题色');
+  logger.debug('beautify', '[Beautify] 悬浮按钮颜色已更新:', color || '主题色');
 }
 
 /**
@@ -3224,7 +3618,7 @@ export function setFloatingBtnImage(url, opacity = 1.0) {
   img.style.opacity = String(opacity);
   img.style.display = 'block';
 
-  logger.debug('[Beautify] 悬浮按钮图片已设置:', url);
+  logger.debug('beautify', '[Beautify] 悬浮按钮图片已设置:', url);
 }
 
 /**
@@ -3245,7 +3639,7 @@ export function clearFloatingBtnImage() {
     icon.style.display = '';
   }
 
-  logger.debug('[Beautify] 悬浮按钮图片已清除');
+  logger.debug('beautify', '[Beautify] 悬浮按钮图片已清除');
 }
 
 /**
@@ -3262,7 +3656,7 @@ export function saveFloatingBtnSettings(newSettings) {
   };
 
   saveSettingsDebounced();
-  logger.debug('[Beautify] 悬浮按钮设置已保存:', newSettings);
+  logger.debug('beautify', '[Beautify] 悬浮按钮设置已保存:', newSettings);
 }
 
 // ==========================================
@@ -3300,7 +3694,7 @@ export function applyGifAnimationPack(pack) {
     floatingBtn.addEventListener('click', handleGifPackClick);
   }
 
-  logger.info('[Beautify] 已应用GIF动画库:', pack.name);
+  logger.info('beautify', '[Beautify] 已应用GIF动画库:', pack.name);
 }
 
 /**
@@ -3309,7 +3703,7 @@ export function applyGifAnimationPack(pack) {
 export function clearGifAnimationPack() {
   clearGifPackState();
   clearFloatingBtnImage();
-  logger.info('[Beautify] 已清除GIF动画库');
+  logger.info('beautify', '[Beautify] 已清除GIF动画库');
 }
 
 /**
@@ -3404,7 +3798,7 @@ function playClickAnimation(pack) {
         // 正在等待中，恢复到等待动画
         const waitingGifUrl = waitingAnimState.currentPack.waitingGif + '?t=' + Date.now();
         setFloatingBtnImageInternal(waitingGifUrl);
-        logger.debug('[Beautify] 点击动画播完，恢复到等待动画');
+        logger.debug('beautify', '[Beautify] 点击动画播完，恢复到等待动画');
       } else if (pack.idle) {
         // 不在等待中，恢复到待机图片
         setFloatingBtnImageInternal(pack.idle);
@@ -3432,7 +3826,7 @@ function scheduleRestoreIdle(pack) {
         if (waitingPack.waitingGif) {
           const gifUrl = waitingPack.waitingGif + '?t=' + Date.now();
           setFloatingBtnImageInternal(gifUrl);
-          logger.debug('[Beautify] 点击动画播完，恢复到等待动画');
+          logger.debug('beautify', '[Beautify] 点击动画播完，恢复到等待动画');
           return;
         }
       }
@@ -3440,7 +3834,7 @@ function scheduleRestoreIdle(pack) {
       // 不在等待中，恢复到待机图片
       if (pack.idle) {
         setFloatingBtnImageInternal(pack.idle);
-        logger.debug('[Beautify] GIF动画库已自动恢复待机');
+        logger.debug('beautify', '[Beautify] GIF动画库已自动恢复待机');
       }
     }
   }, pack.restoreDelay * 1000);
@@ -3507,7 +3901,7 @@ export function initWaitingAnimationListeners() {
   // 监听生成终止事件（用户点击终止按钮后触发）
   eventSource.on(event_types.GENERATION_STOPPED, handleGenerationStopped);
 
-  logger.info('[Beautify] 等待动画监听器已初始化');
+  logger.info('beautify', '[Beautify] 等待动画监听器已初始化');
 }
 
 /**
@@ -3520,7 +3914,7 @@ export function initWaitingAnimationListeners() {
 function handleGenerationStarted(type, params, dryRun) {
   // 忽略静默生成（后台生成，不显示终止键）和干运行
   if (type === 'quiet' || dryRun) {
-    logger.debug('[Beautify] 忽略静默生成或干运行，type:', type, 'dryRun:', dryRun);
+    logger.debug('beautify', '[Beautify] 忽略静默生成或干运行，type:', type, 'dryRun:', dryRun);
     return;
   }
 
@@ -3534,14 +3928,14 @@ function handleGenerationStarted(type, params, dryRun) {
 
   // 如果没有设置等待动画库，不做任何处理
   if (!currentWaitingPackId || waitingPacks.length === 0) {
-    logger.debug('[Beautify] 未设置等待动画库，保持当前状态');
+    logger.debug('beautify', '[Beautify] 未设置等待动画库，保持当前状态');
     return;
   }
 
   // 查找当前使用的等待动画库
   const pack = waitingPacks.find(p => p.id === currentWaitingPackId);
   if (!pack || (!pack.startGif && !pack.waitingGif)) {
-    logger.debug('[Beautify] 等待动画库无效或没有动画GIF');
+    logger.debug('beautify', '[Beautify] 等待动画库无效或没有动画GIF');
     return;
   }
 
@@ -3559,7 +3953,7 @@ function handleGenerationStarted(type, params, dryRun) {
     const startGifUrl = pack.startGif + '?t=' + Date.now();
     setFloatingBtnImageInternal(startGifUrl);
 
-    logger.info('[Beautify] 播放开始动画:', pack.name, '时长:', pack.startDuration, '秒');
+    logger.info('beautify', '[Beautify] 播放开始动画:', pack.name, '时长:', pack.startDuration, '秒');
 
     // 设置定时器，开始动画播完后切换到等待动画
     const startDuration = (pack.startDuration || 2) * 1000;
@@ -3571,14 +3965,14 @@ function handleGenerationStarted(type, params, dryRun) {
       if (pack.waitingGif) {
         const waitingGifUrl = pack.waitingGif + '?t=' + Date.now();
         setFloatingBtnImageInternal(waitingGifUrl);
-        logger.debug('[Beautify] 切换到等待动画（循环播放）');
+        logger.debug('beautify', '[Beautify] 切换到等待动画（循环播放）');
       }
     }, startDuration);
   } else {
     // 没有开始动画，直接显示等待动画
     const gifUrl = pack.waitingGif + '?t=' + Date.now();
     setFloatingBtnImageInternal(gifUrl);
-    logger.info('[Beautify] 开始播放等待动画:', pack.name);
+    logger.info('beautify', '[Beautify] 开始播放等待动画:', pack.name);
   }
 }
 
@@ -3604,7 +3998,7 @@ function handleGenerationEnded() {
       restoreToIdleState();
     }, duration);
 
-    logger.info('[Beautify] 播放完成动画，', pack.completeDuration, '秒后恢复待机');
+    logger.info('beautify', '[Beautify] 播放完成动画，', pack.completeDuration, '秒后恢复待机');
   } else {
     // 没有完成动画，直接恢复待机
     restoreToIdleState();
@@ -3619,7 +4013,7 @@ function handleGenerationStopped() {
   // 如果不在等待状态，忽略
   if (!waitingAnimState.isWaiting) return;
 
-  logger.info('[Beautify] 用户终止生成，直接恢复待机');
+  logger.info('beautify', '[Beautify] 用户终止生成，直接恢复待机');
 
   // 清除开始动画定时器（如果有）
   if (waitingAnimState.startTimer) {
@@ -3666,7 +4060,7 @@ function restoreToIdleState() {
     const gifPack = settings.gifPacks.find(p => p.id === settings.currentGifPackId);
     if (gifPack && gifPack.idle) {
       setFloatingBtnImageInternal(gifPack.idle);
-      logger.debug('[Beautify] 恢复到点击动画库的待机图');
+      logger.debug('beautify', '[Beautify] 恢复到点击动画库的待机图');
       return;
     }
   }
@@ -3674,13 +4068,13 @@ function restoreToIdleState() {
   // 其次使用静态待机图片
   if (waitingAnimState.previousImageUrl) {
     setFloatingBtnImage(waitingAnimState.previousImageUrl, waitingAnimState.previousOpacity);
-    logger.debug('[Beautify] 恢复到静态待机图片');
+    logger.debug('beautify', '[Beautify] 恢复到静态待机图片');
     return;
   }
 
   // 最后清除图片，显示默认图标
   clearFloatingBtnImage();
-  logger.debug('[Beautify] 恢复到默认图标');
+  logger.debug('beautify', '[Beautify] 恢复到默认图标');
 }
 
 /**
@@ -3744,7 +4138,7 @@ function bindRemoveShadowGroup() {
       removeShadowAllEnabled = newState;
       extension_settings[EXT_ID].beautify.removeShadowAllEnabled = newState;
       saveSettingsDebounced();
-      logger.info('[Beautify] 一键去除所有阴影:', newState);
+      logger.info('beautify', '[Beautify] 一键去除所有阴影:', newState);
 
       applyAllShadowSettings(newState);
     });
@@ -3764,7 +4158,7 @@ function bindRemoveShadowGroup() {
     );
   });
 
-  logger.debug('[Beautify] 去除阴影功能组已绑定');
+  logger.debug('beautify', '[Beautify] 去除阴影功能组已绑定');
 }
 
 // ==========================================
@@ -3799,7 +4193,7 @@ function bindReadingAidGroup() {
       underlineEnabled = newState;
       extension_settings[EXT_ID].beautify.underlineEnabled = newState;
       saveSettingsDebounced();
-      logger.info('[Beautify] 文本下划线:', newState);
+      logger.info('beautify', '[Beautify] 文本下划线:', newState);
 
       // 显示/隐藏子选项
       if (underlineOptions) {
@@ -3861,7 +4255,7 @@ function bindReadingAidGroup() {
       hoverHighlightEnabled = newState;
       extension_settings[EXT_ID].beautify.hoverHighlightEnabled = newState;
       saveSettingsDebounced();
-      logger.info('[Beautify] 悬停段落高亮:', newState);
+      logger.info('beautify', '[Beautify] 悬停段落高亮:', newState);
 
       // 显示/隐藏颜色选择器
       if (hoverColorSetting) {
@@ -3891,7 +4285,7 @@ function bindReadingAidGroup() {
   document.documentElement.style.setProperty('--beautify-underline-user-color', underlineUserColor);
   document.documentElement.style.setProperty('--beautify-hover-highlight-color', hoverHighlightColor);
 
-  logger.debug('[Beautify] 阅读辅助功能组已绑定');
+  logger.debug('beautify', '[Beautify] 阅读辅助功能组已绑定');
 }
 
 /**
@@ -3904,7 +4298,7 @@ function bindCollapsible(headerId, contentId) {
   const content = document.getElementById(contentId);
 
   if (!header || !content) {
-    logger.warn(`[Beautify] 未找到折叠元素 #${headerId} 或 #${contentId}`);
+    logger.warn('beautify', `[Beautify] 未找到折叠元素 #${headerId} 或 #${contentId}`);
     return;
   }
 
@@ -3936,7 +4330,7 @@ function bindChatLineHeight() {
   const valueDisplay = document.getElementById('beautify-chat-line-height-value');
 
   if (!checkbox) {
-    logger.warn('[Beautify] 未找到聊天行高勾选框');
+    logger.warn('beautify', '[Beautify] 未找到聊天行高勾选框');
     return;
   }
 
@@ -3971,7 +4365,7 @@ function bindChatLineHeight() {
     const newState = /** @type {HTMLInputElement} */ (this).checked;
     extension_settings[EXT_ID].beautify.chatLineHeightEnabled = newState;
     saveSettingsDebounced();
-    logger.info('[Beautify] 聊天行高:', newState);
+    logger.info('beautify', '[Beautify] 聊天行高:', newState);
 
     // 显示/隐藏滑块
     if (settingContainer) {
@@ -4013,7 +4407,7 @@ function bindChatLineHeight() {
 function applyLineHeight(value) {
   document.documentElement.style.setProperty('--beautify-chat-line-height', String(value));
   document.documentElement.style.setProperty('--beautify-underline-line-height', `${value}em`);
-  logger.debug('[Beautify] 行高已应用:', value);
+  logger.debug('beautify', '[Beautify] 行高已应用:', value);
 }
 
 /**
@@ -4026,7 +4420,7 @@ function applyLineHeight(value) {
 function bindColorPicker(elementId, settingKey, initialValue, applyFn) {
   const colorPicker = document.getElementById(elementId);
   if (!colorPicker) {
-    logger.warn(`[Beautify] 未找到颜色选择器 #${elementId}`);
+    logger.warn('beautify', `[Beautify] 未找到颜色选择器 #${elementId}`);
     return;
   }
 
@@ -4039,7 +4433,7 @@ function bindColorPicker(elementId, settingKey, initialValue, applyFn) {
     extension_settings[EXT_ID].beautify[settingKey] = color;
     saveSettingsDebounced();
     applyFn(color);
-    logger.debug(`[Beautify] ${settingKey} 颜色变更:`, color);
+    logger.debug('beautify', `[Beautify] ${settingKey} 颜色变更:`, color);
   });
 
   // 立即应用初始颜色
@@ -4056,7 +4450,7 @@ function bindParagraphSpacing() {
   const radios = document.querySelectorAll('input[name="beautify-paragraph-spacing"]');
 
   if (!checkbox) {
-    logger.warn('[Beautify] 未找到段落间距勾选框');
+    logger.warn('beautify', '[Beautify] 未找到段落间距勾选框');
     return;
   }
 
@@ -4087,7 +4481,7 @@ function bindParagraphSpacing() {
     paragraphSpacingEnabled = newState;
     extension_settings[EXT_ID].beautify.paragraphSpacingEnabled = newState;
     saveSettingsDebounced();
-    logger.info('[Beautify] 段落间距:', newState);
+    logger.info('beautify', '[Beautify] 段落间距:', newState);
 
     // 显示/隐藏单选按钮组
     if (settingContainer) {
@@ -4110,7 +4504,7 @@ function bindParagraphSpacing() {
       extension_settings[EXT_ID].beautify.paragraphSpacingValue = value;
       saveSettingsDebounced();
       document.documentElement.style.setProperty('--beautify-paragraph-spacing', `${value}em`);
-      logger.debug('[Beautify] 段落间距值:', value);
+      logger.debug('beautify', '[Beautify] 段落间距值:', value);
     });
   });
 }
@@ -4125,25 +4519,25 @@ function bindParagraphSpacing() {
 function bindBgTagManagerToggle() {
   const checkbox = document.getElementById('beautify-bg-tag-manager-enabled');
   if (!checkbox) {
-    logger.warn('[Beautify] 未找到背景图标签管理开关元素 #beautify-bg-tag-manager-enabled');
+    logger.warn('beautify', '[Beautify] 未找到背景图标签管理开关元素 #beautify-bg-tag-manager-enabled');
     return;
   }
 
     // 同步初始状态
     /** @type {HTMLInputElement} */ (checkbox).checked = bgTagManagerEnabled;
-  logger.debug('[Beautify] 背景图标签管理开关初始状态:', bgTagManagerEnabled);
+  logger.debug('beautify', '[Beautify] 背景图标签管理开关初始状态:', bgTagManagerEnabled);
 
   checkbox.addEventListener('change', function () {
     const newState = /** @type {HTMLInputElement} */ (this).checked;
     extension_settings[EXT_ID].beautify.bgTagManagerEnabled = newState;
     saveSettingsDebounced();
-    logger.info('[Beautify] 背景图标签管理开关状态变更:', newState);
+    logger.info('beautify', '[Beautify] 背景图标签管理开关状态变更:', newState);
 
     // 委托给新模块
     import('./beautify-bg-tags.js').then(({ bindBgTagManagerToggle: bindToggle }) => {
       bindToggle(newState);
     }).catch(error => {
-      logger.error('[Beautify] 委托背景图标签管理失败:', error);
+      logger.error('beautify', '[Beautify] 委托背景图标签管理失败:', error);
     });
   });
 
@@ -4152,9 +4546,494 @@ function bindBgTagManagerToggle() {
     import('./beautify-bg-tags.js').then(({ initBgTagManager }) => {
       initBgTagManager();
     }).catch(error => {
-      logger.error('[Beautify] 初始化背景图标签管理失败:', error);
+      logger.error('beautify', '[Beautify] 初始化背景图标签管理失败:', error);
     });
   }
+}
+
+// ==========================================
+// 防窥模式
+// ==========================================
+
+/**
+ * 绑定防窥模式开关
+ */
+function bindPrivacyModeToggle() {
+  const checkbox = document.getElementById('beautify-privacy-mode-enabled');
+  if (!checkbox) {
+    logger.warn('beautify', '[Beautify] 未找到防窥模式开关元素 #beautify-privacy-mode-enabled');
+    return;
+  }
+
+  // 同步初始状态
+  /** @type {HTMLInputElement} */ (checkbox).checked = privacyModeEnabled;
+  logger.debug('beautify', '[Beautify] 防窥模式开关初始状态:', privacyModeEnabled);
+
+  checkbox.addEventListener('change', function () {
+    const newState = /** @type {HTMLInputElement} */ (this).checked;
+    extension_settings[EXT_ID].beautify.privacyModeEnabled = newState;
+    privacyModeEnabled = newState;  // 更新模块变量
+    saveSettingsDebounced();
+    logger.info('beautify', '[Beautify] 防窥模式开关状态变更:', newState);
+
+    // 如果悬浮窗已打开，重新渲染以更新防窥按钮
+    if (snapshotMenu) {
+      // 记录当前鼠标位置用于重新打开菜单
+      const rect = snapshotMenu.getBoundingClientRect();
+      hideSnapshotMenu();
+      showSnapshotMenu(rect.left, rect.top);
+    }
+  });
+}
+
+// ==========================================
+// 防窥模式编辑弹窗
+// ==========================================
+
+/**
+ * 获取防窥模式设置
+ * @returns {Object} 防窥模式设置对象
+ */
+function getPrivacySettings() {
+  // 优先读取新字段（beautify-privacy-popup.js 模块使用）
+  const newSettings = extension_settings[EXT_ID]?.beautify?.privacy;
+
+  // 合并设置（新字段优先）
+  return {
+    unlockText: '滑动解锁',
+    textPresets: ['滑动解锁', '向右滑动', ' swipe to unlock', '👆滑动解锁'],
+    customCss: '',
+    cssPresets: [],
+    currentCssPresetId: null,
+    bgImage: '',
+    savedBgImages: [],
+    // 启用开关
+    bgEnabled: false,
+    // 合并新字段（最优先）
+    ...(newSettings || {})
+  };
+}
+
+/**
+ * 绑定防窥模式编辑弹窗事件
+ */
+function bindPrivacyEditPopup() {
+  const editBtn = document.getElementById('beautify-privacy-edit-btn');
+
+  if (!editBtn) {
+    logger.warn('beautify', '[Beautify] 未找到防窥编辑按钮');
+    return;
+  }
+
+  // 初始化弹窗（创建DOM）
+  initPrivacyPopup();
+
+  // 打开弹窗
+  editBtn.addEventListener('click', () => {
+    openPrivacyEditPopup();
+    logger.debug('beautify', '[Beautify] 打开防窥编辑弹窗');
+  });
+
+  logger.debug('beautify', '[Beautify] 防窥编辑弹窗事件已绑定');
+}
+
+/**
+ * 绑定解锁文字相关事件
+ */
+function bindPrivacyTextEvents() {
+  const textInput = document.getElementById('beautify-privacy-unlock-text');
+  const addPresetBtn = document.getElementById('beautify-privacy-add-preset');
+
+  // 实时保存解锁文字
+  textInput?.addEventListener('input', () => {
+    const settings = getPrivacySettings();
+    settings.unlockText = textInput.value;
+    extension_settings[EXT_ID].beautify.privacy = settings;
+    saveSettingsDebounced();
+  });
+
+  // 添加预设
+  addPresetBtn?.addEventListener('click', () => {
+    const settings = getPrivacySettings();
+    const currentText = textInput?.value || '';
+    if (currentText && !settings.textPresets.includes(currentText)) {
+      settings.textPresets.push(currentText);
+      extension_settings[EXT_ID].beautify.privacy = settings;
+      saveSettingsDebounced();
+      renderPrivacyTextPresets(settings.textPresets);
+      toastr.success('已添加预设');
+      logger.info('beautify', '[Beautify] 添加解锁文字预设:', currentText);
+    }
+  });
+}
+
+/**
+ * 渲染解锁文字预设列表
+ * @param {Array} presets - 预设列表
+ */
+function renderPrivacyTextPresets(presets) {
+  const container = document.getElementById('beautify-privacy-presets-list');
+  if (!container) return;
+
+  container.innerHTML = presets.map((text, index) => `
+    <div class="beautify-privacy-preset-item" data-index="${index}">
+      <span class="beautify-privacy-preset-text">${text}</span>
+      <button class="beautify-privacy-preset-delete" data-index="${index}" title="删除">
+        <i class="fa-solid fa-trash"></i>
+      </button>
+    </div>
+  `).join('');
+
+  // 绑定预设点击事件（应用预设）
+  container.querySelectorAll('.beautify-privacy-preset-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      if (e.target.closest('.beautify-privacy-preset-delete')) return;
+      const index = parseInt(item.dataset.index);
+      const text = presets[index];
+      const textInput = document.getElementById('beautify-privacy-unlock-text');
+      if (textInput) {
+        textInput.value = text;
+        // 同步保存
+        const settings = getPrivacySettings();
+        settings.unlockText = text;
+        extension_settings[EXT_ID].beautify.privacy = settings;
+        saveSettingsDebounced();
+      }
+    });
+  });
+
+  // 绑定删除事件
+  container.querySelectorAll('.beautify-privacy-preset-delete').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const index = parseInt(btn.dataset.index);
+      const settings = getPrivacySettings();
+      settings.textPresets.splice(index, 1);
+      extension_settings[EXT_ID].beautify.privacy = settings;
+      saveSettingsDebounced();
+      renderPrivacyTextPresets(settings.textPresets);
+      toastr.success('已删除预设');
+      logger.info('beautify', '[Beautify] 删除解锁文字预设，索引:', index);
+    });
+  });
+}
+
+/**
+ * 绑定自定义CSS相关事件
+ */
+function bindPrivacyCssEvents() {
+  logger.info('beautify', '[Debug] bindPrivacyCssEvents被调用');
+
+  const cssTextarea = document.getElementById('beautify-privacy-custom-css');
+  const saveBtn = document.getElementById('beautify-css-save');
+  const importBtn = document.getElementById('beautify-css-import');
+  const exportBtn = document.getElementById('beautify-css-export');
+  const helpBtn = document.getElementById('beautify-css-help');
+  const searchInput = document.getElementById('beautify-css-search');
+  const fileInput = document.getElementById('beautify-privacy-css-file');
+
+  // 渲染CSS方案列表
+  renderCssPresets();
+
+  // 搜索功能
+  searchInput?.addEventListener('input', () => {
+    const keyword = searchInput.value.toLowerCase();
+    renderCssPresets(keyword);
+  });
+
+  // 实时保存CSS（防抖）
+  let cssDebounceTimer = null;
+  cssTextarea?.addEventListener('input', () => {
+    clearTimeout(cssDebounceTimer);
+    cssDebounceTimer = setTimeout(() => {
+      // 如果正在应用方案，不清除选中状态
+      if (cssTextarea?.dataset.applyingPreset === 'true') {
+        logger.debug('beautify', '[Debug] 正在应用方案，跳过清除currentCssPresetId');
+        return;
+      }
+
+      const settings = getPrivacySettings();
+      // 只有当 textarea 的内容和当前方案不同时才清除选中状态
+      const currentPreset = settings.cssPresets?.find(p => p.id === settings.currentCssPresetId);
+      if (currentPreset && currentPreset.css !== cssTextarea.value) {
+        settings.currentCssPresetId = null;
+        logger.debug('beautify', '[Debug] CSS内容已修改，清除currentCssPresetId');
+      }
+      settings.customCss = cssTextarea.value;
+      extension_settings[EXT_ID].beautify.privacy = settings;
+      saveSettingsDebounced();
+      // 更新方案列表中的当前方案
+      renderCssPresets(searchInput?.value?.toLowerCase() || '');
+      logger.debug('beautify', '[Beautify] 防窥自定义CSS已更新');
+    }, 500);
+  });
+
+  // 保存方案
+  saveBtn?.addEventListener('click', () => {
+    const settings = getPrivacySettings();
+    const currentCss = cssTextarea?.value || '';
+    const currentId = settings.currentCssPresetId;
+
+    if (currentId) {
+      // 更新现有方案
+      const preset = settings.cssPresets.find(p => p.id === currentId);
+      if (preset) {
+        preset.css = currentCss;
+        preset.savedTime = new Date().toISOString();
+      }
+    } else {
+      // 新建方案
+      const name = prompt('请输入方案名称：', `方案${settings.cssPresets.length + 1}`);
+      if (!name) return;
+
+      const newPreset = {
+        id: `css_preset_${Date.now()}`,
+        name: name,
+        css: currentCss,
+        savedTime: new Date().toISOString()
+      };
+      settings.cssPresets.push(newPreset);
+      settings.currentCssPresetId = newPreset.id;
+    }
+
+    settings.customCss = currentCss;
+    extension_settings[EXT_ID].beautify.privacy = settings;
+    saveSettingsDebounced();
+    renderCssPresets(searchInput?.value?.toLowerCase() || '');
+    toastr.success('方案已保存');
+    logger.info('beautify', '[Beautify] 防窥CSS方案已保存');
+  });
+
+  // 导入方案
+  importBtn?.addEventListener('click', () => {
+    fileInput?.click();
+  });
+
+  fileInput?.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target?.result);
+        if (data.customCss !== undefined) {
+          if (cssTextarea) {
+            cssTextarea.value = data.customCss;
+          }
+          const settings = getPrivacySettings();
+          settings.customCss = data.customCss;
+          settings.currentCssPresetId = null; // 导入的不是方案列表
+          extension_settings[EXT_ID].beautify.privacy = settings;
+          saveSettingsDebounced();
+          renderCssPresets();
+          toastr.success('CSS方案导入成功');
+          logger.info('beautify', '[Beautify] 防窥CSS方案导入成功');
+        }
+      } catch (error) {
+        toastr.error('导入失败：格式错误');
+        logger.error('beautify', '[Beautify] 防窥CSS方案导入失败:', error.message);
+      }
+    };
+    reader.readAsText(file);
+    fileInput.value = '';
+  });
+
+  // 导出方案
+  exportBtn?.addEventListener('click', () => {
+    const settings = getPrivacySettings();
+    const data = {
+      customCss: settings.customCss,
+      exportedAt: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `beautify-privacy-css-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toastr.success('CSS方案已导出');
+    logger.info('beautify', '[Beautify] 防窥CSS方案已导出');
+  });
+
+  // 帮助按钮 - 显示类名说明
+  helpBtn?.addEventListener('click', () => {
+    const helpText = `防窥遮罩CSS类名说明：
+
+【容器】
+#beautify-privacy-overlay - 整个遮罩层
+
+【内容区】
+.privacy-overlay-content - 内容容器
+
+【滑块】
+.privacy-slider-container - 滑块容器
+.privacy-slider-track - 滑块轨道
+.privacy-slider-fill - 滑块进度条
+.privacy-slider-knob - 滑块按钮（可拖动）
+
+【文字】
+.privacy-overlay-text - 解锁文字
+
+【示例】
+/* 修改背景 */
+#beautify-privacy-overlay { background: #333; }
+
+/* 修改滑块按钮 */
+.privacy-slider-knob { background: red; }`;
+    alert(helpText);
+  });
+}
+
+/**
+ * 渲染CSS方案列表
+ * @param {string} keyword - 搜索关键词
+ */
+function renderCssPresets(keyword = '') {
+  const container = document.getElementById('beautify-css-preset-list');
+  if (!container) return;
+
+  const settings = getPrivacySettings();
+  const presets = settings.cssPresets || [];
+  const currentId = settings.currentCssPresetId;
+
+  logger.info('beautify', '[Debug] renderCssPresets调用:', {
+    currentId,
+    presetsCount: presets.length,
+    keyword
+  });
+
+  // 过滤方案
+  const filteredPresets = keyword
+    ? presets.filter(p => p.name.toLowerCase().includes(keyword))
+    : presets;
+
+  if (filteredPresets.length === 0) {
+    container.innerHTML = '<div class="beautify-preset-empty">暂无方案</div>';
+    return;
+  }
+
+  container.innerHTML = filteredPresets.map(preset => {
+    const date = new Date(preset.savedTime);
+    const timeStr = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    const isActive = preset.id === currentId ? 'active' : '';
+
+    return `
+      <div class="beautify-preset-item ${isActive}" data-id="${preset.id}">
+        <div class="beautify-preset-info">
+          <span class="beautify-preset-name">${preset.name}</span>
+          <span class="beautify-preset-time">${timeStr}</span>
+        </div>
+        <div class="beautify-preset-actions">
+          <button class="beautify-preset-load" data-id="${preset.id}" title="应用">
+            <i class="fa-solid fa-check"></i>
+          </button>
+          <button class="beautify-preset-delete" data-id="${preset.id}" title="删除">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // 绑定应用方案事件
+  container.querySelectorAll('.beautify-preset-load').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      applyCssPreset(id);
+    });
+  });
+
+  // 绑定删除方案事件
+  container.querySelectorAll('.beautify-preset-delete').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      deleteCssPreset(id);
+    });
+  });
+
+  // 绑定点击方案应用事件
+  container.querySelectorAll('.beautify-preset-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      if (e.target.closest('.beautify-preset-actions')) return;
+      const id = item.dataset.id;
+      applyCssPreset(id);
+    });
+  });
+}
+
+/**
+ * 应用CSS方案
+ * @param {string} id - 方案ID
+ */
+function applyCssPreset(id) {
+  logger.info('beautify', '[Debug] applyCssPreset被调用:', { id });
+
+  const settings = getPrivacySettings();
+  const preset = settings.cssPresets.find(p => p.id === id);
+
+  if (!preset) {
+    toastr.error('方案不存在');
+    return;
+  }
+
+  // 设置标记，防止实时保存清除currentCssPresetId
+  const cssTextarea = document.getElementById('beautify-privacy-custom-css');
+  if (cssTextarea) {
+    cssTextarea.dataset.applyingPreset = 'true';
+  }
+
+  // 更新 textarea
+  if (cssTextarea) {
+    cssTextarea.value = preset.css;
+  }
+
+  // 保存设置
+  settings.customCss = preset.css;
+  settings.currentCssPresetId = id;
+  extension_settings[EXT_ID].beautify.privacy = settings;
+  saveSettingsDebounced();
+
+  // 延迟清除标记，确保保存完成
+  setTimeout(() => {
+    if (cssTextarea) {
+      cssTextarea.dataset.applyingPreset = 'false';
+    }
+  }, 1000);
+
+  // 更新列表显示
+  renderCssPresets(document.getElementById('beautify-css-search')?.value?.toLowerCase() || '');
+
+  toastr.success(`已应用：${preset.name}`);
+  logger.info('beautify', '[Beautify] 应用CSS方案:', preset.name);
+}
+
+/**
+ * 删除CSS方案
+ * @param {string} id - 方案ID
+ */
+function deleteCssPreset(id) {
+  const settings = getPrivacySettings();
+  const preset = settings.cssPresets.find(p => p.id === id);
+
+  if (!preset) return;
+
+  if (!confirm(`确定删除方案"${preset.name}"吗？`)) return;
+
+  settings.cssPresets = settings.cssPresets.filter(p => p.id !== id);
+  // 如果删除的是当前选中的方案，清除选中状态
+  if (settings.currentCssPresetId === id) {
+    settings.currentCssPresetId = null;
+  }
+  extension_settings[EXT_ID].beautify.privacy = settings;
+  saveSettingsDebounced();
+
+  renderCssPresets(document.getElementById('beautify-css-search')?.value?.toLowerCase() || '');
+  toastr.success('方案已删除');
+  logger.info('beautify', '[Beautify] 删除CSS方案:', preset.name);
 }
 
 // ==========================================

@@ -32,7 +32,7 @@ let hideActionsTimer = null;
  * @returns {Promise<DocumentFragment>} 详情页内容片段
  */
 export async function renderFriendRequestDetail(contactId) {
-  logger.debug('[FriendRequestDetail] 渲染详情页:', contactId);
+  logger.debug('phone','[FriendRequestDetail] 渲染详情页:', contactId);
 
   try {
     // 保存当前 contactId
@@ -43,7 +43,7 @@ export async function renderFriendRequestDetail(contactId) {
     const request = requests.find(r => r.contactId === contactId);
 
     if (!request) {
-      logger.warn('[FriendRequestDetail] 未找到申请数据:', contactId);
+      logger.warn('phone','[FriendRequestDetail] 未找到申请数据:', contactId);
       return createEmptyFragment();
     }
 
@@ -89,10 +89,10 @@ export async function renderFriendRequestDetail(contactId) {
     // 绑定事件监听（传入 pageId 用于管理监听器）
     bindEventListeners(page.id);
 
-    logger.info('[FriendRequestDetail] 详情页渲染完成:', request.contactName);
+    logger.info('phone','[FriendRequestDetail] 详情页渲染完成:', request.contactName);
     return fragment;
   } catch (error) {
-    logger.error('[FriendRequestDetail] 渲染详情页失败:', error);
+    logger.error('phone','[FriendRequestDetail] 渲染详情页失败:', error);
     return createEmptyFragment();
   }
 }
@@ -267,7 +267,7 @@ function createProbabilitySettings(request) {
       probability: value
     });
 
-    logger.info('[FriendRequestDetail] 更新概率设置:', request.contactName, value);
+    logger.info('phone','[FriendRequestDetail] 更新概率设置:', request.contactName, value);
   });
 
   sliderContainer.appendChild(slider);
@@ -320,7 +320,7 @@ function createActionButtons(request) {
  * @private
  */
 async function handleBack() {
-  logger.info('[FriendRequestDetail] 点击返回按钮');
+  logger.info('phone','[FriendRequestDetail] 点击返回按钮');
 
   // 获取手机遮罩层元素
   const overlayElement = document.querySelector('.phone-overlay');
@@ -339,7 +339,7 @@ async function handleBack() {
  * @param {Object} request - 申请对象
  */
 async function handleReject(request) {
-  logger.info('[FriendRequestDetail] 点击不通过:', request.contactName);
+  logger.info('phone','[FriendRequestDetail] 点击不通过:', request.contactName);
 
   // 确认
   const confirmed = await showConfirmPopup(
@@ -378,7 +378,7 @@ async function handleReject(request) {
  * @param {Object} request - 申请对象
  */
 async function handleAgree(request) {
-  logger.info('[FriendRequestDetail] 点击同意:', request.contactName);
+  logger.info('phone','[FriendRequestDetail] 点击同意:', request.contactName);
 
   try {
     // 1. 恢复联系人到列表
@@ -391,7 +391,7 @@ async function handleAgree(request) {
     };
 
     await saveContact(contact);
-    logger.info('[FriendRequestDetail] 已恢复联系人:', request.contactName);
+    logger.info('phone','[FriendRequestDetail] 已恢复联系人:', request.contactName);
 
     // 2. 插入系统消息："{{user}}添加了你为好友"
     const currentTime = getCurrentTimestamp();
@@ -400,7 +400,7 @@ async function handleAgree(request) {
       content: '{{user}}添加了你为好友',
       time: currentTime
     });
-    logger.info('[FriendRequestDetail] 已插入系统消息');
+    logger.info('phone','[FriendRequestDetail] 已插入系统消息');
 
     // 3. 从AI感知删除列表中移除
     await removeAIAwareDeletedRequest(request.contactId);
@@ -418,7 +418,7 @@ async function handleAgree(request) {
     await refreshNewFriendsPage();
 
   } catch (error) {
-    logger.error('[FriendRequestDetail] 同意申请失败:', error);
+    logger.error('phone','[FriendRequestDetail] 同意申请失败:', error);
   }
 }
 
@@ -459,7 +459,7 @@ export function bindEventListeners(pageId) {
     handleAIGenerationComplete
   );
 
-  logger.debug('[FriendRequestDetail] 已绑定AI生成完成事件，pageId:', pageId);
+  logger.debug('phone','[FriendRequestDetail] 已绑定AI生成完成事件，pageId:', pageId);
 }
 
 /**
@@ -471,7 +471,7 @@ export function bindEventListeners(pageId) {
 async function handleAIGenerationComplete() {
   if (!currentContactId) return;
 
-  logger.info('[FriendRequestDetail] 检测到AI生成完成，准备刷新页面');
+  logger.info('phone','[FriendRequestDetail] 检测到AI生成完成，准备刷新页面');
 
   // 等待一小段时间，确保数据已保存（增加延迟，确保存储操作完成）
   await new Promise(resolve => setTimeout(resolve, 200));
@@ -489,7 +489,7 @@ async function handleAIGenerationComplete() {
 async function refreshCurrentPage() {
   if (!currentContactId) return;
 
-  logger.debug('[FriendRequestDetail] 局部刷新消息列表:', currentContactId);
+  logger.debug('phone','[FriendRequestDetail] 局部刷新消息列表:', currentContactId);
 
   try {
     // 获取最新数据
@@ -497,7 +497,7 @@ async function refreshCurrentPage() {
     const request = requests.find(r => r.contactId === currentContactId);
 
     if (!request) {
-      logger.warn('[FriendRequestDetail] 未找到申请数据，页面可能已关闭');
+      logger.warn('phone','[FriendRequestDetail] 未找到申请数据，页面可能已关闭');
       return;
     }
 
@@ -522,14 +522,14 @@ async function refreshCurrentPage() {
     }
 
     if (!page) {
-      logger.warn('[FriendRequestDetail] 未找到页面元素，contactId:', currentContactId);
+      logger.warn('phone','[FriendRequestDetail] 未找到页面元素，contactId:', currentContactId);
       return;
     }
 
     // 查找内容容器
     const contentContainer = page.querySelector('.friend-request-detail-content');
     if (!contentContainer) {
-      logger.warn('[FriendRequestDetail] 未找到内容容器');
+      logger.warn('phone','[FriendRequestDetail] 未找到内容容器');
       return;
     }
 
@@ -547,22 +547,22 @@ async function refreshCurrentPage() {
     // 重新插入消息列表（在操作按钮之后）
     const actionButtons = contentContainer.querySelector('.friend-request-action-buttons');
     if (!actionButtons) {
-      logger.warn('[FriendRequestDetail] 未找到操作按钮元素');
+      logger.warn('phone','[FriendRequestDetail] 未找到操作按钮元素');
       return;
     }
 
     if (request.reapplyMessages.length > 0) {
       const newMessageList = createMessageList(request);
       actionButtons.after(newMessageList);
-      logger.info('[FriendRequestDetail] 消息列表已局部刷新，消息数量:', request.reapplyMessages.length);
+      logger.info('phone','[FriendRequestDetail] 消息列表已局部刷新，消息数量:', request.reapplyMessages.length);
     } else {
       const emptyHint = createEmptyHint();
       actionButtons.after(emptyHint);
-      logger.info('[FriendRequestDetail] 消息列表已局部刷新，暂无消息');
+      logger.info('phone','[FriendRequestDetail] 消息列表已局部刷新，暂无消息');
     }
 
   } catch (error) {
-    logger.error('[FriendRequestDetail] 局部刷新消息列表失败:', error);
+    logger.error('phone','[FriendRequestDetail] 局部刷新消息列表失败:', error);
   }
 }
 
@@ -619,7 +619,7 @@ function handleToggleDeleteButton(clickedItem, container) {
  * @param {HTMLElement} messageItemElement - 消息项DOM元素（可选，用于直接删除）
  */
 async function handleDeleteMessage(request, index, messageItemElement) {
-  logger.info('[FriendRequestDetail] 删除好友申请消息:', index);
+  logger.info('phone','[FriendRequestDetail] 删除好友申请消息:', index);
 
   try {
     // 重要：删除前先重新加载最新数据，确保使用正确的数组长度
@@ -627,7 +627,7 @@ async function handleDeleteMessage(request, index, messageItemElement) {
     const currentRequest = requests.find(r => r.contactId === request.contactId);
 
     if (!currentRequest) {
-      logger.warn('[FriendRequestDetail] 未找到申请数据:', request.contactId);
+      logger.warn('phone','[FriendRequestDetail] 未找到申请数据:', request.contactId);
       return;
     }
 
@@ -636,7 +636,7 @@ async function handleDeleteMessage(request, index, messageItemElement) {
 
     // 验证索引范围
     if (actualIndex < 0 || actualIndex >= currentRequest.reapplyMessages.length) {
-      logger.warn('[FriendRequestDetail] 消息索引超出范围:', {
+      logger.warn('phone','[FriendRequestDetail] 消息索引超出范围:', {
         uiIndex: index,
         actualIndex: actualIndex,
         arrayLength: currentRequest.reapplyMessages.length,
@@ -651,7 +651,7 @@ async function handleDeleteMessage(request, index, messageItemElement) {
     const success = await deleteReapplyMessage(request.contactId, actualIndex);
 
     if (!success) {
-      logger.warn('[FriendRequestDetail] 删除消息失败');
+      logger.warn('phone','[FriendRequestDetail] 删除消息失败');
       return;
     }
 
@@ -661,7 +661,7 @@ async function handleDeleteMessage(request, index, messageItemElement) {
     showSuccessToast('已删除消息');
 
   } catch (error) {
-    logger.error('[FriendRequestDetail] 删除消息失败:', error);
+    logger.error('phone','[FriendRequestDetail] 删除消息失败:', error);
     // 出错时也尝试刷新页面
     await refreshCurrentPage();
   }
@@ -675,7 +675,7 @@ async function handleDeleteMessage(request, index, messageItemElement) {
  */
 export function cleanupEventListeners(pageId) {
   destroyPageListeners(pageId);
-  logger.debug('[FriendRequestDetail] 已清理事件监听，pageId:', pageId);
+  logger.debug('phone','[FriendRequestDetail] 已清理事件监听，pageId:', pageId);
   currentContactId = null;
 }
 

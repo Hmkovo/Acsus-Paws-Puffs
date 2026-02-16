@@ -20,7 +20,7 @@ import { showSuccessToast, showErrorToast } from '../ui-components/toast-notific
  * @returns {Promise<HTMLElement>} 页面元素
  */
 export async function renderPresetSettings(params) {
-  logger.debug('[PresetSettingsUI] 渲染预设管理页面');
+  logger.debug('phone','[PresetSettingsUI] 渲染预设管理页面');
 
   // 创建页面容器
   const page = document.createElement('div');
@@ -36,7 +36,7 @@ export async function renderPresetSettings(params) {
   // 加载并渲染预设列表
   await loadAndRenderPresets(page);
 
-  logger.info('[PresetSettingsUI] 预设管理页面渲染完成');
+  logger.info('phone','[PresetSettingsUI] 预设管理页面渲染完成');
 
   return page;
 }
@@ -95,7 +95,7 @@ function createPresetSettingsHTML() {
  * @param {HTMLElement} page - 页面元素
  */
 function bindPresetEvents(page) {
-  logger.debug('[PresetSettingsUI] 绑定事件');
+  logger.debug('phone','[PresetSettingsUI]] 绑定事件');
 
   // 返回按钮
   const backBtn = page.querySelector('.preset-settings-back-btn');
@@ -130,7 +130,7 @@ function bindPresetEvents(page) {
  * @param {HTMLElement} page - 页面元素
  */
 async function loadAndRenderPresets(page) {
-  logger.debug('[PresetSettingsUI] 加载预设列表');
+  logger.debug('phone','[PresetSettingsUI]] 加载预设列表');
 
   // 获取预设数据
   const presets = getPresetData();
@@ -153,7 +153,7 @@ async function loadAndRenderPresets(page) {
   // 初始化拖拽排序（使用jQuery UI Sortable）
   initSortable(/** @type {HTMLElement} */(listContainer));
 
-  logger.debug('[PresetSettingsUI] 预设列表渲染完成，共', sortedItems.length, '项');
+  logger.debug('phone','[PresetSettingsUI]] 预设列表渲染完成，共', sortedItems.length, '项');
 }
 
 /**
@@ -240,7 +240,7 @@ function createPresetItem(item) {
  * @param {HTMLElement} listContainer - 列表容器
  */
 function initSortable(listContainer) {
-  logger.debug('[PresetSettingsUI] 初始化拖拽排序');
+  logger.debug('phone','[PresetSettingsUI]] 初始化拖拽排序');
 
   // 使用jQuery UI Sortable（已内置jQuery UI Touch Punch，支持触摸）
   // @ts-ignore - jQuery UI Sortable 扩展方法
@@ -263,7 +263,7 @@ function initSortable(listContainer) {
  * @param {HTMLElement} listContainer - 列表容器
  */
 function handleSortEnd(listContainer) {
-  logger.debug('[PresetSettingsUI] 拖拽排序结束，保存新顺序');
+  logger.debug('phone','[PresetSettingsUI]] 拖拽排序结束，保存新顺序');
 
   // 获取所有条目的新顺序
   const items = Array.from(listContainer.querySelectorAll('.preset-item'));
@@ -293,7 +293,7 @@ function handleSortEnd(listContainer) {
  * @param {HTMLElement} itemElement - 条目元素
  */
 function handleToggleItem(itemId, itemElement) {
-  logger.debug('[PresetSettingsUI] 切换条目开关:', itemId);
+  logger.debug('phone','[PresetSettingsUI]] 切换条目开关:', itemId);
 
   const presets = getPresetData();
   const item = presets.items.find(i => i.id === itemId);
@@ -333,7 +333,7 @@ function handleToggleItem(itemId, itemElement) {
  * @param {HTMLElement} itemElement - 条目元素
  */
 async function handleEditItem(itemId, itemElement) {
-  logger.debug('[PresetSettingsUI] 编辑条目:', itemId);
+  logger.debug('phone','[PresetSettingsUI]] 编辑条目:', itemId);
 
   const presets = getPresetData();
   const item = presets.items.find(i => i.id === itemId);
@@ -397,7 +397,7 @@ async function handleEditItem(itemId, itemElement) {
     savePresetData(presets);
     showSuccessToast('已保存');
 
-    logger.debug('[PresetSettingsUI] 条目已更新:', { id: itemId, label: result.label, contentLength: result.content.length });
+    logger.debug('phone','[PresetSettingsUI]] 条目已更新:', { id: itemId, label: result.label, contentLength: result.content.length });
   }
 }
 
@@ -408,7 +408,7 @@ async function handleEditItem(itemId, itemElement) {
  * 显示Toast提示，引导用户到角色聊天设置页面
  */
 function handleEditCharacterInfo() {
-  logger.debug('[PresetSettingsUI] 点击编辑角色总条目');
+  logger.debug('phone','[PresetSettingsUI]] 点击编辑角色总条目');
   showErrorToast('请在角色聊天设置中配置');
 }
 
@@ -419,7 +419,7 @@ function handleEditCharacterInfo() {
  * @param {HTMLElement} itemElement - 条目元素
  */
 async function handleDeleteItem(itemId, itemElement) {
-  logger.debug('[PresetSettingsUI] 删除条目:', itemId);
+  logger.debug('phone','[PresetSettingsUI]] 删除条目:', itemId);
 
   const presets = getPresetData();
   const item = presets.items.find(i => i.id === itemId);
@@ -452,7 +452,7 @@ async function handleDeleteItem(itemId, itemElement) {
  * @param {HTMLElement} page - 页面元素
  */
 async function handleAddPreset(page) {
-  logger.debug('[PresetSettingsUI] 添加自定义条目');
+  logger.debug('phone','[PresetSettingsUI]] 添加自定义条目');
 
   // 弹出输入弹窗
   const editHTML = `
@@ -527,7 +527,7 @@ async function handleAddPreset(page) {
     }
 
     showSuccessToast('已添加');
-    logger.debug('[PresetSettingsUI] 新条目已添加（局部更新）:', { label: result.label, contentLength: result.content.length });
+    logger.debug('phone','[PresetSettingsUI]] 新条目已添加（局部更新）:', { label: result.label, contentLength: result.content.length });
   }
 }
 
@@ -537,7 +537,7 @@ async function handleAddPreset(page) {
  * @param {HTMLElement} page - 页面元素
  */
 async function handleImportPresets(page) {
-  logger.debug('[PresetSettingsUI] 导入预设');
+  logger.debug('phone','[PresetSettingsUI]] 导入预设');
 
   // 创建文件选择器
   const input = document.createElement('input');
@@ -575,9 +575,9 @@ async function handleImportPresets(page) {
       await loadAndRenderPresets(page);
 
       showSuccessToast('导入成功');
-      logger.info('[PresetSettingsUI] 预设已导入，共', importedData.items.length, '项');
+      logger.info('phone','[PresetSettingsUI] 预设已导入，共', importedData.items.length, '项');
     } catch (error) {
-      logger.error('[PresetSettingsUI] 导入失败:', error);
+      logger.error('phone','[PresetSettingsUI] 导入失败:', error);
       showErrorToast('导入失败：' + error.message);
     }
   };
@@ -590,7 +590,7 @@ async function handleImportPresets(page) {
  * 处理导出预设
  */
 function handleExportPresets() {
-  logger.debug('[PresetSettingsUI] 导出预设');
+  logger.debug('phone','[PresetSettingsUI]] 导出预设');
 
   const presets = getPresetData();
 
@@ -615,7 +615,7 @@ function handleExportPresets() {
  * @param {HTMLElement} page - 页面元素
  */
 async function handleResetPresets(page) {
-  logger.debug('[PresetSettingsUI] 重置预设');
+  logger.debug('phone','[PresetSettingsUI]] 重置预设');
 
   // 确认重置
   const confirmed = await showConfirmPopup(
@@ -671,7 +671,7 @@ function savePresetData(presets) {
   extension_settings.acsusPawsPuffs.phone.promptPreset = presets;
   saveSettingsDebounced();
 
-  logger.debug('[PresetSettingsUI] 预设数据已保存');
+  logger.debug('phone','[PresetSettingsUI]] 预设数据已保存');
 }
 
 /**

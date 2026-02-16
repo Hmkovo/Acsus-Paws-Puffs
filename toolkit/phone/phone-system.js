@@ -64,11 +64,11 @@ export class PhoneSystem {
    */
   async init() {
     if (this.initialized) {
-      logger.warn('[PhoneSystem] 已经初始化过了');
+      logger.warn('phone','[PhoneSystem] 已经初始化过了');
       return;
     }
 
-    logger.info('[PhoneSystem] 开始初始化...');
+    logger.info('phone','[PhoneSystem] 开始初始化...');
 
     try {
       // 加载设置
@@ -76,7 +76,7 @@ export class PhoneSystem {
 
       // 如果功能未启用，跳过完整初始化
       if (!this.enabled) {
-        logger.info('[PhoneSystem] 功能未启用，跳过完整初始化');
+        logger.info('phone','[PhoneSystem] 功能未启用，跳过完整初始化');
         this.initialized = true;
         return;
       }
@@ -101,22 +101,22 @@ export class PhoneSystem {
       initPlanStoryRollbackHandler();
       initFriendRequestRollbackHandler();
       initGiftMembershipRollbackHandler();
-      logger.info('[PhoneSystem] 已注册回退处理器（约定计划、个签、转账、计划剧情、好友申请、送会员）');
+      logger.info('phone','[PhoneSystem] 已注册回退处理器（约定计划、个签、转账、计划剧情、好友申请、送会员）');
 
       // 检查会员过期（初始化时统一检查一次）
       const { checkAllMembershipsExpiry } = await import('./data-storage/storage-membership.js');
       await checkAllMembershipsExpiry();
-      logger.info('[PhoneSystem] 已检查会员过期状态');
+      logger.info('phone','[PhoneSystem] 已检查会员过期状态');
 
       // 初始化主题管理器（加载保存的主题设置）
       const { initTheme } = await import('./utils/theme-manager.js');
       await initTheme();
-      logger.info('[PhoneSystem] 已初始化主题管理器');
+      logger.info('phone','[PhoneSystem] 已初始化主题管理器');
 
       this.initialized = true;
-      logger.info('[PhoneSystem] 初始化完成');
+      logger.info('phone','[PhoneSystem] 初始化完成');
     } catch (error) {
-      logger.error('[PhoneSystem] 初始化失败:', error);
+      logger.error('phone','[PhoneSystem] 初始化失败:', error);
       throw error;
     }
   }
@@ -136,7 +136,7 @@ export class PhoneSystem {
 
     this.enabled = extension_settings[EXT_ID][MODULE_NAME].enabled !== false;
 
-    logger.debug('[PhoneSystem] 设置已加载，启用状态:', this.enabled);
+    logger.debug('phone','[PhoneSystem] 设置已加载，启用状态:', this.enabled);
   }
 }
 

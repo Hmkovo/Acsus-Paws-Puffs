@@ -52,19 +52,19 @@ const rollbackHandlers = [];
  */
 export function registerRollbackHandler(handler) {
   if (!handler || !handler.name || !handler.rollback) {
-    logger.error('[RollbackManager] 注册失败：缺少必需参数', handler);
+    logger.error('phone','[RollbackManager] 注册失败：缺少必需参数', handler);
     return;
   }
 
   if (typeof handler.rollback !== 'function') {
-    logger.error('[RollbackManager] 注册失败：rollback必须是函数', handler.name);
+    logger.error('phone','[RollbackManager] 注册失败：rollback必须是函数', handler.name);
     return;
   }
 
   // 检查是否已注册（避免重复）
   const existing = rollbackHandlers.find(h => h.name === handler.name);
   if (existing) {
-    logger.warn('[RollbackManager] 处理器已存在，跳过注册:', handler.name);
+    logger.warn('phone','[RollbackManager] 处理器已存在，跳过注册:', handler.name);
     return;
   }
 
@@ -80,7 +80,7 @@ export function registerRollbackHandler(handler) {
   // 按优先级排序（数字越小越先执行）
   rollbackHandlers.sort((a, b) => a.priority - b.priority);
 
-  logger.info('[RollbackManager] 已注册回退处理器:', handler.name, '优先级:', priority);
+  logger.info('phone','[RollbackManager] 已注册回退处理器:', handler.name, '优先级:', priority);
 }
 
 /**
@@ -92,12 +92,12 @@ export function registerRollbackHandler(handler) {
 export function unregisterRollbackHandler(name) {
   const index = rollbackHandlers.findIndex(h => h.name === name);
   if (index === -1) {
-    logger.warn('[RollbackManager] 处理器不存在，无法注销:', name);
+    logger.warn('phone','[RollbackManager] 处理器不存在，无法注销:', name);
     return false;
   }
 
   rollbackHandlers.splice(index, 1);
-  logger.info('[RollbackManager] 已注销回退处理器:', name);
+  logger.info('phone','[RollbackManager] 已注销回退处理器:', name);
   return true;
 }
 
@@ -115,18 +115,18 @@ export function unregisterRollbackHandler(name) {
  * @example
  * // 在 message-debug-ui.js 中调用
  * const result = await executeRollbackHandlers(contactId, afterAI);
- * logger.info('回退完成:', result.success, '成功', result.failed, '失败');
+ * logger.info('phone','回退完成:', result.success, '成功', result.failed, '失败');
  */
 export async function executeRollbackHandlers(contactId, deletedMessages) {
   if (rollbackHandlers.length === 0) {
-    logger.debug('[RollbackManager] 没有注册的回退处理器');
+    logger.debug('phone','[RollbackManager] 没有注册的回退处理器');
     return { success: 0, failed: 0, total: 0 };
   }
 
-  logger.info('[RollbackManager] ========== 开始执行回退处理器 ==========');
-  logger.info('[RollbackManager] 联系人:', contactId);
-  logger.info('[RollbackManager] 被删除消息数:', deletedMessages.length);
-  logger.info('[RollbackManager] 注册的处理器数:', rollbackHandlers.length);
+  logger.info('phone','[RollbackManager] ========== 开始执行回退处理器 ==========');
+  logger.info('phone','[RollbackManager] 联系人:', contactId);
+  logger.info('phone','[RollbackManager] 被删除消息数:', deletedMessages.length);
+  logger.info('phone','[RollbackManager] 注册的处理器数:', rollbackHandlers.length);
 
   const deletedMessageIds = deletedMessages.map(msg => msg.id);
   let successCount = 0;
@@ -135,22 +135,22 @@ export async function executeRollbackHandlers(contactId, deletedMessages) {
   // 按优先级顺序执行所有处理器
   for (const handler of rollbackHandlers) {
     try {
-      logger.info(`[RollbackManager] 执行: ${handler.name} (优先级: ${handler.priority})`);
+      logger.info('phone',`[RollbackManager] 执行: ${handler.name} (优先级: ${handler.priority})`);
 
       // 调用处理器（支持异步）
       await handler.rollback(contactId, deletedMessages, deletedMessageIds);
 
-      logger.info(`[RollbackManager] ✅ ${handler.name} 执行成功`);
+      logger.info('phone',`[RollbackManager] ✅ ${handler.name} 执行成功`);
       successCount++;
     } catch (error) {
-      logger.error(`[RollbackManager] ❌ ${handler.name} 执行失败:`, error);
+      logger.error('phone',`[RollbackManager] ❌ ${handler.name} 执行失败:`, error);
       failedCount++;
       // 不中断，继续执行其他处理器
     }
   }
 
-  logger.info('[RollbackManager] ========== 回退处理器执行完成 ==========');
-  logger.info('[RollbackManager] 成功:', successCount, '失败:', failedCount, '总计:', rollbackHandlers.length);
+  logger.info('phone','[RollbackManager] ========== 回退处理器执行完成 ==========');
+  logger.info('phone','[RollbackManager] 成功:', successCount, '失败:', failedCount, '总计:', rollbackHandlers.length);
 
   return {
     success: successCount,
@@ -177,6 +177,6 @@ export function getRegisteredHandlers() {
 export function clearAllHandlers() {
   const count = rollbackHandlers.length;
   rollbackHandlers.length = 0;
-  logger.warn('[RollbackManager] 已清空所有处理器，共', count, '个');
+  logger.warn('phone','[RollbackManager] 已清空所有处理器，共', count, '个');
 }
 

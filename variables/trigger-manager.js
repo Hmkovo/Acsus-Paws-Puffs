@@ -50,7 +50,7 @@ export class TriggerManager {
      */
     async init(_analyzeCallback) {
         if (this.initialized) {
-            logger.debug('[TriggerManager] 已初始化，跳过');
+            logger.debug('variable', '[TriggerManager] 已初始化，跳过');
             return;
         }
 
@@ -64,7 +64,7 @@ export class TriggerManager {
         eventSource.on(event_types.CHAT_CHANGED, this._onChatChanged);
 
         this.initialized = true;
-        logger.info('[TriggerManager] 初始化完成');
+        logger.info('variable', '[TriggerManager] 初始化完成');
     }
 
     /**
@@ -77,7 +77,7 @@ export class TriggerManager {
 
         this.abortAnalysis();
         this.initialized = false;
-        logger.info('[TriggerManager] 已销毁');
+        logger.info('variable', '[TriggerManager] 已销毁');
     }
 
     // ========================================
@@ -131,14 +131,14 @@ export class TriggerManager {
                 const interval = trigger.interval || 5;
 
                 if (count >= interval) {
-                    logger.info('[TriggerManager] 间隔触发:', suite.name, '计数:', count);
+                    logger.info('variable', '[TriggerManager] 间隔触发:', suite.name, '计数:', count);
                     await this.triggerAnalysis(suite.id, 'interval');
                     this.resetCount(suite.id, chatId);
                 }
             } else if (trigger.type === 'keyword') {
                 // 关键词触发
                 if (this.checkKeywords(messageContent, suite)) {
-                    logger.info('[TriggerManager] 关键词触发:', suite.name);
+                    logger.info('variable', '[TriggerManager] 关键词触发:', suite.name);
                     await this.triggerAnalysis(suite.id, 'keyword');
                 }
             }
@@ -152,7 +152,7 @@ export class TriggerManager {
      */
     async _onChatChanged() {
         // 聊天切换时不重置计数，计数是按 chatId 存储的
-        logger.debug('[TriggerManager] 聊天已切换');
+        logger.debug('variable', '[TriggerManager] 聊天已切换');
 
         // 刷新变量宏（因为之前的 chatId 是 undefined）
         await refreshVariableMacros();
@@ -160,7 +160,7 @@ export class TriggerManager {
         // 重新预加载当前聊天的变量值
         await preloadAllVariableValues();
 
-        logger.debug('[TriggerManager] 变量宏已刷新，缓存已预加载');
+        logger.debug('variable', '[TriggerManager] 变量宏已刷新，缓存已预加载');
     }
 
     // ========================================
@@ -253,7 +253,7 @@ export class TriggerManager {
         const suite = suiteManager.getSuite(suiteId);
 
         if (!suite) {
-            logger.warn('[TriggerManager] 套装不存在:', suiteId);
+            logger.warn('variable', '[TriggerManager] 套装不存在:', suiteId);
             return;
         }
 
@@ -268,7 +268,7 @@ export class TriggerManager {
 
         // 入队
         queueManager.enqueue(suiteId, suite.name, triggerType);
-        logger.info('[TriggerManager] 任务已入队:', suite.name, '触发类型:', triggerType);
+        logger.info('variable', '[TriggerManager] 任务已入队:', suite.name, '触发类型:', triggerType);
     }
 
     /**

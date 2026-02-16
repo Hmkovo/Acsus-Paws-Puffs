@@ -23,7 +23,7 @@ import { stateManager } from '../utils/state-manager.js';
  * @returns {Promise<DocumentFragment>} 页面内容片段
  */
 export async function renderImageStorage() {
-    logger.info('[ImageStorage] 开始渲染图片管理页面');
+    logger.info('phone','[ImageStorage] 开始渲染图片管理页面');
 
     const fragment = document.createDocumentFragment();
 
@@ -72,7 +72,7 @@ export async function renderImageStorage() {
 
     fragment.appendChild(container);
 
-    logger.info('[ImageStorage] 页面渲染完成');
+    logger.info('phone','[ImageStorage] 页面渲染完成');
     return fragment;
 }
 
@@ -86,7 +86,7 @@ function bindEvents(page) {
     const backBtn = page.querySelector('.image-storage-back-btn');
     if (backBtn) {
         backBtn.addEventListener('click', () => {
-            logger.info('[ImageStorage] 点击返回');
+            logger.info('phone','[ImageStorage] 点击返回');
             const overlayElement = document.querySelector('.phone-overlay');
             if (overlayElement) {
                 hidePage(overlayElement, 'image-storage');
@@ -98,7 +98,7 @@ function bindEvents(page) {
     const sortBtn = page.querySelector('.image-storage-sort-btn');
     if (sortBtn) {
         sortBtn.addEventListener('click', () => {
-            logger.info('[ImageStorage] 切换排序方式');
+            logger.info('phone','[ImageStorage] 切换排序方式');
             toggleSortOrder(page);
         });
     }
@@ -107,7 +107,7 @@ function bindEvents(page) {
     const deleteBtn = page.querySelector('.image-storage-delete-btn');
     if (deleteBtn) {
         deleteBtn.addEventListener('click', () => {
-            logger.info('[ImageStorage] 点击删除选中');
+            logger.info('phone','[ImageStorage] 点击删除选中');
             deleteSelectedImages(page);
         });
     }
@@ -116,7 +116,7 @@ function bindEvents(page) {
     const selectAllBtn = page.querySelector('.image-storage-select-all-btn');
     if (selectAllBtn) {
         selectAllBtn.addEventListener('click', () => {
-            logger.info('[ImageStorage] 点击全选/取消全选');
+            logger.info('phone','[ImageStorage] 点击全选/取消全选');
             toggleSelectAll(page);
         });
     }
@@ -125,12 +125,12 @@ function bindEvents(page) {
     stateManager.subscribe('image-storage', 'images', async (meta) => {
         // 检查页面是否还在DOM中
         if (!document.contains(page)) {
-            logger.debug('[ImageStorage] 页面已移除，跳过刷新');
+            logger.debug('phone','[ImageStorage] 页面已移除，跳过刷新');
             return;
         }
 
         const { action, image, count } = meta;
-        logger.info('[ImageStorage] 收到数据变化通知:', action, image?.filename || count);
+        logger.info('phone','[ImageStorage] 收到数据变化通知:', action, image?.filename || count);
 
         // 最小局部更新：只刷新图片列表，不重新渲染整个页面
         await refreshImageList(page);
@@ -147,7 +147,7 @@ function bindEvents(page) {
  * 只更新图片列表部分，保持当前排序顺序，不重新渲染整个页面
  */
 async function refreshImageList(page) {
-    logger.debug('[ImageStorage] 刷新图片列表（局部更新）');
+    logger.debug('phone','[ImageStorage] 刷新图片列表（局部更新）');
 
     try {
         // 重新加载数据
@@ -172,9 +172,9 @@ async function refreshImageList(page) {
         // 重新渲染图片网格
         renderImageGrid(page, sortedImages);
 
-        logger.info('[ImageStorage] 列表已刷新，共', sortedImages.length, '张图片');
+        logger.info('phone','[ImageStorage] 列表已刷新，共', sortedImages.length, '张图片');
     } catch (error) {
-        logger.error('[ImageStorage] 刷新列表失败:', error);
+        logger.error('phone','[ImageStorage] 刷新列表失败:', error);
     }
 }
 
@@ -185,13 +185,13 @@ async function refreshImageList(page) {
  * @param {HTMLElement} page - 页面元素
  */
 async function loadImageList(page) {
-    logger.debug('[ImageStorage] 开始加载图片列表');
+    logger.debug('phone','[ImageStorage] 开始加载图片列表');
 
     try {
         // 从配置中获取已上传的图片列表
         const uploadedImages = getUploadedImages();
 
-        logger.info('[ImageStorage] 找到', uploadedImages.length, '张图片');
+        logger.info('phone','[ImageStorage] 找到', uploadedImages.length, '张图片');
 
         // 数据格式已经标准化，直接使用
         const phoneImages = uploadedImages.map(img => ({
@@ -209,7 +209,7 @@ async function loadImageList(page) {
         renderImageGrid(page, phoneImages);
 
     } catch (error) {
-        logger.error('[ImageStorage] 加载图片列表失败:', error);
+        logger.error('phone','[ImageStorage] 加载图片列表失败:', error);
 
         const content = page.querySelector('.image-storage-content');
         if (content) {
@@ -308,7 +308,7 @@ function renderImageGrid(page, images) {
         const img = item.querySelector('.image-storage-item-img');
         if (img) {
             img.addEventListener('click', () => {
-                logger.debug('[ImageStorage] 预览图片:', url);
+                logger.debug('phone','[ImageStorage] 预览图片:', url);
                 showImagePreview(url);
             });
         }
@@ -368,7 +368,7 @@ function toggleSortOrder(page) {
     const currentIndex = orders.indexOf(currentOrder);
     const nextOrder = orders[(currentIndex + 1) % orders.length];
 
-    logger.info('[ImageStorage] 切换排序:', currentOrder, '->', nextOrder);
+    logger.info('phone','[ImageStorage] 切换排序:', currentOrder, '->', nextOrder);
 
     page.dataset.sortOrder = nextOrder;
 
@@ -398,11 +398,11 @@ function toggleSelectAll(page) {
     if (allSelected) {
         // 全部取消选中
         items.forEach(item => item.classList.remove('selected'));
-        logger.debug('[ImageStorage] 取消全选');
+        logger.debug('phone','[ImageStorage] 取消全选');
     } else {
         // 全部选中
         items.forEach(item => item.classList.add('selected'));
-        logger.debug('[ImageStorage] 全选');
+        logger.debug('phone','[ImageStorage] 全选');
     }
 
     updateSelectAllButton(page);
@@ -437,7 +437,7 @@ async function deleteSelectedImages(page) {
         return;
     }
 
-    logger.info('[ImageStorage] 准备删除', selectedItems.length, '张图片');
+    logger.info('phone','[ImageStorage] 准备删除', selectedItems.length, '张图片');
 
     // 确认弹窗
     const confirmed = await showConfirmPopup(
@@ -451,7 +451,7 @@ async function deleteSelectedImages(page) {
     );
 
     if (!confirmed) {
-        logger.debug('[ImageStorage] 用户取消删除');
+        logger.debug('phone','[ImageStorage] 用户取消删除');
         return;
     }
 
@@ -461,7 +461,7 @@ async function deleteSelectedImages(page) {
         return el.dataset.name;
     }).filter(Boolean);
 
-    logger.info('[ImageStorage] 准备删除', filenames.length, '张图片');
+    logger.info('phone','[ImageStorage] 准备删除', filenames.length, '张图片');
 
     try {
         // 使用数据管理系统删除（同时删除文件和记录）
@@ -485,7 +485,7 @@ async function deleteSelectedImages(page) {
             showErrorToast('删除失败，请稍后重试');
         }
     } catch (error) {
-        logger.error('[ImageStorage] 删除图片时出错:', error);
+        logger.error('phone','[ImageStorage] 删除图片时出错:', error);
         showErrorToast('删除失败：' + error.message);
     }
 
@@ -520,7 +520,7 @@ async function deleteSelectedImages(page) {
     // 更新全选按钮
     updateSelectAllButton(page);
 
-    logger.info('[ImageStorage] 删除完成');
+    logger.info('phone','[ImageStorage] 删除完成');
 }
 
 /**

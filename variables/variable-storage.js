@@ -152,7 +152,7 @@ export async function loadStorageV2() {
     }
 
     try {
-        logger.debug('[VariableStorage] 尝试加载 V2 存储文件...');
+        logger.debug('variable', '[VariableStorage] 尝试加载 V2 存储文件...');
 
         const response = await fetch(FILE_PATH_V2, {
             method: 'GET',
@@ -162,10 +162,10 @@ export async function loadStorageV2() {
         if (response.ok) {
             const text = await response.text();
             cachedDataV2 = JSON.parse(text);
-            logger.info('[VariableStorage] V2 存储文件加载成功');
+            logger.info('variable', '[VariableStorage] V2 存储文件加载成功');
             return cachedDataV2;
         } else if (response.status === 404) {
-            logger.info('[VariableStorage] V2 存储文件不存在，创建默认数据');
+            logger.info('variable', '[VariableStorage] V2 存储文件不存在，创建默认数据');
             cachedDataV2 = JSON.parse(JSON.stringify(DEFAULT_DATA_V2));
             await saveStorageV2();
             return cachedDataV2;
@@ -173,7 +173,7 @@ export async function loadStorageV2() {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
     } catch (error) {
-        logger.error('[VariableStorage] V2 加载失败:', error.message);
+        logger.error('variable', '[VariableStorage] V2 加载失败:', error.message);
         cachedDataV2 = JSON.parse(JSON.stringify(DEFAULT_DATA_V2));
         return cachedDataV2;
     }
@@ -186,7 +186,7 @@ export async function loadStorageV2() {
  */
 export async function saveStorageV2() {
     if (!cachedDataV2) {
-        logger.warn('[VariableStorage] V2 没有数据可保存');
+        logger.warn('variable', '[VariableStorage] V2 没有数据可保存');
         return false;
     }
 
@@ -208,10 +208,10 @@ export async function saveStorageV2() {
         }
 
         isDirtyV2 = false;
-        logger.debug('[VariableStorage] V2 数据已保存');
+        logger.debug('variable', '[VariableStorage] V2 数据已保存');
         return true;
     } catch (error) {
-        logger.error('[VariableStorage] V2 保存失败:', error.message);
+        logger.error('variable', '[VariableStorage] V2 保存失败:', error.message);
         return false;
     }
 }
@@ -355,7 +355,7 @@ export async function loadValuesV2(chatId) {
             throw new Error(`HTTP ${response.status}`);
         }
     } catch (error) {
-        logger.error('[VariableStorage] 加载变量值失败:', chatId, error.message);
+        logger.error('variable', '[VariableStorage] 加载变量值失败:', chatId, error.message);
         cachedValues[chatId] = {};
         return cachedValues[chatId];
     }
@@ -392,10 +392,10 @@ export async function saveValuesV2(chatId) {
         }
 
         dirtyValueFiles.delete(chatId);
-        logger.debug('[VariableStorage] 变量值已保存:', chatId);
+        logger.debug('variable', '[VariableStorage] 变量值已保存:', chatId);
         return true;
     } catch (error) {
-        logger.error('[VariableStorage] 保存变量值失败:', chatId, error.message);
+        logger.error('variable', '[VariableStorage] 保存变量值失败:', chatId, error.message);
         return false;
     }
 }
@@ -494,7 +494,7 @@ export async function deleteVariableValuesV2(variableId) {
             saveValuesV2Debounced(chatId);
         }
     }
-    logger.debug('[VariableStorage] 已删除 V2 变量的所有值:', variableId);
+    logger.debug('variable', '[VariableStorage] 已删除 V2 变量的所有值:', variableId);
 }
 
 // ============================================
@@ -535,7 +535,7 @@ export async function loadStorage() {
     }
 
     try {
-        logger.debug('[VariableStorage] 尝试加载 V1 存储文件...');
+        logger.debug('variable', '[VariableStorage] 尝试加载 V1 存储文件...');
 
         const response = await fetch(FILE_PATH_V1, {
             method: 'GET',
@@ -545,10 +545,10 @@ export async function loadStorage() {
         if (response.ok) {
             const text = await response.text();
             cachedDataV1 = JSON.parse(text);
-            logger.info('[VariableStorage] V1 存储文件加载成功');
+            logger.info('variable', '[VariableStorage] V1 存储文件加载成功');
             return cachedDataV1;
         } else if (response.status === 404) {
-            logger.info('[VariableStorage] V1 存储文件不存在，创建默认数据');
+            logger.info('variable', '[VariableStorage] V1 存储文件不存在，创建默认数据');
             cachedDataV1 = JSON.parse(JSON.stringify(DEFAULT_DATA_V1));
             await saveStorage();
             return cachedDataV1;
@@ -556,7 +556,7 @@ export async function loadStorage() {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
     } catch (error) {
-        logger.error('[VariableStorage] V1 加载失败:', error.message);
+        logger.error('variable', '[VariableStorage] V1 加载失败:', error.message);
         cachedDataV1 = JSON.parse(JSON.stringify(DEFAULT_DATA_V1));
         return cachedDataV1;
     }
@@ -569,7 +569,7 @@ export async function loadStorage() {
  */
 export async function saveStorage() {
     if (!cachedDataV1) {
-        logger.warn('[VariableStorage] V1 没有数据可保存');
+        logger.warn('variable', '[VariableStorage] V1 没有数据可保存');
         return false;
     }
 
@@ -591,10 +591,10 @@ export async function saveStorage() {
         }
 
         isDirtyV1 = false;
-        logger.debug('[VariableStorage] V1 数据已保存');
+        logger.debug('variable', '[VariableStorage] V1 数据已保存');
         return true;
     } catch (error) {
-        logger.error('[VariableStorage] V1 保存失败:', error.message);
+        logger.error('variable', '[VariableStorage] V1 保存失败:', error.message);
         return false;
     }
 }
@@ -717,7 +717,7 @@ export async function deleteVariableValues(variableId) {
         }
     }
     saveStorageDebounced();
-    logger.debug('[VariableStorage] 已删除 V1 变量的所有值:', variableId);
+    logger.debug('variable', '[VariableStorage] 已删除 V1 变量的所有值:', variableId);
 }
 
 /**

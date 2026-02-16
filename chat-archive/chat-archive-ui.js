@@ -25,7 +25,7 @@ const PAGE_IDS = {
  * @returns {HTMLElement} 返回 overlay 元素
  */
 export function renderArchiveFrame() {
-    logger.debug('[ChatArchive.UI] 开始渲染框架');
+    logger.debug('archive', '[ChatArchive.UI] 开始渲染框架');
 
     // 创建遮罩层
     const overlay = document.createElement('div');
@@ -108,7 +108,7 @@ export function renderArchiveFrame() {
     // 绑定事件
     bindFrameEvents(overlay);
 
-    logger.debug('[ChatArchive.UI] 框架渲染完成');
+    logger.debug('archive', '[ChatArchive.UI] 框架渲染完成');
     return overlay;
 }
 
@@ -142,7 +142,7 @@ function bindFrameEvents(overlay) {
     //     }
     // });
 
-    logger.debug('[ChatArchive.UI] 事件绑定完成');
+    logger.debug('archive', '[ChatArchive.UI] 事件绑定完成');
 }
 
 /**
@@ -172,7 +172,7 @@ function switchPage(overlay, pageId) {
         }
     });
 
-    logger.debug('[ChatArchive.UI] 切换到页面:', pageId);
+    logger.debug('archive', '[ChatArchive.UI] 切换到页面:', pageId);
 }
 
 /**
@@ -187,7 +187,7 @@ export function closeArchiveUI() {
         // 动画结束后移除元素
         setTimeout(() => {
             overlay.remove();
-            logger.info('[ChatArchive.UI] 界面已关闭');
+            logger.info('archive', '[ChatArchive.UI] 界面已关闭');
         }, 200);
     }
 }

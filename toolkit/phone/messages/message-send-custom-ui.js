@@ -39,7 +39,7 @@ import { renderPokeMessage } from './message-types/poke-message.js';
  */
 export async function renderMessageSendCustom(params) {
   const { contactId } = params;
-  logger.debug('[MessageSendCustom] 渲染消息发送管理页:', contactId);
+  logger.debug('phone','[MessageSendCustom] 渲染消息发送管理页:', contactId);
 
   try {
     // 加载联系人数据
@@ -47,7 +47,7 @@ export async function renderMessageSendCustom(params) {
     const contact = contacts.find(c => c.id === contactId);
 
     if (!contact) {
-      logger.warn('[MessageSendCustom] 未找到联系人:', contactId);
+      logger.warn('phone','[MessageSendCustom] 未找到联系人:', contactId);
       return createErrorView();
     }
 
@@ -77,10 +77,10 @@ export async function renderMessageSendCustom(params) {
     fragment.appendChild(container);
 
 
-    logger.info('[MessageSendCustom] 页面渲染完成');
+    logger.info('phone','[MessageSendCustom] 页面渲染完成');
     return fragment;
   } catch (error) {
-    logger.error('[MessageSendCustom] 渲染失败:', error);
+    logger.error('phone','[MessageSendCustom] 渲染失败:', error);
     return createErrorView();
   }
 }
@@ -242,7 +242,7 @@ function insertDividers(listContainer, allMessages, sendSettings) {
   const lastItem = items[items.length - 1];
   const recentDivider = createDivider('recent', sendSettings);
   lastItem.insertAdjacentElement('afterend', recentDivider);
-  logger.debug('[MessageSendCustom] 插入最新消息分割线（最底部）');
+  logger.debug('phone','[MessageSendCustom] 插入最新消息分割线（最底部）');
 
   // 2. 从后往前遍历，找到第recentCount条有效消息的上方 → 插入历史分割线
   let validCount = 0;
@@ -265,7 +265,7 @@ function insertDividers(listContainer, allMessages, sendSettings) {
       const divider = createDivider('history', sendSettings);
       item.insertAdjacentElement('beforebegin', divider);
       historyDividerInserted = true;
-      logger.debug('[MessageSendCustom] 插入历史消息分割线，位置:', i, '有效消息数:', validCount);
+      logger.debug('phone','[MessageSendCustom] 插入历史消息分割线，位置:', i, '有效消息数:', validCount);
     }
 
     // 达到存档消息阈值 → 在这条消息的上方插入"存档消息"分割线
@@ -273,7 +273,7 @@ function insertDividers(listContainer, allMessages, sendSettings) {
       const divider = createDivider('archived', sendSettings);
       item.insertAdjacentElement('beforebegin', divider);
       archivedDividerInserted = true;
-      logger.debug('[MessageSendCustom] 插入存档消息分割线，位置:', i, '有效消息数:', validCount);
+      logger.debug('phone','[MessageSendCustom] 插入存档消息分割线，位置:', i, '有效消息数:', validCount);
     }
   }
 }
@@ -302,7 +302,7 @@ function bindDividerUpdater(listContainer, contactId, sendSettings) {
     );
 
     if (hasExcludedChange) {
-      logger.debug('[MessageSendCustom] 检测到消息排除状态变化，更新分割线');
+      logger.debug('phone','[MessageSendCustom] 检测到消息排除状态变化，更新分割线');
       updateDividers(listContainer, contactId, sendSettings);
     }
   };
@@ -317,7 +317,7 @@ function bindDividerUpdater(listContainer, contactId, sendSettings) {
     subtree: true  // 监听所有子元素
   });
 
-  logger.debug('[MessageSendCustom] 已绑定分割线自动更新监听器');
+  logger.debug('phone','[MessageSendCustom] 已绑定分割线自动更新监听器');
 
   // 页面销毁时自动清理监听器（使用父容器的 MutationObserver）
   const parentObserver = new MutationObserver((mutations) => {
@@ -326,7 +326,7 @@ function bindDividerUpdater(listContainer, contactId, sendSettings) {
         if (node === listContainer || (node instanceof HTMLElement && node.contains(listContainer))) {
           observer.disconnect();
           parentObserver.disconnect();
-          logger.debug('[MessageSendCustom] 页面销毁，已清理分割线监听器');
+          logger.debug('phone','[MessageSendCustom] 页面销毁，已清理分割线监听器');
         }
       });
     });
@@ -428,7 +428,7 @@ async function createMessageBubble(message, contact, contactId) {
         innerBubble = await renderPlanMessage(message, contact, contactId);
         // 如果返回 null（例如旧数据的响应消息缺少 quotedPlanId），降级为普通文本
         if (!innerBubble) {
-          logger.debug('[MessageSendCustom] 计划消息渲染器返回null，降级为普通文本');
+          logger.debug('phone','[MessageSendCustom] 计划消息渲染器返回null，降级为普通文本');
           innerBubble = renderTextMessage(message, contact, contactId);
         }
       } else {
@@ -466,7 +466,7 @@ async function createMessageBubble(message, contact, contactId) {
     case 'recalled-pending':
       // 待撤回消息（在发送管理页面直接显示原消息，不触发动画）
       innerBubble = renderTextMessage(message, contact, contactId);
-      logger.debug('[MessageSendCustom] 待撤回消息（发送管理页不触发动画）');
+      logger.debug('phone','[MessageSendCustom] 待撤回消息（发送管理页不触发动画）');
       break;
 
     case 'friend_added':
@@ -518,7 +518,7 @@ async function createMessageBubble(message, contact, contactId) {
 
     default:
       // 未知类型，降级为文字
-      logger.warn('[MessageSendCustom] 未知消息类型:', message.type);
+      logger.warn('phone','[MessageSendCustom] 未知消息类型:', message.type);
       innerBubble = renderTextMessage({
         ...message,
         content: message.content || '[未知消息类型]',
@@ -529,7 +529,7 @@ async function createMessageBubble(message, contact, contactId) {
 
   // 安全检查：确保 innerBubble 不为 null
   if (!innerBubble) {
-    logger.error('[MessageSendCustom] 渲染器返回null，消息:', message);
+    logger.error('phone','[MessageSendCustom] 渲染器返回null，消息:', message);
     innerBubble = renderTextMessage({ ...message, content: message.content || '[渲染失败]', type: 'text' }, contact, contactId);
   }
 
@@ -710,14 +710,14 @@ function getSelectedMessages(pageContainer) {
  * @param {boolean} exclude - 是否排除
  */
 async function handleToggleExclude(timestamp, contactId, exclude) {
-  logger.debug('[MessageSendCustom] 局部更新消息排除状态:', timestamp, exclude);
+  logger.debug('phone','[MessageSendCustom] 局部更新消息排除状态:', timestamp, exclude);
 
   // 1. 修改数据（保存到存储）
   const allMessages = await loadChatHistory(contactId);
   const message = allMessages.find(m => m.time === timestamp);
 
   if (!message) {
-    logger.warn('[MessageSendCustom] 未找到消息:', timestamp);
+    logger.warn('phone','[MessageSendCustom] 未找到消息:', timestamp);
     return;
   }
 
@@ -742,7 +742,7 @@ async function handleToggleExclude(timestamp, contactId, exclude) {
     // 更新眼睛图标（动态添加/移除）
     updateEyeIcon(itemElement, exclude, timestamp, contactId);
 
-    logger.debug('[MessageSendCustom] DOM已更新，消息停留在原地');
+    logger.debug('phone','[MessageSendCustom] DOM已更新，消息停留在原地');
   }
 
   showSuccessToast(exclude ? '已标记为不发送' : '已恢复发送');
@@ -761,7 +761,7 @@ async function handleToggleExclude(timestamp, contactId, exclude) {
  * @param {boolean} exclude - 是否排除
  */
 async function batchToggleExclude(timestamps, contactId, exclude) {
-  logger.debug('[MessageSendCustom] 批量局部更新排除状态:', timestamps.length, exclude);
+  logger.debug('phone','[MessageSendCustom] 批量局部更新排除状态:', timestamps.length, exclude);
 
   // 1. 修改数据（保存到存储）
   const allMessages = await loadChatHistory(contactId);
@@ -795,7 +795,7 @@ async function batchToggleExclude(timestamps, contactId, exclude) {
     }
   });
 
-  logger.debug('[MessageSendCustom] 批量DOM更新完成，消息停留在原地');
+  logger.debug('phone','[MessageSendCustom] 批量DOM更新完成，消息停留在原地');
 }
 
 /**
@@ -841,7 +841,7 @@ function updateEyeIcon(itemElement, excluded, timestamp, contactId) {
  * 处理返回
  */
 function handleBack() {
-  logger.debug('[MessageSendCustom] 返回上一页');
+  logger.debug('phone','[MessageSendCustom] 返回上一页');
   const overlay = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
   import('../phone-main-ui.js').then(({ hidePage }) => {
     hidePage(overlay, 'message-send-custom');

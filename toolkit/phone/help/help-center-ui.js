@@ -16,7 +16,7 @@ import logger from '../../../logger.js';
  * @returns {Promise<DocumentFragment>} 页面内容片段
  */
 export async function renderHelpCenter() {
-  logger.info('[HelpCenter] 开始渲染帮助中心页');
+  logger.info('phone','[HelpCenter] 开始渲染帮助中心页');
 
   const fragment = document.createDocumentFragment();
   const container = document.createElement('div');
@@ -68,7 +68,7 @@ export async function renderHelpCenter() {
 
   fragment.appendChild(container);
 
-  logger.info('[HelpCenter] 帮助中心页渲染完成');
+  logger.info('phone','[HelpCenter] 帮助中心页渲染完成');
   return fragment;
 }
 
@@ -79,7 +79,7 @@ export async function renderHelpCenter() {
  * @param {HTMLElement} container - 页面容器
  */
 function bindEvents(container) {
-  logger.debug('[HelpCenter] 绑定事件');
+  logger.debug('phone','[HelpCenter] 绑定事件');
 
   // 返回按钮
   const backBtn = container.querySelector('.help-center-back-btn');
@@ -100,7 +100,7 @@ function bindEvents(container) {
  * @private
  */
 function handleBack() {
-  logger.info('[HelpCenter] 点击返回');
+  logger.info('phone','[HelpCenter] 点击返回');
   const overlayElement = document.querySelector('.phone-overlay');
   if (overlayElement) {
     import('../phone-main-ui.js').then(({ hidePage }) => {
@@ -116,7 +116,7 @@ function handleBack() {
  * @param {string} action - 操作类型
  */
 async function handleItemClick(action) {
-  logger.info('[HelpCenter] 点击设置项:', action);
+  logger.info('phone','[HelpCenter] 点击设置项:', action);
 
   const overlayElement = document.querySelector('.phone-overlay');
   if (!overlayElement) return;
@@ -142,11 +142,11 @@ async function handleItemClick(action) {
 
     case 'placeholder-4':
       // 占位符，暂无操作
-      logger.debug('[HelpCenter] 占位符，暂无操作');
+      logger.debug('phone','[HelpCenter] 占位符，暂无操作');
       break;
 
     default:
-      logger.warn('[HelpCenter] 未知操作:', action);
+      logger.warn('phone','[HelpCenter] 未知操作:', action);
   }
 }
 

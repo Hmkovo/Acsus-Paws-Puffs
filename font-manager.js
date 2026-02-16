@@ -59,7 +59,7 @@ export class FontManager {
    * @async
    */
   async init() {
-    logger.debug('[FontManager.init] 开始初始化');
+    logger.debug('font', '[FontManager.init] 开始初始化');
 
     // 确保设置对象存在
     extension_settings['Acsus-Paws-Puffs'] = extension_settings['Acsus-Paws-Puffs'] || {};
@@ -73,15 +73,15 @@ export class FontManager {
     if (savedEnabled !== undefined) {
       this.fontEnabled = savedEnabled;
     }
-    logger.debug('[FontManager.init] 字体功能状态:', this.fontEnabled ? '启用' : '禁用');
+    logger.debug('font', '[FontManager.init] 字体功能状态:', this.fontEnabled ? '启用' : '禁用');
 
     // 加载当前选中的字体
     const savedCurrent = extension_settings['Acsus-Paws-Puffs'].fontManager.currentFont;
     if (savedCurrent && this.fonts.has(savedCurrent)) {
       this.currentFont = savedCurrent;
-      logger.debug('[FontManager.init] 当前字体:', savedCurrent);
+      logger.debug('font', '[FontManager.init] 当前字体:', savedCurrent);
     } else if (savedCurrent) {
-      logger.warn('[FontManager.init] 保存的字体不存在:', savedCurrent);
+      logger.warn('font', '[FontManager.init] 保存的字体不存在:', savedCurrent);
     }
 
     // 如果字体功能开启且有选中的字体，应用它
@@ -92,7 +92,7 @@ export class FontManager {
       }
     }
 
-    logger.info('[FontManager.init] 初始化完成: 字体', this.fonts.size, '个，标签', this.tags.size, '个');
+    logger.info('font', '[FontManager.init] 初始化完成: 字体', this.fonts.size, '个，标签', this.tags.size, '个');
   }
 
   /**
@@ -127,7 +127,7 @@ export class FontManager {
     // 通知其他模组
     eventSource.emit('pawsFontEnabledChanged', enabled);
 
-    logger.info('字体功能', enabled ? '已启用' : '已禁用');
+    logger.info('font', '字体功能', enabled ? '已启用' : '已禁用');
   }
 
   /**
@@ -156,7 +156,7 @@ export class FontManager {
   applyFont(font) {
     // 只有开启时才应用
     if (!this.fontEnabled) {
-      logger.debug('字体功能已禁用，跳过应用');
+      logger.debug('font', '字体功能已禁用，跳过应用');
       return;
     }
 
@@ -197,7 +197,7 @@ export class FontManager {
 
     style.textContent = css;
     document.head.appendChild(style);
-    logger.info('已应用字体:', font.name, '(类型:', fontType, ')');
+    logger.info('font', '已应用字体:', font.name, '(类型:', fontType, ')');
   }
 
   /**
@@ -211,7 +211,7 @@ export class FontManager {
     const existingStyle = document.getElementById('paws-puffs-font-style');
     if (existingStyle) {
       existingStyle.remove();
-      logger.info('已清除应用的字体');
+      logger.info('font', '已清除应用的字体');
     }
   }
 
@@ -232,7 +232,7 @@ export class FontManager {
    */
   async deleteTag(tagToDelete) {
     if (!this.tags.has(tagToDelete)) {
-      logger.warn('标签不存在:', tagToDelete);
+      logger.warn('font', '标签不存在:', tagToDelete);
       return false;
     }
 
@@ -254,7 +254,7 @@ export class FontManager {
     await this.saveFonts();
     eventSource.emit('pawsFontTagsChanged', { action: 'deleted', tag: tagToDelete });
 
-    logger.info('已删除标签:', tagToDelete);
+    logger.info('font', '已删除标签:', tagToDelete);
     return true;
   }
 
@@ -279,7 +279,7 @@ export class FontManager {
    * @returns {Object|null} 字体数据对象，解析失败返回 null
    */
   parseFont(input, customName = null) {
-    logger.debug('[FontManager.parseFont] 开始解析字体代码');
+    logger.debug('font', '[FontManager.parseFont] 开始解析字体代码');
 
     // 先尝试解析 @font-face 格式
     const fontFaceResult = this.parseFontFace(input, customName);
@@ -295,7 +295,7 @@ export class FontManager {
 
     // 都解析失败
     const preview = input.substring(0, 100) + (input.length > 100 ? '...' : '');
-    logger.warn('[FontManager.parseFont] 无法解析字体代码，输入:', preview);
+    logger.warn('font', '[FontManager.parseFont] 无法解析字体代码，输入:', preview);
     return null;
   }
 
@@ -329,7 +329,7 @@ export class FontManager {
     // 生成字体名称
     const defaultName = customName || fontFamily || `Font-${Date.now()}`;
 
-    logger.debug('[FontManager.parseImport] 解析成功:', defaultName);
+    logger.debug('font', '[FontManager.parseImport] 解析成功:', defaultName);
 
     return {
       name: defaultName,              // 唯一标识
@@ -366,7 +366,7 @@ export class FontManager {
       return null;
     }
 
-    logger.debug('[FontManager.parseFontFace] 找到', fontFaceBlocks.length, '个 @font-face 块');
+    logger.debug('font', '[FontManager.parseFontFace] 找到', fontFaceBlocks.length, '个 @font-face 块');
 
     // 从第一个 @font-face 块提取 font-family
     const firstBlock = fontFaceBlocks[0];
@@ -375,7 +375,7 @@ export class FontManager {
 
     // 如果没有 font-family 且没有自定义名称，返回 null（需要用户填写）
     if (!fontFamily && !customName) {
-      logger.debug('[FontManager.parseFontFace] 未找到 font-family，需要用户提供自定义名称');
+      logger.debug('font', '[FontManager.parseFontFace] 未找到 font-family，需要用户提供自定义名称');
       return null;
     }
 
@@ -385,7 +385,7 @@ export class FontManager {
     // 合并所有 @font-face 块
     const combinedCss = fontFaceBlocks.join('\n\n');
 
-    logger.debug('[FontManager.parseFontFace] 解析成功:', defaultName, '(', fontFaceBlocks.length, '个变体)');
+    logger.debug('font', '[FontManager.parseFontFace] 解析成功:', defaultName, '(', fontFaceBlocks.length, '个变体)');
 
     return {
       name: defaultName,              // 唯一标识
@@ -435,7 +435,7 @@ export class FontManager {
 
     // 检查是否重复
     if (this.fonts.has(fontData.name)) {
-      logger.warn('字体已存在:', fontData.name);
+      logger.warn('font', '字体已存在:', fontData.name);
       return false;
     }
 
@@ -450,7 +450,7 @@ export class FontManager {
     await this.saveFonts();
     eventSource.emit('pawsFontAdded', fontData);
 
-    logger.info('添加字体:', fontData.name);
+    logger.info('font', '添加字体:', fontData.name);
     return true;
   }
 
@@ -473,11 +473,11 @@ export class FontManager {
    * @returns {Promise<boolean>} 是否更新成功
    */
   async updateFont(fontName, updates) {
-    logger.debug('[FontManager.updateFont] 更新字体:', fontName);
+    logger.debug('font', '[FontManager.updateFont] 更新字体:', fontName);
 
     const font = this.fonts.get(fontName);
     if (!font) {
-      logger.warn('[FontManager.updateFont] 字体不存在:', fontName);
+      logger.warn('font', '[FontManager.updateFont] 字体不存在:', fontName);
       return false;
     }
 
@@ -492,10 +492,10 @@ export class FontManager {
         extension_settings['Acsus-Paws-Puffs'].fontManager.currentFont = this.currentFont;
       }
 
-      logger.info('[FontManager.updateFont] 已重命名:', fontName, '→', updates.name);
+      logger.info('font', '[FontManager.updateFont] 已重命名:', fontName, '→', updates.name);
     } else {
       this.fonts.set(fontName, { ...font, ...updates });
-      logger.info('[FontManager.updateFont] 已更新字体:', fontName);
+      logger.info('font', '[FontManager.updateFont] 已更新字体:', fontName);
     }
 
     // 如果更新了标签，刷新标签列表
@@ -526,7 +526,7 @@ export class FontManager {
    */
   async removeFont(fontName) {
     if (!this.fonts.has(fontName)) {
-      logger.warn('[FontManager.removeFont] 字体不存在:', fontName);
+      logger.warn('font', '[FontManager.removeFont] 字体不存在:', fontName);
       return false;
     }
 
@@ -539,9 +539,9 @@ export class FontManager {
       extension_settings['Acsus-Paws-Puffs'].fontManager.currentFont = null;
       this.clearAppliedFont();
       eventSource.emit('pawsFontChanged', null);
-      logger.info('[FontManager.removeFont] 已删除当前字体:', fontName);
+      logger.info('font', '[FontManager.removeFont] 已删除当前字体:', fontName);
     } else {
-      logger.info('[FontManager.removeFont] 已删除字体:', fontName);
+      logger.info('font', '[FontManager.removeFont] 已删除字体:', fontName);
     }
 
     this.updateTagsList();
@@ -566,10 +566,10 @@ export class FontManager {
    * @returns {Promise<boolean>} 是否设置成功
    */
   async setCurrentFont(fontName) {
-    logger.debug('[FontManager.setCurrentFont] 设置字体:', fontName);
+    logger.debug('font', '[FontManager.setCurrentFont] 设置字体:', fontName);
 
     if (!this.fonts.has(fontName)) {
-      logger.warn('[FontManager.setCurrentFont] 字体不存在:', fontName);
+      logger.warn('font', '[FontManager.setCurrentFont] 字体不存在:', fontName);
       return false;
     }
 
@@ -584,9 +584,9 @@ export class FontManager {
       if (font) {
         this.applyFont(font);
       }
-      logger.info('[FontManager.setCurrentFont] 已切换字体:', fontName);
+      logger.info('font', '[FontManager.setCurrentFont] 已切换字体:', fontName);
     } else {
-      logger.debug('[FontManager.setCurrentFont] 字体功能已禁用，已保存选择但不应用');
+      logger.debug('font', '[FontManager.setCurrentFont] 字体功能已禁用，已保存选择但不应用');
     }
 
     eventSource.emit('pawsFontChanged', fontName);
@@ -752,7 +752,7 @@ export class FontManager {
    * console.log(`导入了 ${count} 个字体`);
    */
   async importFonts(jsonData, merge = true) {
-    logger.info('[FontManager.importFonts] 开始导入，模式:', merge ? '合并' : '替换');
+    logger.info('font', '[FontManager.importFonts] 开始导入，模式:', merge ? '合并' : '替换');
 
     try {
       const data = JSON.parse(jsonData);
@@ -761,14 +761,14 @@ export class FontManager {
         throw new Error('无效的导入数据格式');
       }
 
-      logger.debug('[FontManager.importFonts] 解析成功，共', data.fonts.length, '个字体');
+      logger.debug('font', '[FontManager.importFonts] 解析成功，共', data.fonts.length, '个字体');
 
       // 如果是替换模式，先清空
       if (!merge) {
         const oldCount = this.fonts.size;
         this.fonts.clear();
         this.tags.clear();
-        logger.debug('[FontManager.importFonts] 已清空现有', oldCount, '个字体（替换模式）');
+        logger.debug('font', '[FontManager.importFonts] 已清空现有', oldCount, '个字体（替换模式）');
       }
 
       // 导入字体
@@ -777,7 +777,7 @@ export class FontManager {
       data.fonts.forEach(font => {
         // 合并模式下，跳过已存在的字体
         if (merge && this.fonts.has(font.name)) {
-          logger.debug('[FontManager.importFonts] 跳过已存在的字体:', font.name);
+          logger.debug('font', '[FontManager.importFonts] 跳过已存在的字体:', font.name);
           skipped++;
           return;
         }
@@ -796,7 +796,7 @@ export class FontManager {
       if (data.currentFont && this.fonts.has(data.currentFont)) {
         this.currentFont = data.currentFont;
         extension_settings['Acsus-Paws-Puffs'].fontManager.currentFont = this.currentFont;
-        logger.debug('[FontManager.importFonts] 已设置当前字体:', data.currentFont);
+        logger.debug('font', '[FontManager.importFonts] 已设置当前字体:', data.currentFont);
       }
 
       // 导入开关状态
@@ -809,10 +809,10 @@ export class FontManager {
       eventSource.emit('pawsFontImported', { count: imported, total: data.fonts.length });
       eventSource.emit('pawsFontTagsChanged', { action: 'imported' });
 
-      logger.info(`[FontManager.importFonts] 导入完成: ${imported} 成功, ${skipped} 跳过, ${data.fonts.length - imported - skipped} 失败`);
+      logger.info('font', `[FontManager.importFonts] 导入完成: ${imported} 成功, ${skipped} 跳过, ${data.fonts.length - imported - skipped} 失败`);
       return imported;
     } catch (error) {
-      logger.error('[FontManager.importFonts] 导入失败:', error.message || error);
+      logger.error('font', '[FontManager.importFonts] 导入失败:', error.message || error);
       throw error;
     }
   }
@@ -829,7 +829,7 @@ export class FontManager {
    * @returns {Promise<number>} 成功添加的字体数量
    */
   async addFontsBatch(fontsData) {
-    logger.info('[FontManager.addFontsBatch] 开始批量添加，共', fontsData.length, '个字体');
+    logger.info('font', '[FontManager.addFontsBatch] 开始批量添加，共', fontsData.length, '个字体');
 
     let added = 0;
     let failed = 0;
@@ -842,7 +842,7 @@ export class FontManager {
       }
     }
 
-    logger.info(`[FontManager.addFontsBatch] 批量添加完成: ${added} 成功, ${failed} 失败`);
+    logger.info('font', `[FontManager.addFontsBatch] 批量添加完成: ${added} 成功, ${failed} 失败`);
     return added;
   }
 
@@ -905,7 +905,7 @@ export class FontManager {
       const data = extension_settings['Acsus-Paws-Puffs'].fontManager.fonts;
 
       if (!data) {
-        logger.debug('[FontManager.loadFonts] 首次使用，无历史数据');
+        logger.debug('font', '[FontManager.loadFonts] 首次使用，无历史数据');
         return;
       }
 
@@ -930,9 +930,9 @@ export class FontManager {
         this.currentFont = separateCurrentFont;
       }
 
-      logger.debug('[FontManager.loadFonts] 加载成功，字体', this.fonts.size, '个，标签', this.tags.size, '个');
+      logger.debug('font', '[FontManager.loadFonts] 加载成功，字体', this.fonts.size, '个，标签', this.tags.size, '个');
     } catch (error) {
-      logger.error('[FontManager.loadFonts] 加载失败:', error.message || error);
+      logger.error('font', '[FontManager.loadFonts] 加载失败:', error.message || error);
       // 不抛出异常，允许初始化继续
     }
   }
@@ -996,7 +996,7 @@ export class FontManager {
     const fontCount = this.fonts.size;
     const tagCount = this.tags.size;
 
-    logger.info('[FontManager.clearAllFonts] 清空所有数据:', fontCount, '个字体,', tagCount, '个标签');
+    logger.info('font', '[FontManager.clearAllFonts] 清空所有数据:', fontCount, '个字体,', tagCount, '个标签');
 
     this.fonts.clear();
     this.tags.clear();
@@ -1010,7 +1010,7 @@ export class FontManager {
 
     eventSource.emit('pawsFontAllCleared');
 
-    logger.info('[FontManager.clearAllFonts] 清空完成');
+    logger.info('font', '[FontManager.clearAllFonts] 清空完成');
   }
 
   /**

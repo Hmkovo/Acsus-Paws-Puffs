@@ -93,7 +93,7 @@ export class DiaryAPIConfig {
     // 加载现有设置到 UI
     this.loadApiSettingsToUI();
 
-    logger.debug('[DiaryAPIConfig] API设置事件已绑定');
+    logger.debug('diary', '[DiaryAPIConfig]] API设置事件已绑定');
   }
 
   // ========================================
@@ -134,7 +134,7 @@ export class DiaryAPIConfig {
           this.toggleApiSourceForms();
         }
 
-        logger.info('[DiaryAPIConfig] API来源已切换:', source);
+        logger.info('diary', '[DiaryAPIConfig]] API来源已切换:', source);
       });
     }
   }
@@ -166,7 +166,7 @@ export class DiaryAPIConfig {
         // 重新渲染高级参数
         this.renderAdvancedParams();
 
-        logger.info('[DiaryAPIConfig] API类型已切换:', format);
+        logger.info('diary', '[DiaryAPIConfig]] API类型已切换:', format);
       });
     }
   }
@@ -190,7 +190,7 @@ export class DiaryAPIConfig {
           }
         });
 
-        logger.info('[DiaryAPIConfig] 流式生成已', streamCheckbox.checked ? '启用' : '禁用');
+        logger.info('diary', '[DiaryAPIConfig]] 流式生成已', streamCheckbox.checked ? '启用' : '禁用');
       });
     }
   }
@@ -396,7 +396,7 @@ export class DiaryAPIConfig {
           }
         });
 
-        logger.debug('[DiaryAPIConfig] Vertex AI 认证模式切换:', mode);
+        logger.debug('diary', '[DiaryAPIConfig]] Vertex AI 认证模式切换:', mode);
       });
     }
   }
@@ -536,7 +536,7 @@ export class DiaryAPIConfig {
       /** @type {HTMLElement} */ (section).style.display = shouldShow ? 'block' : 'none';
     });
 
-    logger.debug('[DiaryAPIConfig] 表单已切换，当前格式:', currentFormat);
+    logger.debug('diary', '[DiaryAPIConfig]] 表单已切换，当前格式:', currentFormat);
   }
 
   // ========================================
@@ -643,7 +643,7 @@ export class DiaryAPIConfig {
     // 渲染高级参数
     this.renderAdvancedParams();
 
-    logger.debug('[DiaryAPIConfig] API设置已加载到UI');
+    logger.debug('diary', '[DiaryAPIConfig]] API设置已加载到UI');
   }
 
 
@@ -785,7 +785,7 @@ export class DiaryAPIConfig {
         model: model
       }
     });
-    logger.debug('[DiaryAPIConfig] 模型已保存:', model);
+    logger.debug('diary', '[DiaryAPIConfig]] 模型已保存:', model);
   }
 
   /**
@@ -814,7 +814,7 @@ export class DiaryAPIConfig {
       }
     });
 
-    logger.debug('[DiaryAPIConfig] Custom API 配置已保存');
+    logger.debug('diary', '[DiaryAPIConfig]] Custom API 配置已保存');
   }
 
   /**
@@ -834,7 +834,7 @@ export class DiaryAPIConfig {
       }
     });
 
-    logger.debug('[DiaryAPIConfig] 参数已保存:', paramName, '=', value);
+    logger.debug('diary', '[DiaryAPIConfig]] 参数已保存:', paramName, '=', value);
   }
 
   // ========================================
@@ -975,7 +975,7 @@ export class DiaryAPIConfig {
    */
   async fetchAndUpdateModels(baseUrl, apiKey, selectSelector, datalistSelector) {
     showInfoToast('正在获取模型列表...');
-    logger.info('[DiaryAPIConfig] 开始获取模型列表, baseUrl:', baseUrl);
+    logger.info('diary', '[DiaryAPIConfig]] 开始获取模型列表, baseUrl:', baseUrl);
 
     try {
       // 清理 URL
@@ -1056,10 +1056,10 @@ export class DiaryAPIConfig {
       }
 
       showSuccessToast(`已获取 ${models.length} 个模型`);
-      logger.info('[DiaryAPIConfig] 模型列表已更新，共', models.length, '个');
+      logger.info('diary', '[DiaryAPIConfig]] 模型列表已更新，共', models.length, '个');
 
     } catch (error) {
-      logger.error('[DiaryAPIConfig] 获取失败:', error);
+      logger.error('diary', '[DiaryAPIConfig] 获取失败:', error);
       showErrorToast('获取模型列表失败：' + error.message);
     }
   }
@@ -1110,7 +1110,7 @@ export class DiaryAPIConfig {
   renderAdvancedParams() {
     const container = this.panelElement.querySelector('#diaryApiParamsContainer');
     if (!container) {
-      logger.warn('[DiaryAPIConfig.renderAdvancedParams] 未找到参数容器');
+      logger.warn('diary', '[DiaryAPIConfig.renderAdvancedParams] 未找到参数容器');
       return;
     }
 
@@ -1121,7 +1121,7 @@ export class DiaryAPIConfig {
     const supportedParams = getSupportedParams(format);
     const defaultParams = getDefaultParams(format);
 
-    logger.debug('[DiaryAPIConfig.renderAdvancedParams] 开始渲染参数，格式:', format, '参数列表:', supportedParams);
+    logger.debug('diary', '[DiaryAPIConfig].renderAdvancedParams] 开始渲染参数，格式:', format, '参数列表:', supportedParams);
 
     // 清理不支持的旧参数（避免格式切换后残留）
     this.cleanUnsupportedParams(format, supportedParams);
@@ -1133,7 +1133,7 @@ export class DiaryAPIConfig {
     supportedParams.forEach(paramName => {
       const definition = PARAMS_DEFINITIONS[paramName];
       if (!definition) {
-        logger.warn('[DiaryAPIConfig.renderAdvancedParams] 未知参数定义:', paramName);
+        logger.warn('diary', '[DiaryAPIConfig.renderAdvancedParams] 未知参数定义:', paramName);
         return;
       }
 
@@ -1193,7 +1193,7 @@ export class DiaryAPIConfig {
     // 加载保存的参数值到UI（关键！）
     this.loadParamValuesToUI(format);
 
-    logger.info('[DiaryAPIConfig.renderAdvancedParams] ✅ 参数UI已渲染，共', supportedParams.length, '个参数');
+    logger.info('diary', '[DiaryAPIConfig].renderAdvancedParams] ✅ 参数UI已渲染，共', supportedParams.length, '个参数');
   }
 
   /**
@@ -1224,7 +1224,7 @@ export class DiaryAPIConfig {
           params: cleanedParams
         }
       });
-      logger.debug('[DiaryAPIConfig.cleanUnsupportedParams] 已清理', oldCount - newCount, '个不支持的参数');
+      logger.debug('diary', '[DiaryAPIConfig].cleanUnsupportedParams] 已清理', oldCount - newCount, '个不支持的参数');
     }
   }
 
@@ -1271,7 +1271,7 @@ export class DiaryAPIConfig {
       if (rangeInput && numberInput) {
         rangeInput.value = String(value);
         numberInput.value = String(value);
-        logger.debug('[DiaryAPIConfig.loadParamValuesToUI] 已加载参数:', paramName, '=', value);
+        logger.debug('diary', '[DiaryAPIConfig].loadParamValuesToUI] 已加载参数:', paramName, '=', value);
       }
     }
 
@@ -1283,7 +1283,7 @@ export class DiaryAPIConfig {
           params: paramsToSave
         }
       });
-      logger.info('[DiaryAPIConfig.loadParamValuesToUI] 已保存默认参数值');
+      logger.info('diary', '[DiaryAPIConfig].loadParamValuesToUI] 已保存默认参数值');
     }
   }
 
@@ -1296,7 +1296,7 @@ export class DiaryAPIConfig {
    */
   async testApiConnection() {
     showInfoToast('正在测试连接...');
-    logger.info('[DiaryAPIConfig] 开始测试 API 连接');
+    logger.info('diary', '[DiaryAPIConfig]] 开始测试 API 连接');
 
     try {
       const config = this.getCurrentConfig();
@@ -1317,13 +1317,13 @@ export class DiaryAPIConfig {
 
       if (response && response.length > 0) {
         showSuccessToast('API 连接成功！');
-        logger.info('[DiaryAPIConfig] 测试成功，响应长度:', response.length);
+        logger.info('diary', '[DiaryAPIConfig]] 测试成功，响应长度:', response.length);
       } else {
         showErrorToast('API 返回空响应');
       }
 
     } catch (error) {
-      logger.error('[DiaryAPIConfig] 测试失败:', error);
+      logger.error('diary', '[DiaryAPIConfig] 测试失败:', error);
       showErrorToast('连接失败：' + error.message);
     }
   }

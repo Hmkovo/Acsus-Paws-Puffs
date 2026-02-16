@@ -306,7 +306,7 @@ export const FORMAT_PARAMS_MAP = {
  */
 export function getSupportedParams(format) {
   const params = FORMAT_PARAMS_MAP[format] || FORMAT_PARAMS_MAP.custom;
-  logger.debug('[PhoneAPIParams.getSupportedParams] 格式:', format, '→ 支持参数:', params);
+  logger.debug('phone','[PhoneAPIParams.getSupportedParams] 格式:', format, '→ 支持参数:', params);
   return params;
 }
 
@@ -327,7 +327,7 @@ export function getDefaultParams(format) {
     }
   }
 
-  logger.debug('[PhoneAPIParams.getDefaultParams] 格式:', format, '→ 默认值:', defaults);
+  logger.debug('phone','[PhoneAPIParams.getDefaultParams] 格式:', format, '→ 默认值:', defaults);
   return defaults;
 }
 
@@ -341,7 +341,7 @@ export function getDefaultParams(format) {
 export function validateParamValue(paramName, value) {
   const definition = PARAMS_DEFINITIONS[paramName];
   if (!definition) {
-    logger.warn('[PhoneAPIParams.validateParamValue] 未知参数:', paramName);
+    logger.warn('phone','[PhoneAPIParams.validateParamValue] 未知参数:', paramName);
     return false;
   }
 

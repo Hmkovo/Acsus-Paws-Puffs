@@ -23,7 +23,7 @@ import { getCurrentTimestamp } from '../utils/time-helper.js';
  * @returns {Promise<DocumentFragment>} 设置页内容片段
  */
 export async function renderContactSettings(contactId) {
-  logger.debug('[ContactSettings] 渲染联系人设置页:', contactId);
+  logger.debug('phone','[ContactSettings] 渲染联系人设置页:', contactId);
 
   try {
     // 加载联系人数据
@@ -31,7 +31,7 @@ export async function renderContactSettings(contactId) {
     const contact = contacts.find(c => c.id === contactId);
 
     if (!contact) {
-      logger.warn('[ContactSettings] 未找到联系人:', contactId);
+      logger.warn('phone','[ContactSettings] 未找到联系人:', contactId);
       return createErrorView();
     }
 
@@ -49,10 +49,10 @@ export async function renderContactSettings(contactId) {
 
     fragment.appendChild(container);
 
-    logger.info('[ContactSettings] 设置页渲染完成:', contact.name);
+    logger.info('phone','[ContactSettings] 设置页渲染完成:', contact.name);
     return fragment;
   } catch (error) {
-    logger.error('[ContactSettings] 渲染设置页失败:', error);
+    logger.error('phone','[ContactSettings] 渲染设置页失败:', error);
     return createErrorView();
   }
 }
@@ -256,7 +256,7 @@ function createDeleteButton(contact) {
  * @param {Object} contact - 联系人对象
  */
 async function handleEditRemark(contact) {
-  logger.debug('[ContactSettings] 编辑备注:', contact.name);
+  logger.debug('phone','[ContactSettings] 编辑备注:', contact.name);
 
   try {
     const currentRemark = contact.remark || '';
@@ -286,7 +286,7 @@ async function handleEditRemark(contact) {
     // 保存到存储
     const success = await saveContact(contact);
     if (success) {
-      logger.info('[ContactSettings] 备注已保存:', trimmedRemark || '(清空备注)');
+      logger.info('phone','[ContactSettings] 备注已保存:', trimmedRemark || '(清空备注)');
 
       // 获取显示名称
       const displayName = contact.remark || contact.name;
@@ -294,10 +294,10 @@ async function handleEditRemark(contact) {
       // 同步更新所有位置的名称显示（使用统一工具函数）
       syncContactDisplayName(contact.id, displayName, contact.name);
     } else {
-      logger.error('[ContactSettings] 备注保存失败');
+      logger.error('phone','[ContactSettings] 备注保存失败');
     }
   } catch (error) {
-    logger.error('[ContactSettings] 编辑备注失败:', error);
+    logger.error('phone','[ContactSettings] 编辑备注失败:', error);
   }
 }
 
@@ -311,14 +311,14 @@ async function handleEditRemark(contact) {
  * @param {Object} contact - 联系人对象
  */
 async function handleSelectGroup(contact) {
-  logger.debug('[ContactSettings] 选择分组:', contact.name);
+  logger.debug('phone','[ContactSettings] 选择分组:', contact.name);
 
   try {
     // 获取所有分组
     const groups = await loadContactGroups();
 
     if (groups.length === 0) {
-      logger.warn('[ContactSettings] 没有可用分组');
+      logger.warn('phone','[ContactSettings] 没有可用分组');
       return;
     }
 
@@ -360,7 +360,7 @@ async function handleSelectGroup(contact) {
 
         // 如果分组没变，直接返回
         if (newGroupId === contact.groupId) {
-          logger.debug('[ContactSettings] 分组未变化');
+          logger.debug('phone','[ContactSettings] 分组未变化');
           // 关闭自定义弹窗（通过移除遮罩层）
           document.querySelector('.phone-popup-overlay')?.remove();
           return;
@@ -372,7 +372,7 @@ async function handleSelectGroup(contact) {
         // 保存到存储
         const success = await saveContact(contact);
         if (success) {
-          logger.info('[ContactSettings] 分组已更新:', newGroupId);
+          logger.info('phone','[ContactSettings] 分组已更新:', newGroupId);
 
           // 局部更新当前设置页的显示
           await updateSettingsGroupDisplay(contact);
@@ -383,14 +383,14 @@ async function handleSelectGroup(contact) {
           // 关闭自定义弹窗
           document.querySelector('.phone-popup-overlay')?.remove();
         } else {
-          logger.error('[ContactSettings] 分组保存失败');
+          logger.error('phone','[ContactSettings] 分组保存失败');
         }
       });
     });
 
     await popupPromise;
   } catch (error) {
-    logger.error('[ContactSettings] 选择分组失败:', error);
+    logger.error('phone','[ContactSettings] 选择分组失败:', error);
   }
 }
 
@@ -406,7 +406,7 @@ async function handleSelectGroup(contact) {
  * @param {Object} contact - 联系人对象
  */
 async function handleDeleteContact(contact) {
-  logger.debug('[ContactSettings] 删除好友:', contact.name);
+  logger.debug('phone','[ContactSettings] 删除好友:', contact.name);
 
   try {
     // 第一次确认：是否删除好友
@@ -443,7 +443,7 @@ async function handleDeleteContact(contact) {
       }
     );
 
-    logger.info('[ContactSettings] 删除好友确认:', {
+    logger.info('phone','[ContactSettings] 删除好友确认:', {
       contactId: contact.id,
       deleteMode: deleteMode,
       deleteMessages: deleteMessages
@@ -453,7 +453,7 @@ async function handleDeleteContact(contact) {
     if (deleteMode === 'ai_aware') {
       const currentTime = getCurrentTimestamp();
       await addAIAwareDeletedRequest(contact, currentTime);
-      logger.info('[ContactSettings] 已添加到AI感知删除列表:', contact.name);
+      logger.info('phone','[ContactSettings] 已添加到AI感知删除列表:', contact.name);
 
       // ✅ 插入系统消息："{{user}}于xxxx时间删除了你的好友"
       if (!deleteMessages) {
@@ -462,7 +462,7 @@ async function handleDeleteContact(contact) {
           content: `{{user}}删除了你为好友`,
           time: currentTime
         });
-        logger.info('[ContactSettings] 已插入好友删除系统消息');
+        logger.info('phone','[ContactSettings] 已插入好友删除系统消息');
       }
     }
 
@@ -470,16 +470,16 @@ async function handleDeleteContact(contact) {
     const deleteSuccess = await deleteContact(contact.id);
 
     if (!deleteSuccess) {
-      logger.error('[ContactSettings] 删除联系人失败');
+      logger.error('phone','[ContactSettings] 删除联系人失败');
       return;
     }
 
     // 3. 如果选择删除聊天记录
     if (deleteMessages) {
       await clearChatHistory(contact.id);
-      logger.info('[ContactSettings] 已删除聊天记录:', contact.id);
+      logger.info('phone','[ContactSettings] 已删除聊天记录:', contact.id);
     } else {
-      logger.info('[ContactSettings] 已保留聊天记录:', contact.id);
+      logger.info('phone','[ContactSettings] 已保留聊天记录:', contact.id);
     }
 
     // 4. 显示成功通知
@@ -496,7 +496,7 @@ async function handleDeleteContact(contact) {
     }, 1000);
 
   } catch (error) {
-    logger.error('[ContactSettings] 删除好友失败:', error);
+    logger.error('phone','[ContactSettings] 删除好友失败:', error);
   }
 }
 
@@ -508,7 +508,7 @@ async function handleDeleteContact(contact) {
  * @returns {Promise<string|null>} 删除模式（'ai_aware' | 'silent' | null=取消）
  */
 async function showDeleteModePopup(contact) {
-  logger.debug('[ContactSettings] 显示删除模式选择:', contact.name);
+  logger.debug('phone','[ContactSettings] 显示删除模式选择:', contact.name);
 
   const displayName = contact.remark || contact.name;
 
@@ -547,7 +547,7 @@ async function showDeleteModePopup(contact) {
       modeButtons.forEach(btn => {
         btn.addEventListener('click', () => {
           const mode = btn.dataset.mode;
-          logger.info('[ContactSettings] 选择删除模式:', mode);
+          logger.info('phone','[ContactSettings] 选择删除模式:', mode);
 
           // 关闭弹窗
           const overlay = document.querySelector('.phone-popup-overlay');
@@ -569,7 +569,7 @@ async function showDeleteModePopup(contact) {
  * @param {Object} contact - 联系人对象
  */
 function updateSettingsRemarkDisplay(contact) {
-  logger.debug('[ContactSettings] 局部更新备注显示:', contact.name);
+  logger.debug('phone','[ContactSettings] 局部更新备注显示:', contact.name);
 
   const remarkText = document.querySelector('.contact-settings-remark-text');
   if (remarkText) {
@@ -585,7 +585,7 @@ function updateSettingsRemarkDisplay(contact) {
  * @param {Object} contact - 联系人对象
  */
 async function updateSettingsGroupDisplay(contact) {
-  logger.debug('[ContactSettings] 局部更新分组显示:', contact.name);
+  logger.debug('phone','[ContactSettings] 局部更新分组显示:', contact.name);
 
   const groups = await loadContactGroups();
   const currentGroup = groups.find(g => g.id === contact.groupId);
@@ -603,7 +603,7 @@ async function updateSettingsGroupDisplay(contact) {
  * @param {Object} contact - 联系人对象
  */
 function updateProfileNameDisplay(contact) {
-  logger.debug('[ContactSettings] 同步更新角色个人页:', contact.name);
+  logger.debug('phone','[ContactSettings] 同步更新角色个人页:', contact.name);
 
   const infoText = document.querySelector('.contact-profile-info-text');
   if (!infoText) return;
@@ -641,7 +641,7 @@ function updateProfileNameDisplay(contact) {
  * @param {Object} contact - 联系人对象
  */
 function updateContactListItemName(contact) {
-  logger.debug('[ContactSettings] 同步更新联系人列表:', contact.name);
+  logger.debug('phone','[ContactSettings] 同步更新联系人列表:', contact.name);
 
   const contactItem = document.querySelector(`.contact-friend-item[data-contact-id="${contact.id}"]`);
 
@@ -650,10 +650,10 @@ function updateContactListItemName(contact) {
     if (nameElement) {
       const displayName = contact.remark || contact.name;
       nameElement.textContent = displayName;
-      logger.debug('[ContactSettings] 已更新联系人列表项名称:', displayName);
+      logger.debug('phone','[ContactSettings] 已更新联系人列表项名称:', displayName);
     }
   } else {
-    logger.debug('[ContactSettings] 联系人列表中未找到该项（可能未渲染）');
+    logger.debug('phone','[ContactSettings] 联系人列表中未找到该项（可能未渲染）');
   }
 }
 
@@ -666,7 +666,7 @@ function updateContactListItemName(contact) {
  * 注意：事件在 overlayElement 上触发，避免事件监听器累积
  */
 function refreshContactListInBackground() {
-  logger.debug('[ContactSettings] 后台刷新联系人列表');
+  logger.debug('phone','[ContactSettings] 后台刷新联系人列表');
 
   // 触发自定义事件，通知联系人列表刷新（在overlayElement上触发）
   const overlayElement = document.querySelector('.phone-overlay');
@@ -683,7 +683,7 @@ function refreshContactListInBackground() {
  * 返回到角色个人页
  */
 function handleBack() {
-  logger.debug('[ContactSettings] 返回上一页');
+  logger.debug('phone','[ContactSettings] 返回上一页');
 
   // 获取手机遮罩层元素
   const overlayElement = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
@@ -702,7 +702,7 @@ function handleBack() {
  * 删除好友后连续关闭两个页面：设置页 → 角色个人页，最终回到联系人列表
  */
 function handleBackToContactList() {
-  logger.debug('[ContactSettings] 返回到联系人列表');
+  logger.debug('phone','[ContactSettings] 返回到联系人列表');
 
   // 获取手机遮罩层元素
   const overlayElement = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));

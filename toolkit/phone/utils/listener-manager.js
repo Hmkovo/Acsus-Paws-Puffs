@@ -67,7 +67,7 @@ export function registerListener(pageId, eventName, handler, options = {}) {
 
     // 参数校验
     if (!pageId || !eventName || typeof handler !== 'function') {
-        logger.error('[ListenerManager] 注册失败：参数无效', { pageId, eventName, handler });
+        logger.error('phone','[ListenerManager] 注册失败：参数无效', { pageId, eventName, handler });
         return false;
     }
 
@@ -78,14 +78,14 @@ export function registerListener(pageId, eventName, handler, options = {}) {
             isDestroyed: false,
         });
         stats.activePages++;
-        logger.debug(`[ListenerManager] 创建页面组: ${pageId}`);
+        logger.debug('phone',`[ListenerManager] 创建页面组: ${pageId}`);
     }
 
     const pageGroup = listenerRegistry.get(pageId);
 
     // 检查是否已销毁
     if (pageGroup.isDestroyed) {
-        logger.warn(`[ListenerManager] 页面 ${pageId} 已销毁，无法注册监听器`);
+        logger.warn('phone',`[ListenerManager] 页面 ${pageId} 已销毁，无法注册监听器`);
         return false;
     }
 
@@ -94,7 +94,7 @@ export function registerListener(pageId, eventName, handler, options = {}) {
         try {
             handler(event);
         } catch (error) {
-            logger.error(`[ListenerManager] 监听器执行出错`, {
+            logger.error('phone',`[ListenerManager] 监听器执行出错`, {
                 pageId,
                 eventName,
                 description,
@@ -125,7 +125,7 @@ export function registerListener(pageId, eventName, handler, options = {}) {
 
     stats.totalRegistered++;
 
-    logger.debug(`[ListenerManager] 已注册监听器`, {
+    logger.debug('phone',`[ListenerManager] 已注册监听器`, {
         pageId,
         eventName,
         description,
@@ -149,11 +149,11 @@ export function registerListener(pageId, eventName, handler, options = {}) {
  */
 export function registerListeners(pageId, listeners) {
     if (!Array.isArray(listeners)) {
-        logger.error('[ListenerManager] 批量注册失败：listeners必须是数组');
+        logger.error('phone','[ListenerManager] 批量注册失败：listeners必须是数组');
         return false;
     }
 
-    logger.info(`[ListenerManager] 开始批量注册，页面: ${pageId}, 数量: ${listeners.length}`);
+    logger.info('phone',`[ListenerManager] 开始批量注册，页面: ${pageId}, 数量: ${listeners.length}`);
 
     let successCount = 0;
     for (const config of listeners) {
@@ -163,7 +163,7 @@ export function registerListeners(pageId, listeners) {
         }
     }
 
-    logger.info(`[ListenerManager] 批量注册完成: ${successCount}/${listeners.length} 成功`);
+    logger.info('phone',`[ListenerManager] 批量注册完成: ${successCount}/${listeners.length} 成功`);
     return successCount === listeners.length;
 }
 
@@ -178,7 +178,7 @@ export function registerListeners(pageId, listeners) {
 export function unregisterListener(pageId, eventName, handler) {
     const pageGroup = listenerRegistry.get(pageId);
     if (!pageGroup) {
-        logger.warn(`[ListenerManager] 移除失败：页面 ${pageId} 不存在`);
+        logger.warn('phone',`[ListenerManager] 移除失败：页面 ${pageId} 不存在`);
         return false;
     }
 
@@ -187,7 +187,7 @@ export function unregisterListener(pageId, eventName, handler) {
     );
 
     if (index === -1) {
-        logger.warn(`[ListenerManager] 移除失败：监听器未找到`, { pageId, eventName });
+        logger.warn('phone',`[ListenerManager] 移除失败：监听器未找到`, { pageId, eventName });
         return false;
     }
 
@@ -196,7 +196,7 @@ export function unregisterListener(pageId, eventName, handler) {
     pageGroup.listeners.splice(index, 1);
     stats.totalCleaned++;
 
-    logger.debug(`[ListenerManager] 已移除监听器`, { pageId, eventName });
+    logger.debug('phone',`[ListenerManager] 已移除监听器`, { pageId, eventName });
     return true;
 }
 
@@ -213,12 +213,12 @@ export function unregisterListener(pageId, eventName, handler) {
 export function destroyPageListeners(pageId) {
     const pageGroup = listenerRegistry.get(pageId);
     if (!pageGroup) {
-        logger.warn(`[ListenerManager] 清理失败：页面 ${pageId} 不存在`);
+        logger.warn('phone',`[ListenerManager] 清理失败：页面 ${pageId} 不存在`);
         return 0;
     }
 
     if (pageGroup.isDestroyed) {
-        logger.warn(`[ListenerManager] 页面 ${pageId} 已清理过`);
+        logger.warn('phone',`[ListenerManager] 页面 ${pageId} 已清理过`);
         return 0;
     }
 
@@ -234,7 +234,7 @@ export function destroyPageListeners(pageId) {
     stats.totalCleaned += count;
     stats.activePages--;
 
-    logger.info(`[ListenerManager] 已清理页面 ${pageId}，共 ${count} 个监听器`);
+    logger.info('phone',`[ListenerManager] 已清理页面 ${pageId}，共 ${count} 个监听器`);
 
     // 从注册表删除
     listenerRegistry.delete(pageId);
@@ -252,7 +252,7 @@ export function destroyAllListeners() {
     for (const pageId of listenerRegistry.keys()) {
         totalCount += destroyPageListeners(pageId);
     }
-    logger.warn(`[ListenerManager] 已清理所有监听器，共 ${totalCount} 个`);
+    logger.warn('phone',`[ListenerManager] 已清理所有监听器，共 ${totalCount} 个`);
     return totalCount;
 }
 
@@ -285,7 +285,7 @@ export function destroyAllListeners() {
  */
 export function createPageListenerManager(pageId, pageElement, listeners) {
     if (!pageElement) {
-        logger.error('[ListenerManager] 创建管理器失败：pageElement为空');
+        logger.error('phone','[ListenerManager] 创建管理器失败：pageElement为空');
         return null;
     }
 
@@ -297,7 +297,7 @@ export function createPageListenerManager(pageId, pageElement, listeners) {
         for (const mutation of mutations) {
             for (const node of mutation.removedNodes) {
                 if (node === pageElement) {
-                    logger.debug(`[ListenerManager] 检测到页面 ${pageId} 被移除，自动清理`);
+                    logger.debug('phone',`[ListenerManager] 检测到页面 ${pageId} 被移除，自动清理`);
                     destroyPageListeners(pageId);
                     observer.disconnect();
                     return;

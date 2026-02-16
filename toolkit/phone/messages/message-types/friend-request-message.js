@@ -88,7 +88,7 @@ export function renderFriendRequestMessage(message, contactId, contact) {
 
   container.appendChild(bubble);
 
-  logger.debug('[FriendRequestMessage] 渲染好友申请消息:', message.content.substring(0, 20));
+  logger.debug('phone','[FriendRequestMessage] 渲染好友申请消息:', message.content.substring(0, 20));
   return container;
 }
 
@@ -102,7 +102,7 @@ export function renderFriendRequestMessage(message, contactId, contact) {
  * @param {HTMLElement} container - 消息容器元素
  */
 async function handleDeleteMessage(message, contactId, container) {
-  logger.info('[FriendRequestMessage] 删除好友申请消息:', message.id);
+  logger.info('phone','[FriendRequestMessage] 删除好友申请消息:', message.id);
 
   try {
     // 从聊天记录中删除
@@ -115,7 +115,7 @@ async function handleDeleteMessage(message, contactId, container) {
 
     showSuccessToast('已删除好友申请消息');
   } catch (error) {
-    logger.error('[FriendRequestMessage] 删除消息失败:', error);
+    logger.error('phone','[FriendRequestMessage] 删除消息失败:', error);
   }
 }
 

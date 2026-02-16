@@ -37,7 +37,7 @@ import { getThumbnailUrl } from '../../../../../../../../script.js';
  * };
  */
 export function renderImageRealMessage(message, contact, contactId) {
-  logger.debug('[ImageRealMessage] 渲染真实图片消息:', message);
+  logger.debug('phone','[ImageRealMessage]] 渲染真实图片消息:', message);
 
   const container = document.createElement('div');
   container.className = 'chat-msg';

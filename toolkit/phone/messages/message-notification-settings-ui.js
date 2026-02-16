@@ -22,7 +22,7 @@ import { getContactDisplayName } from '../utils/contact-display-helper.js';
  */
 export async function renderNotificationSettings(params) {
   const { contactId } = params;
-  logger.debug('[NotificationSettings] 渲染消息通知设置页:', contactId);
+  logger.debug('phone','[NotificationSettings] 渲染消息通知设置页:', contactId);
 
   try {
     // 加载联系人数据
@@ -30,7 +30,7 @@ export async function renderNotificationSettings(params) {
     const contact = contacts.find(c => c.id === contactId);
 
     if (!contact) {
-      logger.warn('[NotificationSettings] 未找到联系人:', contactId);
+      logger.warn('phone','[NotificationSettings] 未找到联系人:', contactId);
       return createErrorView();
     }
 
@@ -54,10 +54,10 @@ export async function renderNotificationSettings(params) {
 
     fragment.appendChild(container);
 
-    logger.info('[NotificationSettings] 消息通知设置页渲染完成:', contact.name);
+    logger.info('phone','[NotificationSettings] 消息通知设置页渲染完成:', contact.name);
     return fragment;
   } catch (error) {
-    logger.error('[NotificationSettings] 渲染消息通知设置页失败:', error);
+    logger.error('phone','[NotificationSettings] 渲染消息通知设置页失败:', error);
     return createErrorView();
   }
 }
@@ -156,7 +156,7 @@ function bindSettingsEvents(list, contact) {
  * 处理返回
  */
 function handleBack() {
-  logger.debug('[NotificationSettings] 返回上一页');
+  logger.debug('phone','[NotificationSettings] 返回上一页');
   const overlay = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
   const pageName = 'notification-settings';
   import('../phone-main-ui.js').then(({ hidePage }) => {
@@ -176,7 +176,7 @@ function handleBack() {
  * @param {boolean} disabled - 是否关闭通知
  */
 async function handleToggleDisabled(contact, disabled) {
-  logger.info('[NotificationSettings] 切换"关闭消息弹窗":', contact.name, disabled);
+  logger.info('phone','[NotificationSettings] 切换"关闭消息弹窗":', contact.name, disabled);
 
   // 更新联系人数据
   contact.notificationDisabled = disabled;
@@ -187,7 +187,7 @@ async function handleToggleDisabled(contact, disabled) {
     detail: { contactId: contact.id }
   }));
 
-  logger.debug('[NotificationSettings] 设置已保存:', { contactId: contact.id, notificationDisabled: disabled });
+  logger.debug('phone','[NotificationSettings] 设置已保存:', { contactId: contact.id, notificationDisabled: disabled });
 }
 
 /**
@@ -202,7 +202,7 @@ async function handleToggleDisabled(contact, disabled) {
  * @param {boolean} preview - 是否显示预览
  */
 async function handleTogglePreview(contact, preview) {
-  logger.info('[NotificationSettings] 切换"通知显示消息预览":', contact.name, preview);
+  logger.info('phone','[NotificationSettings] 切换"通知显示消息预览":', contact.name, preview);
 
   // 更新联系人数据
   contact.notificationPreview = preview;
@@ -213,7 +213,7 @@ async function handleTogglePreview(contact, preview) {
     detail: { contactId: contact.id }
   }));
 
-  logger.debug('[NotificationSettings] 设置已保存:', { contactId: contact.id, notificationPreview: preview });
+  logger.debug('phone','[NotificationSettings] 设置已保存:', { contactId: contact.id, notificationPreview: preview });
 }
 
 /**

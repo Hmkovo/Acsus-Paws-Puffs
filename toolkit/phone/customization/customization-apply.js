@@ -78,7 +78,7 @@ function getTodayDate() {
  * @returns {Promise<void>}
  */
 export async function applyBubbleTheme(bubbleId, scope = null) {
-  logger.info('[Apply] 应用气泡装扮:', bubbleId, '作用范围:', scope);
+  logger.info('phone','[Apply] 应用气泡装扮:', bubbleId, '作用范围:', scope);
 
   const customizationData = await getCustomizationData();
 
@@ -94,10 +94,10 @@ export async function applyBubbleTheme(bubbleId, scope = null) {
   const body = document.body;
   if (bubbleId === 'default') {
     body.removeAttribute('data-bubble-theme');
-    logger.debug('[Apply] 已恢复默认气泡');
+    logger.debug('phone','[Apply] 已恢复默认气泡');
   } else {
     body.setAttribute('data-bubble-theme', bubbleId);
-    logger.debug('[Apply] 已设置气泡主题:', bubbleId);
+    logger.debug('phone','[Apply] 已设置气泡主题:', bubbleId);
   }
 
   // 4. 保存数据
@@ -108,7 +108,7 @@ export async function applyBubbleTheme(bubbleId, scope = null) {
     scope
   });
 
-  logger.info('[Apply] 气泡装扮已应用');
+  logger.info('phone','[Apply] 气泡装扮已应用');
 }
 
 /**
@@ -145,7 +145,7 @@ export async function getItemScope(itemId) {
  * @returns {Promise<void>}
  */
 export async function applyBubbleThemeForCharacter(contactId) {
-  logger.info('[Apply] 应用角色专属装扮:', contactId);
+  logger.info('phone','[Apply] 应用角色专属装扮:', contactId);
 
   // 1. 获取角色专属装扮数据
   const characterCustomization = await loadData('characterCustomization');
@@ -167,11 +167,11 @@ export async function applyBubbleThemeForCharacter(contactId) {
       : (globalBubble || 'default');
     // 角色气泡：仅角色专属
     characterBubble = characterData.characterBubble || 'default';
-    logger.debug('[Apply] 使用角色专属装扮:', { userBubble, characterBubble });
+    logger.debug('phone','[Apply] 使用角色专属装扮:', { userBubble, characterBubble });
   } else {
     // 没有角色专属装扮，使用全局装扮
     userBubble = globalBubble || 'default';
-    logger.debug('[Apply] 使用全局装扮:', userBubble);
+    logger.debug('phone','[Apply] 使用全局装扮:', userBubble);
   }
 
   // 4. 应用CSS（修改body的data属性）
@@ -191,7 +191,7 @@ export async function applyBubbleThemeForCharacter(contactId) {
     body.setAttribute('data-character-bubble-theme', characterBubble);
   }
 
-  logger.info('[Apply] 角色专属装扮已应用:', { userBubble, characterBubble });
+  logger.info('phone','[Apply] 角色专属装扮已应用:', { userBubble, characterBubble });
 }
 
 /**
@@ -201,7 +201,7 @@ export async function applyBubbleThemeForCharacter(contactId) {
  * 从存储中读取当前使用的装扮并应用
  */
 export async function initializeCustomization() {
-  logger.info('[Apply] 初始化装扮系统');
+  logger.info('phone','[Apply] 初始化装扮系统');
 
   const customizationData = await getCustomizationData();
 
@@ -210,7 +210,7 @@ export async function initializeCustomization() {
   if (currentBubble && currentBubble !== 'default') {
     const body = document.body;
     body.setAttribute('data-bubble-theme', currentBubble);
-    logger.info('[Apply] 已恢复气泡装扮:', currentBubble);
+    logger.info('phone','[Apply] 已恢复气泡装扮:', currentBubble);
   }
 
   // TODO: 应用头像挂件

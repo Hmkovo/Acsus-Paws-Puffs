@@ -116,7 +116,7 @@ function getStorage() {
 
     // v1 到 v2 迁移：如果存在旧的 snapshots 数组，迁移到 presets 结构
     if (Array.isArray(storage.snapshots) && storage.snapshots.length > 0) {
-        logger.info('[PresetSnapshot] 检测到 v1 数据结构，开始迁移...');
+        logger.info('preset', '[PresetSnapshot] 检测到 v1 数据结构，开始迁移...');
         const currentPreset = getCurrentPresetName();
         storage.presets = storage.presets || {};
         storage.presets[currentPreset] = {
@@ -126,7 +126,7 @@ function getStorage() {
         delete storage.snapshots;
         delete storage.lastApplied;
         saveSettingsDebounced();
-        logger.info('[PresetSnapshot] 数据迁移完成，已迁移到预设:', currentPreset);
+        logger.info('preset', '[PresetSnapshot] 数据迁移完成，已迁移到预设:', currentPreset);
     }
 
     // 确保 presets 对象存在
@@ -157,7 +157,7 @@ export function getCurrentPresetName() {
         }
         return 'default';
     } catch (error) {
-        logger.warn('[PresetSnapshot] 获取预设名称失败:', error.message);
+        logger.warn('preset', '[PresetSnapshot] 获取预设名称失败:', error.message);
         return 'default';
     }
 }
@@ -214,7 +214,7 @@ export function deletePresetSnapshots(presetName) {
     delete storage.presets[presetName];
     saveSettingsDebounced();
 
-    logger.info('[PresetSnapshot] 已删除预设的所有快照:', presetName, '共', count, '个');
+    logger.info('preset', '[PresetSnapshot] 已删除预设的所有快照:', presetName, '共', count, '个');
     return count;
 }
 
@@ -248,14 +248,14 @@ function getCurrentPromptOrder() {
     try {
         // promptManager 使用 activeCharacter 来获取当前的 prompt_order
         if (!promptManager || !promptManager.activeCharacter) {
-            logger.warn('[PresetSnapshot] promptManager 或 activeCharacter 不存在');
+            logger.warn('preset', '[PresetSnapshot] promptManager 或 activeCharacter 不存在');
             return [];
         }
 
         const promptOrder = promptManager.getPromptOrderForCharacter(promptManager.activeCharacter);
         return promptOrder || [];
     } catch (error) {
-        logger.error('[PresetSnapshot] 获取 prompt_order 失败:', error.message);
+        logger.error('preset', '[PresetSnapshot] 获取 prompt_order 失败:', error.message);
         return [];
     }
 }
@@ -280,7 +280,7 @@ export function setEnabled(enabled) {
     const storage = getStorage();
     storage.enabled = !!enabled;
     saveSettingsDebounced();
-    logger.info('[PresetSnapshot] 功能状态已更新:', enabled ? '启用' : '禁用');
+    logger.info('preset', '[PresetSnapshot] 功能状态已更新:', enabled ? '启用' : '禁用');
 }
 
 
@@ -298,7 +298,7 @@ export function loadSnapshots(presetName) {
         if (isValidSnapshot(snapshot)) {
             validSnapshots.push(snapshot);
         } else {
-            logger.warn('[PresetSnapshot] 跳过损坏的快照条目:', snapshot?.id || 'unknown');
+            logger.warn('preset', '[PresetSnapshot] 跳过损坏的快照条目:', snapshot?.id || 'unknown');
         }
     }
 
@@ -306,7 +306,7 @@ export function loadSnapshots(presetName) {
     if (validSnapshots.length !== presetData.snapshots.length) {
         presetData.snapshots = validSnapshots;
         saveSettingsDebounced();
-        logger.info('[PresetSnapshot] 已清理损坏的快照条目');
+        logger.info('preset', '[PresetSnapshot] 已清理损坏的快照条目');
     }
 
     return validSnapshots;
@@ -355,7 +355,7 @@ export function saveSnapshot(name) {
     presetData.snapshots.push(snapshot);
     saveSettingsDebounced();
 
-    logger.info('[PresetSnapshot] 已保存快照:', snapshot.name, '包含', states.length, '个条目', '预设:', currentPreset);
+    logger.info('preset', '[PresetSnapshot] 已保存快照:', snapshot.name, '包含', states.length, '个条目', '预设:', currentPreset);
 
     // 触发事件通知 UI 刷新
     eventSource.emit('pawsSnapshotSaved', { presetName: currentPreset, snapshot });
@@ -374,14 +374,14 @@ export function applySnapshot(id) {
     const snapshot = presetData.snapshots.find(s => s.id === id);
 
     if (!snapshot) {
-        logger.warn('[PresetSnapshot] 未找到快照:', id);
+        logger.warn('preset', '[PresetSnapshot] 未找到快照:', id);
         return false;
     }
 
     const promptOrder = getCurrentPromptOrder();
 
     if (promptOrder.length === 0) {
-        logger.warn('[PresetSnapshot] 当前 prompt_order 为空，无法应用快照');
+        logger.warn('preset', '[PresetSnapshot] 当前 prompt_order 为空，无法应用快照');
         return false;
     }
 
@@ -419,7 +419,7 @@ export function applySnapshot(id) {
         promptManager.render(false);
     }
 
-    logger.info('[PresetSnapshot] 已应用快照:', snapshot.name,
+    logger.info('preset', '[PresetSnapshot] 已应用快照:', snapshot.name,
         '- 应用:', appliedCount, '个, 跳过:', skippedCount, '个');
 
     return true;
@@ -437,7 +437,7 @@ export function renameSnapshot(id, newName) {
     const snapshot = presetData.snapshots.find(s => s.id === id);
 
     if (!snapshot) {
-        logger.warn('[PresetSnapshot] 未找到快照:', id);
+        logger.warn('preset', '[PresetSnapshot] 未找到快照:', id);
         return false;
     }
 
@@ -445,7 +445,7 @@ export function renameSnapshot(id, newName) {
     snapshot.name = newName || snapshot.name;
     saveSettingsDebounced();
 
-    logger.info('[PresetSnapshot] 已重命名快照:', oldName, '->', snapshot.name);
+    logger.info('preset', '[PresetSnapshot] 已重命名快照:', oldName, '->', snapshot.name);
     return true;
 }
 
@@ -460,7 +460,7 @@ export function deleteSnapshot(id) {
     const index = presetData.snapshots.findIndex(s => s.id === id);
 
     if (index === -1) {
-        logger.warn('[PresetSnapshot] 未找到快照:', id);
+        logger.warn('preset', '[PresetSnapshot] 未找到快照:', id);
         return false;
     }
 
@@ -473,7 +473,7 @@ export function deleteSnapshot(id) {
 
     saveSettingsDebounced();
 
-    logger.info('[PresetSnapshot] 已删除快照:', deleted.name);
+    logger.info('preset', '[PresetSnapshot] 已删除快照:', deleted.name);
     return true;
 }
 
@@ -522,5 +522,5 @@ export function setMenuSettings(settings) {
         storage.fontScale = settings.fontScale;
     }
     saveSettingsDebounced();
-    logger.debug('[PresetSnapshot] 菜单样式已更新:', settings);
+    logger.debug('preset', 'PresetSnapshot] 菜单样式已更新:', settings);
 }

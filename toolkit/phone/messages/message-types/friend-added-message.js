@@ -38,7 +38,7 @@ export function renderFriendAddedMessage(message) {
   bubble.appendChild(hint);
   container.appendChild(bubble);
 
-  logger.debug('[FriendAddedMessage] 渲染添加好友消息');
+  logger.debug('phone','[FriendAddedMessage] 渲染添加好友消息');
   return container;
 }
 

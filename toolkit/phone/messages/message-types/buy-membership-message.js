@@ -38,7 +38,7 @@ const savedBuyMembershipMessages = new Set();
  * @returns {HTMLElement} 消息容器元素
  */
 export function renderBuyMembershipMessage(message, contact, contactId) {
-  logger.debug('[BuyMembershipMessage] 渲染角色买会员消息:', message);
+  logger.debug('phone','[BuyMembershipMessage]] 渲染角色买会员消息:', message);
   
   // 创建容器
   const container = document.createElement('div');
@@ -90,7 +90,7 @@ async function handleBuyMembership(contactId, message) {
       from: 'ai-buy'
     });
     
-    logger.info('[BuyMembershipMessage] 角色开通会员成功:', {
+    logger.info('phone','[BuyMembershipMessage]] 角色开通会员成功:', {
       contactId,
       type: message.membershipType,
       months: message.months
@@ -98,7 +98,7 @@ async function handleBuyMembership(contactId, message) {
     
     // 注：grantCharacterMembership 已通过 stateManager.set 自动触发角色会员变化通知，不需要重复触发
   } catch (error) {
-    logger.error('[BuyMembershipMessage] 角色开通会员失败:', error);
+    logger.error('phone','[BuyMembershipMessage]] 角色开通会员失败:', error);
     // 失败时删除标记，允许重试
     savedBuyMembershipMessages.delete(message.id);
   }

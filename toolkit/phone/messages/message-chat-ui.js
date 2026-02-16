@@ -22,14 +22,14 @@ import { bindMultiSelectToolbar } from './message-multiselect-ui.js';
  * @returns {Promise<HTMLElement>} 聊天页面容器
  */
 export async function renderChatView(contactId) {
-  logger.info('[ChatView] 开始渲染聊天界面:', contactId);
+  logger.info('phone','[ChatView] 开始渲染聊天界面:', contactId);
 
   // 读取联系人数据
   const contacts = await loadContacts();
   const contact = contacts.find(c => c.id === contactId);
 
   if (!contact) {
-    logger.error('[ChatView] 联系人不存在:', contactId);
+    logger.error('phone','[ChatView] 联系人不存在:', contactId);
     const errorPage = document.createElement('div');
     errorPage.className = 'phone-page';
     errorPage.textContent = '联系人不存在';
@@ -97,7 +97,7 @@ export async function renderChatView(contactId) {
     restoreDraft(page, contactId);
   }, 100);
 
-  logger.info('[ChatView] 聊天界面渲染完成');
+  logger.info('phone','[ChatView] 聊天界面渲染完成');
   return page;
 }
 
@@ -265,7 +265,7 @@ function createEmojiPanel() {
 function initEmojiLazyLoad() {
   const grid = document.querySelector('.chat-emoji-grid');
   if (!grid) {
-    logger.warn('[ChatView.LazyLoad] 找不到表情网格，跳过懒加载初始化');
+    logger.warn('phone','[ChatView.LazyLoad] 找不到表情网格，跳过懒加载初始化');
     return;
   }
 
@@ -278,7 +278,7 @@ function initEmojiLazyLoad() {
             img.src = img.dataset.src;  // 加载真实图片
             img.classList.remove('lazy-emoji');
             observer.unobserve(img);  // 加载后停止监听
-            logger.debug('[ChatView.LazyLoad] 已加载表情包:', img.alt);
+            logger.debug('phone','[ChatView.LazyLoad] 已加载表情包:', img.alt);
           }
         }
       });
@@ -293,7 +293,7 @@ function initEmojiLazyLoad() {
   const lazyImages = grid.querySelectorAll('.lazy-emoji');
   lazyImages.forEach(img => observer.observe(img));
 
-  logger.info(`[ChatView.LazyLoad] 已初始化懒加载，监听 ${lazyImages.length} 个表情包`);
+  logger.info('phone',`[ChatView.LazyLoad] 已初始化懒加载，监听 ${lazyImages.length} 个表情包`);
 }
 
 /**
@@ -307,14 +307,14 @@ function refreshEmojiPanel() {
   // 查找现有的表情选择器面板
   const existingPanel = document.querySelector('.chat-emoji-panel');
   if (!existingPanel) {
-    logger.debug('[ChatView] 表情面板不存在，跳过刷新');
+    logger.debug('phone','[ChatView] 表情面板不存在，跳过刷新');
     return;
   }
 
   // 查找表情网格
   const grid = existingPanel.querySelector('.chat-emoji-grid');
   if (!grid) {
-    logger.warn('[ChatView] 找不到表情网格，无法刷新');
+    logger.warn('phone','[ChatView] 找不到表情网格，无法刷新');
     return;
   }
 
@@ -349,7 +349,7 @@ function refreshEmojiPanel() {
     grid.appendChild(item);
   });
 
-  logger.info(`[ChatView] 表情选择器已刷新，当前共 ${emojis.length} 个表情包`);
+  logger.info('phone',`[ChatView] 表情选择器已刷新，当前共 ${emojis.length} 个表情包`);
 
   // 初始化懒加载
   initEmojiLazyLoad();
@@ -409,7 +409,7 @@ function showQuotePreview(page, message, contact) {
     inputField.focus();
   }
 
-  logger.info('[ChatView] 显示引用预览:', formatQuotePreviewText(message));
+  logger.info('phone','[ChatView] 显示引用预览:', formatQuotePreviewText(message));
 }
 
 /**
@@ -424,7 +424,7 @@ function hideQuotePreview(page) {
     preview.style.display = 'none';
     preview.dataset.quotedMessageData = '';
     preview.dataset.quotedSenderName = '';
-    logger.debug('[ChatView] 隐藏引用预览');
+    logger.debug('phone','[ChatView] 隐藏引用预览');
   }
 }
 
@@ -569,7 +569,7 @@ async function bindInputEvents(page, contactId, contact) {
   if (phoneSystem && phoneSystem.api &&
     phoneSystem.api.isGenerating &&
     phoneSystem.api.currentGeneratingContactId === contactId) {
-    logger.debug('[ChatView] 检测到正在生成，初始化按钮为终止键');
+    logger.debug('phone','[ChatView] 检测到正在生成，初始化按钮为终止键');
     sendBtn.innerHTML = '<i class="fa-solid fa-circle-stop"></i>';
     sendBtn.classList.add('generating');
   }
@@ -615,7 +615,7 @@ async function bindInputEvents(page, contactId, contact) {
   const planBtn = page.querySelector('.chat-plan-list-btn');
   if (planBtn) {
     planBtn.addEventListener('click', async () => {
-      logger.info('[ChatView] 打开约定计划列表');
+      logger.info('phone','[ChatView] 打开约定计划列表');
       const overlay = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
       const { showPage } = await import('../phone-main-ui.js');
       showPage(overlay, 'plan-list', { contactId });
@@ -681,7 +681,7 @@ function bindEmojiPanel(page) {
     // 点击添加按钮 → 跳转到表情管理页面
     const addBtn = e.target.closest('.chat-emoji-add');
     if (addBtn) {
-      logger.info('[ChatView] 跳转到表情管理页面');
+      logger.info('phone','[ChatView] 跳转到表情管理页面');
       const overlayElement = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
       if (overlayElement) {
         const { showPage } = await import('../phone-main-ui.js');
@@ -694,7 +694,7 @@ function bindEmojiPanel(page) {
     const emojiItem = e.target.closest('.chat-emoji-item');
     if (emojiItem) {
       const emojiId = emojiItem.dataset.emojiId;  // ← 改用ID获取
-      logger.info('[ChatView] 发送表情:', emojiId);
+      logger.info('phone','[ChatView] 发送表情:', emojiId);
 
       // 关闭表情面板
       emojiPanel.classList.remove('active');
@@ -750,7 +750,7 @@ function bindPlusPanel(page) {
 
       // 拍摄功能：打开摄像头拍照
       if (action === 'take-photo') {
-        logger.info('[ChatView] 点击拍摄照片');
+        logger.info('phone','[ChatView] 点击拍摄照片');
         closePanels(page);
         const photoInput = page.querySelector('#phone-take-photo');
         if (photoInput) /** @type {HTMLInputElement} */ (photoInput).click();
@@ -759,7 +759,7 @@ function bindPlusPanel(page) {
 
       // 识别照片按钮（原有逻辑）
       if (text === '照片') {
-        logger.info('[ChatView] 点击照片按钮');
+        logger.info('phone','[ChatView] 点击照片按钮');
         closePanels(page);
         const contactId = page.dataset.contactId;
         await handleSendImage(page, contactId);
@@ -768,7 +768,7 @@ function bindPlusPanel(page) {
 
       // 识别转账按钮
       if (text === '转账') {
-        logger.info('[ChatView] 点击转账按钮');
+        logger.info('phone','[ChatView] 点击转账按钮');
         closePanels(page);
         const contactId = page.dataset.contactId;
         await handleOpenTransfer(contactId);
@@ -777,7 +777,7 @@ function bindPlusPanel(page) {
 
       // 识别送会员按钮
       if (text === '送会员') {
-        logger.info('[ChatView] 点击送会员按钮');
+        logger.info('phone','[ChatView] 点击送会员按钮');
         closePanels(page);
         const contactId = page.dataset.contactId;
         await handleOpenGiftMembership(contactId);
@@ -786,7 +786,7 @@ function bindPlusPanel(page) {
 
       // 识别收藏按钮
       if (text === '收藏') {
-        logger.info('[ChatView] 点击收藏按钮');
+        logger.info('phone','[ChatView] 点击收藏按钮');
         closePanels(page);
         const contactId = page.dataset.contactId;
         await handleSendFavorite(page, contactId);
@@ -795,7 +795,7 @@ function bindPlusPanel(page) {
 
       // 识别约定计划按钮
       if (text === '约定计划') {
-        logger.info('[ChatView] 点击约定计划按钮');
+        logger.info('phone','[ChatView] 点击约定计划按钮');
         closePanels(page);
         const contactId = page.dataset.contactId;
         await handleCreatePlan(contactId);
@@ -804,7 +804,7 @@ function bindPlusPanel(page) {
 
       // 识别戳一戳按钮
       if (text === '戳一戳') {
-        logger.info('[ChatView] 点击戳一戳按钮');
+        logger.info('phone','[ChatView] 点击戳一戳按钮');
         closePanels(page);
         const contactId = page.dataset.contactId;
         await handleSendPoke(contactId);
@@ -812,7 +812,7 @@ function bindPlusPanel(page) {
       }
 
       // 其他功能暂时输出日志
-      logger.info('[ChatView] 点击+号菜单项:', text, '（功能待实现）');
+      logger.info('phone','[ChatView] 点击+号菜单项:', text, '（功能待实现）');
       closePanels(page);
     }
   });
@@ -896,7 +896,7 @@ function bindReturnButton(page) {
   if (!backBtn) return;
 
   backBtn.addEventListener('click', () => {
-    logger.info('[ChatView] 点击返回按钮');
+    logger.info('phone','[ChatView] 点击返回按钮');
 
     // 获取 overlay 元素
     const overlay = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
@@ -918,7 +918,7 @@ function bindSettingsButton(page, contactId) {
   if (!settingsBtn) return;
 
   settingsBtn.addEventListener('click', async () => {
-    logger.info('[ChatView] 点击设置按钮，跳转到聊天设置页面');
+    logger.info('phone','[ChatView] 点击设置按钮，跳转到聊天设置页面');
     const overlay = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
     const { showPage } = await import('../phone-main-ui.js');
     showPage(overlay, 'chat-settings', { contactId });
@@ -971,7 +971,7 @@ async function loadChatHistoryAndRender(page, contactId, contact, isLoadMore = f
   const history = await loadChatHistory(contactId);
 
   if (history.length === 0) {
-    logger.debug('[ChatView] 没有历史消息');
+    logger.debug('phone','[ChatView] 没有历史消息');
     return;
   }
 
@@ -1002,7 +1002,7 @@ async function loadChatHistoryAndRender(page, contactId, contact, isLoadMore = f
   }
 
   // 🔍 详细日志
-  logger.info('📊 [加载历史]', isLoadMore ? '加载更多' : '初次加载',
+  logger.info('phone','📊 [加载历史]', isLoadMore ? '加载更多' : '初次加载',
     `${messagesToRender.length}条消息 (总计${history.length}条，已显示${page.dataset.loadedCount}条)`);
 
   // 判断是否需要显示"加载更多"按钮
@@ -1031,8 +1031,8 @@ async function loadChatHistoryAndRender(page, contactId, contact, isLoadMore = f
   const finalIds = Array.from(chatContent.querySelectorAll('.chat-msg[data-msg-id]'))
     .map(el => /** @type {HTMLElement} */(el).dataset.msgId);
   const idsPreview = finalIds.length > 5 ? `${finalIds.slice(0, 3).join(', ')}... (共${finalIds.length}个)` : finalIds.join(', ');
-  logger.info('📊 [加载完成] DOM消息数:', finalDomCount, '现有ID:', idsPreview);
-  logger.info(`✅ [加载历史完成] 本次渲染 ${messagesToRender.length} 条，总消息 ${history.length} 条，已显示 ${page.dataset.loadedCount} 条`);
+  logger.info('phone','📊 [加载完成] DOM消息数:', finalDomCount, '现有ID:', idsPreview);
+  logger.info('phone',`✅ [加载历史完成] 本次渲染 ${messagesToRender.length} 条，总消息 ${history.length} 条，已显示 ${page.dataset.loadedCount} 条`);
 }
 
 /**
@@ -1048,7 +1048,7 @@ async function handleSendText(page, contactId, contact, inputField) {
   const preview = page.querySelector('.chat-quote-preview');
   const hasQuote = preview && preview.style.display !== 'none' && preview.dataset.quotedMessageData;
 
-  logger.info('[ChatView] 点击发送文字:', content.substring(0, 20), hasQuote ? '（引用消息）' : '');
+  logger.info('phone','[ChatView] 点击发送文字:', content.substring(0, 20), hasQuote ? '（引用消息）' : '');
 
   // 动态导入
   const { addPendingMessage } = await import('../ai-integration/pending-operations.js');
@@ -1153,7 +1153,7 @@ async function handleSendText(page, contactId, contact, inputField) {
  * @param {string} emojiId - 表情包ID（改用ID存储，支持改名）
  */
 async function handleSendEmoji(page, contactId, emojiId) {
-  logger.info('[ChatView] 发送表情 ID:', emojiId);
+  logger.info('phone','[ChatView] 发送表情 ID:', emojiId);
 
   // 动态导入
   const { addPendingMessage } = await import('../ai-integration/pending-operations.js');
@@ -1166,7 +1166,7 @@ async function handleSendEmoji(page, contactId, emojiId) {
   // 获取表情包对象（用于获取名称）
   const emoji = findEmojiById(emojiId);
   if (!emoji) {
-    logger.error('[ChatView] 表情包不存在:', emojiId);
+    logger.error('phone','[ChatView] 表情包不存在:', emojiId);
     return;
   }
 
@@ -1219,7 +1219,7 @@ async function handleSendEmoji(page, contactId, emojiId) {
  * 弹窗让用户输入图片描述和可选链接，然后发送图片消息
  */
 async function handleSendImage(page, contactId) {
-  logger.info('[ChatView] 显示发送图片弹窗');
+  logger.info('phone','[ChatView] 显示发送图片弹窗');
 
   // 动态导入
   const { showCustomPopupWithData } = await import('../utils/popup-helper.js');
@@ -1270,7 +1270,7 @@ async function handleSendImage(page, contactId) {
 
   // 用户取消
   if (!result || result.action !== 'send') {
-    logger.debug('[ChatView] 用户取消发送图片');
+    logger.debug('phone','[ChatView] 用户取消发送图片');
     return;
   }
 
@@ -1278,7 +1278,7 @@ async function handleSendImage(page, contactId) {
   if (!result.description) {
     const { showErrorToast } = await import('../ui-components/toast-notification.js');
     showErrorToast('请输入图片描述');
-    logger.warn('[ChatView] 图片描述为空');
+    logger.warn('phone','[ChatView] 图片描述为空');
     return;
   }
 
@@ -1352,7 +1352,7 @@ async function handleSendImage(page, contactId) {
   chatContent.appendChild(bubble);
   scrollToBottom(chatContent);
 
-  logger.info('[ChatView] 图片消息已发送:', { description: result.description, hasUrl: !!result.imageUrl });
+  logger.info('phone','[ChatView] 图片消息已发送:', { description: result.description, hasUrl: !!result.imageUrl });
 
   // 更新消息列表
   updateMessageListItem(contactId);
@@ -1365,7 +1365,7 @@ async function handleSendImage(page, contactId) {
  * @param {string} contactId - 联系人ID
  */
 async function handleOpenTransfer(contactId) {
-  logger.info('[ChatView] 打开转账页面，联系人:', contactId);
+  logger.info('phone','[ChatView] 打开转账页面，联系人:', contactId);
 
   // 动态导入
   const { showPage } = await import('../phone-main-ui.js');
@@ -1374,7 +1374,7 @@ async function handleOpenTransfer(contactId) {
   if (overlay) {
     await showPage(overlay, 'transfer', { contactId });
   } else {
-    logger.error('[ChatView] 找不到.phone-overlay容器！');
+    logger.error('phone','[ChatView] 找不到.phone-overlay容器！');
   }
 }
 
@@ -1385,7 +1385,7 @@ async function handleOpenTransfer(contactId) {
  * @param {string} contactId - 联系人ID
  */
 async function handleOpenGiftMembership(contactId) {
-  logger.info('[ChatView] 打开会员送礼页面，联系人:', contactId);
+  logger.info('phone','[ChatView] 打开会员送礼页面，联系人:', contactId);
 
   // 动态导入
   const { showPage } = await import('../phone-main-ui.js');
@@ -1395,7 +1395,7 @@ async function handleOpenGiftMembership(contactId) {
   if (overlay) {
     await showPage(overlay, 'gift-membership', { contactId });
   } else {
-    logger.error('[ChatView] 找不到.phone-overlay容器！');
+    logger.error('phone','[ChatView] 找不到.phone-overlay容器！');
   }
 }
 
@@ -1404,7 +1404,7 @@ async function handleOpenGiftMembership(contactId) {
  * @private
  */
 async function handleSendToAI(page, contactId, contact, sendBtn) {
-  logger.info('[ChatView] 点击纸飞机，开始调用AI');
+  logger.info('phone','[ChatView] 点击纸飞机，开始调用AI');
 
   // 类型断言
   const sendButton = /** @type {HTMLButtonElement} */ (sendBtn);
@@ -1430,13 +1430,13 @@ async function handleSendToAI(page, contactId, contact, sendBtn) {
   const phoneSystem = getPhoneSystem();
 
   if (!phoneSystem || !phoneSystem.api) {
-    logger.error('[ChatView] 手机系统未初始化');
+    logger.error('phone','[ChatView] 手机系统未初始化');
     return;
   }
 
   // 如果正在生成，则终止
   if (phoneSystem.api.isGenerating) {
-    logger.info('[ChatView] 终止生成');
+    logger.info('phone','[ChatView] 终止生成');
     phoneSystem.api.abort();
 
     // 恢复按钮状态
@@ -1500,12 +1500,12 @@ async function handleSendToAI(page, contactId, contact, sendBtn) {
     },
     // onComplete: 完成时的回调
     async () => {
-      logger.info('[ChatView] AI回复完成');
+      logger.info('phone','[ChatView] AI回复完成');
 
       // ✅ 递增轮次（AI回复完成后，本轮对话结束）
       const { incrementRound } = await import('../messages/message-chat-data.js');
       await incrementRound(contactId);
-      logger.debug('[ChatView] 本轮对话结束，轮次已递增');
+      logger.debug('phone','[ChatView] 本轮对话结束，轮次已递增');
 
       // ✅ 按钮状态由事件监听器自动更新（bindAIGenerationEvents）
 
@@ -1518,7 +1518,7 @@ async function handleSendToAI(page, contactId, contact, sendBtn) {
     },
     // onError: 错误时的回调
     (error) => {
-      logger.error('[ChatView] AI回复失败:', error);
+      logger.error('phone','[ChatView] AI回复失败:', error);
 
       // ✅ 按钮状态由事件监听器自动更新（bindAIGenerationEvents）
 
@@ -1541,35 +1541,35 @@ async function handleSendToAI(page, contactId, contact, sendBtn) {
  * @param {string} contactId - 联系人ID（用于删除等操作）
  */
 export async function appendMessageToChat(page, message, contact, contactId) {
-  logger.debug('[ChatView.appendMessageToChat] ==================== 开始追加消息 ====================');
-  logger.debug('[ChatView.appendMessageToChat] 消息类型:', message.type);
-  logger.debug('[ChatView.appendMessageToChat] 消息ID:', message.id);
-  logger.debug('[ChatView.appendMessageToChat] contactId:', contactId);
-  logger.debug('[ChatView.appendMessageToChat] 完整消息对象:', message);
+  logger.debug('phone','[ChatView.appendMessageToChat] ==================== 开始追加消息 ====================');
+  logger.debug('phone','[ChatView.appendMessageToChat] 消息类型:', message.type);
+  logger.debug('phone','[ChatView.appendMessageToChat] 消息ID:', message.id);
+  logger.debug('phone','[ChatView.appendMessageToChat] contactId:', contactId);
+  logger.debug('phone','[ChatView.appendMessageToChat] 完整消息对象:', message);
 
   // 防御性检查：确保页面DOM存在
-  logger.debug('[ChatView.appendMessageToChat] 检查page是否存在:', !!page);
-  logger.debug('[ChatView.appendMessageToChat] 检查page.parentElement:', !!page?.parentElement);
+  logger.debug('phone','[ChatView.appendMessageToChat] 检查page是否存在:', !!page);
+  logger.debug('phone','[ChatView.appendMessageToChat] 检查page.parentElement:', !!page?.parentElement);
 
   if (!page || !page.parentElement) {
-    logger.warn('[ChatView.appendMessageToChat] ❌ 页面不存在或已销毁，跳过DOM更新');
+    logger.warn('phone','[ChatView.appendMessageToChat] ❌ 页面不存在或已销毁，跳过DOM更新');
     return;
   }
 
   const chatContent = page.querySelector('.chat-content');
-  logger.debug('[ChatView.appendMessageToChat] 查找.chat-content结果:', !!chatContent);
+  logger.debug('phone','[ChatView.appendMessageToChat] 查找.chat-content结果:', !!chatContent);
 
   if (!chatContent) {
-    logger.error('[ChatView.appendMessageToChat] ❌ 未找到聊天内容区！');
-    logger.error('[ChatView.appendMessageToChat] page的所有子元素:');
+    logger.error('phone','[ChatView.appendMessageToChat] ❌ 未找到聊天内容区！');
+    logger.error('phone','[ChatView.appendMessageToChat] page的所有子元素:');
     Array.from(page.children).forEach((child, i) => {
       const el = /** @type {HTMLElement} */ (child);
-      logger.error(`  [${i}] ${el.tagName}.${el.className}`);
+      logger.error('phone',`  [${i}] ${el.tagName}.${el.className}`);
     });
     return;
   }
 
-  logger.debug('[ChatView.appendMessageToChat] chatContent详情:', {
+  logger.debug('phone','[ChatView.appendMessageToChat] chatContent详情:', {
     tagName: chatContent.tagName,
     className: chatContent.className,
     childrenCount: chatContent.children.length
@@ -1578,10 +1578,10 @@ export async function appendMessageToChat(page, message, contact, contactId) {
   // ✅ 防止重复添加：检查消息是否已存在于DOM
   if (message.id) {
     const existingMsg = chatContent.querySelector(`[data-msg-id="${message.id}"]`);
-    logger.debug('[ChatView.appendMessageToChat] DOM重复检查（querySelector）:', !!existingMsg);
+    logger.debug('phone','[ChatView.appendMessageToChat] DOM重复检查（querySelector）:', !!existingMsg);
 
     if (existingMsg) {
-      logger.warn('[ChatView.appendMessageToChat] 📛 消息已存在于DOM，跳过重复添加:', message.id);
+      logger.warn('phone','[ChatView.appendMessageToChat] 📛 消息已存在于DOM，跳过重复添加:', message.id);
       return;
     }
   }
@@ -1591,20 +1591,20 @@ export async function appendMessageToChat(page, message, contact, contactId) {
   const phoneAPI = getPhoneSystem().api;
 
   const isRendered = message.id && phoneAPI.isMessageRendered(contactId, message.id);
-  logger.debug('[ChatView.appendMessageToChat] PhoneAPI渲染记录检查:', isRendered);
+  logger.debug('phone','[ChatView.appendMessageToChat] PhoneAPI渲染记录检查:', isRendered);
 
   if (isRendered) {
-    logger.warn('[ChatView.appendMessageToChat] 📛 消息已在渲染记录中，跳过重复添加:', message.id);
+    logger.warn('phone','[ChatView.appendMessageToChat] 📛 消息已在渲染记录中，跳过重复添加:', message.id);
     return;
   }
 
-  logger.debug('[ChatView.appendMessageToChat] ✅ 通过所有检查，准备渲染消息');
+  logger.debug('phone','[ChatView.appendMessageToChat] ✅ 通过所有检查，准备渲染消息');
 
   // 🔍 详细日志：追加前的DOM状态
   const beforeCount = chatContent.querySelectorAll('.chat-msg').length;
   const existingIds = Array.from(chatContent.querySelectorAll('.chat-msg[data-msg-id]'))
     .map(el => /** @type {HTMLElement} */(el).dataset.msgId);
-  logger.info('📊 [追加前] DOM消息数:', beforeCount, '消息ID:', message.id || '无', '现有ID列表:', existingIds.join(', '));
+  logger.info('phone','📊 [追加前] DOM消息数:', beforeCount, '消息ID:', message.id || '无', '现有ID列表:', existingIds.join(', '));
 
   // 动态导入
   const { renderTextMessage } = await import('./message-types/text-message.js');
@@ -1622,36 +1622,36 @@ export async function appendMessageToChat(page, message, contact, contactId) {
   // 根据消息类型渲染不同的气泡
   let bubble;
 
-  logger.debug('[ChatView.appendMessageToChat] 开始渲染气泡，消息类型:', message.type);
+  logger.debug('phone','[ChatView.appendMessageToChat] 开始渲染气泡，消息类型:', message.type);
 
   switch (message.type) {
     case 'emoji':
-      logger.debug('[ChatView.appendMessageToChat] 渲染表情包消息');
+      logger.debug('phone','[ChatView.appendMessageToChat] 渲染表情包消息');
       bubble = renderEmojiMessage(message, contact, contactId);
       break;
 
     case 'text':
       // 检查是否是个签更新消息
       if (message.content?.startsWith('[改个签]')) {
-        logger.debug('[ChatView.appendMessageToChat] 渲染个签更新消息');
+        logger.debug('phone','[ChatView.appendMessageToChat] 渲染个签更新消息');
         bubble = renderSignatureMessage(message, contactId, contact);
       }
       // 检查是否是计划剧情消息
       else if (message.content?.match(/^\[约定计划(过程|内心印象|过程记录)\]/)) {
-        logger.debug('[ChatView.appendMessageToChat] 渲染计划剧情消息');
+        logger.debug('phone','[ChatView.appendMessageToChat] 渲染计划剧情消息');
         bubble = renderPlanStoryMessage(message, contactId);
       }
       // 检查是否是计划消息
       else if (message.content?.startsWith('[约定计划')) {
-        logger.debug('[ChatView.appendMessageToChat] 渲染计划消息');
+        logger.debug('phone','[ChatView.appendMessageToChat] 渲染计划消息');
         bubble = await renderPlanMessage(message, contact, contactId);
         // 如果返回 null（例如旧数据的响应消息缺少 quotedPlanId），降级为普通文本
         if (!bubble) {
-          logger.debug('[ChatView.appendMessageToChat] 计划消息渲染器返回null，降级为普通文本');
+          logger.debug('phone','[ChatView.appendMessageToChat] 计划消息渲染器返回null，降级为普通文本');
           bubble = renderTextMessage(message, contact, contactId);
         }
       } else {
-        logger.debug('[ChatView.appendMessageToChat] 渲染文本消息');
+        logger.debug('phone','[ChatView.appendMessageToChat] 渲染文本消息');
         bubble = renderTextMessage(message, contact, contactId);
       }
       break;
@@ -1659,80 +1659,80 @@ export async function appendMessageToChat(page, message, contact, contactId) {
     case 'image':
     case 'image-real':  // ✅ 新增：真实图片类型
     case 'image-fake':  // ✅ 新增：假装图片类型
-      logger.debug('[ChatView.appendMessageToChat] 渲染图片消息');
+      logger.debug('phone','[ChatView.appendMessageToChat] 渲染图片消息');
       bubble = renderImageMessage(message, contact, contactId);
       break;
 
     case 'transfer':
-      logger.debug('[ChatView.appendMessageToChat] 渲染转账消息');
-      logger.debug('[ChatView.appendMessageToChat] 转账消息数据:', {
+      logger.debug('phone','[ChatView.appendMessageToChat] 渲染转账消息');
+      logger.debug('phone','[ChatView.appendMessageToChat] 转账消息数据:', {
         amount: message.amount,
         message: message.message,
         sender: message.sender
       });
       bubble = renderTransferMessage(message, contact, contactId);
-      logger.debug('[ChatView.appendMessageToChat] 转账气泡已生成');
+      logger.debug('phone','[ChatView.appendMessageToChat] 转账气泡已生成');
       break;
 
     case 'gift-membership':
-      logger.debug('[ChatView.appendMessageToChat] 渲染会员送礼消息');
+      logger.debug('phone','[ChatView.appendMessageToChat] 渲染会员送礼消息');
       bubble = renderGiftMembershipMessage(message, contact, contactId);
-      logger.debug('[ChatView.appendMessageToChat] 会员送礼气泡已生成');
+      logger.debug('phone','[ChatView.appendMessageToChat] 会员送礼气泡已生成');
       break;
 
     case 'buy-membership':
-      logger.debug('[ChatView.appendMessageToChat] 渲染角色买会员消息');
+      logger.debug('phone','[ChatView.appendMessageToChat] 渲染角色买会员消息');
       bubble = renderBuyMembershipMessage(message, contact, contactId);
-      logger.debug('[ChatView.appendMessageToChat] 角色买会员气泡已生成');
+      logger.debug('phone','[ChatView.appendMessageToChat] 角色买会员气泡已生成');
       break;
 
     case 'quote':
-      logger.debug('[ChatView.appendMessageToChat] 渲染引用消息');
+      logger.debug('phone','[ChatView.appendMessageToChat] 渲染引用消息');
       bubble = renderQuoteMessage(message, contact, contactId);
       break;
 
     case 'recalled':
       // 已撤回消息（直接显示撤回提示）
-      logger.debug('[ChatView.appendMessageToChat] 渲染撤回消息');
+      logger.debug('phone','[ChatView.appendMessageToChat] 渲染撤回消息');
       bubble = renderRecalledMessage(message, contact, contactId);
       break;
 
     case 'recalled-pending':
       // 待撤回消息（先显示原消息，随机3-8秒后变撤回提示）
-      logger.debug('[ChatView.appendMessageToChat] 渲染待撤回消息（触发动画）');
+      logger.debug('phone','[ChatView.appendMessageToChat] 渲染待撤回消息（触发动画）');
       bubble = handleRecalledPending(message, contact, contactId, renderTextMessage, renderRecalledMessage);
       break;
 
     case 'friend_added':
       // 添加好友系统消息（居中显示）
-      logger.debug('[ChatView.appendMessageToChat] 渲染添加好友消息');
+      logger.debug('phone','[ChatView.appendMessageToChat] 渲染添加好友消息');
       const { renderFriendAddedMessage } = await import('./message-types/friend-added-message.js');
       bubble = renderFriendAddedMessage(message);
       break;
 
     case 'friend_deleted':
       // 删除好友系统消息（居中显示）
-      logger.debug('[ChatView.appendMessageToChat] 渲染删除好友消息');
+      logger.debug('phone','[ChatView.appendMessageToChat] 渲染删除好友消息');
       const { renderFriendDeletedMessage } = await import('./message-types/friend-deleted-message.js');
       bubble = renderFriendDeletedMessage(message);
       break;
 
     case 'friend_request':
       // 好友申请消息（角色发送的申请消息）
-      logger.debug('[ChatView.appendMessageToChat] 渲染好友申请消息');
+      logger.debug('phone','[ChatView.appendMessageToChat] 渲染好友申请消息');
       const { renderFriendRequestMessage } = await import('./message-types/friend-request-message.js');
       bubble = renderFriendRequestMessage(message, contactId, contact);
       break;
 
     case 'poke':
       // 戳一戳消息
-      logger.debug('[ChatView.appendMessageToChat] 渲染戳一戳消息');
+      logger.debug('phone','[ChatView.appendMessageToChat] 渲染戳一戳消息');
       bubble = renderPokeMessage(message, contact, contactId);
       break;
 
     case 'forwarded':
       // 转发消息
-      logger.debug('[ChatView.appendMessageToChat] 渲染转发消息');
+      logger.debug('phone','[ChatView.appendMessageToChat] 渲染转发消息');
       const { renderForwardedMessage } = await import('./message-types/forwarded-message.js');
       bubble = renderForwardedMessage(message, contact, contactId);
       break;
@@ -1743,13 +1743,13 @@ export async function appendMessageToChat(page, message, contact, contactId) {
     // - messages/message-types/file-message.js
     // 临时降级：显示为文字提示
     case 'redpacket':
-      logger.debug('[ChatView.appendMessageToChat] 渲染红包消息（降级为文字）');
+      logger.debug('phone','[ChatView.appendMessageToChat] 渲染红包消息（降级为文字）');
       bubble = renderTextMessage({
         ...message,
         content: `[红包] ¥${message.amount}`,
         type: 'text'
       }, contact, contactId);
-      logger.warn('[ChatView] 红包渲染器未实现，显示为文字');
+      logger.warn('phone','[ChatView] 红包渲染器未实现，显示为文字');
       break;
 
     case 'video':
@@ -1758,7 +1758,7 @@ export async function appendMessageToChat(page, message, contact, contactId) {
         content: `[视频] ${message.description}`,
         type: 'text'
       }, contact, contactId);
-      logger.warn('[ChatView] 视频渲染器未实现，显示为文字');
+      logger.warn('phone','[ChatView] 视频渲染器未实现，显示为文字');
       break;
 
     case 'file':
@@ -1767,12 +1767,12 @@ export async function appendMessageToChat(page, message, contact, contactId) {
         content: `[文件] ${message.filename} (${message.size})`,
         type: 'text'
       }, contact, contactId);
-      logger.warn('[ChatView] 文件渲染器未实现，显示为文字');
+      logger.warn('phone','[ChatView] 文件渲染器未实现，显示为文字');
       break;
 
     default:
       // 未知类型，降级为文字
-      logger.warn('[ChatView] 未知消息类型:', message.type);
+      logger.warn('phone','[ChatView] 未知消息类型:', message.type);
       bubble = renderTextMessage({
         ...message,
         content: message.content || '[未知消息类型]',
@@ -1782,14 +1782,14 @@ export async function appendMessageToChat(page, message, contact, contactId) {
   }
 
   // 检查bubble是否生成成功
-  logger.debug('[ChatView.appendMessageToChat] bubble生成结果:', !!bubble);
+  logger.debug('phone','[ChatView.appendMessageToChat] bubble生成结果:', !!bubble);
 
   if (!bubble) {
-    logger.error('[ChatView.appendMessageToChat] ❌ bubble未生成！消息类型:', message.type);
+    logger.error('phone','[ChatView.appendMessageToChat] ❌ bubble未生成！消息类型:', message.type);
     return;
   }
 
-  logger.debug('[ChatView.appendMessageToChat] bubble详情:', {
+  logger.debug('phone','[ChatView.appendMessageToChat] bubble详情:', {
     tagName: bubble.tagName,
     className: bubble.className,
     childrenCount: bubble.children.length,
@@ -1799,7 +1799,7 @@ export async function appendMessageToChat(page, message, contact, contactId) {
   // 添加消息ID到DOM（方便追踪）
   if (message.id) {
     bubble.dataset.msgId = message.id;
-    logger.debug('[ChatView.appendMessageToChat] 已设置data-msg-id:', message.id);
+    logger.debug('phone','[ChatView.appendMessageToChat] 已设置data-msg-id:', message.id);
   }
 
   // 添加消息数据到DOM（用于多选功能）
@@ -1846,79 +1846,79 @@ export async function appendMessageToChat(page, message, contact, contactId) {
   checkbox.style.display = 'none';
   bubble.insertBefore(checkbox, bubble.firstChild);
 
-  logger.debug('[ChatView.appendMessageToChat] 准备appendChild到chatContent');
+  logger.debug('phone','[ChatView.appendMessageToChat] 准备appendChild到chatContent');
   chatContent.appendChild(bubble);
-  logger.debug('[ChatView.appendMessageToChat] ✅ 气泡已添加到DOM');
+  logger.debug('phone','[ChatView.appendMessageToChat] ✅ 气泡已添加到DOM');
 
   // 验证是否真的添加成功
   const verifyAdded = chatContent.querySelector(`[data-msg-id="${message.id}"]`);
-  logger.debug('[ChatView.appendMessageToChat] 验证添加结果:', !!verifyAdded);
+  logger.debug('phone','[ChatView.appendMessageToChat] 验证添加结果:', !!verifyAdded);
 
   // ✅ 绑定长按操作菜单（根据消息类型决定是否禁用引用）
-  logger.debug('[ChatView.appendMessageToChat] 准备绑定长按事件');
+  logger.debug('phone','[ChatView.appendMessageToChat] 准备绑定长按事件');
   const disableQuoteTypes = ['emoji', 'image', 'image-real', 'image-fake', 'poke', 'transfer', 'gift-membership', 'buy-membership', 'recalled', 'plan-story', 'plan-message', 'signature', 'forwarded'];
   const options = disableQuoteTypes.includes(message.type) ? { disableQuote: true } : {};
   bindLongPress(bubble, message, contactId, options);
-  logger.debug('[ChatView.appendMessageToChat] 长按事件已绑定, 配置:', options);
+  logger.debug('phone','[ChatView.appendMessageToChat] 长按事件已绑定, 配置:', options);
 
   // ✅ 标记消息已渲染（通知PhoneAPI）
   if (message.id) {
     phoneAPI.markMessageRendered(contactId, message.id);
-    logger.debug('[ChatView.appendMessageToChat] 已标记为已渲染:', message.id);
+    logger.debug('phone','[ChatView.appendMessageToChat] 已标记为已渲染:', message.id);
   }
 
   // 🔍 详细日志：追加后的DOM状态
   const afterCount = chatContent.querySelectorAll('.chat-msg').length;
   const afterIds = Array.from(chatContent.querySelectorAll('.chat-msg[data-msg-id]'))
     .map(el => /** @type {HTMLElement} */(el).dataset.msgId);
-  logger.info('📊 [追加后] DOM消息数:', afterCount, '(+', afterCount - beforeCount, ')', '新消息ID:', message.id);
+  logger.info('phone','📊 [追加后] DOM消息数:', afterCount, '(+', afterCount - beforeCount, ')', '新消息ID:', message.id);
 
   // ✅ 戳一戳消息：触发屏幕震动
   if (message.type === 'poke') {
-    logger.debug('[ChatView.appendMessageToChat.Poke] ========== 戳一戳震动调试开始 ==========');
-    logger.debug('[ChatView.appendMessageToChat.Poke] 消息发送者:', message.sender);
+    logger.debug('phone','[ChatView.appendMessageToChat.Poke] ========== 戳一戳震动调试开始 ==========');
+    logger.debug('phone','[ChatView.appendMessageToChat.Poke] 消息发送者:', message.sender);
 
     const chatPage = page.closest('.phone-chat-page') || page;
     const direction = message.sender === 'user' ? 'left' : 'right';
 
-    logger.debug('[ChatView.appendMessageToChat.Poke] page元素:', {
+    logger.debug('phone','[ChatView.appendMessageToChat.Poke] page元素:', {
       id: page.id,
       className: page.className,
       tagName: page.tagName
     });
-    logger.debug('[ChatView.appendMessageToChat.Poke] 查找.phone-chat-page结果:', !!page.closest('.phone-chat-page'));
-    logger.debug('[ChatView.appendMessageToChat.Poke] chatPage元素:', {
+    logger.debug('phone','[ChatView.appendMessageToChat.Poke] 查找.phone-chat-page结果:', !!page.closest('.phone-chat-page'));
+    logger.debug('phone','[ChatView.appendMessageToChat.Poke] chatPage元素:', {
       id: chatPage.id,
       className: chatPage.className,
       tagName: chatPage.tagName,
       isPage: chatPage === page
     });
-    logger.debug('[ChatView.appendMessageToChat.Poke] 震动方向:', direction);
-    logger.debug('[ChatView.appendMessageToChat.Poke] 将添加的类名:', `shaking-${direction}`);
+    logger.debug('phone','[ChatView.appendMessageToChat.Poke] 震动方向:', direction);
+    logger.debug('phone','[ChatView.appendMessageToChat.Poke] 将添加的类名:', `shaking-${direction}`);
 
     // 延迟250ms触发震动（让手指动画先开始）
     setTimeout(() => {
-      logger.debug('[ChatView.appendMessageToChat.Poke] 250ms后，准备添加震动类');
-      logger.debug('[ChatView.appendMessageToChat.Poke] 添加前的classList:', Array.from(chatPage.classList).join(', '));
+      logger.debug('phone','[ChatView.appendMessageToChat.Poke] 250ms后，准备添加震动类');
+      logger.debug('phone','[ChatView.appendMessageToChat.Poke] 添加前的classList:', Array.from(chatPage.classList).join(', '));
 
       chatPage.classList.add(`shaking-${direction}`);
 
-      logger.debug('[ChatView.appendMessageToChat.Poke] 添加后的classList:', Array.from(chatPage.classList).join(', '));
-      logger.info('[ChatView.appendMessageToChat.Poke] ✅ 震动类已添加:', `shaking-${direction}`);
+      logger.debug('phone','[ChatView.appendMessageToChat.Poke] 添加后的classList:', Array.from(chatPage.classList).join(', '));
+      logger.info('phone','[ChatView.appendMessageToChat.Poke] ✅ 震动类已添加:', `shaking-${direction}`);
 
       setTimeout(() => {
-        logger.debug('[ChatView.appendMessageToChat.Poke] 900ms后，准备移除震动类');
+        logger.debug('phone','[ChatView.appendMessageToChat.Poke] 900ms后，准备移除震动类');
         chatPage.classList.remove(`shaking-${direction}`);
-        logger.debug('[ChatView.appendMessageToChat.Poke] 震动类已移除');
+        logger.debug('phone','[ChatView.appendMessageToChat.Poke] 震动类已移除');
       }, 900);
     }, 250);
 
-    logger.debug('[ChatView.appendMessageToChat.Poke] ========== 戳一戳震动调试结束 ==========');
+    logger.debug('phone','[ChatView.appendMessageToChat.Poke] ========== 戳一戳震动调试结束 ==========');
   }
 
   // 添加动画效果（根据发送者使用不同动画）
   const animClass = message.sender === 'contact' ? 'chat-msg-enter-ai' : 'chat-msg-enter-user';
-  logger.debug('[ChatView.appendMessageToChat] 准备添加动画类:', animClass, 'sender:', message.sender);
+  logger.debug('phone','[ChatView.appendMessageToChat] 准备添加动画类:', animClass, 'sender:', message.sender);
 
   bubble.classList.add(animClass);
 
@@ -1928,12 +1928,12 @@ export async function appendMessageToChat(page, message, contact, contactId) {
     bubble.removeEventListener('animationend', removeAnimClass);
   }, { once: true });
 
-  logger.debug('[ChatView.appendMessageToChat] 已添加动画类:', animClass);
+  logger.debug('phone','[ChatView.appendMessageToChat] 已添加动画类:', animClass);
 
   // 滚动到底部
   scrollToBottom(chatContent);
-  logger.debug('[ChatView.appendMessageToChat] 已滚动到底部');
-  logger.info('[ChatView.appendMessageToChat] ==================== 追加消息完成 ====================');
+  logger.debug('phone','[ChatView.appendMessageToChat] 已滚动到底部');
+  logger.info('phone','[ChatView.appendMessageToChat] ==================== 追加消息完成 ====================');
 }
 
 /**
@@ -1942,8 +1942,8 @@ export async function appendMessageToChat(page, message, contact, contactId) {
  * @param {HTMLElement} chatContent - 聊天内容容器
  */
 function scrollToBottom(chatContent) {
-  logger.debug('[ChatView.scrollToBottom] 开始滚动');
-  logger.debug('[ChatView.scrollToBottom] 滚动前状态:', {
+  logger.debug('phone','[ChatView.scrollToBottom] 开始滚动');
+  logger.debug('phone','[ChatView.scrollToBottom] 滚动前状态:', {
     scrollTop: chatContent.scrollTop,
     scrollHeight: chatContent.scrollHeight,
     clientHeight: chatContent.clientHeight,
@@ -1955,7 +1955,7 @@ function scrollToBottom(chatContent) {
     const before = chatContent.scrollTop;
     chatContent.scrollTop = chatContent.scrollHeight;
 
-    logger.debug('[ChatView.scrollToBottom] 滚动后状态:', {
+    logger.debug('phone','[ChatView.scrollToBottom] 滚动后状态:', {
       scrollTop: chatContent.scrollTop,
       scrollHeight: chatContent.scrollHeight,
       实际滚动距离: chatContent.scrollTop - before,
@@ -2100,7 +2100,7 @@ async function renderSingleBubble(message, contact, contactId, phoneAPI, rendere
         bubble = renderPlanMessage ? await renderPlanMessage(message, contact, contactId) : renderTextMessage(message, contact, contactId);
         // 如果返回 null（例如旧数据的响应消息缺少 quotedPlanId），降级为普通文本
         if (!bubble) {
-          logger.debug('[ChatView.renderSingleBubble] 计划消息渲染器返回null，降级为普通文本');
+          logger.debug('phone','[ChatView.renderSingleBubble] 计划消息渲染器返回null，降级为普通文本');
           bubble = renderTextMessage(message, contact, contactId);
         }
       } else {
@@ -2180,7 +2180,7 @@ async function renderSingleBubble(message, contact, contactId, phoneAPI, rendere
 
   // 安全检查：确保 bubble 不为 null（防御性编程）
   if (!bubble) {
-    logger.error('[ChatView.renderSingleBubble] 渲染器返回null，消息:', message);
+    logger.error('phone','[ChatView.renderSingleBubble] 渲染器返回null，消息:', message);
     bubble = renderTextMessage({ ...message, content: message.content || '[渲染失败]', type: 'text' }, contact, contactId);
   }
 
@@ -2278,7 +2278,7 @@ function handleRecalledPending(message, contact, contactId, renderTextMessage, r
   setTimeout(() => {
     // 检查气泡是否还在DOM中（用户可能已关闭聊天页）
     if (!document.body.contains(tempBubble)) {
-      logger.debug('[RecalledPending] 气泡已从DOM移除，跳过撤回动画');
+      logger.debug('phone','[RecalledPending] 气泡已从DOM移除，跳过撤回动画');
       return;
     }
 
@@ -2295,7 +2295,7 @@ function handleRecalledPending(message, contact, contactId, renderTextMessage, r
 
     // ✅ 不更新存储：存储里已经保存为recalled类型（在ai-send-controller.js里处理）
 
-    logger.info('[RecalledPending] 撤回动画完成，延迟:', Math.round(recallDelay), 'ms');
+    logger.info('phone','[RecalledPending] 撤回动画完成，延迟:', Math.round(recallDelay), 'ms');
   }, recallDelay);
 
   return tempBubble;
@@ -2366,7 +2366,7 @@ async function updateMessageListItem(contactId) {
     // 2. 更新位置（置顶的保持在前，按时间排序）
     await updateMessageItemPosition(contactId);
   } catch (error) {
-    logger.warn('[ChatView] 更新消息列表项失败:', error);
+    logger.warn('phone','[ChatView] 更新消息列表项失败:', error);
     // 不影响主流程，静默失败
   }
 }
@@ -2431,7 +2431,7 @@ function formatMessageContentForNotification(message) {
  * @param {string} contactId - 联系人ID
  */
 async function openChatFromNotification(contactId) {
-  logger.info('[ChatView] 从通知打开聊天页面:', contactId);
+  logger.info('phone','[ChatView] 从通知打开聊天页面:', contactId);
 
   // 如果手机界面已关闭，先打开
   const phoneContainer = document.querySelector('.phone-container');
@@ -2478,7 +2478,7 @@ async function openChatFromNotification(contactId) {
 function shouldShowNotification(contact, message) {
   // 检查是否关闭了消息弹窗（默认false=允许弹窗）
   if (contact.notificationDisabled === true) {
-    logger.debug('[ChatView] 该联系人已关闭消息弹窗，不显示通知:', contact.name);
+    logger.debug('phone','[ChatView] 该联系人已关闭消息弹窗，不显示通知:', contact.name);
     return false;
   }
 
@@ -2539,11 +2539,11 @@ function findActiveChatPage(contactId) {
 
   // 确保页面存在、已挂载到DOM、且处于active状态
   if (page && page.parentElement && page.classList.contains('active')) {
-    logger.debug('[findActiveChatPage] 找到活跃页面:', pageId);
+    logger.debug('phone','[findActiveChatPage] 找到活跃页面:', pageId);
     return page;
   }
 
-  logger.debug('[findActiveChatPage] 未找到活跃页面:', pageId, {
+  logger.debug('phone','[findActiveChatPage] 未找到活跃页面:', pageId, {
     pageExists: !!page,
     hasParent: page?.parentElement !== null,
     isActive: page?.classList.contains('active')
@@ -2563,13 +2563,13 @@ function findActiveChatPage(contactId) {
  */
 function applyChatBackgroundOnRender(chatContent, contact) {
   if (!contact.chatBackground) {
-    logger.debug('[ChatView] 无自定义背景配置，使用默认');
+    logger.debug('phone','[ChatView] 无自定义背景配置，使用默认');
     return;
   }
 
   const bgConfig = contact.chatBackground;
 
-  logger.debug('[ChatView] 应用聊天背景配置:', {
+  logger.debug('phone','[ChatView] 应用聊天背景配置:', {
     imageUrl: bgConfig.imageUrl,
     overlayOpacity: bgConfig.overlayOpacity,
     overlayColor: bgConfig.overlayColor
@@ -2600,7 +2600,7 @@ function saveDraft(contactId, text) {
   const key = `phone_draft_${contactId}`;
   if (text && text.trim()) {
     localStorage.setItem(key, text);
-    logger.debug('[ChatView] 保存草稿:', contactId, text.substring(0, 20));
+    logger.debug('phone','[ChatView] 保存草稿:', contactId, text.substring(0, 20));
   } else {
     // 如果为空，删除草稿
     localStorage.removeItem(key);
@@ -2615,7 +2615,7 @@ function saveDraft(contactId, text) {
 function clearDraft(contactId) {
   const key = `phone_draft_${contactId}`;
   localStorage.removeItem(key);
-  logger.debug('[ChatView] 清空草稿:', contactId);
+  logger.debug('phone','[ChatView] 清空草稿:', contactId);
 }
 
 /**
@@ -2637,7 +2637,7 @@ function restoreDraft(page, contactId) {
       inputField.value = draft;
       // 触发input事件，更新按钮状态和高度
       inputField.dispatchEvent(new Event('input', { bubbles: true }));
-      logger.debug('[ChatView] 恢复草稿:', contactId, draft.substring(0, 20));
+      logger.debug('phone','[ChatView] 恢复草稿:', contactId, draft.substring(0, 20));
     }
   }
 }
@@ -2654,14 +2654,14 @@ function restoreDraft(page, contactId) {
  * 支持文本、表情包、图片、转账、引用等类型
  */
 async function handleSendFavorite(page, contactId) {
-  logger.info('[ChatView] 打开收藏选择器');
+  logger.info('phone','[ChatView] 打开收藏选择器');
 
   // 显示收藏选择器
   const { showFavoritesPicker } = await import('../favorites/favorites-picker-ui.js');
   const favorite = await showFavoritesPicker();
 
   if (!favorite) {
-    logger.debug('[ChatView] 用户取消选择收藏');
+    logger.debug('phone','[ChatView] 用户取消选择收藏');
     return;
   }
 
@@ -2740,7 +2740,7 @@ async function handleSendFavorite(page, contactId) {
     // 更新联系人列表（最新消息和时间）
     await updateContactItem(contactId);
 
-    logger.info('[ChatView] 已发送收藏内容，类型:', favorite.type);
+    logger.info('phone','[ChatView] 已发送收藏内容，类型:', favorite.type);
   }
 }
 
@@ -2749,7 +2749,7 @@ async function handleSendFavorite(page, contactId) {
  * @param {string} contactId - 联系人ID
  */
 async function handleCreatePlan(contactId) {
-  logger.info('[ChatView] 创建约定计划，联系人:', contactId);
+  logger.info('phone','[ChatView] 创建约定计划，联系人:', contactId);
 
   const { createNewPlan } = await import('../plans/plan-executor.js');
   await createNewPlan(contactId);
@@ -2765,7 +2765,7 @@ async function handleCreatePlan(contactId) {
  * @param {string} contactId - 联系人ID
  */
 async function handleSendPoke(contactId) {
-  logger.info('[ChatView] 发送戳一戳，联系人:', contactId);
+  logger.info('phone','[ChatView] 发送戳一戳，联系人:', contactId);
 
   // 动态导入
   const { saveChatMessage } = await import('./message-chat-data.js');
@@ -2801,9 +2801,9 @@ async function handleSendPoke(contactId) {
   const page = document.querySelector(`#page-chat-${contactId.replace(/[^a-zA-Z0-9_-]/g, '_')}`);
   if (page && contact) {
     await appendMessageToChat(page, message, contact, contactId);
-    logger.info('[ChatView] 戳一戳已发送并渲染');
+    logger.info('phone','[ChatView] 戳一戳已发送并渲染');
   } else {
-    logger.warn('[ChatView] 找不到聊天页面或联系人，戳一戳已保存但未渲染');
+    logger.warn('phone','[ChatView] 找不到聊天页面或联系人，戳一戳已保存但未渲染');
   }
 }
 
@@ -2831,7 +2831,7 @@ function setupChatListeners(page, contactId, contact) {
     {
       eventName: 'emoji-data-changed',
       handler: () => {
-        logger.debug('[ChatView] 收到表情包数据变化事件，刷新表情选择器');
+        logger.debug('phone','[ChatView] 收到表情包数据变化事件，刷新表情选择器');
         refreshEmojiPanel();
       },
       description: '刷新表情选择器',
@@ -2892,7 +2892,7 @@ function setupChatListeners(page, contactId, contact) {
       eventName: 'chat-send-settings-changed',
       handler: async (e) => {
         if (e.detail.contactId === contactId) {
-          logger.info('[ChatView] 检测到设置变化，重新加载消息');
+          logger.info('phone','[ChatView] 检测到设置变化，重新加载消息');
           await reloadChatMessages(page, contactId, contact);
         }
       },
@@ -2900,7 +2900,7 @@ function setupChatListeners(page, contactId, contact) {
     },
   ]);
 
-  logger.info('[ChatView] 监听器已注册，共7个事件');
+  logger.info('phone','[ChatView] 监听器已注册，共7个事件');
 }
 
 /**
@@ -2916,7 +2916,7 @@ function bindCameraButton(page, contactId) {
   if (!cameraBtn || !photoInput) return;
 
   cameraBtn.addEventListener('click', () => {
-    logger.info('[ChatView] 点击相机按钮（快捷拍照）');
+    logger.info('phone','[ChatView] 点击相机按钮（快捷拍照）');
     /** @type {HTMLInputElement} */ (photoInput).click();
   });
 }
@@ -2951,7 +2951,7 @@ function bindTakePhotoInput(page, contactId) {
  * @param {File} file - 拍摄的图片文件
  */
 async function handleTakePhotoUpload(page, contactId, file) {
-  logger.info('[ChatView] 开始处理拍照上传:', file.name);
+  logger.info('phone','[ChatView] 开始处理拍照上传:', file.name);
 
   try {
     // 导入工具函数
@@ -2959,17 +2959,17 @@ async function handleTakePhotoUpload(page, contactId, file) {
 
     // 压缩图片（200KB以内）
     const compressed = await compressImage(file, 200);
-    logger.debug('[ChatView] 图片压缩完成:', `${(compressed.size / 1024).toFixed(2)}KB`);
+    logger.debug('phone','[ChatView] 图片压缩完成:', `${(compressed.size / 1024).toFixed(2)}KB`);
 
     // 上传到服务器（传完整的base64 data URL）
     const imageUrl = await uploadImage(compressed.base64, file.name);
-    logger.info('[ChatView] 图片上传成功:', imageUrl);
+    logger.info('phone','[ChatView] 图片上传成功:', imageUrl);
 
     // 发送图片消息（拍照直接发送，无需描述）
     await sendPhotoMessage(page, contactId, imageUrl);
 
   } catch (error) {
-    logger.error('[ChatView] 拍照上传失败:', error);
+    logger.error('phone','[ChatView] 拍照上传失败:', error);
   }
 }
 
@@ -2989,7 +2989,7 @@ async function sendPhotoMessage(page, contactId, imageUrl) {
   const contacts = await loadContacts();
   const contact = contacts.find(c => c.id === contactId);
   if (!contact) {
-    logger.error('[ChatView] 联系人不存在:', contactId);
+    logger.error('phone','[ChatView] 联系人不存在:', contactId);
     return;
   }
 
@@ -3040,7 +3040,7 @@ async function sendPhotoMessage(page, contactId, imageUrl) {
     }, 100);
   }
 
-  logger.info('[ChatView] 拍照消息已发送:', message.id);
+  logger.info('phone','[ChatView] 拍照消息已发送:', message.id);
 }
 
 // ============================================================================
@@ -3055,7 +3055,7 @@ function handleRerollStart(page) {
   if (sendBtn) {
     sendBtn.innerHTML = '<i class="fa-solid fa-circle-stop"></i>';
     sendBtn.classList.add('generating');
-    logger.debug('[ChatView] 纸飞机按钮已变为终止键');
+    logger.debug('phone','[ChatView] 纸飞机按钮已变为终止键');
   }
 }
 
@@ -3068,7 +3068,7 @@ function handleRerollEnd(page) {
     sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
     sendBtn.classList.remove('generating');
     sendBtn.disabled = false;
-    logger.debug('[ChatView] 纸飞机按钮已恢复');
+    logger.debug('phone','[ChatView] 纸飞机按钮已恢复');
   }
 }
 
@@ -3076,7 +3076,7 @@ function handleRerollEnd(page) {
  * 处理AI生成完成事件（追加AI消息到聊天框）
  */
 async function handleAIGenerationComplete(page, contactId, detail) {
-  logger.debug('[ChatView] AI生成完成，准备追加消息');
+  logger.debug('phone','[ChatView] AI生成完成，准备追加消息');
 
   // 动态查找当前活跃页面的发送按钮（不依赖闭包）
   const currentPage = findActiveChatPage(contactId);
@@ -3086,10 +3086,10 @@ async function handleAIGenerationComplete(page, contactId, detail) {
       sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
       sendBtn.disabled = false;
       sendBtn.classList.remove('generating');
-      logger.debug('[ChatView] 发送按钮已恢复（AI完成）');
+      logger.debug('phone','[ChatView] 发送按钮已恢复（AI完成）');
     }
   } else {
-    logger.debug('[ChatView] 当前页面不活跃，跳过按钮更新');
+    logger.debug('phone','[ChatView] 当前页面不活跃，跳过按钮更新');
   }
 }
 
@@ -3097,7 +3097,7 @@ async function handleAIGenerationComplete(page, contactId, detail) {
  * 处理AI生成错误事件（显示错误提示）
  */
 function handleAIGenerationError(page, error) {
-  logger.error('[ChatView] AI生成错误:', error);
+  logger.error('phone','[ChatView] AI生成错误:', error);
 
   // 恢复发送按钮
   const sendBtn = /** @type {HTMLButtonElement} */ (page.querySelector('.chat-send-btn'));
@@ -3105,7 +3105,7 @@ function handleAIGenerationError(page, error) {
     sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
     sendBtn.disabled = false;
     sendBtn.classList.remove('generating');
-    logger.debug('[ChatView] 发送按钮已恢复（AI错误）');
+    logger.debug('phone','[ChatView] 发送按钮已恢复（AI错误）');
   }
 }
 
@@ -3123,6 +3123,6 @@ async function reloadChatMessages(page, contactId, contact) {
 
   if (latestContact) {
     await loadChatHistoryAndRender(page, contactId, latestContact, false);
-    logger.info('[ChatView] 消息已重新加载');
+    logger.info('phone','[ChatView] 消息已重新加载');
   }
 }

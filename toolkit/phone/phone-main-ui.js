@@ -35,7 +35,7 @@ import { initTheme } from './utils/theme-manager.js';
  * @returns {HTMLElement} 手机遮罩层元素（.phone-overlay）
  */
 export function renderPhoneFrame() {
-  logger.debug('[PhoneUI.renderPhoneFrame] 开始渲染手机框架');
+  logger.debug('phone','[PhoneUI.renderPhoneFrame] 开始渲染手机框架');
 
   // 创建临时容器来解析 HTML
   const tempContainer = document.createElement('div');
@@ -62,13 +62,13 @@ export function renderPhoneFrame() {
 
   // 初始化消息列表（异步，不阻塞）
   renderMessageListTab(phoneOverlay).catch(error => {
-    logger.error('[PhoneUI] 初始化消息列表失败:', error);
+    logger.error('phone','[PhoneUI] 初始化消息列表失败:', error);
   });
 
   // 初始化装扮系统（异步，不阻塞）
   import('./customization/customization-apply.js').then(({ initializeCustomization }) => {
     initializeCustomization().catch(error => {
-      logger.error('[PhoneUI] 初始化装扮系统失败:', error);
+      logger.error('phone','[PhoneUI] 初始化装扮系统失败:', error);
     });
   });
 
@@ -76,10 +76,10 @@ export function renderPhoneFrame() {
   // 直接传入 .phone-container 元素，不需要等待 DOM 添加
   const phoneContainer = phoneOverlay.querySelector('.phone-container');
   initTheme(phoneContainer).catch(error => {
-    logger.error('[PhoneUI] 初始化主题失败:', error);
+    logger.error('phone','[PhoneUI] 初始化主题失败:', error);
   });
 
-  logger.info('[PhoneUI.renderPhoneFrame] 手机框架渲染完成');
+  logger.info('phone','[PhoneUI.renderPhoneFrame] 手机框架渲染完成');
 
   return phoneOverlay;
 }
@@ -90,13 +90,13 @@ export function renderPhoneFrame() {
  * @param {HTMLElement} overlayElement - 手机遮罩层元素（.phone-overlay）
  */
 function bindFrameEvents(overlayElement) {
-  logger.debug('[PhoneUI.bindFrameEvents] 绑定框架事件');
+  logger.debug('phone','[PhoneUI.bindFrameEvents] 绑定框架事件');
 
   // 关闭按钮事件
   const closeBtn = overlayElement.querySelector('#phone-btn-close');
   if (closeBtn) {
     closeBtn.addEventListener('click', () => {
-      logger.info('[PhoneUI] 用户点击关闭按钮');
+      logger.info('phone','[PhoneUI] 用户点击关闭按钮');
       closePhoneUI();
     });
   }
@@ -105,7 +105,7 @@ function bindFrameEvents(overlayElement) {
   const userAvatar = /** @type {HTMLElement} */ (overlayElement.querySelector('#phone-user-avatar'));
   if (userAvatar) {
     userAvatar.addEventListener('click', () => {
-      logger.debug('[PhoneUI] 用户点击头像，打开个人主页');
+      logger.debug('phone','[PhoneUI] 用户点击头像，打开个人主页');
       showPage(overlayElement, 'user-profile');
     });
     // 添加鼠标指针样式
@@ -128,7 +128,7 @@ function bindFrameEvents(overlayElement) {
   // 注意：绑定在 overlayElement 而不是 document
   // 当手机关闭（overlayElement被移除）时，监听器会自动清理，避免累积
   overlayElement.addEventListener('phone:refresh-contact-list', () => {
-    logger.debug('[PhoneUI] 接收到刷新联系人列表事件');
+    logger.debug('phone','[PhoneUI] 接收到刷新联系人列表事件');
     // 直接刷新联系人列表（不管标签页是否active）
     // 因为联系人列表DOM是持久化的，需要更新数据
     renderContactListTab(overlayElement);
@@ -148,11 +148,11 @@ function bindFrameEvents(overlayElement) {
  * @param {string} tabName - 标签页名称（messages/contacts/moments）
  */
 async function handleBottomNavClick(overlayElement, tabName) {
-  logger.debug('[PhoneUI.handleBottomNavClick] 点击底部导航:', tabName);
+  logger.debug('phone','[PhoneUI.handleBottomNavClick] 点击底部导航:', tabName);
 
   // 如果不在主页面，先返回主布局
   if (!pageStack.isOnMainPage()) {
-    logger.debug('[PhoneUI] 不在主页面，先返回主布局');
+    logger.debug('phone','[PhoneUI] 不在主页面，先返回主布局');
 
     // 隐藏所有子页面
     const allPages = overlayElement.querySelectorAll('.phone-page');
@@ -173,7 +173,7 @@ async function handleBottomNavClick(overlayElement, tabName) {
   // 显示底部导航
   showBottomNav(overlayElement);
 
-  logger.info('[PhoneUI] 已切换到主页面:', tabName);
+  logger.info('phone','[PhoneUI] 已切换到主页面:', tabName);
 }
 
 /**
@@ -183,7 +183,7 @@ async function handleBottomNavClick(overlayElement, tabName) {
  * @param {string} tabName - 标签页名称（messages/contacts/moments）
  */
 async function switchTab(overlayElement, tabName) {
-  logger.debug('[PhoneUI.switchTab] 切换到标签页:', tabName);
+  logger.debug('phone','[PhoneUI.switchTab] 切换到标签页:', tabName);
 
   // 隐藏所有标签页（.phone-tab）
   const allTabs = overlayElement.querySelectorAll('.phone-tab');
@@ -196,7 +196,7 @@ async function switchTab(overlayElement, tabName) {
   if (targetTab) {
     targetTab.classList.add('active');
   } else {
-    logger.warn('[PhoneUI.switchTab] 标签页不存在:', tabName);
+    logger.warn('phone','[PhoneUI.switchTab] 标签页不存在:', tabName);
     return;
   }
 
@@ -236,7 +236,7 @@ async function switchTab(overlayElement, tabName) {
  * @param {HTMLElement} overlayElement - 手机遮罩层元素
  */
 function updateUserInfo(overlayElement) {
-  logger.debug('[PhoneUI.updateUserInfo] 更新用户信息');
+  logger.debug('phone','[PhoneUI.updateUserInfo] 更新用户信息');
 
   try {
     // 1. 更新用户头像
@@ -244,7 +244,7 @@ function updateUserInfo(overlayElement) {
     const avatarImg = overlayElement.querySelector('#phone-user-avatar');
     if (avatarImg && userAvatarPath) {
       avatarImg.setAttribute('src', userAvatarPath);
-      logger.debug('[PhoneUI.updateUserInfo] 用户头像已更新:', userAvatarPath);
+      logger.debug('phone','[PhoneUI.updateUserInfo] 用户头像已更新:', userAvatarPath);
     }
 
     // 2. 更新用户名（使用统一工具函数）
@@ -252,10 +252,10 @@ function updateUserInfo(overlayElement) {
     if (userName) {
       const displayName = getUserDisplayName();
       userName.textContent = displayName;
-      logger.debug('[PhoneUI.updateUserInfo] 用户名已更新:', displayName);
+      logger.debug('phone','[PhoneUI.updateUserInfo] 用户名已更新:', displayName);
     }
   } catch (error) {
-    logger.error('[PhoneUI.updateUserInfo] 更新用户信息失败:', error);
+    logger.error('phone','[PhoneUI.updateUserInfo] 更新用户信息失败:', error);
   }
 }
 
@@ -275,7 +275,7 @@ function updateHeaderTitle(overlayElement, tabName) {
   const userStatus = /** @type {HTMLElement} */ (overlayElement.querySelector('.phone-header-user-status'));
 
   if (!userName || !userStatus) {
-    logger.warn('[PhoneUI.updateHeaderTitle] 找不到标题元素');
+    logger.warn('phone','[PhoneUI.updateHeaderTitle] 找不到标题元素');
     return;
   }
 
@@ -294,7 +294,7 @@ function updateHeaderTitle(overlayElement, tabName) {
     userStatus.style.display = 'none';  // 隐藏第二行
   }
 
-  logger.debug('[PhoneUI.updateHeaderTitle] 标题已更新:', tabName);
+  logger.debug('phone','[PhoneUI.updateHeaderTitle] 标题已更新:', tabName);
 }
 
 /**
@@ -304,16 +304,16 @@ function updateHeaderTitle(overlayElement, tabName) {
  * 从 DOM 中移除手机遮罩层（包含整个手机界面）
  */
 function closePhoneUI() {
-  logger.info('[PhoneUI.closePhoneUI] 关闭手机界面');
+  logger.info('phone','[PhoneUI.closePhoneUI] 关闭手机界面');
 
   const phoneOverlay = document.querySelector('.phone-overlay');
   if (phoneOverlay) {
     phoneOverlay.remove();
     // 清空页面栈
     pageStack.resetStack('messages');
-    logger.debug('[PhoneUI.closePhoneUI] 手机界面已移除，栈已清空');
+    logger.debug('phone','[PhoneUI.closePhoneUI] 手机界面已移除，栈已清空');
   } else {
-    logger.warn('[PhoneUI.closePhoneUI] 找不到手机界面元素');
+    logger.warn('phone','[PhoneUI.closePhoneUI] 找不到手机界面元素');
   }
 }
 
@@ -326,7 +326,7 @@ function showMainLayout(overlayElement) {
   const mainLayout = overlayElement.querySelector('#main-layout');
   if (mainLayout) {
     mainLayout.classList.add('active');
-    logger.debug('[PhoneUI.showMainLayout] 主布局已显示');
+    logger.debug('phone','[PhoneUI.showMainLayout] 主布局已显示');
   }
 }
 
@@ -339,7 +339,7 @@ function hideMainLayout(overlayElement) {
   const mainLayout = overlayElement.querySelector('#main-layout');
   if (mainLayout) {
     mainLayout.classList.remove('active');
-    logger.debug('[PhoneUI.hideMainLayout] 主布局已隐藏');
+    logger.debug('phone','[PhoneUI.hideMainLayout] 主布局已隐藏');
   }
 }
 
@@ -352,7 +352,7 @@ function showBottomNav(overlayElement) {
   const bottomNav = /** @type {HTMLElement} */ (overlayElement.querySelector('.phone-bottom-nav'));
   if (bottomNav) {
     bottomNav.style.display = 'flex';
-    logger.debug('[PhoneUI.showBottomNav] 底部导航已显示');
+    logger.debug('phone','[PhoneUI.showBottomNav] 底部导航已显示');
   }
 }
 
@@ -365,7 +365,7 @@ function hideBottomNav(overlayElement) {
   const bottomNav = /** @type {HTMLElement} */ (overlayElement.querySelector('.phone-bottom-nav'));
   if (bottomNav) {
     bottomNav.style.display = 'none';
-    logger.debug('[PhoneUI.hideBottomNav] 底部导航已隐藏');
+    logger.debug('phone','[PhoneUI.hideBottomNav] 底部导航已隐藏');
   }
 }
 
@@ -405,7 +405,7 @@ function checkIfParamsChanged(pageElement, newParams, pageName) {
 
   // 收藏列表页每次显示时都刷新（数据可能已变化）
   if (pageName === 'favorites-list') {
-    logger.debug('[PhoneUI.checkIfParamsChanged] 收藏列表页，需要刷新');
+    logger.debug('phone','[PhoneUI.checkIfParamsChanged] 收藏列表页，需要刷新');
     return true;
   }
 
@@ -418,13 +418,13 @@ function checkIfParamsChanged(pageElement, newParams, pageName) {
 
     // targetType 变化（用户 ↔ 角色）
     if (oldTargetType !== newTargetType) {
-      logger.debug('[PhoneUI.checkIfParamsChanged] targetType变化:', oldTargetType, '→', newTargetType);
+      logger.debug('phone','[PhoneUI.checkIfParamsChanged] targetType变化:', oldTargetType, '→', newTargetType);
       return true;
     }
 
     // contactId 变化（不同角色）
     if (oldContactId && newContactId && oldContactId !== newContactId) {
-      logger.debug('[PhoneUI.checkIfParamsChanged] contactId变化:', oldContactId, '→', newContactId);
+      logger.debug('phone','[PhoneUI.checkIfParamsChanged] contactId变化:', oldContactId, '→', newContactId);
       return true;
     }
 
@@ -437,7 +437,7 @@ function checkIfParamsChanged(pageElement, newParams, pageName) {
 
   // 如果contactId不同，需要刷新
   if (oldContactId && newContactId && oldContactId !== newContactId) {
-    logger.debug('[PhoneUI.checkIfParamsChanged] contactId变化:', oldContactId, '→', newContactId);
+    logger.debug('phone','[PhoneUI.checkIfParamsChanged] contactId变化:', oldContactId, '→', newContactId);
     return true;
   }
 
@@ -455,12 +455,12 @@ function checkIfParamsChanged(pageElement, newParams, pageName) {
  * @param {HTMLElement} overlayElement - 手机遮罩层元素
  */
 async function renderMessageListTab(overlayElement) {
-  logger.debug('[PhoneUI.renderMessageListTab] 开始渲染消息列表');
+  logger.debug('phone','[PhoneUI.renderMessageListTab] 开始渲染消息列表');
 
   try {
     const tabContainer = overlayElement.querySelector('#tab-messages');
     if (!tabContainer) {
-      logger.warn('[PhoneUI.renderMessageListTab] 找不到消息标签页容器');
+      logger.warn('phone','[PhoneUI.renderMessageListTab] 找不到消息标签页容器');
       return;
     }
 
@@ -481,9 +481,9 @@ async function renderMessageListTab(overlayElement) {
       }
     }
 
-    logger.info('[PhoneUI.renderMessageListTab] 消息列表渲染完成');
+    logger.info('phone','[PhoneUI.renderMessageListTab] 消息列表渲染完成');
   } catch (error) {
-    logger.error('[PhoneUI.renderMessageListTab] 渲染消息列表失败:', error);
+    logger.error('phone','[PhoneUI.renderMessageListTab] 渲染消息列表失败:', error);
   }
 }
 
@@ -497,12 +497,12 @@ async function renderMessageListTab(overlayElement) {
  * @param {HTMLElement} overlayElement - 手机遮罩层元素
  */
 async function renderContactListTab(overlayElement) {
-  logger.debug('[PhoneUI.renderContactListTab] 开始渲染联系人列表');
+  logger.debug('phone','[PhoneUI.renderContactListTab] 开始渲染联系人列表');
 
   try {
     const tabContainer = overlayElement.querySelector('#tab-contacts');
     if (!tabContainer) {
-      logger.warn('[PhoneUI.renderContactListTab] 找不到联系人标签页容器');
+      logger.warn('phone','[PhoneUI.renderContactListTab] 找不到联系人标签页容器');
       return;
     }
 
@@ -520,9 +520,9 @@ async function renderContactListTab(overlayElement) {
       }
     }
 
-    logger.info('[PhoneUI.renderContactListTab] 联系人列表渲染完成');
+    logger.info('phone','[PhoneUI.renderContactListTab] 联系人列表渲染完成');
   } catch (error) {
-    logger.error('[PhoneUI.renderContactListTab] 渲染联系人列表失败:', error);
+    logger.error('phone','[PhoneUI.renderContactListTab] 渲染联系人列表失败:', error);
   }
 }
 
@@ -536,11 +536,11 @@ async function renderContactListTab(overlayElement) {
  * @param {string} action - 菜单项的 action 值
  */
 async function handlePlusMenuAction(action) {
-  logger.info('[PhoneUI.handlePlusMenuAction] 处理菜单操作:', action);
+  logger.info('phone','[PhoneUI.handlePlusMenuAction] 处理菜单操作:', action);
 
   const phoneOverlay = document.querySelector('.phone-overlay');
   if (!phoneOverlay) {
-    logger.warn('[PhoneUI.handlePlusMenuAction] 找不到手机界面');
+    logger.warn('phone','[PhoneUI.handlePlusMenuAction] 找不到手机界面');
     return;
   }
 
@@ -557,13 +557,13 @@ async function handlePlusMenuAction(action) {
 
     case 'api-settings':
       // API设置 → 打开API设置页面
-      logger.info('[PhoneUI] 打开API设置页面');
+      logger.info('phone','[PhoneUI] 打开API设置页面');
       showPage(/** @type {HTMLElement} */(phoneOverlay), 'api-settings');
       break;
 
     case 'preset-settings':
       // 预设管理 → 打开预设管理页面
-      logger.info('[PhoneUI] 打开预设管理页面');
+      logger.info('phone','[PhoneUI] 打开预设管理页面');
       showPage(/** @type {HTMLElement} */(phoneOverlay), 'preset-settings');
       break;
 
@@ -581,11 +581,11 @@ async function handlePlusMenuAction(action) {
     case 'add-friend':
     case 'send-file':
       // 待添加功能，暂时不做任何操作
-      logger.debug('[PhoneUI] 功能待添加:', action);
+      logger.debug('phone','[PhoneUI] 功能待添加:', action);
       break;
 
     default:
-      logger.warn('[PhoneUI] 未知的菜单操作:', action);
+      logger.warn('phone','[PhoneUI] 未知的菜单操作:', action);
   }
 }
 
@@ -601,7 +601,7 @@ async function handlePlusMenuAction(action) {
  * @param {HTMLElement} overlayElement - 手机遮罩层元素
  */
 async function handleSyncTavernCharacters(overlayElement) {
-  logger.info('[PhoneUI] 同步酒馆角色');
+  logger.info('phone','[PhoneUI] 同步酒馆角色');
 
   try {
     // 1. 从酒馆获取角色列表
@@ -622,9 +622,9 @@ async function handleSyncTavernCharacters(overlayElement) {
     // 4. 刷新联系人列表（更新"新朋友"徽章数字）
     await renderContactListTab(overlayElement);
 
-    logger.info('[PhoneUI] 同步完成，新增', result.added, '个，总计', result.total, '个');
+    logger.info('phone','[PhoneUI] 同步完成，新增', result.added, '个，总计', result.total, '个');
   } catch (error) {
-    logger.error('[PhoneUI] 同步失败:', error);
+    logger.error('phone','[PhoneUI] 同步失败:', error);
     alert('同步失败，请查看控制台');
   }
 }
@@ -640,15 +640,15 @@ async function handleSyncTavernCharacters(overlayElement) {
  * @param {HTMLElement} overlayElement - 手机遮罩层元素
  */
 async function handleOpenGroupManage(overlayElement) {
-  logger.info('[PhoneUI] 打开分组管理页面');
+  logger.info('phone','[PhoneUI] 打开分组管理页面');
 
   try {
     // 使用统一的 showPage 系统
     await showPage(overlayElement, 'group-manage');
 
-    logger.info('[PhoneUI] 分组管理页面已显示');
+    logger.info('phone','[PhoneUI] 分组管理页面已显示');
   } catch (error) {
-    logger.error('[PhoneUI] 打开分组管理页面失败:', error);
+    logger.error('phone','[PhoneUI] 打开分组管理页面失败:', error);
     alert('打开分组管理页面失败，请查看控制台');
   }
 }
@@ -664,7 +664,7 @@ async function handleOpenGroupManage(overlayElement) {
  * @param {HTMLElement} overlayElement - 手机遮罩层元素
  */
 async function handleClearPhoneData(overlayElement) {
-  logger.warn('[PhoneUI] 请求清空手机数据');
+  logger.warn('phone','[PhoneUI] 请求清空手机数据');
 
   try {
     // 弹出确认弹窗（危险操作，使用自定义弹窗）
@@ -679,7 +679,7 @@ async function handleClearPhoneData(overlayElement) {
     );
 
     if (!confirmed) {
-      logger.debug('[PhoneUI] 用户取消清空操作');
+      logger.debug('phone','[PhoneUI] 用户取消清空操作');
       return;
     }
 
@@ -693,7 +693,7 @@ async function handleClearPhoneData(overlayElement) {
     // 保存到服务器
     await saveSettingsDebounced();
 
-    logger.info('[PhoneUI] 手机数据已清空');
+    logger.info('phone','[PhoneUI] 手机数据已清空');
     showSuccessToast('手机数据已清空，正在刷新...');
 
     // 等待一下让用户看到提示
@@ -704,9 +704,9 @@ async function handleClearPhoneData(overlayElement) {
 
     showSuccessToast('刷新完成！现在是全新的手机数据');
 
-    logger.info('[PhoneUI] 清空完成，数据已重新初始化');
+    logger.info('phone','[PhoneUI] 清空完成，数据已重新初始化');
   } catch (error) {
-    logger.error('[PhoneUI] 清空手机数据失败:', error);
+    logger.error('phone','[PhoneUI] 清空手机数据失败:', error);
     alert('清空失败，请查看控制台：' + error.message);
   }
 }
@@ -722,7 +722,7 @@ async function handleClearPhoneData(overlayElement) {
  * @param {HTMLElement} overlayElement - 手机遮罩层元素
  */
 async function handleClearMembershipData(overlayElement) {
-  logger.warn('[PhoneUI] 清空会员数据');
+  logger.warn('phone','[PhoneUI] 清空会员数据');
 
   try {
     // 导入会员存储模块
@@ -731,15 +731,15 @@ async function handleClearMembershipData(overlayElement) {
     // 清空所有会员数据
     await clearAllMemberships();
 
-    logger.info('[PhoneUI] 会员数据已清空');
+    logger.info('phone','[PhoneUI] 会员数据已清空');
 
     // 导入Toast模块
     const { showSuccessToast } = await import('./ui-components/toast-notification.js');
     showSuccessToast('会员数据已清空！');
 
-    logger.info('[PhoneUI] 清空会员数据完成');
+    logger.info('phone','[PhoneUI] 清空会员数据完成');
   } catch (error) {
-    logger.error('[PhoneUI] 清空会员数据失败:', error);
+    logger.error('phone','[PhoneUI] 清空会员数据失败:', error);
     alert('清空失败，请查看控制台：' + error.message);
   }
 }
@@ -761,7 +761,7 @@ async function handleClearMembershipData(overlayElement) {
  * @param {Object} [params] - 页面参数（可选，如 {contactId: 'xxx'}）
  */
 export async function showPage(overlayElement, pageName, params = {}) {
-  logger.info('[PhoneUI.showPage] 显示页面:', pageName, '参数:', params);
+  logger.info('phone','[PhoneUI.showPage] 显示页面:', pageName, '参数:', params);
 
   try {
     // 生成实际的DOM ID（聊天页和转账页使用动态ID，每个联系人独立DOM）
@@ -770,12 +770,12 @@ export async function showPage(overlayElement, pageName, params = {}) {
       ? `page-${pageName}-${params.contactId.replace(/[^a-zA-Z0-9_-]/g, '_')}`
       : `page-${pageName}`;
 
-    logger.debug('[PhoneUI.showPage] 实际DOM ID:', pageId);
+    logger.debug('phone','[PhoneUI.showPage] 实际DOM ID:', pageId);
 
     // 检查目标页面是否已经是当前页面（栈顶）
     const currentPage = pageStack.getCurrentPage();
     if (currentPage && currentPage.pageId === pageId) {
-      logger.debug('[PhoneUI.showPage] 目标页面已经是当前页面，忽略操作:', pageId);
+      logger.debug('phone','[PhoneUI.showPage] 目标页面已经是当前页面，忽略操作:', pageId);
       return;
     }
 
@@ -784,7 +784,7 @@ export async function showPage(overlayElement, pageName, params = {}) {
 
     if (existingIndex >= 0) {
       // 页面已在栈中，出栈到该位置（类似"返回到已有页面"）
-      logger.warn('[PhoneUI.showPage] ⚠️ 页面已在栈中（索引', existingIndex, '），将出栈到该位置');
+      logger.warn('phone','[PhoneUI.showPage] ⚠️ 页面已在栈中（索引', existingIndex, '），将出栈到该位置');
 
       const currentPageItem = pageStack.getCurrentPage();
 
@@ -796,9 +796,9 @@ export async function showPage(overlayElement, pageName, params = {}) {
         const removedElement = overlayElement.querySelector(`#${removed.pageId}`);
         if (removedElement) {
           removedElement.classList.remove('active', 'phone-page-dimmed');
-          logger.debug('[PhoneUI.showPage] 隐藏被移除的页面:', removed.pageId);
+          logger.debug('phone','[PhoneUI.showPage] 隐藏被移除的页面:', removed.pageId);
         } else {
-          logger.warn('[PhoneUI.showPage] ⚠️ 找不到被移除页面的DOM:', removed.pageId);
+          logger.warn('phone','[PhoneUI.showPage] ⚠️ 找不到被移除页面的DOM:', removed.pageId);
         }
       });
 
@@ -807,7 +807,7 @@ export async function showPage(overlayElement, pageName, params = {}) {
         const currentPageElement = overlayElement.querySelector(`#${currentPageItem.pageId}`);
         if (currentPageElement) {
           currentPageElement.classList.remove('active', 'phone-page-dimmed');
-          logger.debug('[PhoneUI.showPage] 隐藏当前页面:', currentPageItem.pageId);
+          logger.debug('phone','[PhoneUI.showPage] 隐藏当前页面:', currentPageItem.pageId);
         }
       }
 
@@ -817,16 +817,16 @@ export async function showPage(overlayElement, pageName, params = {}) {
       if (targetPage) {
         targetPage.classList.remove('phone-page-dimmed');
         targetPage.classList.add('active');
-        logger.info('[PhoneUI.showPage] 已返回到已有页面:', pageName, 'ID:', pageId, '栈深度:', pageStack.getDepth());
+        logger.info('phone','[PhoneUI.showPage] 已返回到已有页面:', pageName, 'ID:', pageId, '栈深度:', pageStack.getDepth());
       } else {
-        logger.error('[PhoneUI.showPage] ❌ 找不到目标页面DOM:', pageId);
+        logger.error('phone','[PhoneUI.showPage] ❌ 找不到目标页面DOM:', pageId);
       }
 
       return;
     }
 
     // 页面不在栈中，正常压栈流程
-    logger.debug('[PhoneUI.showPage] 页面不在栈中，正常压栈');
+    logger.debug('phone','[PhoneUI.showPage] 页面不在栈中，正常压栈');
 
     // 获取当前主页面（从栈底或当前标签页）
     const fromMainTab = pageStack.isOnMainPage()
@@ -850,10 +850,10 @@ export async function showPage(overlayElement, pageName, params = {}) {
 
     if (!targetPage) {
       // 页面不存在，首次创建
-      logger.debug('[PhoneUI.showPage] 首次创建页面:', pageName, 'ID:', pageId);
+      logger.debug('phone','[PhoneUI.showPage] 首次创建页面:', pageName, 'ID:', pageId);
 
       targetPage = await createPage(pageName, params);
-      logger.debug('[PhoneUI.showPage] createPage返回值:', {
+      logger.debug('phone','[PhoneUI.showPage] createPage返回值:', {
         exists: !!targetPage,
         id: targetPage?.id,
         className: targetPage?.className,
@@ -861,38 +861,38 @@ export async function showPage(overlayElement, pageName, params = {}) {
       });
 
       if (targetPage) {
-        logger.debug('[PhoneUI.showPage] ========== 添加页面到DOM树 ==========');
-        logger.debug('[PhoneUI.showPage] overlayElement:', {
+        logger.debug('phone','[PhoneUI.showPage] ========== 添加页面到DOM树 ==========');
+        logger.debug('phone','[PhoneUI.showPage] overlayElement:', {
           tagName: overlayElement.tagName,
           classList: Array.from(overlayElement.classList),
           id: overlayElement.id
         });
 
         const container = overlayElement.querySelector('.phone-container');
-        logger.debug('[PhoneUI.showPage] 查找.phone-container结果:', !!container);
+        logger.debug('phone','[PhoneUI.showPage] 查找.phone-container结果:', !!container);
 
         if (container) {
-          logger.debug('[PhoneUI.showPage] container详情:', {
+          logger.debug('phone','[PhoneUI.showPage] container详情:', {
             tagName: container.tagName,
             classList: Array.from(container.classList),
             childrenCount: container.children.length
           });
 
-          logger.debug('[PhoneUI.showPage] 添加前 - targetPage.isConnected:', targetPage.isConnected);
-          logger.debug('[PhoneUI.showPage] 准备将页面添加到container');
+          logger.debug('phone','[PhoneUI.showPage] 添加前 - targetPage.isConnected:', targetPage.isConnected);
+          logger.debug('phone','[PhoneUI.showPage] 准备将页面添加到container');
 
           container.appendChild(targetPage);
 
-          logger.debug('[PhoneUI.showPage] 添加后 - targetPage.isConnected:', targetPage.isConnected);
-          logger.debug('[PhoneUI.showPage] 页面已添加到container');
+          logger.debug('phone','[PhoneUI.showPage] 添加后 - targetPage.isConnected:', targetPage.isConnected);
+          logger.debug('phone','[PhoneUI.showPage] 页面已添加到container');
 
           // 检查添加后的DOM状态
           const addedPage = overlayElement.querySelector(`#${pageId}`);
-          logger.debug('[PhoneUI.showPage] querySelector查找结果:', !!addedPage);
+          logger.debug('phone','[PhoneUI.showPage] querySelector查找结果:', !!addedPage);
 
           if (addedPage) {
             const computedStyle = window.getComputedStyle(addedPage);
-            logger.debug('[PhoneUI.showPage] 添加后的页面状态:', {
+            logger.debug('phone','[PhoneUI.showPage] 添加后的页面状态:', {
               found: true,
               id: addedPage.id,
               classList: Array.from(addedPage.classList),
@@ -905,20 +905,20 @@ export async function showPage(overlayElement, pageName, params = {}) {
               computedHeight: computedStyle.height
             });
           } else {
-            logger.error('[PhoneUI.showPage] ❌ appendChild后仍然无法querySelector到页面！');
+            logger.error('phone','[PhoneUI.showPage] ❌ appendChild后仍然无法querySelector到页面！');
           }
         } else {
-          logger.error('[PhoneUI.showPage] ❌❌❌ 找不到.phone-container容器！');
-          logger.error('[PhoneUI.showPage] overlayElement的所有子元素:');
+          logger.error('phone','[PhoneUI.showPage] ❌❌❌ 找不到.phone-container容器！');
+          logger.error('phone','[PhoneUI.showPage] overlayElement的所有子元素:');
           Array.from(overlayElement.children).forEach((child, i) => {
             const el = /** @type {HTMLElement} */ (child);
-            logger.error(`  [${i}]`, el.tagName, el.className, el.id);
+            logger.error('phone',`  [${i}]`, el.tagName, el.className, el.id);
           });
         }
 
-        logger.debug('[PhoneUI.showPage] ========== 添加页面到DOM树结束 ==========');
+        logger.debug('phone','[PhoneUI.showPage] ========== 添加页面到DOM树结束 ==========');
       } else {
-        logger.error('[PhoneUI.showPage] createPage返回null！');
+        logger.error('phone','[PhoneUI.showPage] createPage返回null！');
       }
     } else {
       // 页面已存在，检查参数是否变化
@@ -926,11 +926,11 @@ export async function showPage(overlayElement, pageName, params = {}) {
 
       if (needsRefresh) {
         // 参数变化（如contactId不同），需要刷新内容
-        logger.debug('[PhoneUI.showPage] 参数已变化，刷新页面内容');
+        logger.debug('phone','[PhoneUI.showPage] 参数已变化，刷新页面内容');
         await refreshPageContent(pageName, params);
       } else {
         // 参数未变化，直接显示
-        logger.debug('[PhoneUI.showPage] 页面已存在，直接显示（参数未变）');
+        logger.debug('phone','[PhoneUI.showPage] 页面已存在，直接显示（参数未变）');
 
         // ✅ 用户个人主页：每次显示时刷新动态内容（会员徽章）
         if (pageName === 'user-profile') {
@@ -948,7 +948,7 @@ export async function showPage(overlayElement, pageName, params = {}) {
             if (membership && membership.type && membership.type !== 'none') {
               addMembershipBadgeToName(nameElement, membership.type);
             }
-            logger.debug('[PhoneUI.showPage] 用户会员徽章已刷新');
+            logger.debug('phone','[PhoneUI.showPage] 用户会员徽章已刷新');
           }
         }
 
@@ -956,7 +956,7 @@ export async function showPage(overlayElement, pageName, params = {}) {
         if (pageName === 'friend-request-detail') {
           const { bindEventListeners } = await import('./contacts/friend-request-detail-ui.js');
           bindEventListeners(pageId);
-          logger.debug('[PhoneUI.showPage] 已重新绑定好友申请详情页监听器');
+          logger.debug('phone','[PhoneUI.showPage] 已重新绑定好友申请详情页监听器');
         }
       }
     }
@@ -968,7 +968,7 @@ export async function showPage(overlayElement, pageName, params = {}) {
     if (pageName === 'chat' && params.contactId) {
       const { clearUnread } = await import('./messages/unread-badge-manager.js');
       clearUnread(params.contactId);
-      logger.debug('[PhoneUI.showPage] 已清除未读计数:', params.contactId);
+      logger.debug('phone','[PhoneUI.showPage] 已清除未读计数:', params.contactId);
     }
 
     // 显示目标页面（带动画）
@@ -976,7 +976,7 @@ export async function showPage(overlayElement, pageName, params = {}) {
       // 0. 移除目标页面的dimmed状态（如果之前被变暗过）
       const wasDimmed = targetPage.classList.contains('phone-page-dimmed');
       if (wasDimmed) {
-        logger.debug('[PhoneUI.showPage] 目标页面之前被变暗，正在移除dimmed状态:', pageId);
+        logger.debug('phone','[PhoneUI.showPage] 目标页面之前被变暗，正在移除dimmed状态:', pageId);
       }
       targetPage.classList.remove('phone-page-dimmed');
 
@@ -985,7 +985,7 @@ export async function showPage(overlayElement, pageName, params = {}) {
         const hadActive = currentPageElement.classList.contains('active');
         currentPageElement.classList.remove('active');  // 先移除active
         currentPageElement.classList.add('phone-page-dimmed');
-        logger.debug('[PhoneUI.showPage] 当前页面已隐藏并变暗:', currentPageItem.pageName, {
+        logger.debug('phone','[PhoneUI.showPage] 当前页面已隐藏并变暗:', currentPageItem.pageName, {
           pageId: currentPageItem.pageId,
           hadActive,
           nowClasses: Array.from(currentPageElement.classList),
@@ -994,13 +994,13 @@ export async function showPage(overlayElement, pageName, params = {}) {
       }
 
       // 2. 添加滑入动画类（初始状态：在右边100%）
-      logger.debug('[PhoneUI.showPage] 步骤2: 添加滑入动画类');
+      logger.debug('phone','[PhoneUI.showPage] 步骤2: 添加滑入动画类');
       targetPage.classList.add('phone-slide-in-right');
-      logger.debug('[PhoneUI.showPage] 步骤2完成，classList:', Array.from(targetPage.classList));
+      logger.debug('phone','[PhoneUI.showPage] 步骤2完成，classList:', Array.from(targetPage.classList));
 
       // 3. 显示页面（display: flex）
-      logger.debug('[PhoneUI.showPage] 步骤3: 添加active类');
-      logger.debug('[PhoneUI.showPage] 步骤3前状态:', {
+      logger.debug('phone','[PhoneUI.showPage] 步骤3: 添加active类');
+      logger.debug('phone','[PhoneUI.showPage] 步骤3前状态:', {
         classList: Array.from(targetPage.classList),
         computedDisplay: window.getComputedStyle(targetPage).display,
         computedZIndex: window.getComputedStyle(targetPage).zIndex
@@ -1012,7 +1012,7 @@ export async function showPage(overlayElement, pageName, params = {}) {
       void /** @type {HTMLElement} */ (targetPage).offsetHeight;
 
       const computedAfterActive = window.getComputedStyle(targetPage);
-      logger.debug('[PhoneUI.showPage] 步骤3后状态:', {
+      logger.debug('phone','[PhoneUI.showPage] 步骤3后状态:', {
         classList: Array.from(targetPage.classList),
         classListString: targetPage.className,
         hasActive: targetPage.classList.contains('active'),
@@ -1025,8 +1025,8 @@ export async function showPage(overlayElement, pageName, params = {}) {
       });
 
       // 检查CSS规则是否存在（详细版，调试白屏问题）
-      logger.debug('[PhoneUI.showPage] ==================== CSS规则检查 ====================');
-      logger.debug('[PhoneUI.showPage] 目标元素:', {
+      logger.debug('phone','[PhoneUI.showPage] ==================== CSS规则检查 ====================');
+      logger.debug('phone','[PhoneUI.showPage] 目标元素:', {
         id: targetPage.id,
         classList: Array.from(targetPage.classList),
         tagName: targetPage.tagName
@@ -1066,55 +1066,55 @@ export async function showPage(overlayElement, pageName, params = {}) {
           } catch (e) {
             // 跨域样式表，跳过（正常情况）
             if (sheetHref !== '(内联样式)') {
-              logger.debug('[PhoneUI.showPage] 跨域样式表（跳过）:', sheetHref);
+              logger.debug('phone','[PhoneUI.showPage] 跨域样式表（跳过）:', sheetHref);
             }
           }
         }
       } catch (e) {
-        logger.warn('[PhoneUI.showPage] CSS规则扫描失败:', e.message);
+        logger.warn('phone','[PhoneUI.showPage] CSS规则扫描失败:', e.message);
       }
 
-      logger.debug('[PhoneUI.showPage] CSS规则检查结果:', {
+      logger.debug('phone','[PhoneUI.showPage] CSS规则检查结果:', {
         找到phonePageActive规则: foundPhonePageActive,
         找到phonePage规则: foundPhonePage,
         相关规则总数: relevantRules.length
       });
 
       if (relevantRules.length > 0) {
-        logger.debug('[PhoneUI.showPage] 所有.phone-page相关规则:');
+        logger.debug('phone','[PhoneUI.showPage] 所有.phone-page相关规则:');
         relevantRules.forEach((r, index) => {
-          logger.debug(`  [${index + 1}] ${r.selector}`, r.cssText);
+          logger.debug('phone',`  [${index + 1}] ${r.selector}`, r.cssText);
         });
       }
 
       if (!foundPhonePageActive) {
-        logger.warn('[PhoneUI.showPage] ⚠️ 未找到.phone-page.active的CSS规则！这可能导致页面不显示');
+        logger.warn('phone','[PhoneUI.showPage] ⚠️ 未找到.phone-page.active的CSS规则！这可能导致页面不显示');
       }
 
       if (!foundPhonePage) {
-        logger.warn('[PhoneUI.showPage] ⚠️ 未找到.phone-page的基础CSS规则！');
+        logger.warn('phone','[PhoneUI.showPage] ⚠️ 未找到.phone-page的基础CSS规则！');
       }
 
       // 额外：检查元素是否在DOM树中
       const isConnected = targetPage.isConnected;
-      logger.debug('[PhoneUI.showPage] 元素是否在DOM树中:', isConnected);
+      logger.debug('phone','[PhoneUI.showPage] 元素是否在DOM树中:', isConnected);
 
       if (!isConnected) {
-        logger.error('[PhoneUI.showPage] ❌❌❌ 页面元素未连接到DOM树！这是白屏的根本原因！');
-        logger.error('[PhoneUI.showPage] 可能原因：container.appendChild(targetPage)失败或未执行');
+        logger.error('phone','[PhoneUI.showPage] ❌❌❌ 页面元素未连接到DOM树！这是白屏的根本原因！');
+        logger.error('phone','[PhoneUI.showPage] 可能原因：container.appendChild(targetPage)失败或未执行');
       }
 
-      logger.debug('[PhoneUI.showPage] ==================== CSS规则检查结束 ====================');
+      logger.debug('phone','[PhoneUI.showPage] ==================== CSS规则检查结束 ====================');
 
       // 4. 强制浏览器重排（确保初始状态生效）
-      logger.debug('[PhoneUI.showPage] 步骤4: 强制重排');
+      logger.debug('phone','[PhoneUI.showPage] 步骤4: 强制重排');
       void /** @type {HTMLElement} */ (targetPage).offsetWidth;
 
       // 5. 移除滑入类，触发动画（滑到0%）
-      logger.debug('[PhoneUI.showPage] 步骤5: 移除滑入类，触发动画');
+      logger.debug('phone','[PhoneUI.showPage] 步骤5: 移除滑入类，触发动画');
       requestAnimationFrame(() => {
         targetPage.classList.remove('phone-slide-in-right');
-        logger.debug('[PhoneUI.showPage] 步骤5完成，classList:', Array.from(targetPage.classList));
+        logger.debug('phone','[PhoneUI.showPage] 步骤5完成，classList:', Array.from(targetPage.classList));
       });
 
       // 6. 动画结束后清理类名（400ms后）
@@ -1123,7 +1123,7 @@ export async function showPage(overlayElement, pageName, params = {}) {
 
         // 验证最终状态（详细版，用于调试）
         const computedStyle = window.getComputedStyle(targetPage);
-        logger.debug('[PhoneUI.showPage] 动画结束后页面状态:', {
+        logger.debug('phone','[PhoneUI.showPage] 动画结束后页面状态:', {
           pageName,
           pageId,
           classList: Array.from(targetPage.classList),
@@ -1138,14 +1138,14 @@ export async function showPage(overlayElement, pageName, params = {}) {
         });
       }, 450);
 
-      logger.info('[PhoneUI.showPage] 页面已显示（带动画）:', pageName, 'ID:', pageId, '栈深度:', pageStack.getDepth());
+      logger.info('phone','[PhoneUI.showPage] 页面已显示（带动画）:', pageName, 'ID:', pageId, '栈深度:', pageStack.getDepth());
     } else {
-      logger.warn('[PhoneUI.showPage] 无法创建页面:', pageName);
+      logger.warn('phone','[PhoneUI.showPage] 无法创建页面:', pageName);
       // 创建失败，出栈
       pageStack.popPage();
     }
   } catch (error) {
-    logger.error('[PhoneUI.showPage] 显示页面失败:', error);
+    logger.error('phone','[PhoneUI.showPage] 显示页面失败:', error);
     // 失败时出栈
     pageStack.popPage();
   }
@@ -1162,7 +1162,7 @@ export async function showPage(overlayElement, pageName, params = {}) {
  * @param {Object} [params] - 页面参数
  */
 async function refreshPageContent(pageName, params = {}) {
-  logger.debug('[PhoneUI.refreshPageContent] 刷新页面内容:', pageName, params);
+  logger.debug('phone','[PhoneUI.refreshPageContent] 刷新页面内容:', pageName, params);
 
   switch (pageName) {
     case 'new-friends':
@@ -1195,7 +1195,7 @@ async function refreshPageContent(pageName, params = {}) {
           pageElement.innerHTML = '';
           pageElement.appendChild(newContent);
           pageElement.dataset.contactId = params.contactId;  // 更新contactId
-          logger.debug('[PhoneUI] 设置页内容已刷新:', params.contactId);
+          logger.debug('phone','[PhoneUI] 设置页内容已刷新:', params.contactId);
         }
       }
       break;
@@ -1210,7 +1210,7 @@ async function refreshPageContent(pageName, params = {}) {
           chatSettingsElement.innerHTML = '';
           chatSettingsElement.appendChild(newContent);
           chatSettingsElement.dataset.contactId = params.contactId;  // 更新contactId
-          logger.debug('[PhoneUI] 聊天设置页内容已刷新:', params.contactId);
+          logger.debug('phone','[PhoneUI] 聊天设置页内容已刷新:', params.contactId);
         }
       }
       break;
@@ -1225,7 +1225,7 @@ async function refreshPageContent(pageName, params = {}) {
           charPromptElement.innerHTML = '';
           charPromptElement.appendChild(newContent);  // appendChild fragment，自动提取内容
           charPromptElement.dataset.contactId = params.contactId;  // 更新contactId
-          logger.debug('[PhoneUI] 角色提示词设置页内容已刷新:', params.contactId);
+          logger.debug('phone','[PhoneUI] 角色提示词设置页内容已刷新:', params.contactId);
         }
       }
       break;
@@ -1239,7 +1239,7 @@ async function refreshPageContent(pageName, params = {}) {
           const newContent = await renderContactRegexSettings(params);
           regexElement.innerHTML = '';
           regexElement.appendChild(newContent);
-          logger.debug('[PhoneUI] 正则配置页内容已刷新:', params.contactId);
+          logger.debug('phone','[PhoneUI] 正则配置页内容已刷新:', params.contactId);
         }
       }
       break;
@@ -1252,7 +1252,7 @@ async function refreshPageContent(pageName, params = {}) {
         const newContent = await renderUserProfile();
         userProfilePage.innerHTML = '';
         userProfilePage.appendChild(newContent);
-        logger.debug('[PhoneUI] 用户个人主页内容已刷新');
+        logger.debug('phone','[PhoneUI] 用户个人主页内容已刷新');
       }
       break;
 
@@ -1264,7 +1264,7 @@ async function refreshPageContent(pageName, params = {}) {
         const newContent = await renderFavoritesList();
         favoritesPage.innerHTML = '';
         favoritesPage.appendChild(newContent);
-        logger.debug('[PhoneUI] 收藏列表页内容已刷新');
+        logger.debug('phone','[PhoneUI] 收藏列表页内容已刷新');
       }
       break;
 
@@ -1283,7 +1283,7 @@ async function refreshPageContent(pageName, params = {}) {
         } else {
           delete signatureHistoryPage.dataset.contactId;
         }
-        logger.debug('[PhoneUI] 个签历史页内容已刷新:', params);
+        logger.debug('phone','[PhoneUI] 个签历史页内容已刷新:', params);
       }
       break;
 
@@ -1291,7 +1291,7 @@ async function refreshPageContent(pageName, params = {}) {
       // 聊天页使用独立ID（page-chat-{contactId}），每个角色一个DOM
       // 不需要刷新逻辑，因为切换角色时会创建新的DOM
       // 注意：清除未读的逻辑已移至 showPage() 函数中（压栈后），无条件执行
-      logger.debug('[PhoneUI] 聊天页使用独立DOM，无需刷新');
+      logger.debug('phone','[PhoneUI] 聊天页使用独立DOM，无需刷新');
       break;
 
     case 'plan-list':
@@ -1304,13 +1304,13 @@ async function refreshPageContent(pageName, params = {}) {
           planListPage.innerHTML = '';
           planListPage.appendChild(newContent);
           planListPage.dataset.contactId = params.contactId;  // 更新contactId
-          logger.debug('[PhoneUI] 约定计划列表页内容已刷新:', params.contactId);
+          logger.debug('phone','[PhoneUI] 约定计划列表页内容已刷新:', params.contactId);
         }
       }
       break;
 
     default:
-      logger.debug('[PhoneUI] 页面不需要刷新:', pageName);
+      logger.debug('phone','[PhoneUI] 页面不需要刷新:', pageName);
   }
 }
 
@@ -1331,7 +1331,7 @@ async function refreshPageContent(pageName, params = {}) {
  * @param {string} pageName - 当前页面名称
  */
 export async function hidePage(overlayElement, pageName) {
-  logger.info('[PhoneUI.hidePage] 返回上一页，当前页面:', pageName);
+  logger.info('phone','[PhoneUI.hidePage] 返回上一页，当前页面:', pageName);
 
   // 出栈当前页面
   const poppedPage = pageStack.popPage();
@@ -1339,11 +1339,11 @@ export async function hidePage(overlayElement, pageName) {
   // 获取当前页面元素（直接用pageId，不需要判断）
   let currentPage;
   if (poppedPage) {
-    logger.debug('[PhoneUI.hidePage] 已出栈:', poppedPage.pageName, 'ID:', poppedPage.pageId);
+    logger.debug('phone','[PhoneUI.hidePage] 已出栈:', poppedPage.pageName, 'ID:', poppedPage.pageId);
     currentPage = overlayElement.querySelector(`#${poppedPage.pageId}`);
 
     if (!currentPage) {
-      logger.warn('[PhoneUI.hidePage] ⚠️ 找不到被出栈页面的DOM:', poppedPage.pageId);
+      logger.warn('phone','[PhoneUI.hidePage] ⚠️ 找不到被出栈页面的DOM:', poppedPage.pageId);
     }
   }
 
@@ -1352,7 +1352,7 @@ export async function hidePage(overlayElement, pageName) {
 
   if (previousPage) {
     // 有上一页面，返回到上一页面（带动画）
-    logger.info('[PhoneUI.hidePage] 返回到上一页面:', previousPage.pageName, 'ID:', previousPage.pageId);
+    logger.info('phone','[PhoneUI.hidePage] 返回到上一页面:', previousPage.pageName, 'ID:', previousPage.pageId);
 
     // 获取上一页面元素（直接用pageId，不需要判断）
     const targetPage = overlayElement.querySelector(`#${previousPage.pageId}`);
@@ -1360,14 +1360,14 @@ export async function hidePage(overlayElement, pageName) {
     if (targetPage) {
       // 1. 移除上一页面的变暗效果（恢复亮度）
       targetPage.classList.remove('phone-page-dimmed');
-      logger.debug('[PhoneUI.hidePage] 上一页面已移除dimmed');
+      logger.debug('phone','[PhoneUI.hidePage] 上一页面已移除dimmed');
 
       // 2. 隐藏其他所有active页面（确保只有1个active）
       const allPages = overlayElement.querySelectorAll('.phone-page.active');
       allPages.forEach(page => {
         if (page !== targetPage) {
           page.classList.remove('active');
-          logger.debug('[PhoneUI.hidePage] 隐藏其他active页面:', page.id);
+          logger.debug('phone','[PhoneUI.hidePage] 隐藏其他active页面:', page.id);
         }
       });
 
@@ -1387,7 +1387,7 @@ export async function hidePage(overlayElement, pageName) {
         if (poppedPage && poppedPage.pageName === 'friend-request-detail') {
           const { cleanupEventListeners } = await import('./contacts/friend-request-detail-ui.js');
           cleanupEventListeners(poppedPage.pageId);
-          logger.debug('[PhoneUI.hidePage] 已清理好友申请详情页事件监听');
+          logger.debug('phone','[PhoneUI.hidePage] 已清理好友申请详情页事件监听');
         }
 
         // 6. 立即检查聊天页/转账页是否在栈中（决策要在栈改变前做）
@@ -1397,9 +1397,9 @@ export async function hidePage(overlayElement, pageName) {
           && pageStack.findPageIndex(currentPage.id) < 0;
 
         if (shouldDeletePage) {
-          logger.debug('[PhoneUI.hidePage] 页面不在栈中，将在动画后删除:', currentPage.id);
+          logger.debug('phone','[PhoneUI.hidePage] 页面不在栈中，将在动画后删除:', currentPage.id);
         } else if (poppedPage && (poppedPage.pageName === 'chat' || poppedPage.pageName === 'transfer')) {
-          logger.debug('[PhoneUI.hidePage] 页面还在栈中，保留DOM:', currentPage.id);
+          logger.debug('phone','[PhoneUI.hidePage] 页面还在栈中，保留DOM:', currentPage.id);
         }
 
         // 6. 动画结束后移除当前页面（400ms后）
@@ -1408,7 +1408,7 @@ export async function hidePage(overlayElement, pageName) {
 
           // 聊天页/转账页：根据之前的决策删除（不在这里检查栈，因为栈可能已变化）
           if (shouldDeletePage) {
-            logger.warn('[PhoneUI.hidePage] ⚠️⚠️⚠️ 即将删除页面DOM:', currentPage.id, {
+            logger.warn('phone','[PhoneUI.hidePage] ⚠️⚠️⚠️ 即将删除页面DOM:', currentPage.id, {
               决策时刻: '立即检查（450ms前）',
               当时栈深度: '见上方日志',
               删除原因: '页面不在栈中'
@@ -1422,16 +1422,16 @@ export async function hidePage(overlayElement, pageName) {
             }
 
             currentPage.remove();
-            logger.warn('[PhoneUI.hidePage] 页面DOM已删除 ← 如果误删，检查这里');
+            logger.warn('phone','[PhoneUI.hidePage] 页面DOM已删除 ← 如果误删，检查这里');
           }
 
-          logger.debug('[PhoneUI.hidePage] 已隐藏当前页面:', pageName);
+          logger.debug('phone','[PhoneUI.hidePage] 已隐藏当前页面:', pageName);
         }, 450);
       }
 
-      logger.debug('[PhoneUI.hidePage] 已显示上一页面（带动画）:', previousPage.pageName, 'ID:', previousPage.pageId, '栈深度:', pageStack.getDepth());
+      logger.debug('phone','[PhoneUI.hidePage] 已显示上一页面（带动画）:', previousPage.pageName, 'ID:', previousPage.pageId, '栈深度:', pageStack.getDepth());
     } else {
-      logger.warn('[PhoneUI.hidePage] ⚠️ 找不到上一页面DOM:', previousPage.pageId);
+      logger.warn('phone','[PhoneUI.hidePage] ⚠️ 找不到上一页面DOM:', previousPage.pageId);
       // 找不到页面，直接隐藏当前页面，回到主布局
       if (currentPage) {
         // 立即检查聊天页/转账页是否在栈中（判断pageName，不是ID前缀）
@@ -1451,9 +1451,9 @@ export async function hidePage(overlayElement, pageName) {
         // 聊天页/转账页：根据决策删除
         if (shouldDeletePage) {
           currentPage.remove();
-          logger.debug('[PhoneUI.hidePage] 页面不在栈中，删除DOM:', currentPage.id);
+          logger.debug('phone','[PhoneUI.hidePage] 页面不在栈中，删除DOM:', currentPage.id);
         } else if (poppedPage && (poppedPage.pageName === 'chat' || poppedPage.pageName === 'transfer')) {
-          logger.debug('[PhoneUI.hidePage] 页面还在栈中，保留DOM:', currentPage.id);
+          logger.debug('phone','[PhoneUI.hidePage] 页面还在栈中，保留DOM:', currentPage.id);
         }
       }
       showMainLayout(overlayElement);
@@ -1461,10 +1461,10 @@ export async function hidePage(overlayElement, pageName) {
     }
   } else {
     // 栈空了，返回主布局（带动画）
-    logger.info('[PhoneUI.hidePage] 栈已空，返回主布局');
+    logger.info('phone','[PhoneUI.hidePage] 栈已空，返回主布局');
 
     if (currentPage) {
-      logger.debug('[PhoneUI.hidePage] 找到当前页面，添加滑出动画:', currentPage.id);
+      logger.debug('phone','[PhoneUI.hidePage] 找到当前页面，添加滑出动画:', currentPage.id);
 
       // 添加滑出动画
       currentPage.classList.add('phone-slide-out-right');
@@ -1482,21 +1482,21 @@ export async function hidePage(overlayElement, pageName) {
         // 注意：判断pageName而不是ID前缀（chat-settings也包含'page-chat-'）
         if (poppedPage && (poppedPage.pageName === 'chat' || poppedPage.pageName === 'transfer')) {
           currentPage.remove();
-          logger.debug('[PhoneUI.hidePage] 栈空，页面DOM已删除:', currentPage.id);
+          logger.debug('phone','[PhoneUI.hidePage] 栈空，页面DOM已删除:', currentPage.id);
         }
 
         showMainLayout(overlayElement);
         showBottomNav(overlayElement);
-        logger.debug('[PhoneUI.hidePage] 页面已隐藏，主布局已显示');
+        logger.debug('phone','[PhoneUI.hidePage] 页面已隐藏，主布局已显示');
       }, 450);
     } else {
       // 没有当前页面，强制隐藏所有active页面
-      logger.warn('[PhoneUI.hidePage] ⚠️ 找不到当前页面DOM，强制隐藏所有active页面');
+      logger.warn('phone','[PhoneUI.hidePage] ⚠️ 找不到当前页面DOM，强制隐藏所有active页面');
 
       const allActivePages = overlayElement.querySelectorAll('.phone-page.active');
       allActivePages.forEach(page => {
         page.classList.remove('active');
-        logger.debug('[PhoneUI.hidePage] 强制隐藏:', page.id);
+        logger.debug('phone','[PhoneUI.hidePage] 强制隐藏:', page.id);
       });
 
       showMainLayout(overlayElement);
@@ -1517,7 +1517,7 @@ export async function hidePage(overlayElement, pageName) {
  * @returns {Promise<HTMLElement|null>} 页面元素或null
  */
 async function createPage(pageName, params = {}) {
-  logger.debug('[PhoneUI.createPage] 创建页面:', pageName, params);
+  logger.debug('phone','[PhoneUI.createPage] 创建页面:', pageName, params);
 
   switch (pageName) {
     case 'new-friends':
@@ -1533,7 +1533,7 @@ async function createPage(pageName, params = {}) {
     case 'friend-request-detail':
       // 动态导入好友申请详情页渲染函数
       if (!params.contactId) {
-        logger.warn('[PhoneUI.createPage] 好友申请详情页缺少contactId参数');
+        logger.warn('phone','[PhoneUI.createPage] 好友申请详情页缺少contactId参数');
         return null;
       }
       const { renderFriendRequestDetail } = await import('./contacts/friend-request-detail-ui.js');
@@ -1555,7 +1555,7 @@ async function createPage(pageName, params = {}) {
     case 'contact-profile':
       // 动态导入角色个人页渲染函数
       if (!params.contactId) {
-        logger.warn('[PhoneUI.createPage] 角色个人页缺少contactId参数');
+        logger.warn('phone','[PhoneUI.createPage] 角色个人页缺少contactId参数');
         return null;
       }
       const { renderContactProfile } = await import('./contacts/contact-profile-ui.js');
@@ -1573,7 +1573,7 @@ async function createPage(pageName, params = {}) {
     case 'contact-settings':
       // 动态导入联系人设置页渲染函数
       if (!params.contactId) {
-        logger.warn('[PhoneUI.createPage] 设置页缺少contactId参数');
+        logger.warn('phone','[PhoneUI.createPage] 设置页缺少contactId参数');
         return null;
       }
       const { renderContactSettings } = await import('./contacts/contact-settings-ui.js');
@@ -1591,7 +1591,7 @@ async function createPage(pageName, params = {}) {
     case 'chat':
       // 动态导入聊天界面渲染函数
       if (!params.contactId) {
-        logger.warn('[PhoneUI.createPage] 聊天页面缺少contactId参数');
+        logger.warn('phone','[PhoneUI.createPage] 聊天页面缺少contactId参数');
         return null;
       }
       const { renderChatView } = await import('./messages/message-chat-ui.js');
@@ -1600,7 +1600,7 @@ async function createPage(pageName, params = {}) {
     case 'chat-settings':
       // 动态导入聊天设置页渲染函数
       if (!params.contactId) {
-        logger.warn('[PhoneUI.createPage] 聊天设置页缺少contactId参数');
+        logger.warn('phone','[PhoneUI.createPage] 聊天设置页缺少contactId参数');
         return null;
       }
       const { renderChatSettings } = await import('./messages/message-chat-settings-ui.js');
@@ -1618,7 +1618,7 @@ async function createPage(pageName, params = {}) {
     case 'notification-settings':
       // 动态导入消息通知设置页渲染函数
       if (!params.contactId) {
-        logger.warn('[PhoneUI.createPage] 消息通知设置页缺少contactId参数');
+        logger.warn('phone','[PhoneUI.createPage] 消息通知设置页缺少contactId参数');
         return null;
       }
       const { renderNotificationSettings } = await import('./messages/message-notification-settings-ui.js');
@@ -1636,7 +1636,7 @@ async function createPage(pageName, params = {}) {
     case 'character-customization':
       // 动态导入角色专属装扮页渲染函数
       if (!params.contactId) {
-        logger.warn('[PhoneUI.createPage] 角色专属装扮页缺少contactId参数');
+        logger.warn('phone','[PhoneUI.createPage] 角色专属装扮页缺少contactId参数');
         return null;
       }
       const { renderCharacterCustomizationPage } = await import('./customization/character-customization-ui.js');
@@ -1654,7 +1654,7 @@ async function createPage(pageName, params = {}) {
     case 'chat-background-settings':
       // 动态导入聊天背景设置页渲染函数
       if (!params.contactId) {
-        logger.warn('[PhoneUI.createPage] 聊天背景设置页缺少contactId参数');
+        logger.warn('phone','[PhoneUI.createPage] 聊天背景设置页缺少contactId参数');
         return null;
       }
       const { renderChatBackgroundSettings } = await import('./messages/message-chat-background-ui.js');
@@ -1760,7 +1760,7 @@ async function createPage(pageName, params = {}) {
     case 'plan-list':
       // 动态导入约定计划列表页渲染函数
       if (!params.contactId) {
-        logger.warn('[PhoneUI.createPage] 约定计划列表页缺少contactId参数');
+        logger.warn('phone','[PhoneUI.createPage] 约定计划列表页缺少contactId参数');
         return null;
       }
       const { renderPlanList } = await import('./plans/plan-list-ui.js');
@@ -1827,7 +1827,7 @@ async function createPage(pageName, params = {}) {
     case 'message-send-custom':
       // 动态导入消息发送管理页渲染函数
       if (!params.contactId) {
-        logger.warn('[PhoneUI.createPage] 消息发送管理页缺少contactId参数');
+        logger.warn('phone','[PhoneUI.createPage] 消息发送管理页缺少contactId参数');
         return null;
       }
       const { renderMessageSendCustom } = await import('./messages/message-send-custom-ui.js');
@@ -1845,7 +1845,7 @@ async function createPage(pageName, params = {}) {
     case 'character-prompt-settings':
       // 动态导入角色提示词设置页渲染函数
       if (!params.contactId) {
-        logger.warn('[PhoneUI.createPage] 角色提示词设置页缺少contactId参数');
+        logger.warn('phone','[PhoneUI.createPage] 角色提示词设置页缺少contactId参数');
         return null;
       }
       const { renderCharacterPromptSettings } = await import('./settings/character-prompt-settings-ui.js');
@@ -1863,7 +1863,7 @@ async function createPage(pageName, params = {}) {
     case 'contact-regex-settings':
       // 动态导入联系人正则配置页渲染函数
       if (!params.contactId) {
-        logger.warn('[PhoneUI.createPage] 正则配置页缺少contactId参数');
+        logger.warn('phone','[PhoneUI.createPage] 正则配置页缺少contactId参数');
         return null;
       }
       const { renderContactRegexSettings } = await import('./settings/contact-regex-settings-ui.js');
@@ -1934,7 +1934,7 @@ async function createPage(pageName, params = {}) {
     case 'signature-history':
       // 动态导入个签历史页渲染函数
       if (!params.targetType) {
-        logger.warn('[PhoneUI.createPage] 个签历史页缺少targetType参数');
+        logger.warn('phone','[PhoneUI.createPage] 个签历史页缺少targetType参数');
         return null;
       }
 
@@ -1994,19 +1994,19 @@ async function createPage(pageName, params = {}) {
 
     case 'transfer':
       // 动态导入转账页面渲染函数
-      logger.debug('[PhoneUI.createPage] 开始创建转账页，params:', params);
+      logger.debug('phone','[PhoneUI.createPage] 开始创建转账页，params:', params);
 
       if (!params.contactId) {
-        logger.warn('[PhoneUI.createPage] 转账页面缺少contactId参数');
+        logger.warn('phone','[PhoneUI.createPage] 转账页面缺少contactId参数');
         return null;
       }
 
       const { renderTransferPage } = await import('./messages/transfer-ui.js');
-      logger.debug('[PhoneUI.createPage] 已导入renderTransferPage函数');
+      logger.debug('phone','[PhoneUI.createPage] 已导入renderTransferPage函数');
 
       const transferContent = await renderTransferPage(params);
-      logger.debug('[PhoneUI.createPage] 渲染函数已返回，类型:', transferContent ? transferContent.constructor.name : 'null');
-      logger.debug('[PhoneUI.createPage] transferContent详情:', {
+      logger.debug('phone','[PhoneUI.createPage] 渲染函数已返回，类型:', transferContent ? transferContent.constructor.name : 'null');
+      logger.debug('phone','[PhoneUI.createPage] transferContent详情:', {
         nodeType: transferContent?.nodeType,
         childNodes: transferContent?.childNodes?.length,
         firstChild: transferContent?.firstChild,
@@ -2020,32 +2020,32 @@ async function createPage(pageName, params = {}) {
       transferPage.className = 'phone-page phone-page-scrollable';  // 标准布局：整页滚动
       transferPage.dataset.contactId = params.contactId;  // 保存contactId
 
-      logger.debug('[PhoneUI.createPage] 外层容器已创建:', {
+      logger.debug('phone','[PhoneUI.createPage] 外层容器已创建:', {
         id: transferPage.id,
         className: transferPage.className,
         datasetContactId: transferPage.dataset.contactId
       });
 
       transferPage.appendChild(transferContent);
-      logger.debug('[PhoneUI.createPage] transferContent已添加到外层容器');
-      logger.debug('[PhoneUI.createPage] 外层容器子元素数量:', transferPage.children.length);
-      logger.debug('[PhoneUI.createPage] 外层容器第一个子元素:', transferPage.children[0]?.className);
+      logger.debug('phone','[PhoneUI.createPage] transferContent已添加到外层容器');
+      logger.debug('phone','[PhoneUI.createPage] 外层容器子元素数量:', transferPage.children.length);
+      logger.debug('phone','[PhoneUI.createPage] 外层容器第一个子元素:', transferPage.children[0]?.className);
 
       // 检查DOM嵌套结构（防止容器嵌套导致样式失效）
-      logger.debug('[PhoneUI.createPage] DOM结构检查:');
-      logger.debug('[PhoneUI.createPage] - 第1层（外层）:', transferPage.id, transferPage.className);
+      logger.debug('phone','[PhoneUI.createPage] DOM结构检查:');
+      logger.debug('phone','[PhoneUI.createPage] - 第1层（外层）:', transferPage.id, transferPage.className);
       if (transferPage.children[0]) {
         const secondLayer = /** @type {HTMLElement} */ (transferPage.children[0]);
-        logger.debug('[PhoneUI.createPage] - 第2层（内容）:', secondLayer.className);
+        logger.debug('phone','[PhoneUI.createPage] - 第2层（内容）:', secondLayer.className);
         if (secondLayer.children.length > 0) {
-          logger.debug('[PhoneUI.createPage] - 第3层子元素数量:', secondLayer.children.length);
+          logger.debug('phone','[PhoneUI.createPage] - 第3层子元素数量:', secondLayer.children.length);
           const thirdLayer = /** @type {HTMLElement} */ (secondLayer.children[0]);
-          logger.debug('[PhoneUI.createPage] - 第3层第一个:', thirdLayer?.className);
+          logger.debug('phone','[PhoneUI.createPage] - 第3层第一个:', thirdLayer?.className);
         }
       }
 
-      logger.info('[PhoneUI.createPage] 转账页面已创建，联系人:', params.contactId);
-      logger.debug('[PhoneUI.createPage] 返回的transferPage:', {
+      logger.info('phone','[PhoneUI.createPage] 转账页面已创建，联系人:', params.contactId);
+      logger.debug('phone','[PhoneUI.createPage] 返回的transferPage:', {
         id: transferPage.id,
         className: transferPage.className,
         childrenCount: transferPage.children.length,
@@ -2058,18 +2058,18 @@ async function createPage(pageName, params = {}) {
 
     case 'gift-membership':
       // 动态导入会员送礼页面渲染函数
-      logger.debug('[PhoneUI.createPage] 开始创建会员送礼页，params:', params);
+      logger.debug('phone','[PhoneUI.createPage] 开始创建会员送礼页，params:', params);
 
       if (!params.contactId) {
-        logger.warn('[PhoneUI.createPage] 会员送礼页面缺少contactId参数');
+        logger.warn('phone','[PhoneUI.createPage] 会员送礼页面缺少contactId参数');
         return null;
       }
 
       const { renderGiftMembershipPage } = await import('./messages/gift-membership-ui.js');
-      logger.debug('[PhoneUI.createPage] 已导入renderGiftMembershipPage函数');
+      logger.debug('phone','[PhoneUI.createPage] 已导入renderGiftMembershipPage函数');
 
       const giftMembershipContent = await renderGiftMembershipPage(params);
-      logger.debug('[PhoneUI.createPage] 渲染函数已返回');
+      logger.debug('phone','[PhoneUI.createPage] 渲染函数已返回');
 
       // 创建外层页面容器（每个联系人独立DOM）
       const giftMembershipPage = document.createElement('div');
@@ -2082,12 +2082,12 @@ async function createPage(pageName, params = {}) {
       // 添加内容
       giftMembershipPage.appendChild(giftMembershipContent);
 
-      logger.info('[PhoneUI.createPage] 会员送礼页创建完成');
+      logger.info('phone','[PhoneUI.createPage] 会员送礼页创建完成');
 
       return giftMembershipPage;
 
     default:
-      logger.warn('[PhoneUI.createPage] 未知的页面:', pageName);
+      logger.warn('phone','[PhoneUI.createPage] 未知的页面:', pageName);
       return null;
   }
 }

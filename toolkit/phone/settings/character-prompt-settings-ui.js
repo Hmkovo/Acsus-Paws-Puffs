@@ -27,7 +27,7 @@ import { showSuccessToast, showErrorToast } from '../ui-components/toast-notific
  */
 export async function renderCharacterPromptSettings(params) {
   const { contactId } = params;
-  logger.debug('[CharPromptUI] 渲染角色提示词设置页:', contactId);
+  logger.debug('phone','[CharPromptUI]] 渲染角色提示词设置页:', contactId);
 
   const fragment = document.createDocumentFragment();
 
@@ -46,7 +46,7 @@ export async function renderCharacterPromptSettings(params) {
 
   fragment.appendChild(container);
 
-  logger.info('[CharPromptUI] 角色提示词设置页渲染完成');
+  logger.info('phone','[CharPromptUI]] 角色提示词设置页渲染完成');
 
   return fragment;
 }
@@ -110,7 +110,7 @@ function createCharPromptHTML() {
  * @param {string} contactId - 联系人ID
  */
 function bindCharPromptEvents(page, contactId) {
-  logger.debug('[CharPromptUI] 绑定事件');
+  logger.debug('phone','[CharPromptUI]] 绑定事件');
 
   // 返回按钮
   const backBtn = page.querySelector('.char-prompt-back-btn');
@@ -145,7 +145,7 @@ function bindCharPromptEvents(page, contactId) {
  * @param {string} contactId - 联系人ID
  */
 async function loadAndRenderItems(page, contactId) {
-  logger.debug('[CharPromptUI] 加载条目列表');
+  logger.debug('phone','[CharPromptUI]] 加载条目列表');
 
   // 获取或初始化数据
   const data = getCharacterPromptData(contactId);
@@ -168,7 +168,7 @@ async function loadAndRenderItems(page, contactId) {
   // 初始化拖拽排序
   initSortable(/** @type {HTMLElement} */(listContainer), contactId);
 
-  logger.debug('[CharPromptUI] 条目列表渲染完成，共', sortedItems.length, '项');
+  logger.debug('phone','[CharPromptUI]] 条目列表渲染完成，共', sortedItems.length, '项');
 }
 
 /**
@@ -242,7 +242,7 @@ function createPromptItem(item, contactId) {
  * @param {string} contactId - 联系人ID
  */
 function initSortable(listContainer, contactId) {
-  logger.debug('[CharPromptUI] 初始化拖拽排序');
+  logger.debug('phone','[CharPromptUI]] 初始化拖拽排序');
 
   // @ts-ignore - jQuery UI Sortable
   $(listContainer).sortable({
@@ -263,7 +263,7 @@ function initSortable(listContainer, contactId) {
  * @param {string} contactId - 联系人ID
  */
 function handleSortEnd(listContainer, contactId) {
-  logger.debug('[CharPromptUI] 拖拽排序结束，保存新顺序');
+  logger.debug('phone','[CharPromptUI]] 拖拽排序结束，保存新顺序');
 
   const items = Array.from(listContainer.querySelectorAll('.char-prompt-item'));
   const newOrder = items.map((item, index) => ({
@@ -290,7 +290,7 @@ function handleSortEnd(listContainer, contactId) {
  * @param {HTMLElement} itemElement - 条目元素
  */
 function handleToggleItem(itemId, contactId, itemElement) {
-  logger.debug('[CharPromptUI] 切换条目开关:', itemId);
+  logger.debug('phone','[CharPromptUI]] 切换条目开关:', itemId);
 
   const data = getCharacterPromptData(contactId);
   const item = data.items.find(i => i.id === itemId);
@@ -328,7 +328,7 @@ function handleToggleItem(itemId, contactId, itemElement) {
  * @param {HTMLElement} itemElement - 条目元素
  */
 async function handleEditItem(itemId, contactId, itemElement) {
-  logger.debug('[CharPromptUI] 编辑条目:', itemId);
+  logger.debug('phone','[CharPromptUI]] 编辑条目:', itemId);
 
   const data = getCharacterPromptData(contactId);
   const item = data.items.find(i => i.id === itemId);
@@ -422,7 +422,7 @@ async function handleEditItem(itemId, contactId, itemElement) {
     saveCharacterPromptData(contactId, data);
     showSuccessToast('已保存');
 
-    logger.debug('[CharPromptUI] 条目已更新:', { id: item.id, label: result.label });
+    logger.debug('phone','[CharPromptUI]] 条目已更新:', { id: item.id, label: result.label });
   }
 }
 
@@ -433,7 +433,7 @@ async function handleEditItem(itemId, contactId, itemElement) {
  * @param {HTMLElement} itemElement - 条目元素
  */
 async function handleDeleteItem(itemId, contactId, itemElement) {
-  logger.debug('[CharPromptUI] 删除条目:', itemId);
+  logger.debug('phone','[CharPromptUI]] 删除条目:', itemId);
 
   const data = getCharacterPromptData(contactId);
   const item = data.items.find(i => i.id === itemId);
@@ -460,7 +460,7 @@ async function handleDeleteItem(itemId, contactId, itemElement) {
  * @param {string} contactId - 联系人ID
  */
 async function handleAddCustomItem(page, contactId) {
-  logger.debug('[CharPromptUI] 添加自定义条目');
+  logger.debug('phone','[CharPromptUI]] 添加自定义条目');
 
   const editHTML = `
         <div class="preset-edit-form">
@@ -531,7 +531,7 @@ async function handleAddCustomItem(page, contactId) {
     }
 
     showSuccessToast('已添加');
-    logger.debug('[CharPromptUI] 新条目已添加（局部更新）:', { label: result.label });
+    logger.debug('phone','[CharPromptUI]] 新条目已添加（局部更新）:', { label: result.label });
   }
 }
 
@@ -541,7 +541,7 @@ async function handleAddCustomItem(page, contactId) {
  * @param {string} contactId - 联系人ID
  */
 async function handleAddFromWorldbook(page, contactId) {
-  logger.debug('[CharPromptUI] 打开世界书选择器');
+  logger.debug('phone','[CharPromptUI]] 打开世界书选择器');
 
   // 获取角色关联的世界书条目
   const entries = await getCharacterWorldbookEntries(contactId);
@@ -563,7 +563,7 @@ async function handleAddFromWorldbook(page, contactId) {
       // 检查是否已存在
       const exists = data.items.some(i => i.type === 'worldbook' && i.entryUid === entry.uid);
       if (exists) {
-        logger.debug('[CharPromptUI] 条目已存在，跳过:', entry.comment);
+        logger.debug('phone','[CharPromptUI]] 条目已存在，跳过:', entry.comment);
         return;
       }
 
@@ -602,7 +602,7 @@ async function handleAddFromWorldbook(page, contactId) {
       }
 
       showSuccessToast(`已添加 ${newItems.length} 个条目`);
-      logger.debug('[CharPromptUI] 世界书条目已添加（局部更新）:', newItems.length, '个');
+      logger.debug('phone','[CharPromptUI]] 世界书条目已添加（局部更新）:', newItems.length, '个');
     } else {
       showErrorToast('所选条目已全部存在');
     }
@@ -616,7 +616,7 @@ async function handleAddFromWorldbook(page, contactId) {
  * @returns {Promise<Array<Object>|null>} 选中的条目列表
  */
 async function showWorldbookSelector(entries, contactId) {
-  logger.debug('[CharPromptUI] 显示世界书选择器，共', entries.length, '个条目');
+  logger.debug('phone','[CharPromptUI]] 显示世界书选择器，共', entries.length, '个条目');
 
   // 创建选择器HTML
   const selectorHTML = `
@@ -654,7 +654,7 @@ async function showWorldbookSelector(entries, contactId) {
             /** @type {HTMLElement} */ (item).style.display = text.includes(keyword) ? 'flex' : 'none';
           });
         });
-        logger.debug('[CharPromptUI] 世界书搜索功能已绑定');
+        logger.debug('phone','[CharPromptUI]] 世界书搜索功能已绑定');
       }
     },
 
@@ -695,14 +695,14 @@ async function getCharacterWorldbookEntries(contactId) {
     });
 
     if (!character) {
-      logger.warn('[CharPromptUI] 未找到对应的酒馆角色:', charName);
+      logger.warn('phone','[CharPromptUI]] 未找到对应的酒馆角色:', charName);
       return [];
     }
 
     // 获取角色关联的世界书
     const characterBook = character.data?.character_book;
     if (!characterBook || !characterBook.entries) {
-      logger.debug('[CharPromptUI] 角色没有关联世界书');
+      logger.debug('phone','[CharPromptUI]] 角色没有关联世界书');
       return [];
     }
 
@@ -714,11 +714,11 @@ async function getCharacterWorldbookEntries(contactId) {
       worldbookName: character.name + ' (角色世界书)'
     }));
 
-    logger.debug('[CharPromptUI] 找到角色世界书条目:', entries.length, '个');
+    logger.debug('phone','[CharPromptUI]] 找到角色世界书条目:', entries.length, '个');
     return entries;
 
   } catch (error) {
-    logger.error('[CharPromptUI] 获取世界书条目失败:', error);
+    logger.error('phone','[CharPromptUI]] 获取世界书条目失败:', error);
     return [];
   }
 }
@@ -729,7 +729,7 @@ async function getCharacterWorldbookEntries(contactId) {
  * @param {string} contactId - 联系人ID
  */
 async function handleReset(page, contactId) {
-  logger.debug('[CharPromptUI] 重置角色配置');
+  logger.debug('phone','[CharPromptUI]] 重置角色配置');
 
   const confirmed = await showConfirmPopup(
     '⚠️ 重置配置',
@@ -764,7 +764,7 @@ function getCharacterPromptData(contactId) {
 
   // 如果该角色没有配置，创建默认配置
   if (!extension_settings.acsusPawsPuffs.phone.characterPrompts[contactId]) {
-    logger.debug('[CharPromptUI] 首次打开，创建默认配置');
+    logger.debug('phone','[CharPromptUI]] 首次打开，创建默认配置');
     extension_settings.acsusPawsPuffs.phone.characterPrompts[contactId] = createDefaultCharacterPrompt();
     saveSettingsDebounced();
   }
@@ -791,7 +791,7 @@ function saveCharacterPromptData(contactId, data) {
   extension_settings.acsusPawsPuffs.phone.characterPrompts[contactId] = data;
   saveSettingsDebounced();
 
-  logger.debug('[CharPromptUI] 角色提示词数据已保存');
+  logger.debug('phone','[CharPromptUI]] 角色提示词数据已保存');
 }
 
 /**
@@ -878,12 +878,12 @@ function createDefaultCharacterPrompt() {
  * @param {string} contactId - 联系人ID
  */
 async function handleOpenRegexSettings(contactId) {
-  logger.debug('[CharPromptUI] 打开正则配置页');
+  logger.debug('phone','[CharPromptUI]] 打开正则配置页');
   
   // 获取手机遮罩层元素
   const overlay = document.querySelector('.phone-overlay');
   if (!overlay) {
-    logger.error('[CharPromptUI] 找不到手机遮罩层');
+    logger.error('phone','[CharPromptUI]] 找不到手机遮罩层');
     return;
   }
   

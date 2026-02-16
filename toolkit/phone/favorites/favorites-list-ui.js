@@ -19,7 +19,7 @@ import { getThumbnailUrl } from '../../../../../../../script.js';
  * @returns {Promise<DocumentFragment>} 页面内容片段
  */
 export async function renderFavoritesList() {
-  logger.info('[FavoritesList] 开始渲染收藏列表页面');
+  logger.info('phone','[FavoritesList] 开始渲染收藏列表页面');
 
   const fragment = document.createDocumentFragment();
 
@@ -43,7 +43,7 @@ export async function renderFavoritesList() {
 
   fragment.appendChild(container);
 
-  logger.info('[FavoritesList] 收藏列表页面渲染完成');
+  logger.info('phone','[FavoritesList] 收藏列表页面渲染完成');
   return fragment;
 }
 
@@ -130,7 +130,7 @@ function createSearchBar() {
  * @param {string} [keyword=''] - 搜索关键词
  */
 async function refreshFavoritesList(listContainer, keyword = '') {
-  logger.debug('[FavoritesList] 刷新收藏列表, keyword:', keyword || '(无)');
+  logger.debug('phone','[FavoritesList] 刷新收藏列表, keyword:', keyword || '(无)');
 
   // 获取收藏列表（搜索或全部）
   const favorites = keyword ? searchFavorites(keyword) : loadFavorites();
@@ -156,7 +156,7 @@ async function refreshFavoritesList(listContainer, keyword = '') {
     listContainer.appendChild(item);
   });
 
-  logger.debug('[FavoritesList] 收藏列表已刷新，共', favorites.length, '条');
+  logger.debug('phone','[FavoritesList] 收藏列表已刷新，共', favorites.length, '条');
 }
 
 /**
@@ -227,7 +227,7 @@ function createFavoriteItem(favorite) {
 
   // 点击收藏项（TODO: 后期可以展开查看详情）
   item.addEventListener('click', () => {
-    logger.debug('[FavoritesList] 点击收藏项:', favorite.id);
+    logger.debug('phone','[FavoritesList] 点击收藏项:', favorite.id);
     // 暂时不做任何操作
   });
 
@@ -297,7 +297,7 @@ function truncateText(text, maxLength) {
  * 处理返回
  */
 function handleBack() {
-  logger.debug('[FavoritesList] 点击返回');
+  logger.debug('phone','[FavoritesList] 点击返回');
 
   const overlayElement = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
   if (overlayElement) {
@@ -313,7 +313,7 @@ function handleBack() {
  * @param {string} keyword - 搜索关键词
  */
 function handleSearch(keyword) {
-  logger.debug('[FavoritesList] 搜索:', keyword || '(全部)');
+  logger.debug('phone','[FavoritesList] 搜索:', keyword || '(全部)');
 
   const listContainer = /** @type {HTMLElement} */ (document.querySelector('.favorites-list-content'));
   if (listContainer) {
@@ -328,7 +328,7 @@ function handleSearch(keyword) {
  * @param {string} favoriteId - 收藏ID
  */
 async function handleDeleteItem(favoriteId) {
-  logger.debug('[FavoritesList] 删除收藏:', favoriteId);
+  logger.debug('phone','[FavoritesList] 删除收藏:', favoriteId);
 
   // 二次确认
   const confirmed = await showConfirmPopup(
@@ -364,7 +364,7 @@ async function handleDeleteItem(favoriteId) {
  * @async
  */
 async function handleClearAll() {
-  logger.debug('[FavoritesList] 点击清空所有收藏');
+  logger.debug('phone','[FavoritesList] 点击清空所有收藏');
 
   // 检查是否有收藏
   const favorites = loadFavorites();

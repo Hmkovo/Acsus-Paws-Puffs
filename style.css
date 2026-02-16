@@ -37,6 +37,12 @@
 @import url('beautify/beautify-popup.css');
 @import url('beautify/beautify-theme-manager.css');
 
+/* ============================================
+   导入聊天工具CSS
+   ============================================ */
+@import url('chat-tools/chat-tools-fold.css');
+@import url('chat-tools/chat-tools-nav.css');
+
 /* ========================================
    导入聊天记录管理CSS
    ======================================== */
@@ -4796,16 +4802,23 @@ body.beautify-hide-qr #qr--bar {
 }
 
 body.beautify-hide-qr #send_form:hover #qr--bar:not(:empty) {
-  height: 30px;
+  height: var(--beautify-qr-height, 30px);
 }
 
 body.beautify-hide-qr #qr--bar:empty {
   display: none !important;
 }
 
+/* 快捷回复高度自适应 */
+body.beautify-hide-qr.beautify-qr-height-auto #send_form:hover #qr--bar:not(:empty) {
+  height: auto;
+  max-height: none;
+}
+
 /* 抽屉页面位置调整 - 使用 CSS 变量控制所有导航栏展开页面的上下偏移 */
 :root {
   --beautify-drawer-offset: 0px;
+  --beautify-qr-height: 30px;
 }
 
 #left-nav-panel.drawer-content,
@@ -7484,4 +7497,191 @@ body.beautify-hide-qr #qr--bar:empty {
   opacity: 0.6;
   text-align: center;
   margin: 0 0 8px 0;
+}
+
+
+/* ============================================
+   聊天工具手风琴样式
+   ============================================ */
+
+/* 手风琴容器 */
+.chat-tools-accordion-container {
+  display: flex;
+  gap: 0;
+  height: 320px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--SmartThemeBlurTintColor);
+  border: 1px solid var(--SmartThemeBorderColor);
+}
+
+/* 聊天工具手风琴卡片 */
+.chat-tools-accordion-card {
+  flex: 0 0 35px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  border-right: 1px solid var(--SmartThemeBorderColor);
+}
+
+.chat-tools-accordion-card:last-child {
+  border-right: none;
+}
+
+/* 展开的卡片 */
+.chat-tools-accordion-card.active {
+  flex: 1;
+}
+
+/* 卡片标题（垂直标签） */
+.chat-tools-accordion-header {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 35px;
+  height: 100%;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 15%, var(--SmartThemeBlurTintColor) 85%);
+  transition: all 0.3s ease;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-tools-accordion-header:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 60%, var(--SmartThemeBlurTintColor) 40%);
+}
+
+/* 垂直标签内容 */
+.chat-tools-accordion-tab {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 15px 5px;
+  color: var(--SmartThemeBodyColor);
+  white-space: nowrap;
+}
+
+.chat-tools-accordion-tab i {
+  transform: rotate(90deg);
+  font-size: 1.1em;
+  color: var(--SmartThemeQuoteColor);
+}
+
+.chat-tools-accordion-tab strong {
+  font-size: 0.95em;
+}
+
+/* 展开的卡片：隐藏垂直标签 */
+.chat-tools-accordion-card.active .chat-tools-accordion-header {
+  display: none;
+}
+
+/* 卡片内容 */
+.chat-tools-accordion-body {
+  margin-left: 35px;
+  padding: 20px;
+  font-size: 0.9em;
+  line-height: 1.6;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.chat-tools-accordion-body p {
+  margin: 0 0 10px 0;
+  color: var(--SmartThemeBodyColor);
+}
+
+.chat-tools-accordion-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* 展开的卡片：显示内容 */
+.chat-tools-accordion-card.active .chat-tools-accordion-body {
+  margin-left: 0;
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 聊天工具滚动条 */
+.chat-tools-accordion-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-tools-accordion-body::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--SmartThemeBorderColor) 30%, transparent 70%);
+  border-radius: 3px;
+}
+
+.chat-tools-accordion-body::-webkit-scrollbar-thumb {
+  background: var(--SmartThemeQuoteColor);
+  border-radius: 3px;
+}
+
+/* 设置项样式 */
+.chat-tools-setting-item {
+  margin-bottom: 10px;
+}
+
+.chat-tools-setting-item .checkbox_label {
+  display: inline-flex;
+  align-items: center;
+}
+
+.chat-tools-setting-item .checkbox_label span {
+  font-size: 0.9em;
+}
+
+.chat-tools-setting-item .text_pole {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.chat-tools-label {
+  font-size: 0.9em;
+  margin-right: 8px;
+}
+
+.chat-tools-hint {
+  display: block;
+  margin-left: 22px;
+  font-size: 0.85em;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
+.chat-tools-actions {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.chat-tools-actions .menu_button {
+  white-space: nowrap;
+}
+
+/* 空状态 */
+.chat-tools-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  opacity: 0.5;
+}
+
+.chat-tools-empty i {
+  font-size: 2em;
+  margin-bottom: 10px;
+}
+
+.chat-tools-empty p {
+  margin: 0;
+  font-size: 0.9em;
 }

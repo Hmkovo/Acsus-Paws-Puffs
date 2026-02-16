@@ -98,7 +98,7 @@ export async function calculatePrice(item, category = 'bubble') {
     reason = 'owned';
     priceLabel = '已拥有';
     
-    logger.debug(`[Pricing] ${item.id} 已购买`);
+    logger.debug('phone',`[Pricing] ${item.id} 已购买`);
     return { finalPrice, originalPrice, priceLabel, isFree, reason };
   }
   
@@ -114,7 +114,7 @@ export async function calculatePrice(item, category = 'bubble') {
       reason = 'svip';
       priceLabel = '免费';
       
-      logger.debug(`[Pricing] ${item.id} SVIP免费`);
+      logger.debug('phone',`[Pricing] ${item.id} SVIP免费`);
       return { finalPrice, originalPrice, priceLabel, isFree, reason };
     }
   }
@@ -129,7 +129,7 @@ export async function calculatePrice(item, category = 'bubble') {
       reason = 'vip-daily';
       priceLabel = '免费（今日1次）';
       
-      logger.debug(`[Pricing] ${item.id} VIP今日免费`);
+      logger.debug('phone',`[Pricing] ${item.id} VIP今日免费`);
       return { finalPrice, originalPrice, priceLabel, isFree, reason };
     } else {
       // 已使用今日免费，显示原价
@@ -138,7 +138,7 @@ export async function calculatePrice(item, category = 'bubble') {
   }
   
   // 4. 普通用户或VIP已用完免费次数：显示原价
-  logger.debug(`[Pricing] ${item.id} 需付费 ¥${originalPrice}`);
+  logger.debug('phone',`[Pricing] ${item.id} 需付费 ¥${originalPrice}`);
   return { finalPrice, originalPrice, priceLabel, isFree, reason };
 }
 

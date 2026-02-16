@@ -22,32 +22,32 @@ export function initSignatureRollbackHandler() {
         name: '个性签名',
         priority: 20, // 优先级中等
         rollback: async (contactId, deletedMessages, deletedMessageIds) => {
-            logger.debug('[SignatureRollback] 开始回退个签历史');
+            logger.debug('phone','[SignatureRollback] 开始回退个签历史');
 
             const rollbackResult = await rollbackSignatureHistory(contactId, deletedMessageIds);
 
             if (rollbackResult.count > 0) {
-                logger.info('[SignatureRollback] 共回退', rollbackResult.count, '条个签记录');
-                logger.debug('[SignatureRollback] 删除的个签:', rollbackResult.deleted.map(s => s.signature || s.content).join(', '));
+                logger.info('phone','[SignatureRollback] 共回退', rollbackResult.count, '条个签记录');
+                logger.debug('phone','[SignatureRollback] 删除的个签:', rollbackResult.deleted.map(s => s.signature || s.content).join(', '));
 
                 // 刷新个签历史UI（如果当前正在查看）
                 try {
                     const historyPage = document.querySelector('.signature-history-page');
                     if (historyPage && historyPage.closest('.phone-popup')) {
-                        logger.debug('[SignatureRollback] 检测到个签历史页面打开，刷新UI');
+                        logger.debug('phone','[SignatureRollback] 检测到个签历史页面打开，刷新UI');
                         const { renderSignatureHistory } = await import('./signature-history-ui.js');
                         const newContent = await renderSignatureHistory({ targetType: 'contact', contactId });
                         historyPage.replaceWith(newContent);
                     }
                 } catch (uiError) {
-                    logger.warn('[SignatureRollback] UI刷新失败（不影响数据回退）:', uiError);
+                    logger.warn('phone','[SignatureRollback] UI刷新失败（不影响数据回退）:', uiError);
                 }
             } else {
-                logger.debug('[SignatureRollback] 没有需要回退的个签');
+                logger.debug('phone','[SignatureRollback] 没有需要回退的个签');
             }
         }
     });
 
-    logger.info('[SignatureRollback] 个性签名回退处理器已初始化');
+    logger.info('phone','[SignatureRollback] 个性签名回退处理器已初始化');
 }
 

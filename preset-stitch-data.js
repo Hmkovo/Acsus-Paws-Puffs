@@ -57,7 +57,7 @@ export function isEnabled() {
 export function setEnabled(enabled) {
   getData().enabled = enabled;
   saveData();
-  logger.debug('[PresetStitchData] 启用状态已设置:', enabled);
+  logger.debug('preset', '[PresetStitchData] 启用状态已设置:', enabled);
 }
 
 // ========================================
@@ -94,7 +94,7 @@ export function getItemById(id) {
  */
 export function addItem(item) {
   if (!item.name || !item.content) {
-    logger.warn('[PresetStitchData] 添加条目失败：名称或内容为空');
+    logger.warn('preset', '[PresetStitchData] 添加条目失败：名称或内容为空');
     return null;
   }
 
@@ -110,7 +110,7 @@ export function addItem(item) {
 
   getData().items.push(newItem);
   saveData();
-  logger.info('[PresetStitchData] 已添加条目:', newItem.name);
+  logger.info('preset', '[PresetStitchData] 已添加条目:', newItem.name);
   return newItem.id;
 }
 
@@ -125,7 +125,7 @@ export function updateItem(id, updates) {
   const index = items.findIndex(item => item.id === id);
 
   if (index === -1) {
-    logger.warn('[PresetStitchData] 更新条目失败：未找到 ID:', id);
+    logger.warn('preset', '[PresetStitchData] 更新条目失败：未找到 ID:', id);
     return false;
   }
 
@@ -138,7 +138,7 @@ export function updateItem(id, updates) {
   }
 
   saveData();
-  logger.info('[PresetStitchData] 已更新条目:', items[index].name);
+  logger.info('preset', '[PresetStitchData] 已更新条目:', items[index].name);
   return true;
 }
 
@@ -152,13 +152,13 @@ export function deleteItem(id) {
   const index = data.items.findIndex(item => item.id === id);
 
   if (index === -1) {
-    logger.warn('[PresetStitchData] 删除条目失败：未找到 ID:', id);
+    logger.warn('preset', '[PresetStitchData] 删除条目失败：未找到 ID:', id);
     return false;
   }
 
   const deletedItem = data.items.splice(index, 1)[0];
   saveData();
-  logger.info('[PresetStitchData] 已删除条目:', deletedItem.name);
+  logger.info('preset', '[PresetStitchData] 已删除条目:', deletedItem.name);
   return true;
 }
 
@@ -181,25 +181,25 @@ export function getTags() {
  */
 export function addTag(name) {
   if (!name || typeof name !== 'string') {
-    logger.warn('[PresetStitchData] 添加标签失败：名称无效');
+    logger.warn('preset', '[PresetStitchData] 添加标签失败：名称无效');
     return false;
   }
 
   const trimmedName = name.trim();
   if (!trimmedName) {
-    logger.warn('[PresetStitchData] 添加标签失败：名称为空');
+    logger.warn('preset', '[PresetStitchData] 添加标签失败：名称为空');
     return false;
   }
 
   const tags = getTags();
   if (tags.includes(trimmedName)) {
-    logger.warn('[PresetStitchData] 添加标签失败：标签已存在:', trimmedName);
+    logger.warn('preset', '[PresetStitchData] 添加标签失败：标签已存在:', trimmedName);
     return false;
   }
 
   getData().tags.push(trimmedName);
   saveData();
-  logger.info('[PresetStitchData] 已添加标签:', trimmedName);
+  logger.info('preset', '[PresetStitchData] 已添加标签:', trimmedName);
   return true;
 }
 
@@ -212,7 +212,7 @@ export function addTag(name) {
 export function renameTag(oldName, newName) {
   const trimmedNew = newName?.trim();
   if (!trimmedNew) {
-    logger.warn('[PresetStitchData] 重命名标签失败：新名称为空');
+    logger.warn('preset', '[PresetStitchData] 重命名标签失败：新名称为空');
     return false;
   }
 
@@ -220,12 +220,12 @@ export function renameTag(oldName, newName) {
   const tagIndex = data.tags.indexOf(oldName);
 
   if (tagIndex === -1) {
-    logger.warn('[PresetStitchData] 重命名标签失败：未找到标签:', oldName);
+    logger.warn('preset', '[PresetStitchData] 重命名标签失败：未找到标签:', oldName);
     return false;
   }
 
   if (data.tags.includes(trimmedNew) && trimmedNew !== oldName) {
-    logger.warn('[PresetStitchData] 重命名标签失败：新名称已存在:', trimmedNew);
+    logger.warn('preset', '[PresetStitchData] 重命名标签失败：新名称已存在:', trimmedNew);
     return false;
   }
 
@@ -241,7 +241,7 @@ export function renameTag(oldName, newName) {
   }
 
   saveData();
-  logger.info('[PresetStitchData] 已重命名标签:', oldName, '->', trimmedNew);
+  logger.info('preset', '[PresetStitchData] 已重命名标签:', oldName, '->', trimmedNew);
   return true;
 }
 
@@ -255,7 +255,7 @@ export function deleteTag(name) {
   const tagIndex = data.tags.indexOf(name);
 
   if (tagIndex === -1) {
-    logger.warn('[PresetStitchData] 删除标签失败：未找到标签:', name);
+    logger.warn('preset', '[PresetStitchData] 删除标签失败：未找到标签:', name);
     return false;
   }
 
@@ -273,7 +273,7 @@ export function deleteTag(name) {
   }
 
   saveData();
-  logger.info('[PresetStitchData] 已删除标签:', name);
+  logger.info('preset', '[PresetStitchData] 已删除标签:', name);
   return true;
 }
 
@@ -294,6 +294,6 @@ export function saveData() {
  */
 export function loadData() {
   const data = getData();
-  logger.debug('[PresetStitchData] 数据已加载，条目数:', data.items?.length || 0, '标签数:', data.tags?.length || 0);
+  logger.debug('preset', '[PresetStitchData] 数据已加载，条目数:', data.items?.length || 0, '标签数:', data.tags?.length || 0);
   return data;
 }

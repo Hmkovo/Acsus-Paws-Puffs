@@ -25,12 +25,12 @@ export class SimulatedLifeUI {
    * 渲染 UI
    */
   render() {
-    logger.debug('[SimulatedLifeUI] 开始渲染 UI');
+    logger.debug('simlife', '开始渲染 UI');
 
     // 找到模拟人生标签页容器
     const container = $('#paws-puffs-simulated-life-panel');
     if (!container.length) {
-      logger.error('[SimulatedLifeUI] 找不到模拟人生标签页容器');
+      logger.error('simlife', '找不到模拟人生标签页容器');
       return;
     }
 
@@ -52,7 +52,7 @@ export class SimulatedLifeUI {
     // 渲染条目列表（如果世界书已存在）
     this._renderEntries();
 
-    logger.debug('[SimulatedLifeUI] UI 渲染完成');
+    logger.debug('simlife', 'UI 渲染完成');
   }
 
   /**
@@ -248,7 +248,7 @@ export class SimulatedLifeUI {
       const uid = parseInt($(e.target).data('uid'));
       const enable = $(e.target).is(':checked');
 
-      logger.debug('[SimulatedLifeUI] 切换条目状态:', uid, enable ? '开启' : '禁用');
+      logger.debug('simlife', '切换条目状态:', uid, enable ? '开启' : '禁用');
 
       const success = await this.module.toggleEntry(uid, enable);
       if (success) {
@@ -275,7 +275,7 @@ export class SimulatedLifeUI {
     // 创建世界书按钮
     $(document).off('click', '#simulated-life-create-btn');
     $(document).on('click', '#simulated-life-create-btn', async () => {
-      logger.debug('[SimulatedLifeUI] 点击创建世界书按钮');
+      logger.debug('simlife', '点击创建世界书按钮');
 
       const btn = $('#simulated-life-create-btn');
       const originalText = btn.html();
@@ -301,7 +301,7 @@ export class SimulatedLifeUI {
     // 刷新条目状态按钮
     $(document).off('click', '#simulated-life-refresh-btn');
     $(document).on('click', '#simulated-life-refresh-btn', async () => {
-      logger.debug('[SimulatedLifeUI] 点击刷新条目状态按钮');
+      logger.debug('simlife', '点击刷新条目状态按钮');
       this._updateStatus();
       await this._renderEntries();
       toastr.info('状态已刷新', '模拟人生');
@@ -310,7 +310,7 @@ export class SimulatedLifeUI {
     // 查看溯 Sus 版本按钮
     $(document).off('click', '#view-sus-prompt-btn');
     $(document).on('click', '#view-sus-prompt-btn', async () => {
-      logger.debug('[SimulatedLifeUI] 点击查看溯版本按钮');
+      logger.debug('simlife', '点击查看溯版本按钮');
       const promptContent = this.module.getDesktopPrompt();
       const htmlContent = `
         <div style="text-align: left; max-height: 70vh; overflow-y: auto;">
@@ -330,7 +330,7 @@ export class SimulatedLifeUI {
     // 查看白沉优化版按钮
     $(document).off('click', '#view-mobile-prompt-btn');
     $(document).on('click', '#view-mobile-prompt-btn', async () => {
-      logger.debug('[SimulatedLifeUI] 点击查看白沉版本按钮');
+      logger.debug('simlife', '点击查看白沉版本按钮');
       const promptContent = this.module.getMobilePrompt();
       const htmlContent = `
         <div style="text-align: left; max-height: 70vh; overflow-y: auto;">
@@ -350,7 +350,7 @@ export class SimulatedLifeUI {
     // 使用说明按钮
     $(document).off('click', '#simulated-life-help-btn');
     $(document).on('click', '#simulated-life-help-btn', async () => {
-      logger.debug('[SimulatedLifeUI] 点击查看使用说明');
+      logger.debug('simlife', '点击查看使用说明');
       const htmlContent = `
         <div style="text-align: left; line-height: 1.6;">
           <h3 style="color: var(--SmartThemeQuoteColor); margin-top: 0;">使用说明</h3>
@@ -399,7 +399,7 @@ export class SimulatedLifeUI {
     $(document).off('change', '#simulated-life-global-enable');
     $(document).on('change', '#simulated-life-global-enable', async () => {
       const isChecked = $('#simulated-life-global-enable').is(':checked');
-      logger.debug('[SimulatedLifeUI] 切换全局世界书:', isChecked ? '开启' : '关闭');
+      logger.debug('simlife', '切换全局世界书:', isChecked ? '开启' : '关闭');
 
       if (isChecked) {
         // 添加到全局

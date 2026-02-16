@@ -47,7 +47,7 @@ function initFavoritesData() {
       items: []
     };
     saveSettingsDebounced();
-    logger.info('[FavoritesData] 初始化收藏数据结构');
+    logger.info('phone','[FavoritesData] 初始化收藏数据结构');
   }
 }
 
@@ -61,7 +61,7 @@ export function loadFavorites() {
 
   const items = extension_settings.phone.favorites.items || [];
 
-  logger.debug('[FavoritesData] 加载收藏:', items.length, '条');
+  logger.debug('phone','[FavoritesData] 加载收藏:', items.length, '条');
   return items;
 }
 
@@ -94,7 +94,7 @@ export function addFavorite(favoriteData) {
   );
 
   if (existing) {
-    logger.warn('[FavoritesData] 消息已收藏:', favoriteData.messageId);
+    logger.warn('phone','[FavoritesData] 消息已收藏:', favoriteData.messageId);
     return existing;
   }
 
@@ -148,7 +148,7 @@ export function addFavorite(favoriteData) {
 
   saveSettingsDebounced();
 
-  logger.info('[FavoritesData] 添加收藏:', {
+  logger.info('phone','[FavoritesData] 添加收藏:', {
     id: favoriteItem.id,
     type: favoriteItem.type,
     contactName: favoriteItem.contactName,
@@ -174,14 +174,14 @@ export function deleteFavorite(favoriteId) {
   );
 
   if (index === -1) {
-    logger.warn('[FavoritesData] 收藏不存在:', favoriteId);
+    logger.warn('phone','[FavoritesData] 收藏不存在:', favoriteId);
     return false;
   }
 
   const deleted = extension_settings.phone.favorites.items.splice(index, 1);
   saveSettingsDebounced();
 
-  logger.info('[FavoritesData] 删除收藏:', favoriteId);
+  logger.info('phone','[FavoritesData] 删除收藏:', favoriteId);
   return true;
 }
 
@@ -215,14 +215,14 @@ export function deleteFavoriteByMessageId(messageId) {
   );
 
   if (index === -1) {
-    logger.warn('[FavoritesData] 收藏不存在:', messageId);
+    logger.warn('phone','[FavoritesData] 收藏不存在:', messageId);
     return false;
   }
 
   const deleted = extension_settings.phone.favorites.items.splice(index, 1);
   saveSettingsDebounced();
 
-  logger.info('[FavoritesData] 取消收藏:', messageId);
+  logger.info('phone','[FavoritesData] 取消收藏:', messageId);
   return true;
 }
 
@@ -247,7 +247,7 @@ export function searchFavorites(keyword) {
       item.contactName.toLowerCase().includes(lowerKeyword);
   });
 
-  logger.debug('[FavoritesData] 搜索收藏:', keyword, '，找到', results.length, '条');
+  logger.debug('phone','[FavoritesData] 搜索收藏:', keyword, '，找到', results.length, '条');
   return results;
 }
 
@@ -274,7 +274,7 @@ export function clearAllFavorites() {
 
   saveSettingsDebounced();
 
-  logger.info('[FavoritesData] 清空所有收藏，共', count, '条');
+  logger.info('phone','[FavoritesData] 清空所有收藏，共', count, '条');
   return true;
 }
 

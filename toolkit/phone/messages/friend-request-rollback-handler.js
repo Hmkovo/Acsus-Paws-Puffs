@@ -21,7 +21,7 @@ export function initFriendRequestRollbackHandler() {
     name: '好友申请消息',
     priority: 15,
     rollback: async (contactId, deletedMessages, deletedMessageIds) => {
-      logger.debug('[FriendRequestRollback] 开始回退好友申请消息，联系人:', contactId);
+      logger.debug('phone','[FriendRequestRollback] 开始回退好友申请消息，联系人:', contactId);
 
       let deletedCount = 0;
 
@@ -29,30 +29,30 @@ export function initFriendRequestRollbackHandler() {
       for (const aiMsg of deletedMessages) {
         // 检查是否是好友申请消息
         if (aiMsg.type === 'friend_request') {
-          logger.debug('[FriendRequestRollback] 检测到好友申请消息:', aiMsg.id, aiMsg.content?.substring(0, 20));
+          logger.debug('phone','[FriendRequestRollback] 检测到好友申请消息:', aiMsg.id, aiMsg.content?.substring(0, 20));
           
           // ✅ 从 reapplyMessages 中删除对应的消息
           const success = await deleteReapplyMessageByMsgId(contactId, aiMsg.id);
           
           if (success) {
             deletedCount++;
-            logger.info('[FriendRequestRollback] 已删除好友申请消息:', aiMsg.id);
+            logger.info('phone','[FriendRequestRollback] 已删除好友申请消息:', aiMsg.id);
           }
         }
       }
 
       if (deletedCount > 0) {
-        logger.info('[FriendRequestRollback] 共回退', deletedCount, '条好友申请消息');
+        logger.info('phone','[FriendRequestRollback] 共回退', deletedCount, '条好友申请消息');
         
         // ✅ 触发详情页刷新事件
         document.dispatchEvent(new CustomEvent('phone-ai-generation-complete', {
           detail: { contactId }
         }));
-        logger.debug('[FriendRequestRollback] 已触发详情页刷新事件');
+        logger.debug('phone','[FriendRequestRollback] 已触发详情页刷新事件');
       }
     }
   });
 
-  logger.info('[FriendRequestRollback] 好友申请消息回退处理器已注册');
+  logger.info('phone','[FriendRequestRollback] 好友申请消息回退处理器已注册');
 }
 

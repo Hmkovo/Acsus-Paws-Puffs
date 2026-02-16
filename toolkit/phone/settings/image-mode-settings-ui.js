@@ -15,7 +15,7 @@ import { hidePage } from '../phone-main-ui.js';
  * @returns {Promise<DocumentFragment>} 设置页面内容片段
  */
 export async function renderImageModeSettings() {
-  logger.info('[ImageModeSettings] 开始渲染图片识别模式设置页');
+  logger.info('phone','[ImageModeSettings] 开始渲染图片识别模式设置页');
 
   // 确保数据结构存在
   if (!extension_settings.acsusPawsPuffs) {
@@ -107,7 +107,7 @@ export async function renderImageModeSettings() {
 
   fragment.appendChild(container);
 
-  logger.info('[ImageModeSettings] 设置页渲染完成');
+  logger.info('phone','[ImageModeSettings] 设置页渲染完成');
   return fragment;
 }
 
@@ -121,7 +121,7 @@ function bindEvents(container) {
   const backBtn = container.querySelector('.image-mode-settings-back-btn');
   if (backBtn) {
     backBtn.addEventListener('click', () => {
-      logger.debug('[ImageModeSettings] 点击返回按钮');
+      logger.debug('phone','[ImageModeSettings] 点击返回按钮');
       const overlayElement = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
       if (overlayElement) {
         hidePage(overlayElement, 'image-mode-settings');
@@ -135,7 +135,7 @@ function bindEvents(container) {
     option.addEventListener('click', () => {
       const optionEl = /** @type {HTMLElement} */ (option);
       const mode = optionEl.dataset.mode;
-      logger.info('[ImageModeSettings] 切换模式:', mode);
+      logger.info('phone','[ImageModeSettings] 切换模式:', mode);
 
       // 更新UI
       options.forEach(opt => opt.classList.remove('active'));
@@ -157,7 +157,7 @@ function bindEvents(container) {
       });
       document.dispatchEvent(event);
 
-      logger.info('[ImageModeSettings] 设置已保存:', mode);
+      logger.info('phone','[ImageModeSettings] 设置已保存:', mode);
     });
   });
 }

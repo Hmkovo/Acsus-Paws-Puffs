@@ -20,13 +20,13 @@ import { showCustomPopup } from './popup-helper.js';
  * @param {string} contactName - 角色名字
  */
 export async function showMembershipDetailPopup(contactId, contactName) {
-  logger.info('[MembershipPopup] 显示会员详情弹窗:', contactName);
+  logger.info('phone','[MembershipPopup] 显示会员详情弹窗:', contactName);
 
   // 获取会员数据
   const membership = await getCharacterMembership(contactId);
   
   if (!membership || membership.type === 'none') {
-    logger.warn('[MembershipPopup] 角色无会员数据:', contactName);
+    logger.warn('phone','[MembershipPopup] 角色无会员数据:', contactName);
     return;
   }
 
@@ -82,5 +82,5 @@ export async function showMembershipDetailPopup(contactId, contactName) {
     width: '18em'
   });
 
-  logger.debug('[MembershipPopup] 弹窗已关闭');
+  logger.debug('phone','[MembershipPopup] 弹窗已关闭');
 }

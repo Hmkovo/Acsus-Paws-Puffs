@@ -24,7 +24,7 @@ import { renderImageFakeMessage } from './image-fake-message.js';
  * @deprecated 建议直接使用 renderImageRealMessage 或 renderImageFakeMessage
  */
 export function renderImageMessage(message, contact, contactId) {
-  logger.debug('[ImageMessage] 渲染图片消息（兼容层）:', message);
+  logger.debug('phone','[ImageMessage] 渲染图片消息（兼容层）:', message);
 
   // ✅ 自动识别类型
   if (message.type === 'image-real') {
@@ -34,14 +34,14 @@ export function renderImageMessage(message, contact, contactId) {
   } else if (message.type === 'image') {
     // ✅ 旧数据兼容：根据 imageUrl 判断类型
     if (message.imageUrl) {
-      logger.debug('[ImageMessage] 旧数据自动转换为 image-real');
+      logger.debug('phone','[ImageMessage] 旧数据自动转换为 image-real');
       return renderImageRealMessage(message, contact, contactId);
     } else {
-      logger.debug('[ImageMessage] 旧数据自动转换为 image-fake');
+      logger.debug('phone','[ImageMessage] 旧数据自动转换为 image-fake');
       return renderImageFakeMessage(message, contact, contactId);
     }
   } else {
-    logger.error('[ImageMessage] 未知的图片消息类型:', message.type);
+    logger.error('phone','[ImageMessage] 未知的图片消息类型:', message.type);
     // 降级处理：尝试按真实图片渲染
     return renderImageRealMessage(message, contact, contactId);
   }

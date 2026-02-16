@@ -89,7 +89,7 @@ export function extractToolCallsFromOpenAI(response) {
     const toolCalls = choice.message?.tool_calls;
     if (!toolCalls || toolCalls.length === 0) return null;
 
-    logger.debug('[ToolCalling] 提取到', toolCalls.length, '个 OpenAI 工具调用');
+    logger.debug('phone','[ToolCalling] 提取到', toolCalls.length, '个 OpenAI 工具调用');
 
     return toolCalls.map(call => ({
       id: call.id,
@@ -97,7 +97,7 @@ export function extractToolCallsFromOpenAI(response) {
       arguments: JSON.parse(call.function.arguments)
     }));
   } catch (error) {
-    logger.error('[ToolCalling] 解析 OpenAI 工具调用失败:', error);
+    logger.error('phone','[ToolCalling] 解析 OpenAI 工具调用失败:', error);
     return null;
   }
 }
@@ -119,14 +119,14 @@ export function extractToolCallsFromGemini(response) {
     const functionCalls = parts.filter(part => part.functionCall);
     if (functionCalls.length === 0) return null;
 
-    logger.debug('[ToolCalling] 提取到', functionCalls.length, '个 Gemini 工具调用');
+    logger.debug('phone','[ToolCalling] 提取到', functionCalls.length, '个 Gemini 工具调用');
 
     return functionCalls.map(part => ({
       name: part.functionCall.name,
       arguments: part.functionCall.args
     }));
   } catch (error) {
-    logger.error('[ToolCalling] 解析 Gemini 工具调用失败:', error);
+    logger.error('phone','[ToolCalling] 解析 Gemini 工具调用失败:', error);
     return null;
   }
 }
@@ -147,7 +147,7 @@ export async function executeToolCalls(toolCalls, currentContactId) {
   const results = [];
 
   for (const call of toolCalls) {
-    logger.info('[ToolCalling] 执行工具:', call.name, '参数:', call.arguments);
+    logger.info('phone','[ToolCalling] 执行工具:', call.name, '参数:', call.arguments);
 
     try {
       let result;
@@ -158,7 +158,7 @@ export async function executeToolCalls(toolCalls, currentContactId) {
           break;
 
         default:
-          logger.warn('[ToolCalling] 未知工具:', call.name);
+          logger.warn('phone','[ToolCalling] 未知工具:', call.name);
           result = { error: '未知工具' };
       }
 
@@ -169,7 +169,7 @@ export async function executeToolCalls(toolCalls, currentContactId) {
       });
 
     } catch (error) {
-      logger.error('[ToolCalling] 执行工具失败:', error);
+      logger.error('phone','[ToolCalling] 执行工具失败:', error);
       results.push({
         tool_call_id: call.id,
         name: call.name,
@@ -203,7 +203,7 @@ async function executeSendMessage(args, currentContactId) {
   );
 
   if (!contact) {
-    logger.warn('[ToolCalling] 找不到联系人:', contact_name);
+    logger.warn('phone','[ToolCalling] 找不到联系人:', contact_name);
     return { error: `找不到联系人：${contact_name}` };
   }
 
@@ -217,7 +217,7 @@ async function executeSendMessage(args, currentContactId) {
 
   await saveChatMessage(contact.id, messageData);
 
-  logger.info('[ToolCalling] 消息已保存:', contact.name, '-', message.substring(0, 20));
+  logger.info('phone','[ToolCalling] 消息已保存:', contact.name, '-', message.substring(0, 20));
 
   return {
     success: true,

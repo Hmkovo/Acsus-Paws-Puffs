@@ -56,21 +56,21 @@ function parseContentToFields(content) {
  * @returns {HTMLElement} 消息气泡DOM元素
  */
 export function renderGiftMembershipMessage(message, contact, contactId) {
-  logger.debug('[GiftMembershipMessage] 开始渲染会员送礼消息');
-  logger.debug('[GiftMembershipMessage] 消息对象:', message);
-  logger.debug('[GiftMembershipMessage] contactId:', contactId);
+  logger.debug('phone', '[GiftMembershipMessage]] 开始渲染会员送礼消息');
+  logger.debug('phone', '[GiftMembershipMessage]] 消息对象:', message);
+  logger.debug('phone', '[GiftMembershipMessage]] contactId:', contactId);
 
   // ✅ 容错处理：如果旧消息缺少字段，从content解析
   if (!message.membershipType || !message.months || !message.duration) {
-    logger.warn('[GiftMembershipMessage] 检测到旧格式消息，尝试从content解析字段');
+    logger.warn('phone', '[GiftMembershipMessage]] 检测到旧格式消息，尝试从content解析字段');
     const parseResult = parseContentToFields(message.content);
     if (parseResult) {
       message.membershipType = parseResult.membershipType;
       message.months = parseResult.months;
       message.duration = parseResult.duration;
-      logger.debug('[GiftMembershipMessage] 解析成功:', parseResult);
+      logger.debug('phone', '[GiftMembershipMessage]] 解析成功:', parseResult);
     } else {
-      logger.error('[GiftMembershipMessage] 无法解析content，使用默认值');
+      logger.error('phone', '[GiftMembershipMessage]] 无法解析content，使用默认值');
       message.membershipType = 'vip';
       message.months = 1;
       message.duration = 30;
@@ -82,7 +82,7 @@ export function renderGiftMembershipMessage(message, contact, contactId) {
 
   // 判断是发送还是接收
   const isSent = message.sender === 'user';
-  logger.debug('[GiftMembershipMessage] isSent:', isSent);
+  logger.debug('phone', '[GiftMembershipMessage]] isSent:', isSent);
 
   container.classList.add(isSent ? 'chat-msg-sent' : 'chat-msg-received');
   container.setAttribute('data-msg-id', message.id);
@@ -160,13 +160,13 @@ export function renderGiftMembershipMessage(message, contact, contactId) {
 
   // 长按操作菜单由 message-chat-ui.js 统一绑定
 
-  logger.info('[GiftMembershipMessage] ✅ 会员送礼消息渲染完成:', message.id);
+  logger.info('phone', '[GiftMembershipMessage]] ✅ 会员送礼消息渲染完成:', message.id);
 
   // 自动处理会员赠送（双层去重机制）
   // 第一层：内存去重（防止同一会话中重复渲染）
   // 第二层：持久化去重（在grantMembership中检查grantedByMsgId，防止跨会话重复）
   if (savedGiftMembershipMessages.has(message.id)) {
-    logger.debug('[GiftMembershipMessage] 跳过会员赠送处理（内存去重）msgId:', message.id);
+    logger.debug('phone', '[GiftMembershipMessage]] 跳过会员赠送处理（内存去重）msgId:', message.id);
   } else {
     if (isSent) {
       // 用户送AI：给角色开通会员
@@ -177,7 +177,7 @@ export function renderGiftMembershipMessage(message, contact, contactId) {
     }
   }
 
-  logger.info('[GiftMembershipMessage] ✅ 会员送礼消息渲染完成:', message.id);
+  logger.info('phone', '[GiftMembershipMessage]] ✅ 会员送礼消息渲染完成:', message.id);
   return container;
 }
 
@@ -196,7 +196,7 @@ export function renderGiftMembershipMessage(message, contact, contactId) {
  * @param {number} message.duration - 天数
  */
 async function handleGiftToCharacter(contactId, message) {
-  logger.debug('[GiftMembershipMessage] 处理用户送角色会员，msgId:', message.id);
+  logger.debug('phone', '[GiftMembershipMessage]] 处理用户送角色会员，msgId:', message.id);
 
   try {
     // 标记为正在处理（防止异步期间重复调用）
@@ -211,7 +211,7 @@ async function handleGiftToCharacter(contactId, message) {
       msgId: message.id
     });
 
-    logger.info('[GiftMembershipMessage] ✅ 角色会员已开通:', message.membershipType, message.duration, 'msgId:', message.id);
+    logger.info('phone', '[GiftMembershipMessage]] ✅ 角色会员已开通:', message.membershipType, message.duration, 'msgId:', message.id);
 
     // ✅ 保存交易记录到钱包（礼物-支出）
     const { addTransaction } = await import('../../data-storage/storage-wallet.js');
@@ -224,12 +224,12 @@ async function handleGiftToCharacter(contactId, message) {
       time: message.time,
       relatedMsgId: message.id  // 关联消息ID（用于回退）
     });
-    logger.debug('[GiftMembershipMessage] 交易记录已保存（支出）');
+    logger.debug('phone', '[GiftMembershipMessage]] 交易记录已保存（支出）');
 
     // 注：grantCharacterMembership 已通过 stateManager.set 自动触发角色会员变化通知，不需要重复触发
     // 注：addTransaction 已通过 stateManager.set 自动触发钱包数据变化通知，不需要重复触发
   } catch (error) {
-    logger.error('[GiftMembershipMessage] ❌ 角色会员开通失败:', error);
+    logger.error('phone', '[GiftMembershipMessage]] ❌ 角色会员开通失败:', error);
     // 处理失败时移除标记，允许下次重试
     savedGiftMembershipMessages.delete(message.id);
   }
@@ -249,7 +249,7 @@ async function handleGiftToCharacter(contactId, message) {
  * @param {number} message.duration - 天数
  */
 async function handleGiftToUser(message) {
-  logger.debug('[GiftMembershipMessage] 处理角色送用户会员，msgId:', message.id);
+  logger.debug('phone', '[GiftMembershipMessage]] 处理角色送用户会员，msgId:', message.id);
 
   try {
     // 标记为正在处理
@@ -264,7 +264,7 @@ async function handleGiftToUser(message) {
       msgId: message.id
     });
 
-    logger.info('[GiftMembershipMessage] ✅ 用户会员已开通:', message.membershipType, message.duration, 'msgId:', message.id);
+    logger.info('phone', '[GiftMembershipMessage]] ✅ 用户会员已开通:', message.membershipType, message.duration, 'msgId:', message.id);
 
     // ✅ 保存交易记录到钱包（礼物-收入）
     // 注意：需要从消息中提取contactId（由于chats是按contactId组织的）
@@ -293,17 +293,17 @@ async function handleGiftToUser(message) {
         time: message.time,
         relatedMsgId: message.id  // 关联消息ID（用于回退）
       });
-      logger.debug('[GiftMembershipMessage] 交易记录已保存（收入）');
+      logger.debug('phone', '[GiftMembershipMessage]] 交易记录已保存（收入）');
 
       // 注：addTransaction 已通过 stateManager.set 自动触发钱包数据变化通知，不需要重复触发
-      logger.debug('[GiftMembershipMessage] 已触发钱包数据变化事件');
+      logger.debug('phone', '[GiftMembershipMessage]] 已触发钱包数据变化事件');
     } else {
-      logger.warn('[GiftMembershipMessage] 未找到发送者contactId，无法保存交易记录');
+      logger.warn('phone', '[GiftMembershipMessage]] 未找到发送者contactId，无法保存交易记录');
     }
 
     // 注意：grantUserMembership 已通过 stateManager.set('userMembership') 自动通知订阅者，不需要重复触发
   } catch (error) {
-    logger.error('[GiftMembershipMessage] ❌ 用户会员开通失败:', error);
+    logger.error('phone', '[GiftMembershipMessage]] ❌ 用户会员开通失败:', error);
     // 处理失败时移除标记，允许下次重试
     savedGiftMembershipMessages.delete(message.id);
   }

@@ -56,12 +56,12 @@ export class SimulatedLifeModule {
    * @returns {Promise<void>}
    */
   async init() {
-    logger.info('[SimulatedLifeModule] 模拟人生模块初始化');
+    logger.info('simlife', '模拟人生模块初始化');
 
     // 这里只初始化数据，不渲染 UI
     // UI 渲染由 index.js 在 settings.html 加载后调用 renderUI()
 
-    logger.info('[SimulatedLifeModule] 模拟人生模块初始化完成');
+    logger.info('simlife', '模拟人生模块初始化完成');
   }
 
   /**
@@ -72,11 +72,11 @@ export class SimulatedLifeModule {
    */
   async renderUI(container) {
     if (!container) {
-      logger.error('[SimulatedLifeModule.renderUI] 容器元素不存在');
+      logger.error('simlife', '[SimulatedLifeModule.renderUI] 容器元素不存在');
       return;
     }
 
-    logger.debug('[SimulatedLifeModule.renderUI] 开始渲染 UI');
+    logger.debug('simlife', '[SimulatedLifeModule.renderUI] 开始渲染 UI');
 
     // 延迟导入 UI 模块（避免循环依赖）
     // @ts-ignore - 动态导入路径
@@ -86,7 +86,7 @@ export class SimulatedLifeModule {
     // 渲染 UI
     this.ui.render();
 
-    logger.debug('[SimulatedLifeModule.renderUI] UI 渲染完成');
+    logger.debug('simlife', '[SimulatedLifeModule.renderUI] UI 渲染完成');
   }
 
   /**
@@ -112,14 +112,14 @@ export class SimulatedLifeModule {
    */
   async createWorldBookWithEntries() {
     try {
-      logger.info('[SimulatedLifeModule] 开始创建世界书和条目');
+      logger.info('simlife', '开始创建世界书和条目');
 
       // 1. 检查世界书是否已存在
       let worldExists = this.isWorldBookExists();
 
       if (!worldExists) {
         // 创建新世界书
-        logger.info('[SimulatedLifeModule] 创建新世界书:', this.worldBookName);
+        logger.info('simlife', '创建新世界书:', this.worldBookName);
         const created = await createNewWorldInfo(this.worldBookName);
 
         if (!created) {
@@ -130,7 +130,7 @@ export class SimulatedLifeModule {
         await updateWorldInfoList();
         worldExists = true;
       } else {
-        logger.info('[SimulatedLifeModule] 世界书已存在，将添加条目');
+        logger.info('simlife', '世界书已存在，将添加条目');
       }
 
       // 2. 加载世界书数据
@@ -156,7 +156,7 @@ export class SimulatedLifeModule {
 
       // 如果两个条目都已存在，提前提示用户
       if (hasDesktopEntry && hasMobileEntry) {
-        logger.info('[SimulatedLifeModule] 所有条目已存在，无需重复创建');
+        logger.info('simlife', '所有条目已存在，无需重复创建');
         toastr.info('世界书和条目已存在，无需重复创建', '模拟人生');
 
         // 确保已添加到全局（防止之前手动移除了）
@@ -185,9 +185,9 @@ export class SimulatedLifeModule {
         entry1.disable = false;  // 默认开启
         entry1.preventRecursion = true;  // 不可递归
         addedCount++;
-        logger.info('[SimulatedLifeModule] 已添加条目：溯版本（开启）');
+        logger.info('simlife', '已添加条目：溯版本（开启）');
       } else {
-        logger.info('[SimulatedLifeModule] 溯版本条目已存在，跳过');
+        logger.info('simlife', '溯版本条目已存在，跳过');
       }
 
       // 5. 添加条目2：白沉的手机端版本（默认开启）
@@ -206,19 +206,19 @@ export class SimulatedLifeModule {
         entry2.disable = false;  // 默认开启
         entry2.preventRecursion = true;  // 不可递归
         addedCount++;
-        logger.info('[SimulatedLifeModule] 已添加条目：白沉版本（开启）');
+        logger.info('simlife', '已添加条目：白沉版本（开启）');
       } else {
-        logger.info('[SimulatedLifeModule] 白沉版本条目已存在，跳过');
+        logger.info('simlife', '白沉版本条目已存在，跳过');
       }
 
       // 6. 保存世界书
       if (addedCount > 0) {
         await saveWorldInfo(this.worldBookName, worldData, true);
-        logger.info('[SimulatedLifeModule] 世界书已保存');
+        logger.info('simlife', '世界书已保存');
 
         // 刷新官方世界书编辑器UI（重要！让条目显示出来）
         reloadEditor(this.worldBookName);
-        logger.info('[SimulatedLifeModule] 已刷新世界书编辑器UI');
+        logger.info('simlife', '已刷新世界书编辑器UI');
       }
 
       // 7. 添加到全局世界书（一次性操作）
@@ -239,7 +239,7 @@ export class SimulatedLifeModule {
       return true;
 
     } catch (error) {
-      logger.error('[SimulatedLifeModule] 创建世界书失败:', error);
+      logger.error('simlife', '创建世界书失败:', error);
       toastr.error('创建失败：' + (error.message || error), '模拟人生');
       return false;
     }
@@ -264,7 +264,7 @@ export class SimulatedLifeModule {
       // 转换为数组格式
       return Object.values(worldData.entries);
     } catch (error) {
-      logger.error('[SimulatedLifeModule] 获取条目失败:', error);
+      logger.error('simlife', '获取条目失败:', error);
       return [];
     }
   }
@@ -285,7 +285,7 @@ export class SimulatedLifeModule {
 
       const worldData = await loadWorldInfo(this.worldBookName);
       if (!worldData || !worldData.entries[uid]) {
-        logger.error('[SimulatedLifeModule] 条目不存在:', uid);
+        logger.error('simlife', '条目不存在:', uid);
         return false;
       }
 
@@ -298,11 +298,11 @@ export class SimulatedLifeModule {
       // 刷新UI
       reloadEditor(this.worldBookName);
 
-      logger.info('[SimulatedLifeModule] 条目状态已更新:', worldData.entries[uid].comment, enable ? '开启' : '禁用');
+      logger.info('simlife', '条目状态已更新:', worldData.entries[uid].comment, enable ? '开启' : '禁用');
 
       return true;
     } catch (error) {
-      logger.error('[SimulatedLifeModule] 切换条目状态失败:', error);
+      logger.error('simlife', '切换条目状态失败:', error);
       toastr.error('操作失败：' + (error.message || error), '模拟人生');
       return false;
     }
@@ -325,7 +325,7 @@ export class SimulatedLifeModule {
         return true;
       }
 
-      logger.info('[SimulatedLifeModule] 添加到全局世界书');
+      logger.info('simlife', '添加到全局世界书');
 
       // 添加到 selected_world_info 数组
       selected_world_info.push(this.worldBookName);
@@ -340,13 +340,13 @@ export class SimulatedLifeModule {
       // 保存设置
       saveSettingsDebounced();
 
-      logger.info('[SimulatedLifeModule] 已添加到全局世界书');
+      logger.info('simlife', '已添加到全局世界书');
       toastr.success('已添加到全局世界书', '模拟人生');
 
       return true;
 
     } catch (error) {
-      logger.error('[SimulatedLifeModule] 添加到全局失败:', error);
+      logger.error('simlife', '添加到全局失败:', error);
       toastr.error('添加到全局失败：' + (error.message || error), '模拟人生');
       return false;
     }
@@ -369,7 +369,7 @@ export class SimulatedLifeModule {
         return true;
       }
 
-      logger.info('[SimulatedLifeModule] 从全局世界书移除');
+      logger.info('simlife', '从全局世界书移除');
 
       // 从 selected_world_info 数组移除
       const index = selected_world_info.indexOf(this.worldBookName);
@@ -387,13 +387,13 @@ export class SimulatedLifeModule {
       // 保存设置
       saveSettingsDebounced();
 
-      logger.info('[SimulatedLifeModule] 已从全局世界书移除');
+      logger.info('simlife', '已从全局世界书移除');
       toastr.info('已从全局世界书移除', '模拟人生');
 
       return true;
 
     } catch (error) {
-      logger.error('[SimulatedLifeModule] 从全局移除失败:', error);
+      logger.error('simlife', '从全局移除失败:', error);
       toastr.error('从全局移除失败：' + (error.message || error), '模拟人生');
       return false;
     }

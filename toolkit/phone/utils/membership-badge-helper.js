@@ -107,7 +107,7 @@ export function addMembershipBadgeToName(nameElement, type) {
  */
 export async function bindMembershipBadgeClick(badgeElement, contactId, contactName) {
   if (!badgeElement) {
-    logger.warn('[MembershipBadge] 徽章元素不存在');
+    logger.warn('phone','[MembershipBadge] 徽章元素不存在');
     return;
   }
 
@@ -118,7 +118,7 @@ export async function bindMembershipBadgeClick(badgeElement, contactId, contactN
   badgeElement.addEventListener('click', async (e) => {
     e.stopPropagation(); // 阻止事件冒泡
     
-    logger.debug('[MembershipBadge] 点击徽章:', contactName);
+    logger.debug('phone','[MembershipBadge] 点击徽章:', contactName);
     
     // 动态导入弹窗函数
     const { showMembershipDetailPopup } = await import('./membership-popup-helper.js');

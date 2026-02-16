@@ -61,7 +61,7 @@ let draggedItemId = null;
  */
 export async function renderVariableListPageV2(container) {
   if (!container) {
-    logger.warn('[VariableListUIV2] 容器不存在');
+    logger.warn('variable', '[VariableListUIV2] 容器不存在');
     return;
   }
 
@@ -73,7 +73,7 @@ export async function renderVariableListPageV2(container) {
     addExtensionsMenuButton();
   }
 
-  logger.info('[VariableListUIV2] 设置页渲染完成');
+  logger.info('variable', '[VariableListUIV2] 设置页渲染完成');
 }
 
 /**
@@ -155,7 +155,7 @@ export function addExtensionsMenuButton() {
     `;
   btn.addEventListener('click', toggleWindow);
   menu.appendChild(btn);
-  logger.info('[VariableListUIV2] 已添加菜单按钮');
+  logger.info('variable', '[VariableListUIV2] 已添加菜单按钮');
 }
 
 /**
@@ -189,7 +189,7 @@ async function openWindow() {
   // 确保 V2 系统已初始化
   const { initVariables, isInitialized } = await import('../index.js');
   if (!isInitialized()) {
-    logger.info('[VariableListUIV2] V2 系统未初始化，正在初始化...');
+    logger.info('variable', '[VariableListUIV2] V2 系统未初始化，正在初始化...');
     const result = await initVariables();
     if (!result.success) {
       toastr.error('动态变量系统初始化失败');
@@ -218,7 +218,7 @@ async function openWindow() {
   // 确保 activeSuiteId 已设置（解决首次打开时 getActiveSuite() 返回 null 的问题）
   if (!suiteManager.getActiveSuite() && activeSuite) {
     suiteManager.setActiveSuite(activeSuite.id);
-    logger.debug('[VariableListUIV2] 自动设置激活套装:', activeSuite.id);
+    logger.debug('variable', '[VariableListUIV2] 自动设置激活套装:', activeSuite.id);
   }
 
   const variables = variableManager.getDefinitions();
@@ -256,7 +256,7 @@ async function openWindow() {
   // 更新预览
   updatePreview();
 
-  logger.info('[VariableListUIV2] 窗口已打开');
+  logger.info('variable', '[VariableListUIV2] 窗口已打开');
 }
 
 /**
@@ -298,7 +298,7 @@ function onTaskComplete(data) {
     refreshItemsList();
   }
 
-  logger.debug('[VariableListUIV2] 任务完成回调:', data.suiteName, '结果:', data.resultsCount);
+  logger.debug('variable', '[VariableListUIV2] 任务完成回调:', data.suiteName, '结果:', data.resultsCount);
 }
 
 /**
@@ -331,7 +331,7 @@ function switchToTab(tabName) {
  * @param {import('../send-queue-manager.js').QueueTask[]} tasks
  */
 function onQueueChange(tasks) {
-  logger.debug('[VariableListUIV2] 队列变化回调, 任务数:', tasks.length);
+  logger.debug('variable', '[VariableListUIV2] 队列变化回调, 任务数:', tasks.length);
   updateQueueBadge(tasks.length);
   // 刷新当前套装的发送栏状态
   refreshSendBarStatus();
@@ -362,7 +362,7 @@ function closeWindow() {
   windowElement.remove();
   windowElement = null;
 
-  logger.info('[VariableListUIV2] 窗口已关闭');
+  logger.info('variable', '[VariableListUIV2] 窗口已关闭');
 }
 
 /**
@@ -632,7 +632,7 @@ function loadPosition() {
       savedPosition = JSON.parse(saved);
     }
   } catch (e) {
-    logger.warn('[VariableListUIV2] 加载位置失败:', e);
+    logger.warn('variable', '[VariableListUIV2] 加载位置失败:', e);
   }
 }
 
@@ -648,7 +648,7 @@ function savePosition() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(savedPosition));
   } catch (e) {
-    logger.warn('[VariableListUIV2] 保存位置失败:', e);
+    logger.warn('variable', '[VariableListUIV2] 保存位置失败:', e);
   }
 }
 
@@ -923,7 +923,7 @@ async function handleReapplyResponse() {
       toastr.info('没有匹配到任何变量标签');
     }
   } catch (error) {
-    logger.error('[VariableListUIV2] 重新应用失败:', error);
+    logger.error('variable', '[VariableListUIV2] 重新应用失败:', error);
     toastr.error('重新应用失败');
   }
 }
@@ -947,14 +947,14 @@ function bindItemsListEvents() {
       if (suite && itemId) {
         const item = suite.items.find(i => i.id === itemId);
         if (!item) {
-          logger.debug('[VariableListUIV2] 未找到条目:', itemId);
+          logger.debug('variable', '[VariableListUIV2] 未找到条目:', itemId);
           return;
         }
 
         // 处理旧数据：enabled 为 undefined 时默认为 true
         const currentEnabled = item.enabled !== false;
         const newEnabled = !currentEnabled;
-        logger.debug('[VariableListUIV2] 切换开关:', item.id, '当前状态:', currentEnabled, '将切换为:', newEnabled);
+        logger.debug('variable', '[VariableListUIV2] 切换开关:', item.id, '当前状态:', currentEnabled, '将切换为:', newEnabled);
 
         if (item.type === 'prompt') {
           suiteManager.updatePromptItem(suite.id, itemId, { enabled: newEnabled });
@@ -1141,13 +1141,13 @@ function refreshItemsList() {
   const suite = suiteManager.getActiveSuite();
   const variables = variableManager.getDefinitions();
 
-  logger.debug('[VariableListUIV2] refreshItemsList 被调用');
-  logger.debug('[VariableListUIV2] 当前套装:', suite?.id, '条目数:', suite?.items?.length);
+  logger.debug('variable', '[VariableListUIV2] refreshItemsList 被调用');
+  logger.debug('variable', '[VariableListUIV2] 当前套装:', suite?.id, '条目数:', suite?.items?.length);
 
   // 检查第一个条目的 enabled 状态
   if (suite?.items?.length > 0) {
     const firstItem = suite.items[0];
-    logger.debug('[VariableListUIV2] 第一个条目:', firstItem.id, 'enabled:', firstItem.enabled, 'type:', firstItem.type);
+    logger.debug('variable', '[VariableListUIV2] 第一个条目:', firstItem.id, 'enabled:', firstItem.enabled, 'type:', firstItem.type);
   }
 
   const list = windowElement.querySelector('#var-v2-items-list');
@@ -1306,7 +1306,7 @@ async function showInternalPopup(title, contentHTML, options = {}) {
         try {
           result = beforeClose(buttonValue, overlay);
         } catch (e) {
-          logger.error('[VariableListUIV2] beforeClose 错误:', e);
+          logger.error('variable', '[VariableListUIV2] beforeClose 错误:', e);
         }
       }
 
@@ -1738,7 +1738,7 @@ async function handleDeleteVariable(varId) {
       refreshItemsList();
       updatePreview();
       toastr.success('变量已从套装移除');
-      logger.info('[VariableListUIV2] 暂时移除变量:', variable.name);
+      logger.info('variable', '[VariableListUIV2] 暂时移除变量:', variable.name);
     }
   } else if (result === 'delete') {
     // 二次确认彻底删除
@@ -1760,7 +1760,7 @@ async function handleDeleteVariable(varId) {
         refreshItemsList();
         updatePreview();
         toastr.success('变量已彻底删除');
-        logger.info('[VariableListUIV2] 彻底删除变量:', variable.name);
+        logger.info('variable', '[VariableListUIV2] 彻底删除变量:', variable.name);
       } else {
         toastr.error(deleteResult.error || '删除失败');
       }
@@ -2256,7 +2256,7 @@ function bindStackDetailPageEvents(container, varId, chatId, variable, signal) {
       const result = await variableManager.reorderEntries(varId, chatId, newOrder);
       if (result.success) {
         await refreshEntriesList();
-        logger.debug('[VariableListUIV2] 条目排序已更新');
+        logger.debug('variable', '[VariableListUIV2] 条目排序已更新');
       } else {
         toastr.error(result.error || '排序失败');
       }
@@ -3062,17 +3062,17 @@ function refreshQueueList() {
  */
 function updateQueueBadge(count) {
   if (!windowElement) {
-    logger.debug('[VariableListUIV2] updateQueueBadge: windowElement 为空');
+    logger.debug('variable', '[VariableListUIV2] updateQueueBadge: windowElement 为空');
     return;
   }
 
   const badge = windowElement.querySelector('#var-v2-queue-badge');
   if (!badge) {
-    logger.debug('[VariableListUIV2] updateQueueBadge: badge 元素不存在');
+    logger.debug('variable', '[VariableListUIV2] updateQueueBadge: badge 元素不存在');
     return;
   }
 
-  logger.debug('[VariableListUIV2] 更新队列徽章:', count);
+  logger.debug('variable', '[VariableListUIV2] 更新队列徽章:', count);
 
   if (count > 0) {
     badge.textContent = String(count);

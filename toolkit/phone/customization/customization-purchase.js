@@ -156,7 +156,7 @@ export async function checkPurchaseEligibility(item, category = 'bubble') {
  * @property {number} newBalance - 新余额
  */
 export async function purchaseItem(item, category = 'bubble') {
-  logger.info('[Purchase] 开始购买流程:', item.name, '分类:', category);
+  logger.info('phone','[Purchase] 开始购买流程:', item.name, '分类:', category);
 
   // 1. 检查购买资格
   const eligibility = await checkPurchaseEligibility(item, category);
@@ -186,9 +186,9 @@ export async function purchaseItem(item, category = 'bubble') {
     // 需要付费
     try {
       newBalance = await subtractBalance(eligibility.price);
-      logger.info('[Purchase] 扣费成功:', eligibility.price, '新余额:', newBalance);
+      logger.info('phone','[Purchase] 扣费成功:', eligibility.price, '新余额:', newBalance);
     } catch (error) {
-      logger.error('[Purchase] 扣费失败:', error.message);
+      logger.error('phone','[Purchase] 扣费失败:', error.message);
       return {
         success: false,
         message: '扣费失败：' + error.message,
@@ -200,16 +200,16 @@ export async function purchaseItem(item, category = 'bubble') {
     if (eligibility.freeReason === 'vip-daily') {
       // VIP今日免费，记录使用次数
       customizationData.vipDailyUse[category]++;
-      logger.info('[Purchase] VIP今日免费已使用，次数:', customizationData.vipDailyUse[category]);
+      logger.info('phone','[Purchase] VIP今日免费已使用，次数:', customizationData.vipDailyUse[category]);
     } else if (eligibility.freeReason === 'svip') {
-      logger.info('[Purchase] SVIP免费购买');
+      logger.info('phone','[Purchase] SVIP免费购买');
     }
   }
 
   // 3. 添加到owned数组
   if (!customizationData.owned.includes(item.id)) {
     customizationData.owned.push(item.id);
-    logger.info('[Purchase] 已添加到owned:', item.id);
+    logger.info('phone','[Purchase] 已添加到owned:', item.id);
   }
 
   // 4. 保存数据
@@ -221,7 +221,7 @@ export async function purchaseItem(item, category = 'bubble') {
     balance: newBalance
   });
 
-  logger.info('[Purchase] 购买成功:', item.name);
+  logger.info('phone','[Purchase] 购买成功:', item.name);
 
   return {
     success: true,

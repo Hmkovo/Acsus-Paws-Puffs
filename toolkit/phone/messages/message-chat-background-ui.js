@@ -22,7 +22,7 @@ import { showSuccessToast } from '../ui-components/toast-notification.js';
  */
 export async function renderChatBackgroundSettings(params) {
   const { contactId } = params;
-  logger.debug('[ChatBackground] 渲染聊天背景设置页:', contactId);
+  logger.debug('phone','[ChatBackground] 渲染聊天背景设置页:', contactId);
 
   try {
     // 加载联系人数据
@@ -30,13 +30,13 @@ export async function renderChatBackgroundSettings(params) {
     const contact = contacts.find(c => c.id === contactId);
 
     if (!contact) {
-      logger.warn('[ChatBackground] 未找到联系人:', contactId);
+      logger.warn('phone','[ChatBackground] 未找到联系人:', contactId);
       return createErrorView();
     }
 
     // 加载系统背景列表
     const backgrounds = await getSystemBackgrounds();
-    logger.info('[ChatBackground] 获取到系统背景:', backgrounds.length, '个');
+    logger.info('phone','[ChatBackground] 获取到系统背景:', backgrounds.length, '个');
 
     const fragment = document.createDocumentFragment();
 
@@ -63,10 +63,10 @@ export async function renderChatBackgroundSettings(params) {
       bindEvents(container, contact, backgrounds);
     }, 100);
 
-    logger.info('[ChatBackground] 聊天背景设置页渲染完成');
+    logger.info('phone','[ChatBackground] 聊天背景设置页渲染完成');
     return fragment;
   } catch (error) {
-    logger.error('[ChatBackground] 渲染聊天背景设置页失败:', error);
+    logger.error('phone','[ChatBackground] 渲染聊天背景设置页失败:', error);
     return createErrorView();
   }
 }
@@ -273,7 +273,7 @@ function bindEvents(container, contact, backgrounds) {
  * 处理返回
  */
 function handleBack() {
-  logger.debug('[ChatBackground] 返回上一页');
+  logger.debug('phone','[ChatBackground] 返回上一页');
   const overlay = document.querySelector('.phone-overlay');
   const pageName = 'chat-background-settings';
   import('../phone-main-ui.js').then(({ hidePage }) => {
@@ -289,7 +289,7 @@ function handleBack() {
  * @param {number} opacity - 透明度（0-1）
  */
 async function handleOverlayOpacityChange(contact, opacity) {
-  logger.debug('[ChatBackground] 遮罩透明度改变:', opacity);
+  logger.debug('phone','[ChatBackground] 遮罩透明度改变:', opacity);
 
   // 初始化配置对象（如果不存在）
   if (!contact.chatBackground) {
@@ -318,7 +318,7 @@ async function handleOverlayOpacityChange(contact, opacity) {
  * @param {string} color - 颜色（十六进制）
  */
 async function handleOverlayColorChange(contact, color) {
-  logger.debug('[ChatBackground] 遮罩颜色改变:', color);
+  logger.debug('phone','[ChatBackground] 遮罩颜色改变:', color);
 
   // 初始化配置对象（如果不存在）
   if (!contact.chatBackground) {
@@ -349,7 +349,7 @@ async function handleOverlayColorChange(contact, color) {
  * @param {NodeListOf<Element>} gridItems - 所有网格项
  */
 async function handleBackgroundSelect(contact, bgUrl, bgName, gridItems) {
-  logger.info('[ChatBackground] 选择背景:', bgName);
+  logger.info('phone','[ChatBackground] 选择背景:', bgName);
 
   // 预加载图片（学习酒馆）
   await preloadImage(bgUrl);
@@ -400,7 +400,7 @@ async function handleBackgroundSelect(contact, bgUrl, bgName, gridItems) {
  * @param {HTMLElement} container - 页面容器
  */
 async function handleResetBackground(contact, container) {
-  logger.info('[ChatBackground] 恢复默认背景');
+  logger.info('phone','[ChatBackground] 恢复默认背景');
 
   // 重置为默认配置（无背景 + 无遮罩）
   contact.chatBackground = {
@@ -451,7 +451,7 @@ function applyChatBackground(contactId, bgConfig) {
   const chatContent = document.querySelector(`#page-chat-${sanitizedId} .chat-content`);
 
   if (!chatContent) {
-    logger.debug('[ChatBackground] 聊天页未打开，跳过应用背景');
+    logger.debug('phone','[ChatBackground] 聊天页未打开，跳过应用背景');
     return;
   }
 
@@ -466,7 +466,7 @@ function applyChatBackground(contactId, bgConfig) {
   chatContent.style.setProperty('--chat-bg-overlay-color', bgConfig.overlayColor);
   chatContent.style.setProperty('--chat-bg-overlay-opacity', bgConfig.overlayOpacity);
 
-  logger.debug('[ChatBackground] 背景已应用到聊天页');
+  logger.debug('phone','[ChatBackground] 背景已应用到聊天页');
 }
 
 /**
@@ -480,11 +480,11 @@ function preloadImage(url) {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
-      logger.debug('[ChatBackground] 图片预加载成功:', url);
+      logger.debug('phone','[ChatBackground] 图片预加载成功:', url);
       resolve(url);
     };
     img.onerror = () => {
-      logger.warn('[ChatBackground] 图片预加载失败:', url);
+      logger.warn('phone','[ChatBackground] 图片预加载失败:', url);
       resolve(url); // 失败也继续
     };
     img.src = url;

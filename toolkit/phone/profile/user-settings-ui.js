@@ -23,7 +23,7 @@ import { extension_settings } from '../../../../../../extensions.js';
  * @returns {Promise<DocumentFragment>} 设置页面内容片段
  */
 export async function renderUserSettings() {
-  logger.info('[UserSettings] 开始渲染用户设置页');
+  logger.info('phone','[UserSettings] 开始渲染用户设置页');
 
   // 获取用户头像（从顶部栏）
   const userAvatar = /** @type {HTMLImageElement} */ (document.querySelector('#phone-user-avatar'))?.src || 'User Avatars/default.png';
@@ -152,7 +152,7 @@ export async function renderUserSettings() {
 
   fragment.appendChild(container);
 
-  logger.info('[UserSettings] 设置页渲染完成');
+  logger.info('phone','[UserSettings] 设置页渲染完成');
   return fragment;
 }
 
@@ -164,12 +164,12 @@ export async function renderUserSettings() {
 function bindBackButton(pageElement) {
   const backBtn = pageElement.querySelector('.user-settings-back-btn');
   if (!backBtn) {
-    logger.warn('[UserSettings] 找不到返回按钮');
+    logger.warn('phone','[UserSettings] 找不到返回按钮');
     return;
   }
 
   backBtn.addEventListener('click', () => {
-    logger.debug('[UserSettings] 点击返回按钮');
+    logger.debug('phone','[UserSettings] 点击返回按钮');
     const overlayElement = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
     if (overlayElement) {
       hidePage(overlayElement, 'user-settings');
@@ -187,7 +187,7 @@ function bindSettingItems(pageElement) {
   const imageModeLink = pageElement.querySelector('#phone-image-mode-setting-link');
   if (imageModeLink) {
     imageModeLink.addEventListener('click', async () => {
-      logger.info('[UserSettings] 打开图片识别模式设置');
+      logger.info('phone','[UserSettings] 打开图片识别模式设置');
       const overlayElement = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
       if (overlayElement) {
         const { showPage } = await import('../phone-main-ui.js');
@@ -200,7 +200,7 @@ function bindSettingItems(pageElement) {
   const storageSpaceLink = pageElement.querySelector('#phone-storage-space-link');
   if (storageSpaceLink) {
     storageSpaceLink.addEventListener('click', async () => {
-      logger.info('[UserSettings] 打开存储空间');
+      logger.info('phone','[UserSettings] 打开存储空间');
       const overlayElement = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
       if (overlayElement) {
         const { showPage } = await import('../phone-main-ui.js');

@@ -26,7 +26,7 @@ export async function getWeather(city) {
   }
 
   try {
-    logger.debug('[WeatherHelper.getWeather] 获取天气:', city);
+    logger.debug('phone','[WeatherHelper.getWeather] 获取天气:', city);
 
     // wttr.in API: 返回JSON格式天气数据
     const url = `https://wttr.in/${encodeURIComponent(city)}?format=j1`;
@@ -52,11 +52,11 @@ export async function getWeather(city) {
       city: city
     };
 
-    logger.info('[WeatherHelper.getWeather] 天气获取成功:', weatherData);
+    logger.info('phone','[WeatherHelper.getWeather] 天气获取成功:', weatherData);
     return weatherData;
 
   } catch (error) {
-    logger.error('[WeatherHelper.getWeather] 获取天气失败:', error);
+    logger.error('phone','[WeatherHelper.getWeather] 获取天气失败:', error);
     throw new Error(`无法获取天气: ${error.message}`);
   }
 }

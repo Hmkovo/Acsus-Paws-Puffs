@@ -43,7 +43,7 @@ let refreshHandler = null;
 export async function renderSignatureHistory(params) {
   const { targetType, contactId } = params;
 
-  logger.info('[SignatureHistory] 渲染个签历史页面:', { targetType, contactId });
+  logger.info('phone','[SignatureHistory] 渲染个签历史页面:', { targetType, contactId });
 
   const fragment = document.createDocumentFragment();
   const container = document.createElement('div');
@@ -94,10 +94,10 @@ export async function renderSignatureHistory(params) {
     setupAutoRefresh(container, targetType, contactId);
 
     fragment.appendChild(container);
-    logger.info('[SignatureHistory] 页面渲染完成');
+    logger.info('phone','[SignatureHistory] 页面渲染完成');
     return fragment;
   } catch (error) {
-    logger.error('[SignatureHistory] 渲染失败:', error);
+    logger.error('phone','[SignatureHistory] 渲染失败:', error);
     return createErrorView(error.message);
   }
 }
@@ -377,7 +377,7 @@ function handleToggleDeleteButton(clickedItem, container) {
  * @async
  */
 async function handleSettings(container, targetType, contactId) {
-  logger.debug('[SignatureHistory] 打开设置');
+  logger.debug('phone','[SignatureHistory] 打开设置');
 
   try {
     const { getSignatureHistoryDisplayCount, setSignatureHistoryDisplayCount } = await import('./signature-data.js');
@@ -414,9 +414,9 @@ async function handleSettings(container, targetType, contactId) {
     }
 
     showSuccessToast(`已设置为显示 ${newCount} 条`);
-    logger.info('[SignatureHistory] 显示条数已更新:', newCount);
+    logger.info('phone','[SignatureHistory] 显示条数已更新:', newCount);
   } catch (error) {
-    logger.error('[SignatureHistory] 设置失败:', error);
+    logger.error('phone','[SignatureHistory] 设置失败:', error);
     showErrorToast('设置失败，请重试');
   }
 }
@@ -425,7 +425,7 @@ async function handleSettings(container, targetType, contactId) {
  * 处理返回
  */
 function handleBack() {
-  logger.debug('[SignatureHistory] 点击返回');
+  logger.debug('phone','[SignatureHistory] 点击返回');
 
   const overlayElement = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
   if (overlayElement) {
@@ -440,7 +440,7 @@ function handleBack() {
  * @async
  */
 async function handleDeleteHistory(targetType, contactId, signatureId, container) {
-  logger.debug('[SignatureHistory] 删除历史记录:', signatureId);
+  logger.debug('phone','[SignatureHistory] 删除历史记录:', signatureId);
 
   try {
     // 直接删除，不需要二次确认
@@ -457,12 +457,12 @@ async function handleDeleteHistory(targetType, contactId, signatureId, container
       itemElement?.remove();
 
       showSuccessToast('已删除');
-      logger.info('[SignatureHistory] 历史记录已删除');
+      logger.info('phone','[SignatureHistory] 历史记录已删除');
     } else {
       showErrorToast('删除失败');
     }
   } catch (error) {
-    logger.error('[SignatureHistory] 删除历史记录失败:', error);
+    logger.error('phone','[SignatureHistory] 删除历史记录失败:', error);
     showErrorToast('删除失败，请重试');
   }
 }
@@ -472,7 +472,7 @@ async function handleDeleteHistory(targetType, contactId, signatureId, container
  * @async
  */
 async function handleToggleLike(contactId, signatureId, likesSpan) {
-  logger.debug('[SignatureHistory] 切换点赞状态:', signatureId);
+  logger.debug('phone','[SignatureHistory] 切换点赞状态:', signatureId);
 
   try {
     const result = await toggleContactSignatureLike(contactId, signatureId);
@@ -511,12 +511,12 @@ async function handleToggleLike(contactId, signatureId, likesSpan) {
         time: Math.floor(Date.now() / 1000)
       });
 
-      logger.info('[SignatureHistory] 点赞已记录到本轮操作');
+      logger.info('phone','[SignatureHistory] 点赞已记录到本轮操作');
     }
 
-    logger.info('[SignatureHistory] 点赞状态已更新:', result ? '已点赞' : '已取消');
+    logger.info('phone','[SignatureHistory] 点赞状态已更新:', result ? '已点赞' : '已取消');
   } catch (error) {
-    logger.error('[SignatureHistory] 切换点赞状态失败:', error);
+    logger.error('phone','[SignatureHistory] 切换点赞状态失败:', error);
     showErrorToast('操作失败，请重试');
   }
 }
@@ -526,7 +526,7 @@ async function handleToggleLike(contactId, signatureId, likesSpan) {
  * @async
  */
 async function handleAddComment(contactId, signatureId, container) {
-  logger.debug('[SignatureHistory] 添加评论:', signatureId);
+  logger.debug('phone','[SignatureHistory] 添加评论:', signatureId);
 
   try {
     // 弹出输入框
@@ -572,12 +572,12 @@ async function handleAddComment(contactId, signatureId, container) {
         time: Math.floor(Date.now() / 1000)
       });
 
-      logger.info('[SignatureHistory] 评论已添加并记录到本轮操作');
+      logger.info('phone','[SignatureHistory] 评论已添加并记录到本轮操作');
     } else {
       showErrorToast('评论失败');
     }
   } catch (error) {
-    logger.error('[SignatureHistory] 添加评论失败:', error);
+    logger.error('phone','[SignatureHistory] 添加评论失败:', error);
     showErrorToast('评论失败，请重试');
   }
 }
@@ -586,7 +586,7 @@ async function handleAddComment(contactId, signatureId, container) {
  * 处理展开/折叠评论区
  */
 function handleToggleExpand(signatureId, expandBtn, container) {
-  logger.debug('[SignatureHistory] 切换展开状态:', signatureId);
+  logger.debug('phone','[SignatureHistory] 切换展开状态:', signatureId);
 
   const commentsSection = container.querySelector(`.signature-comments-section[data-signature-id="${signatureId}"]`);
   const icon = expandBtn.querySelector('i');
@@ -615,7 +615,7 @@ function handleToggleExpand(signatureId, expandBtn, container) {
  * @async
  */
 async function handleDeleteComment(contactId, signatureId, commentId, container) {
-  logger.debug('[SignatureHistory] 删除评论:', { signatureId, commentId });
+  logger.debug('phone','[SignatureHistory] 删除评论:', { signatureId, commentId });
 
   try {
     const success = await deleteContactSignatureComment(contactId, signatureId, commentId);
@@ -635,12 +635,12 @@ async function handleDeleteComment(contactId, signatureId, commentId, container)
       }
 
       showSuccessToast('评论已删除');
-      logger.info('[SignatureHistory] 评论已删除');
+      logger.info('phone','[SignatureHistory] 评论已删除');
     } else {
       showErrorToast('删除失败');
     }
   } catch (error) {
-    logger.error('[SignatureHistory] 删除评论失败:', error);
+    logger.error('phone','[SignatureHistory] 删除评论失败:', error);
     showErrorToast('删除失败，请重试');
   }
 }
@@ -684,11 +684,11 @@ function setupAutoRefresh(container, targetType, contactId) {
 
     // 检查页面是否还存在
     if (!document.contains(container)) {
-      logger.debug('[SignatureHistory] 页面已关闭，跳过刷新');
+      logger.debug('phone','[SignatureHistory] 页面已关闭，跳过刷新');
       return;
     }
 
-    logger.debug('[SignatureHistory] 检测到个签更新，刷新页面');
+    logger.debug('phone','[SignatureHistory] 检测到个签更新，刷新页面');
 
     try {
       // 重新加载数据
@@ -725,9 +725,9 @@ function setupAutoRefresh(container, targetType, contactId) {
         contentContainer.appendChild(createHistoryList(signatureData.history, targetType, contactId));
       }
 
-      logger.info('[SignatureHistory] 页面已刷新');
+      logger.info('phone','[SignatureHistory] 页面已刷新');
     } catch (error) {
-      logger.error('[SignatureHistory] 刷新失败:', error);
+      logger.error('phone','[SignatureHistory] 刷新失败:', error);
     }
   });
 
@@ -738,7 +738,7 @@ function setupAutoRefresh(container, targetType, contactId) {
         if (node === container || node.contains?.(container)) {
           stateManager.unsubscribeAll(pageId);
           observer.disconnect();
-          logger.debug('[SignatureHistory] 页面已关闭，已清理订阅');
+          logger.debug('phone','[SignatureHistory] 页面已关闭，已清理订阅');
           return;
         }
       }
@@ -750,5 +750,5 @@ function setupAutoRefresh(container, targetType, contactId) {
     observer.observe(parent, { childList: true, subtree: true });
   }
 
-  logger.debug('[SignatureHistory] 已订阅个签数据变化');
+  logger.debug('phone','[SignatureHistory] 已订阅个签数据变化');
 }

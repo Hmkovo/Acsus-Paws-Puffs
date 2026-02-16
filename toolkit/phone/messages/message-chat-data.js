@@ -64,11 +64,11 @@ export async function loadChatHistory(contactId) {
   const chatData = extension_settings.acsusPawsPuffs.phone.chats[chatKey];
 
   if (!chatData || !Array.isArray(chatData)) {
-    logger.debug('[ChatData] 聊天记录不存在，返回空数组:', contactId);
+    logger.debug('phone', '[ChatData] 聊天记录不存在，返回空数组:', contactId);
     return [];
   }
 
-  logger.debug('[ChatData] 加载聊天记录:', contactId, `共${chatData.length}条`);
+  logger.debug('phone', '[ChatData] 加载聊天记录:', contactId, `共${chatData.length}条`);
   return chatData;
 }
 
@@ -156,14 +156,14 @@ export async function saveChatMessage(contactId, message) {
   // 保存到服务器
   saveSettingsDebounced();
 
-  logger.debug('[ChatData] 保存消息:', contactId, getMessagePreview(message));
+  logger.debug('phone', '[ChatData] 保存消息:', contactId, getMessagePreview(message));
 
   // ✅ 如果是AI回复且聊天页面不可见，增加未读计数
   if (message.sender === 'contact') {
     const isChatVisible = isChatPageVisible(contactId);
     if (!isChatVisible) {
       incrementUnread(contactId);
-      logger.debug('[ChatData] AI回复且页面不可见，未读+1:', contactId);
+      logger.debug('phone', '[ChatData] AI回复且页面不可见，未读+1:', contactId);
     }
   }
 }
@@ -203,7 +203,7 @@ export async function saveChatMessages(contactId, messages) {
   // 保存到服务器
   saveSettingsDebounced();
 
-  logger.debug('[ChatData] 批量保存消息:', contactId, `共${messages.length}条`);
+  logger.debug('phone', '[ChatData] 批量保存消息:', contactId, `共${messages.length}条`);
 }
 
 /**
@@ -245,7 +245,7 @@ export async function loadRecentChats() {
   // 按最后消息时间降序排序
   recentChats.sort((a, b) => b.lastMessage.time - a.lastMessage.time);
 
-  logger.debug('[ChatData] 加载最近聊天:', `共${recentChats.length}个`);
+  logger.debug('phone', '[ChatData] 加载最近聊天:', `共${recentChats.length}个`);
   return recentChats;
 }
 
@@ -263,7 +263,7 @@ export async function clearChatHistory(contactId) {
 
   saveSettingsDebounced();
 
-  logger.info('[ChatData] 清空聊天记录:', contactId);
+  logger.info('phone', '[ChatData] 清空聊天记录:', contactId);
 }
 
 /**
@@ -284,7 +284,7 @@ export async function saveChatHistory(contactId, messages) {
 
   saveSettingsDebounced();
 
-  logger.debug('[ChatData] 批量保存聊天记录:', contactId, `共${messages.length}条`);
+  logger.debug('phone', '[ChatData] 批量保存聊天记录:', contactId, `共${messages.length}条`);
 }
 
 /**
@@ -343,7 +343,7 @@ export async function updateChatSendSettings(contactId, updates) {
 
   saveSettingsDebounced();
 
-  logger.debug('[ChatData] 更新发送设置:', contactId, updates);
+  logger.debug('phone', '[ChatData] 更新发送设置:', contactId, updates);
 }
 
 /**
@@ -387,7 +387,7 @@ export async function updateMessage(contactId, messageId, updates) {
   const chatData = extension_settings.acsusPawsPuffs.phone.chats[chatKey];
 
   if (!chatData || !Array.isArray(chatData)) {
-    logger.warn('[ChatData] 聊天记录不存在，无法更新消息:', contactId);
+    logger.warn('phone', '[ChatData] 聊天记录不存在，无法更新消息:', contactId);
     return false;
   }
 
@@ -395,7 +395,7 @@ export async function updateMessage(contactId, messageId, updates) {
   const messageIndex = chatData.findIndex(msg => msg.id === messageId);
 
   if (messageIndex === -1) {
-    logger.warn('[ChatData] 消息不存在，无法更新:', messageId);
+    logger.warn('phone', '[ChatData] 消息不存在，无法更新:', messageId);
     return false;
   }
 
@@ -408,7 +408,7 @@ export async function updateMessage(contactId, messageId, updates) {
   // 保存到服务器
   saveSettingsDebounced();
 
-  logger.info('[ChatData] 更新消息成功:', messageId, '更新字段:', Object.keys(updates));
+  logger.info('phone', '[ChatData] 更新消息成功:', messageId, '更新字段:', Object.keys(updates));
   return true;
 }
 
@@ -434,7 +434,7 @@ export async function updateMessage(contactId, messageId, updates) {
  * });
  */
 export async function addSystemMessage(contactId, systemMessage) {
-  logger.debug('[ChatData] 添加系统消息:', contactId, systemMessage.type);
+  logger.debug('phone', '[ChatData] 添加系统消息:', contactId, systemMessage.type);
 
   try {
     // 加载现有聊天记录
@@ -455,10 +455,10 @@ export async function addSystemMessage(contactId, systemMessage) {
     // 保存回去
     await saveChatHistory(contactId, messages);
 
-    logger.info('[ChatData] 已添加系统消息:', contactId, systemMessage.type);
+    logger.info('phone', '[ChatData] 已添加系统消息:', contactId, systemMessage.type);
     return true;
   } catch (error) {
-    logger.error('[ChatData] 添加系统消息失败:', error);
+    logger.error('phone', '[ChatData] 添加系统消息失败:', error);
     return false;
   }
 }
@@ -507,7 +507,7 @@ export async function incrementRound(contactId) {
   saveSettingsDebounced();
 
   const newRound = extension_settings.acsusPawsPuffs.phone.chatRounds[contactId];
-  logger.debug('[ChatData] 轮次递增:', contactId, `现在是第${newRound}轮`);
+  logger.debug('phone', '[ChatData] 轮次递增:', contactId, `现在是第${newRound}轮`);
 
   return newRound;
 }

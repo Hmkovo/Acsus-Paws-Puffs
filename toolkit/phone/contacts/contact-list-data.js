@@ -21,21 +21,21 @@ const CONTACTS_KEY = 'contacts';
  * // [{ id: 'tavern_alice', name: 'Alice', avatar: 'alice.png', ... }]
  */
 async function loadContacts() {
-  logger.debug('[ContactData] 加载联系人列表');
+  logger.debug('phone','[ContactData] 加载联系人列表');
 
   try {
     const data = await loadData(CONTACTS_KEY);
 
     // 如果数据不存在，返回空数组
     if (!data || !Array.isArray(data)) {
-      logger.debug('[ContactData] 联系人列表为空，返回空数组');
+      logger.debug('phone','[ContactData] 联系人列表为空，返回空数组');
       return [];
     }
 
-    logger.info('[ContactData] 成功加载联系人列表，共', data.length, '个联系人');
+    logger.info('phone','[ContactData] 成功加载联系人列表，共', data.length, '个联系人');
     return data;
   } catch (error) {
-    logger.error('[ContactData] 加载联系人列表失败:', error);
+    logger.error('phone','[ContactData] 加载联系人列表失败:', error);
     return [];
   }
 }
@@ -57,12 +57,12 @@ async function loadContacts() {
  * @returns {Promise<boolean>} 是否保存成功
  */
 async function saveContact(contact) {
-  logger.debug('[ContactData] 保存联系人:', contact.id);
+  logger.debug('phone','[ContactData] 保存联系人:', contact.id);
 
   try {
     // 验证必需字段
     if (!contact.id || !contact.name) {
-      logger.warn('[ContactData] 联系人缺少必需字段:', contact);
+      logger.warn('phone','[ContactData] 联系人缺少必需字段:', contact);
       return false;
     }
 
@@ -86,11 +86,11 @@ async function saveContact(contact) {
     if (existingIndex >= 0) {
       // 更新现有联系人
       contacts[existingIndex] = contact;
-      logger.info('[ContactData] 更新联系人:', contact.name);
+      logger.info('phone','[ContactData] 更新联系人:', contact.name);
     } else {
       // 添加新联系人
       contacts.push(contact);
-      logger.info('[ContactData] 添加联系人:', contact.name);
+      logger.info('phone','[ContactData] 添加联系人:', contact.name);
     }
 
     // 保存到存储
@@ -101,7 +101,7 @@ async function saveContact(contact) {
 
     return true;
   } catch (error) {
-    logger.error('[ContactData] 保存联系人失败:', error);
+    logger.error('phone','[ContactData] 保存联系人失败:', error);
     return false;
   }
 }
@@ -117,7 +117,7 @@ async function saveContact(contact) {
  * @returns {Promise<boolean>} 是否删除成功
  */
 async function deleteContact(contactId) {
-  logger.info('[ContactData] 删除联系人:', contactId);
+  logger.info('phone','[ContactData] 删除联系人:', contactId);
 
   try {
     // 加载现有联系人列表
@@ -128,20 +128,20 @@ async function deleteContact(contactId) {
 
     // 检查是否真的删除了
     if (filteredContacts.length === contacts.length) {
-      logger.warn('[ContactData] 联系人不存在:', contactId);
+      logger.warn('phone','[ContactData] 联系人不存在:', contactId);
       return false;
     }
 
     // 保存到存储
     await saveData(CONTACTS_KEY, filteredContacts);
-    logger.info('[ContactData] 联系人已删除:', contactId);
+    logger.info('phone','[ContactData] 联系人已删除:', contactId);
 
     // 触发联系人列表变化事件（通知酒馆宏刷新）
     triggerContactListChanged();
 
     return true;
   } catch (error) {
-    logger.error('[ContactData] 删除联系人失败:', error);
+    logger.error('phone','[ContactData] 删除联系人失败:', error);
     return false;
   }
 }
@@ -156,19 +156,19 @@ async function deleteContact(contactId) {
  * @returns {Promise<Array<string>>} 已同意的好友ID列表
  */
 async function getAgreedFriends() {
-  logger.debug('[ContactData] 获取已同意好友列表');
+  logger.debug('phone','[ContactData] 获取已同意好友列表');
 
   try {
     const agreedList = await loadData('agreedFriends');
 
     if (!agreedList || !Array.isArray(agreedList)) {
-      logger.debug('[ContactData] 已同意列表为空，返回空数组');
+      logger.debug('phone','[ContactData] 已同意列表为空，返回空数组');
       return [];
     }
 
     return agreedList;
   } catch (error) {
-    logger.error('[ContactData] 获取已同意列表失败:', error);
+    logger.error('phone','[ContactData] 获取已同意列表失败:', error);
     return [];
   }
 }
@@ -184,7 +184,7 @@ async function getAgreedFriends() {
  * @returns {Promise<boolean>} 是否保存成功
  */
 async function markFriendAsAgreed(friendId) {
-  logger.info('[ContactData] 标记好友为已同意:', friendId);
+  logger.info('phone','[ContactData] 标记好友为已同意:', friendId);
 
   try {
     // 获取现有列表
@@ -192,7 +192,7 @@ async function markFriendAsAgreed(friendId) {
 
     // 检查是否已存在
     if (agreedList.includes(friendId)) {
-      logger.warn('[ContactData] 好友已在已同意列表中:', friendId);
+      logger.warn('phone','[ContactData] 好友已在已同意列表中:', friendId);
       return true;
     }
 
@@ -201,10 +201,10 @@ async function markFriendAsAgreed(friendId) {
 
     // 保存到存储
     await saveData('agreedFriends', agreedList);
-    logger.info('[ContactData] 已同意好友已保存:', friendId);
+    logger.info('phone','[ContactData] 已同意好友已保存:', friendId);
     return true;
   } catch (error) {
-    logger.error('[ContactData] 标记已同意失败:', error);
+    logger.error('phone','[ContactData] 标记已同意失败:', error);
     return false;
   }
 }
@@ -235,19 +235,19 @@ async function isFriendAgreed(friendId) {
  * @returns {Promise<Array>} 待处理的好友申请列表
  */
 async function getPendingRequests() {
-  logger.debug('[ContactData] 获取待处理好友申请');
+  logger.debug('phone','[ContactData] 获取待处理好友申请');
 
   try {
     const pending = await loadData('pendingRequests');
 
     if (!pending || !Array.isArray(pending)) {
-      logger.debug('[ContactData] 待处理列表为空，返回空数组');
+      logger.debug('phone','[ContactData] 待处理列表为空，返回空数组');
       return [];
     }
 
     return pending;
   } catch (error) {
-    logger.error('[ContactData] 获取待处理列表失败:', error);
+    logger.error('phone','[ContactData] 获取待处理列表失败:', error);
     return [];
   }
 }
@@ -264,13 +264,13 @@ async function getPendingRequests() {
  * @returns {Promise<boolean>} 是否保存成功
  */
 async function savePendingRequests(requests) {
-  logger.info('[ContactData] 保存待处理申请列表，共', requests.length, '个');
+  logger.info('phone','[ContactData] 保存待处理申请列表，共', requests.length, '个');
 
   try {
     await saveData('pendingRequests', requests);
     return true;
   } catch (error) {
-    logger.error('[ContactData] 保存待处理列表失败:', error);
+    logger.error('phone','[ContactData] 保存待处理列表失败:', error);
     return false;
   }
 }
@@ -287,7 +287,7 @@ async function savePendingRequests(requests) {
  * @returns {Promise<Object>} 同步结果 { added: number, total: number }
  */
 async function mergePendingRequests(newCharacters) {
-  logger.debug('[ContactData] 合并新角色到待处理列表');
+  logger.debug('phone','[ContactData] 合并新角色到待处理列表');
 
   try {
     // 获取现有的待处理列表
@@ -305,14 +305,14 @@ async function mergePendingRequests(newCharacters) {
     // 保存合并后的列表
     await savePendingRequests(merged);
 
-    logger.info('[ContactData] 合并完成，新增', toAdd.length, '个，总计', merged.length, '个');
+    logger.info('phone','[ContactData] 合并完成，新增', toAdd.length, '个，总计', merged.length, '个');
 
     return {
       added: toAdd.length,
       total: merged.length
     };
   } catch (error) {
-    logger.error('[ContactData] 合并失败:', error);
+    logger.error('phone','[ContactData] 合并失败:', error);
     return {
       added: 0,
       total: 0
@@ -332,7 +332,7 @@ async function mergePendingRequests(newCharacters) {
  * @returns {Promise<boolean>} 是否移除成功
  */
 async function removeFromPendingRequests(friendId) {
-  logger.debug('[ContactData] 从待处理列表移除:', friendId);
+  logger.debug('phone','[ContactData] 从待处理列表移除:', friendId);
 
   try {
     const pending = await getPendingRequests();
@@ -341,7 +341,7 @@ async function removeFromPendingRequests(friendId) {
     await savePendingRequests(filtered);
     return true;
   } catch (error) {
-    logger.error('[ContactData] 移除失败:', error);
+    logger.error('phone','[ContactData] 移除失败:', error);
     return false;
   }
 }
@@ -357,7 +357,7 @@ async function removeFromPendingRequests(friendId) {
  * @returns {Promise<number>} 未同意的角色数量
  */
 async function getUnreadFriendRequestsCount() {
-  logger.debug('[ContactData] 计算未同意好友数量');
+  logger.debug('phone','[ContactData] 计算未同意好友数量');
 
   try {
     // 获取待处理列表（快照）
@@ -369,10 +369,10 @@ async function getUnreadFriendRequestsCount() {
     // 计算未同意的数量
     const unreadCount = pending.filter(c => !agreedList.includes(c.id)).length;
 
-    logger.debug('[ContactData] 未同意好友数量:', unreadCount);
+    logger.debug('phone','[ContactData] 未同意好友数量:', unreadCount);
     return unreadCount;
   } catch (error) {
-    logger.error('[ContactData] 计算未同意数量失败:', error);
+    logger.error('phone','[ContactData] 计算未同意数量失败:', error);
     return 0;
   }
 }
@@ -394,23 +394,23 @@ const GROUPS_KEY = 'contactGroups';
  * // [{ id: 'group_1', name: '特别关心', order: 0, isDefault: true }, ...]
  */
 async function loadContactGroups() {
-  logger.debug('[ContactData] 加载分组列表');
+  logger.debug('phone','[ContactData] 加载分组列表');
 
   try {
     const data = await loadData(GROUPS_KEY);
 
     // 如果数据不存在，返回默认分组
     if (!data || !Array.isArray(data)) {
-      logger.debug('[ContactData] 分组列表为空，返回默认分组');
+      logger.debug('phone','[ContactData] 分组列表为空，返回默认分组');
       const defaultGroups = getDefaultGroups();
       await saveData(GROUPS_KEY, defaultGroups);
       return defaultGroups;
     }
 
-    logger.info('[ContactData] 成功加载分组列表，共', data.length, '个分组');
+    logger.info('phone','[ContactData] 成功加载分组列表，共', data.length, '个分组');
     return data;
   } catch (error) {
-    logger.error('[ContactData] 加载分组列表失败:', error);
+    logger.error('phone','[ContactData] 加载分组列表失败:', error);
     return getDefaultGroups();
   }
 }
@@ -450,12 +450,12 @@ function getDefaultGroups() {
  * @returns {Promise<boolean>} 是否保存成功
  */
 async function saveContactGroup(group) {
-  logger.debug('[ContactData] 保存分组:', group.id);
+  logger.debug('phone','[ContactData] 保存分组:', group.id);
 
   try {
     // 验证必需字段（name 可以为空字符串）
     if (!group.id) {
-      logger.warn('[ContactData] 分组缺少必需字段:', group);
+      logger.warn('phone','[ContactData] 分组缺少必需字段:', group);
       return false;
     }
 
@@ -468,18 +468,18 @@ async function saveContactGroup(group) {
     if (existingIndex >= 0) {
       // 更新现有分组
       groups[existingIndex] = group;
-      logger.info('[ContactData] 更新分组:', group.name);
+      logger.info('phone','[ContactData] 更新分组:', group.name);
     } else {
       // 添加新分组
       groups.push(group);
-      logger.info('[ContactData] 添加分组:', group.name);
+      logger.info('phone','[ContactData] 添加分组:', group.name);
     }
 
     // 保存到存储
     await saveData(GROUPS_KEY, groups);
     return true;
   } catch (error) {
-    logger.error('[ContactData] 保存分组失败:', error);
+    logger.error('phone','[ContactData] 保存分组失败:', error);
     return false;
   }
 }
@@ -495,7 +495,7 @@ async function saveContactGroup(group) {
  * @returns {Promise<boolean>} 是否删除成功
  */
 async function deleteContactGroup(groupId) {
-  logger.info('[ContactData] 删除分组:', groupId);
+  logger.info('phone','[ContactData] 删除分组:', groupId);
 
   try {
     // 加载现有分组列表
@@ -504,7 +504,7 @@ async function deleteContactGroup(groupId) {
     // 检查是否为默认分组
     const group = groups.find(g => g.id === groupId);
     if (group && group.isDefault) {
-      logger.warn('[ContactData] 不能删除默认分组:', groupId);
+      logger.warn('phone','[ContactData] 不能删除默认分组:', groupId);
       return false;
     }
 
@@ -513,7 +513,7 @@ async function deleteContactGroup(groupId) {
 
     // 检查是否真的删除了
     if (filteredGroups.length === groups.length) {
-      logger.warn('[ContactData] 分组不存在:', groupId);
+      logger.warn('phone','[ContactData] 分组不存在:', groupId);
       return false;
     }
 
@@ -524,10 +524,10 @@ async function deleteContactGroup(groupId) {
     // 这个功能在后续实现联系人与分组关联时添加
     await moveContactsToDefaultGroup(groupId);
 
-    logger.info('[ContactData] 分组已删除:', groupId);
+    logger.info('phone','[ContactData] 分组已删除:', groupId);
     return true;
   } catch (error) {
-    logger.error('[ContactData] 删除分组失败:', error);
+    logger.error('phone','[ContactData] 删除分组失败:', error);
     return false;
   }
 }
@@ -543,7 +543,7 @@ async function deleteContactGroup(groupId) {
  * @returns {Promise<boolean>} 是否更新成功
  */
 async function updateGroupsOrder(newOrder) {
-  logger.debug('[ContactData] 更新分组排序');
+  logger.debug('phone','[ContactData] 更新分组排序');
 
   try {
     // 加载现有分组列表
@@ -559,10 +559,10 @@ async function updateGroupsOrder(newOrder) {
 
     // 保存到存储
     await saveData(GROUPS_KEY, groups);
-    logger.info('[ContactData] 分组排序已更新');
+    logger.info('phone','[ContactData] 分组排序已更新');
     return true;
   } catch (error) {
-    logger.error('[ContactData] 更新分组排序失败:', error);
+    logger.error('phone','[ContactData] 更新分组排序失败:', error);
     return false;
   }
 }
@@ -578,7 +578,7 @@ async function updateGroupsOrder(newOrder) {
  * @returns {Promise<void>}
  */
 async function moveContactsToDefaultGroup(groupId) {
-  logger.debug('[ContactData] 将分组联系人移至默认分组:', groupId);
+  logger.debug('phone','[ContactData] 将分组联系人移至默认分组:', groupId);
 
   try {
     // 加载所有联系人
@@ -599,10 +599,10 @@ async function moveContactsToDefaultGroup(groupId) {
     // 保存联系人列表
     if (movedCount > 0) {
       await saveData(CONTACTS_KEY, contacts);
-      logger.info('[ContactData] 已将', movedCount, '个联系人移至默认分组');
+      logger.info('phone','[ContactData] 已将', movedCount, '个联系人移至默认分组');
     }
   } catch (error) {
-    logger.error('[ContactData] 移动联系人失败:', error);
+    logger.error('phone','[ContactData] 移动联系人失败:', error);
   }
 }
 
@@ -619,7 +619,7 @@ function triggerContactListChanged() {
     detail: { timestamp: Date.now() }
   });
   document.dispatchEvent(event);
-  logger.debug('[ContactData] 已触发联系人列表变化事件');
+  logger.debug('phone','[ContactData] 已触发联系人列表变化事件');
 }
 
 // ==================== AI感知删除相关函数 ====================
@@ -637,7 +637,7 @@ const AI_AWARE_DELETED_KEY = 'aiAwareDeletedFriends';
  * @returns {Promise<boolean>} 是否添加成功
  */
 async function addAIAwareDeletedRequest(contact, deleteTime) {
-  logger.debug('[ContactData] 添加AI感知删除申请:', contact.name);
+  logger.debug('phone','[ContactData] 添加AI感知删除申请:', contact.name);
 
   try {
     const requests = await loadData(AI_AWARE_DELETED_KEY) || [];
@@ -645,7 +645,7 @@ async function addAIAwareDeletedRequest(contact, deleteTime) {
     // 检查是否已存在（避免重复）
     const exists = requests.find(r => r.contactId === contact.id);
     if (exists) {
-      logger.warn('[ContactData] 该角色已在AI感知删除列表中:', contact.name);
+      logger.warn('phone','[ContactData] 该角色已在AI感知删除列表中:', contact.name);
       return false;
     }
 
@@ -665,10 +665,10 @@ async function addAIAwareDeletedRequest(contact, deleteTime) {
     });
 
     await saveData(AI_AWARE_DELETED_KEY, requests);
-    logger.info('[ContactData] 已添加AI感知删除申请:', contact.name);
+    logger.info('phone','[ContactData] 已添加AI感知删除申请:', contact.name);
     return true;
   } catch (error) {
-    logger.error('[ContactData] 添加AI感知删除申请失败:', error);
+    logger.error('phone','[ContactData] 添加AI感知删除申请失败:', error);
     return false;
   }
 }
@@ -682,10 +682,10 @@ async function addAIAwareDeletedRequest(contact, deleteTime) {
 async function getAIAwareDeletedRequests() {
   try {
     const requests = await loadData(AI_AWARE_DELETED_KEY) || [];
-    logger.debug('[ContactData] 获取AI感知删除申请，共', requests.length, '个');
+    logger.debug('phone','[ContactData] 获取AI感知删除申请，共', requests.length, '个');
     return requests;
   } catch (error) {
-    logger.error('[ContactData] 获取AI感知删除申请失败:', error);
+    logger.error('phone','[ContactData] 获取AI感知删除申请失败:', error);
     return [];
   }
 }
@@ -698,22 +698,22 @@ async function getAIAwareDeletedRequests() {
  * @returns {Promise<boolean>} 是否移除成功
  */
 async function removeAIAwareDeletedRequest(contactId) {
-  logger.debug('[ContactData] 移除AI感知删除申请:', contactId);
+  logger.debug('phone','[ContactData] 移除AI感知删除申请:', contactId);
 
   try {
     const requests = await loadData(AI_AWARE_DELETED_KEY) || [];
     const filtered = requests.filter(r => r.contactId !== contactId);
 
     if (filtered.length === requests.length) {
-      logger.warn('[ContactData] 未找到该申请:', contactId);
+      logger.warn('phone','[ContactData] 未找到该申请:', contactId);
       return false;
     }
 
     await saveData(AI_AWARE_DELETED_KEY, filtered);
-    logger.info('[ContactData] 已移除AI感知删除申请:', contactId);
+    logger.info('phone','[ContactData] 已移除AI感知删除申请:', contactId);
     return true;
   } catch (error) {
-    logger.error('[ContactData] 移除AI感知删除申请失败:', error);
+    logger.error('phone','[ContactData] 移除AI感知删除申请失败:', error);
     return false;
   }
 }
@@ -729,14 +729,14 @@ async function removeAIAwareDeletedRequest(contactId) {
  * @returns {Promise<boolean>} 是否添加成功
  */
 async function addReapplyMessage(contactId, message, time, msgId) {
-  logger.debug('[ContactData] 添加重新申请消息:', contactId, message.substring(0, 20));
+  logger.debug('phone','[ContactData] 添加重新申请消息:', contactId, message.substring(0, 20));
 
   try {
     const requests = await loadData(AI_AWARE_DELETED_KEY) || [];
     const request = requests.find(r => r.contactId === contactId);
 
     if (!request) {
-      logger.warn('[ContactData] 未找到AI感知删除申请:', contactId);
+      logger.warn('phone','[ContactData] 未找到AI感知删除申请:', contactId);
       return false;
     }
 
@@ -752,10 +752,10 @@ async function addReapplyMessage(contactId, message, time, msgId) {
     request.reapplyConfig.lastApplyTime = time;
 
     await saveData(AI_AWARE_DELETED_KEY, requests);
-    logger.info('[ContactData] 已添加重新申请消息:', contactId, msgId ? `(msgId: ${msgId})` : '');
+    logger.info('phone','[ContactData] 已添加重新申请消息:', contactId, msgId ? `(msgId: ${msgId})` : '');
     return true;
   } catch (error) {
-    logger.error('[ContactData] 添加重新申请消息失败:', error);
+    logger.error('phone','[ContactData] 添加重新申请消息失败:', error);
     return false;
   }
 }
@@ -768,19 +768,19 @@ async function addReapplyMessage(contactId, message, time, msgId) {
  * @returns {Promise<boolean>} 是否删除成功
  */
 async function deleteReapplyMessage(contactId, messageIndex) {
-  logger.debug('[ContactData] 删除重新申请消息:', contactId, messageIndex);
+  logger.debug('phone','[ContactData] 删除重新申请消息:', contactId, messageIndex);
 
   try {
     const requests = await loadData(AI_AWARE_DELETED_KEY) || [];
     const request = requests.find(r => r.contactId === contactId);
 
     if (!request) {
-      logger.warn('[ContactData] 未找到AI感知删除申请:', contactId);
+      logger.warn('phone','[ContactData] 未找到AI感知删除申请:', contactId);
       return false;
     }
 
     if (messageIndex < 0 || messageIndex >= request.reapplyMessages.length) {
-      logger.warn('[ContactData] 消息索引超出范围:', messageIndex);
+      logger.warn('phone','[ContactData] 消息索引超出范围:', messageIndex);
       return false;
     }
 
@@ -788,10 +788,10 @@ async function deleteReapplyMessage(contactId, messageIndex) {
     request.reapplyMessages.splice(messageIndex, 1);
 
     await saveData(AI_AWARE_DELETED_KEY, requests);
-    logger.info('[ContactData] 已删除重新申请消息:', contactId, messageIndex);
+    logger.info('phone','[ContactData] 已删除重新申请消息:', contactId, messageIndex);
     return true;
   } catch (error) {
-    logger.error('[ContactData] 删除重新申请消息失败:', error);
+    logger.error('phone','[ContactData] 删除重新申请消息失败:', error);
     return false;
   }
 }
@@ -805,14 +805,14 @@ async function deleteReapplyMessage(contactId, messageIndex) {
  * @returns {Promise<boolean>} 是否删除成功
  */
 async function deleteReapplyMessageByMsgId(contactId, msgId) {
-  logger.debug('[ContactData] 根据msgId删除重新申请消息:', contactId, msgId);
+  logger.debug('phone','[ContactData] 根据msgId删除重新申请消息:', contactId, msgId);
 
   try {
     const requests = await loadData(AI_AWARE_DELETED_KEY) || [];
     const request = requests.find(r => r.contactId === contactId);
 
     if (!request) {
-      logger.warn('[ContactData] 未找到AI感知删除申请:', contactId);
+      logger.warn('phone','[ContactData] 未找到AI感知删除申请:', contactId);
       return false;
     }
 
@@ -820,7 +820,7 @@ async function deleteReapplyMessageByMsgId(contactId, msgId) {
     const messageIndex = request.reapplyMessages.findIndex(msg => msg.msgId === msgId);
     
     if (messageIndex === -1) {
-      logger.warn('[ContactData] 未找到msgId对应的消息:', msgId);
+      logger.warn('phone','[ContactData] 未找到msgId对应的消息:', msgId);
       return false;
     }
 
@@ -828,10 +828,10 @@ async function deleteReapplyMessageByMsgId(contactId, msgId) {
     request.reapplyMessages.splice(messageIndex, 1);
 
     await saveData(AI_AWARE_DELETED_KEY, requests);
-    logger.info('[ContactData] 已根据msgId删除重新申请消息:', contactId, msgId);
+    logger.info('phone','[ContactData] 已根据msgId删除重新申请消息:', contactId, msgId);
     return true;
   } catch (error) {
-    logger.error('[ContactData] 根据msgId删除重新申请消息失败:', error);
+    logger.error('phone','[ContactData] 根据msgId删除重新申请消息失败:', error);
     return false;
   }
 }
@@ -847,14 +847,14 @@ async function deleteReapplyMessageByMsgId(contactId, msgId) {
  * @returns {Promise<boolean>} 是否更新成功
  */
 async function updateReapplyConfig(contactId, config) {
-  logger.debug('[ContactData] 更新申请配置:', contactId, config);
+  logger.debug('phone','[ContactData] 更新申请配置:', contactId, config);
 
   try {
     const requests = await loadData(AI_AWARE_DELETED_KEY) || [];
     const request = requests.find(r => r.contactId === contactId);
 
     if (!request) {
-      logger.warn('[ContactData] 未找到AI感知删除申请:', contactId);
+      logger.warn('phone','[ContactData] 未找到AI感知删除申请:', contactId);
       return false;
     }
 
@@ -862,10 +862,10 @@ async function updateReapplyConfig(contactId, config) {
     Object.assign(request.reapplyConfig, config);
 
     await saveData(AI_AWARE_DELETED_KEY, requests);
-    logger.info('[ContactData] 已更新申请配置:', contactId);
+    logger.info('phone','[ContactData] 已更新申请配置:', contactId);
     return true;
   } catch (error) {
-    logger.error('[ContactData] 更新申请配置失败:', error);
+    logger.error('phone','[ContactData] 更新申请配置失败:', error);
     return false;
   }
 }
@@ -878,7 +878,7 @@ async function updateReapplyConfig(contactId, config) {
  * @returns {Promise<boolean>} 是否更新成功
  */
 async function markReapplyMessagesAsRead(contactId) {
-  logger.debug('[ContactData] 标记申请消息为已读:', contactId);
+  logger.debug('phone','[ContactData] 标记申请消息为已读:', contactId);
 
   try {
     const requests = await loadData(AI_AWARE_DELETED_KEY) || [];
@@ -894,10 +894,10 @@ async function markReapplyMessagesAsRead(contactId) {
     });
 
     await saveData(AI_AWARE_DELETED_KEY, requests);
-    logger.info('[ContactData] 已标记申请消息为已读:', contactId);
+    logger.info('phone','[ContactData] 已标记申请消息为已读:', contactId);
     return true;
   } catch (error) {
-    logger.error('[ContactData] 标记申请消息为已读失败:', error);
+    logger.error('phone','[ContactData] 标记申请消息为已读失败:', error);
     return false;
   }
 }
@@ -921,7 +921,7 @@ async function getUnreadReapplyCount(contactId) {
     const unreadCount = request.reapplyMessages.filter(msg => !msg.isRead).length;
     return unreadCount;
   } catch (error) {
-    logger.error('[ContactData] 获取未读申请消息数量失败:', error);
+    logger.error('phone','[ContactData] 获取未读申请消息数量失败:', error);
     return 0;
   }
 }

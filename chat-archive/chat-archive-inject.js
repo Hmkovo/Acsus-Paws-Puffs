@@ -33,7 +33,7 @@ let globalClickBound = false;
  * 3. 启动 MutationObserver 监听新消息
  */
 export function initMessageInject() {
-    logger.info('[ChatArchive.Inject] 初始化消息按钮注入');
+    logger.info('archive', '[ChatArchive.Inject] 初始化消息按钮注入');
 
     // 绑定全局点击事件（只需绑定一次）
     bindGlobalClickEvent();
@@ -44,7 +44,7 @@ export function initMessageInject() {
     // 监听新消息
     startObserver();
 
-    logger.info('[ChatArchive.Inject] 消息按钮注入已启动');
+    logger.info('archive', '[ChatArchive.Inject] 消息按钮注入已启动');
 }
 
 /**
@@ -55,7 +55,7 @@ export function stopMessageInject() {
     if (messageObserver) {
         messageObserver.disconnect();
         messageObserver = null;
-        logger.info('[ChatArchive.Inject] 消息按钮注入已停止');
+        logger.info('archive', '[ChatArchive.Inject] 消息按钮注入已停止');
     }
 }
 
@@ -74,7 +74,7 @@ function injectToExistingMessages() {
     });
 
     if (count > 0) {
-        logger.debug('[ChatArchive.Inject] 已为', count, '条消息注入收藏按钮');
+        logger.debug('archive', '[ChatArchive.Inject] 已为', count, '条消息注入收藏按钮');
     }
 }
 
@@ -85,7 +85,7 @@ function injectToExistingMessages() {
 function startObserver() {
     const chatContainer = document.getElementById('chat');
     if (!chatContainer) {
-        logger.warn('[ChatArchive.Inject] 找不到聊天容器 #chat');
+        logger.warn('archive', '[ChatArchive.Inject] 找不到聊天容器 #chat');
         return;
     }
 
@@ -115,7 +115,7 @@ function startObserver() {
         subtree: true
     });
 
-    logger.debug('[ChatArchive.Inject] MutationObserver 已启动');
+    logger.debug('archive', '[ChatArchive.Inject] MutationObserver 已启动');
 }
 
 /**
@@ -157,7 +157,7 @@ function injectButtonToMessage(messageElement) {
 function bindGlobalClickEvent() {
     // 防止重复绑定
     if (globalClickBound) {
-        logger.debug('[ChatArchive.Inject] 全局点击事件已绑定过，跳过');
+        logger.debug('archive', '[ChatArchive.Inject] 全局点击事件已绑定过，跳过');
         return;
     }
 
@@ -175,7 +175,7 @@ function bindGlobalClickEvent() {
     });
 
     globalClickBound = true;
-    logger.debug('[ChatArchive.Inject] 全局点击事件已绑定');
+    logger.debug('archive', '[ChatArchive.Inject] 全局点击事件已绑定');
 }
 
 /**
@@ -197,7 +197,7 @@ async function handleFavoriteClick(messageElement, buttonElement) {
         ? messageText.substring(0, 100) + '...'
         : messageText;
 
-    logger.debug('[ChatArchive.Inject] 点击收藏按钮:', {
+    logger.debug('archive', '[ChatArchive.Inject] 点击收藏按钮:', {
         mesId,
         isUser,
         senderName,
@@ -288,7 +288,7 @@ async function showFavoritePopup({ mesId, isUser, senderName, messagePreview, bu
         const title = titleInput?.value?.trim() || '';
         const group = groupSelect?.value || 'default';
 
-        logger.info('[ChatArchive.Inject] 用户确认收藏:', {
+        logger.info('archive', '[ChatArchive.Inject] 用户确认收藏:', {
             mesId,
             title: title || '(无标题)',
             group

@@ -48,16 +48,16 @@ let initialized = false;
  */
 export async function initVariables() {
     if (initialized) {
-        logger.debug('[Variables] 已初始化，跳过');
+        logger.debug('variable', '[Variables] 已初始化，跳过');
         return { success: true };
     }
 
-    logger.info('[Variables] 开始初始化...');
+    logger.info('variable', '[Variables] 开始初始化...');
 
     try {
         // 1. 加载存储数据
         const data = await variableStorage.loadStorageV2();
-        logger.debug('[Variables] 存储数据已加载');
+        logger.debug('variable', '[Variables] 存储数据已加载');
 
         // 2. 初始化套装管理器
         const suiteManager = getSuiteManager(variableStorage.saveStorageV2Debounced);
@@ -93,11 +93,11 @@ export async function initVariables() {
         await registerAllGlobalMacros();
 
         initialized = true;
-        logger.info('[Variables] 初始化完成');
+        logger.info('variable', '[Variables] 初始化完成');
         return { success: true };
 
     } catch (error) {
-        logger.error('[Variables] 初始化失败:', error.message || error);
+        logger.error('variable', '[Variables] 初始化失败:', error.message || error);
         return { success: false, error: error.message };
     }
 }
@@ -124,7 +124,7 @@ export function isInitialized() {
 export function destroyVariables() {
     if (!initialized) return;
 
-    logger.info('[Variables] 开始销毁...');
+    logger.info('variable', '[Variables] 开始销毁...');
 
     // 销毁触发管理器
     resetTriggerManager();
@@ -142,7 +142,7 @@ export function destroyVariables() {
     variableStorage.invalidateCacheV2();
 
     initialized = false;
-    logger.info('[Variables] 销毁完成');
+    logger.info('variable', '[Variables] 销毁完成');
 }
 
 // ============================================

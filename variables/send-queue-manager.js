@@ -77,7 +77,7 @@ class SendQueueManager {
         };
 
         this._queue.push(task);
-        logger.info('[SendQueueManager] 任务入队:', suiteName, '队列长度:', this._queue.length);
+        logger.info('variable', '[SendQueueManager] 任务入队:', suiteName, '队列长度:', this._queue.length);
 
         this._notifyListeners();
         this._tryProcessNext();
@@ -102,7 +102,7 @@ class SendQueueManager {
         }
 
         this._queue.splice(index, 1);
-        logger.info('[SendQueueManager] 任务移除:', task.suiteName);
+        logger.info('variable', '[SendQueueManager] 任务移除:', task.suiteName);
 
         this._notifyListeners();
         return true;
@@ -118,7 +118,7 @@ class SendQueueManager {
         if (!task || task.status === 'processing') return false;
 
         task.status = 'paused';
-        logger.info('[SendQueueManager] 任务暂停:', task.suiteName);
+        logger.info('variable', '[SendQueueManager] 任务暂停:', task.suiteName);
 
         this._notifyListeners();
         return true;
@@ -134,7 +134,7 @@ class SendQueueManager {
         if (!task || task.status !== 'paused') return false;
 
         task.status = 'pending';
-        logger.info('[SendQueueManager] 任务继续:', task.suiteName);
+        logger.info('variable', '[SendQueueManager] 任务继续:', task.suiteName);
 
         this._notifyListeners();
         this._tryProcessNext();
@@ -147,7 +147,7 @@ class SendQueueManager {
     abortCurrent() {
         if (this._currentAbortController) {
             this._currentAbortController.abort();
-            logger.info('[SendQueueManager] 当前任务已终止');
+            logger.info('variable', '[SendQueueManager] 当前任务已终止');
         }
     }
 
@@ -158,7 +158,7 @@ class SendQueueManager {
         this.abortCurrent();
         this._queue = [];
         this._isProcessing = false;
-        logger.info('[SendQueueManager] 队列已清空');
+        logger.info('variable', '[SendQueueManager] 队列已清空');
         this._notifyListeners();
     }
 
@@ -233,7 +233,7 @@ class SendQueueManager {
      */
     setSnapshotMode(useSnapshot) {
         this._useSnapshot = useSnapshot;
-        logger.info('[SendQueueManager] 快照模式:', useSnapshot ? '入队快照' : '实时获取');
+        logger.info('variable', '[SendQueueManager] 快照模式:', useSnapshot ? '入队快照' : '实时获取');
     }
 
     /**
@@ -281,7 +281,7 @@ class SendQueueManager {
             try {
                 listener(tasks);
             } catch (e) {
-                logger.error('[SendQueueManager] 监听器执行失败:', e);
+                logger.error('variable', '[SendQueueManager] 监听器执行失败:', e);
             }
         });
     }
@@ -320,7 +320,7 @@ class SendQueueManager {
                 ? task.chatLengthSnapshot
                 : (getContext()?.chat?.length || 0);
 
-            logger.info('[SendQueueManager] 开始处理任务:', task.suiteName, '楼层:', chatLength);
+            logger.info('variable', '[SendQueueManager] 开始处理任务:', task.suiteName, '楼层:', chatLength);
 
             // 执行分析（注意：analyze 第二个参数是 AbortSignal，不是对象）
             const result = await analyzer.analyze(task.suiteId, this._currentAbortController.signal);
@@ -330,7 +330,7 @@ class SendQueueManager {
                 const floorRange = analyzer.getLastFloorRange() || String(chatLength);
                 const assignResult = await analyzer.assignResults(result.results, task.chatIdSnapshot, floorRange);
 
-                logger.info('[SendQueueManager] 任务完成:', task.suiteName, '结果数:', result.results.length, '已分配:', assignResult.assigned);
+                logger.info('variable', '[SendQueueManager] 任务完成:', task.suiteName, '结果数:', result.results.length, '已分配:', assignResult.assigned);
 
                 // 用户提示
                 if (assignResult.assigned > 0) {
@@ -351,14 +351,14 @@ class SendQueueManager {
                     rawResponse: analyzer.getLastResponse()
                 });
             } else {
-                logger.warn('[SendQueueManager] 任务失败:', task.suiteName, result.error);
+                logger.warn('variable', '[SendQueueManager] 任务失败:', task.suiteName, result.error);
                 toastr.error(`${task.suiteName}: ${result.error || '分析失败'}`);
             }
         } catch (error) {
             if (error.name === 'AbortError') {
-                logger.info('[SendQueueManager] 任务被中止:', task.suiteName);
+                logger.info('variable', '[SendQueueManager] 任务被中止:', task.suiteName);
             } else {
-                logger.error('[SendQueueManager] 任务执行失败:', task.suiteName, error);
+                logger.error('variable', '[SendQueueManager] 任务执行失败:', task.suiteName, error);
             }
         } finally {
             // 从队列移除已完成的任务

@@ -45,7 +45,7 @@ export async function showInputPopup(title, defaultValue = '', options = {}) {
     hint = ''
   } = options;
 
-  logger.debug('[PopupHelper.showInputPopup] 显示输入弹窗:', title);
+  logger.debug('phone','[PopupHelper.showInputPopup] 显示输入弹窗:', title);
 
   return new Promise((resolve) => {
     // 创建弹窗HTML
@@ -99,7 +99,7 @@ export async function showInputPopup(title, defaultValue = '', options = {}) {
 
     // 关闭弹窗
     const closePopup = (result) => {
-      logger.debug('[PopupHelper.showInputPopup] 弹窗关闭，结果:', result === null ? '取消' : '确定');
+      logger.debug('phone','[PopupHelper.showInputPopup] 弹窗关闭，结果:', result === null ? '取消' : '确定');
       overlay.classList.remove('show');
       setTimeout(() => {
         overlay.remove();
@@ -166,7 +166,7 @@ export async function showConfirmPopup(title, message, options = {}) {
     danger = false
   } = options;
 
-  logger.debug('[PopupHelper.showConfirmPopup] 显示确认弹窗:', title);
+  logger.debug('phone','[PopupHelper.showConfirmPopup] 显示确认弹窗:', title);
 
   return new Promise((resolve) => {
     // 创建弹窗HTML
@@ -205,7 +205,7 @@ export async function showConfirmPopup(title, message, options = {}) {
 
     // 关闭弹窗
     const closePopup = (result) => {
-      logger.debug('[PopupHelper.showConfirmPopup] 弹窗关闭，结果:', result ? '确定' : '取消');
+      logger.debug('phone','[PopupHelper.showConfirmPopup] 弹窗关闭，结果:', result ? '确定' : '取消');
       overlay.classList.remove('show');
       setTimeout(() => {
         overlay.remove();
@@ -260,7 +260,7 @@ export async function showCustomPopup(title, contentHTML, options = {}) {
     width = 'auto'
   } = options;
 
-  logger.debug('[PopupHelper.showCustomPopup] 显示自定义弹窗:', title);
+  logger.debug('phone','[PopupHelper.showCustomPopup] 显示自定义弹窗:', title);
 
   return new Promise((resolve) => {
     // 创建按钮HTML
@@ -307,7 +307,7 @@ export async function showCustomPopup(title, contentHTML, options = {}) {
 
     // 关闭弹窗
     const closePopup = (result) => {
-      logger.debug('[PopupHelper.showCustomPopup] 弹窗关闭，结果:', result);
+      logger.debug('phone','[PopupHelper.showCustomPopup] 弹窗关闭，结果:', result);
       overlay.classList.remove('show');
       setTimeout(() => {
         overlay.remove();
@@ -386,7 +386,7 @@ export async function showCustomPopupWithData(title, contentHTML, options = {}) 
     onShow = null
   } = options;
 
-  logger.debug('[PopupHelper.showCustomPopupWithData] 显示自定义弹窗:', title);
+  logger.debug('phone','[PopupHelper.showCustomPopupWithData] 显示自定义弹窗:', title);
 
   return new Promise((resolve) => {
     // 创建按钮HTML
@@ -430,9 +430,9 @@ export async function showCustomPopupWithData(title, contentHTML, options = {}) 
       if (onShow && typeof onShow === 'function') {
         try {
           onShow(overlay);
-          logger.debug('[PopupHelper.showCustomPopupWithData] onShow回调已执行');
+          logger.debug('phone','[PopupHelper.showCustomPopupWithData] onShow回调已执行');
         } catch (error) {
-          logger.error('[PopupHelper.showCustomPopupWithData] onShow回调错误:', error);
+          logger.error('phone','[PopupHelper.showCustomPopupWithData] onShow回调错误:', error);
         }
       }
     });
@@ -448,14 +448,14 @@ export async function showCustomPopupWithData(title, contentHTML, options = {}) 
       if (beforeClose && typeof beforeClose === 'function') {
         try {
           result = beforeClose(buttonValue, overlay);
-          logger.debug('[PopupHelper.showCustomPopupWithData] beforeClose回调返回:', result);
+          logger.debug('phone','[PopupHelper.showCustomPopupWithData] beforeClose回调返回:', result);
         } catch (error) {
-          logger.error('[PopupHelper.showCustomPopupWithData] beforeClose回调错误:', error);
+          logger.error('phone','[PopupHelper.showCustomPopupWithData] beforeClose回调错误:', error);
           result = buttonValue;
         }
       }
 
-      logger.debug('[PopupHelper.showCustomPopupWithData] 弹窗关闭，结果:', result);
+      logger.debug('phone','[PopupHelper.showCustomPopupWithData] 弹窗关闭，结果:', result);
       overlay.classList.remove('show');
       setTimeout(() => {
         overlay.remove();
@@ -486,7 +486,7 @@ export async function showCustomPopupWithData(title, contentHTML, options = {}) 
       document.addEventListener('keydown', handleEsc);
     }
 
-    logger.info('[PopupHelper.showCustomPopupWithData] 自定义弹窗已显示');
+    logger.info('phone','[PopupHelper.showCustomPopupWithData] 自定义弹窗已显示');
   });
 }
 

@@ -44,7 +44,7 @@ export function setSignatureHistoryDisplayCount(count) {
   const config = getSignatureHistoryConfig();
   config.displayCount = Math.max(1, Math.min(20, count)); // 限制1-20条
   saveSettingsDebounced();
-  logger.info('[SignatureData] 个签历史显示条数已设置为:', config.displayCount);
+  logger.info('phone','[SignatureData] 个签历史显示条数已设置为:', config.displayCount);
 }
 
 /**
@@ -92,7 +92,7 @@ export async function loadUserSignature() {
     }
     return data;
   } catch (error) {
-    logger.error('[SignatureData] 加载用户个签失败:', error);
+    logger.error('phone','[SignatureData] 加载用户个签失败:', error);
     return {
       current: '',
       history: []
@@ -110,10 +110,10 @@ export async function loadUserSignature() {
 export async function saveUserSignature(signatureData) {
   try {
     await saveData(USER_SIGNATURE_KEY, signatureData);
-    logger.info('[SignatureData] 用户个签已保存');
+    logger.info('phone','[SignatureData] 用户个签已保存');
     return true;
   } catch (error) {
-    logger.error('[SignatureData] 保存用户个签失败:', error);
+    logger.error('phone','[SignatureData] 保存用户个签失败:', error);
     return false;
   }
 }
@@ -134,7 +134,7 @@ export async function updateUserSignature(newSignature) {
 
     // 如果和当前个签相同，不创建新记录
     if (newSignature === data.current) {
-      logger.debug('[SignatureData] 个签未改变，跳过更新');
+      logger.debug('phone','[SignatureData] 个签未改变，跳过更新');
       return null;
     }
 
@@ -156,7 +156,7 @@ export async function updateUserSignature(newSignature) {
     // 保存用户数据
     await saveUserSignature(data);
 
-    logger.info('[SignatureData] 用户个签已更新:', newSignature.substring(0, 20));
+    logger.info('phone','[SignatureData] 用户个签已更新:', newSignature.substring(0, 20));
 
     // 触发通知（存储最近变化的用户个签信息）
     await stateManager.set('signature', {
@@ -169,7 +169,7 @@ export async function updateUserSignature(newSignature) {
     });
     return historyItem;
   } catch (error) {
-    logger.error('[SignatureData] 更新用户个签失败:', error);
+    logger.error('phone','[SignatureData] 更新用户个签失败:', error);
     return null;
   }
 }
@@ -190,7 +190,7 @@ export async function deleteUserSignatureHistory(signatureId) {
     data.history = data.history.filter(item => item.id !== signatureId);
 
     if (data.history.length === originalLength) {
-      logger.warn('[SignatureData] 个签历史记录不存在:', signatureId);
+      logger.warn('phone','[SignatureData] 个签历史记录不存在:', signatureId);
       return false;
     }
 
@@ -201,10 +201,10 @@ export async function deleteUserSignatureHistory(signatureId) {
     }
 
     await saveUserSignature(data);
-    logger.info('[SignatureData] 用户个签历史记录已删除');
+    logger.info('phone','[SignatureData] 用户个签历史记录已删除');
     return true;
   } catch (error) {
-    logger.error('[SignatureData] 删除用户个签历史记录失败:', error);
+    logger.error('phone','[SignatureData] 删除用户个签历史记录失败:', error);
     return false;
   }
 }
@@ -239,7 +239,7 @@ export async function loadContactSignature(contactId) {
     const contact = contacts.find(c => c.id === contactId);
 
     if (!contact) {
-      logger.warn('[SignatureData] 角色不存在:', contactId);
+      logger.warn('phone','[SignatureData] 角色不存在:', contactId);
       return {
         current: '',
         history: []
@@ -257,7 +257,7 @@ export async function loadContactSignature(contactId) {
     // ✅ 防御性编程：确保数据结构完整
     // 兼容初始格式：新同步的角色 signature 是字符串，需转换为对象格式
     if (typeof contact.signature === 'string') {
-      logger.debug('[SignatureData] 检测到字符串格式个签，转换为对象格式');
+      logger.debug('phone','[SignatureData] 检测到字符串格式个签，转换为对象格式');
       return {
         current: contact.signature,
         history: []
@@ -266,7 +266,7 @@ export async function loadContactSignature(contactId) {
 
     // 确保 history 字段存在
     if (!contact.signature.history) {
-      logger.debug('[SignatureData] 个签数据缺少 history 字段，自动补全');
+      logger.debug('phone','[SignatureData] 个签数据缺少 history 字段，自动补全');
       contact.signature.history = [];
     }
 
@@ -277,7 +277,7 @@ export async function loadContactSignature(contactId) {
 
     return contact.signature;
   } catch (error) {
-    logger.error('[SignatureData] 加载角色个签失败:', error);
+    logger.error('phone','[SignatureData] 加载角色个签失败:', error);
     return {
       current: '',
       history: []
@@ -299,7 +299,7 @@ export async function saveContactSignature(contactId, signatureData) {
     const contact = contacts.find(c => c.id === contactId);
 
     if (!contact) {
-      logger.warn('[SignatureData] 角色不存在:', contactId);
+      logger.warn('phone','[SignatureData] 角色不存在:', contactId);
       return false;
     }
 
@@ -309,10 +309,10 @@ export async function saveContactSignature(contactId, signatureData) {
     // 保存联系人
     await saveContactData(contact);
 
-    logger.info('[SignatureData] 角色个签已保存:', contactId);
+    logger.info('phone','[SignatureData] 角色个签已保存:', contactId);
     return true;
   } catch (error) {
-    logger.error('[SignatureData] 保存角色个签失败:', error);
+    logger.error('phone','[SignatureData] 保存角色个签失败:', error);
     return false;
   }
 }
@@ -337,7 +337,7 @@ export async function updateContactSignature(contactId, newSignature, msgId = nu
     if (msgId) {
       const existingItem = data.history.find(item => item.msgId === msgId);
       if (existingItem) {
-        logger.debug('[SignatureData] 该消息已保存过个签，跳过（msgId:', msgId, ')');
+        logger.debug('phone','[SignatureData] 该消息已保存过个签，跳过（msgId:', msgId, ')');
         // 更新当前个签为这条历史记录的内容（用于版本切换）
         data.current = existingItem.content;
         await saveContactSignature(contactId, data);
@@ -347,7 +347,7 @@ export async function updateContactSignature(contactId, newSignature, msgId = nu
 
     // 如果和当前个签相同，不创建新记录
     if (newSignature === data.current) {
-      logger.debug('[SignatureData] 角色个签未改变，跳过更新');
+      logger.debug('phone','[SignatureData] 角色个签未改变，跳过更新');
       return null;
     }
 
@@ -371,7 +371,7 @@ export async function updateContactSignature(contactId, newSignature, msgId = nu
     // 保存联系人数据
     await saveContactSignature(contactId, data);
 
-    logger.info('[SignatureData] 角色个签已更新:', newSignature.substring(0, 20));
+    logger.info('phone','[SignatureData] 角色个签已更新:', newSignature.substring(0, 20));
 
     // 触发通知（存储最近变化的角色个签信息）
     await stateManager.set('signature', {
@@ -386,7 +386,7 @@ export async function updateContactSignature(contactId, newSignature, msgId = nu
     });
     return historyItem;
   } catch (error) {
-    logger.error('[SignatureData] 更新角色个签失败:', error);
+    logger.error('phone','[SignatureData] 更新角色个签失败:', error);
     return null;
   }
 }
@@ -408,7 +408,7 @@ export async function deleteContactSignatureHistory(contactId, signatureId) {
     data.history = data.history.filter(item => item.id !== signatureId);
 
     if (data.history.length === originalLength) {
-      logger.warn('[SignatureData] 角色个签历史记录不存在:', signatureId);
+      logger.warn('phone','[SignatureData] 角色个签历史记录不存在:', signatureId);
       return false;
     }
 
@@ -419,10 +419,10 @@ export async function deleteContactSignatureHistory(contactId, signatureId) {
     }
 
     await saveContactSignature(contactId, data);
-    logger.info('[SignatureData] 角色个签历史记录已删除');
+    logger.info('phone','[SignatureData] 角色个签历史记录已删除');
     return true;
   } catch (error) {
-    logger.error('[SignatureData] 删除角色个签历史记录失败:', error);
+    logger.error('phone','[SignatureData] 删除角色个签历史记录失败:', error);
     return false;
   }
 }
@@ -442,7 +442,7 @@ export async function toggleContactSignatureLike(contactId, signatureId) {
     // 查找个签记录
     const signature = data.history.find(item => item.id === signatureId);
     if (!signature) {
-      logger.warn('[SignatureData] 个签记录不存在:', signatureId);
+      logger.warn('phone','[SignatureData] 个签记录不存在:', signatureId);
       return null;
     }
 
@@ -451,18 +451,18 @@ export async function toggleContactSignatureLike(contactId, signatureId) {
       // 取消点赞
       signature.liked = false;
       signature.likes = Math.max(0, signature.likes - 1);
-      logger.info('[SignatureData] 取消点赞');
+      logger.info('phone','[SignatureData] 取消点赞');
     } else {
       // 点赞
       signature.liked = true;
       signature.likes += 1;
-      logger.info('[SignatureData] 已点赞');
+      logger.info('phone','[SignatureData] 已点赞');
     }
 
     await saveContactSignature(contactId, data);
     return signature.liked;
   } catch (error) {
-    logger.error('[SignatureData] 点赞/取消点赞失败:', error);
+    logger.error('phone','[SignatureData] 点赞/取消点赞失败:', error);
     return null;
   }
 }
@@ -483,7 +483,7 @@ export async function addContactSignatureComment(contactId, signatureId, comment
     // 查找个签记录
     const signature = data.history.find(item => item.id === signatureId);
     if (!signature) {
-      logger.warn('[SignatureData] 个签记录不存在:', signatureId);
+      logger.warn('phone','[SignatureData] 个签记录不存在:', signatureId);
       return null;
     }
 
@@ -499,10 +499,10 @@ export async function addContactSignatureComment(contactId, signatureId, comment
     signature.comments.push(comment);
 
     await saveContactSignature(contactId, data);
-    logger.info('[SignatureData] 已添加评论');
+    logger.info('phone','[SignatureData] 已添加评论');
     return comment;
   } catch (error) {
-    logger.error('[SignatureData] 添加评论失败:', error);
+    logger.error('phone','[SignatureData] 添加评论失败:', error);
     return null;
   }
 }
@@ -523,7 +523,7 @@ export async function deleteContactSignatureComment(contactId, signatureId, comm
     // 查找个签记录
     const signature = data.history.find(item => item.id === signatureId);
     if (!signature) {
-      logger.warn('[SignatureData] 个签记录不存在:', signatureId);
+      logger.warn('phone','[SignatureData] 个签记录不存在:', signatureId);
       return false;
     }
 
@@ -532,15 +532,15 @@ export async function deleteContactSignatureComment(contactId, signatureId, comm
     signature.comments = signature.comments.filter(c => c.id !== commentId);
 
     if (signature.comments.length === originalLength) {
-      logger.warn('[SignatureData] 评论不存在:', commentId);
+      logger.warn('phone','[SignatureData] 评论不存在:', commentId);
       return false;
     }
 
     await saveContactSignature(contactId, data);
-    logger.info('[SignatureData] 已删除评论');
+    logger.info('phone','[SignatureData] 已删除评论');
     return true;
   } catch (error) {
-    logger.error('[SignatureData] 删除评论失败:', error);
+    logger.error('phone','[SignatureData] 删除评论失败:', error);
     return false;
   }
 }
@@ -558,11 +558,11 @@ export async function deleteContactSignatureComment(contactId, signatureId, comm
  */
 export async function rollbackSignatureHistory(contactId, deletedMessageIds) {
   try {
-    logger.debug('[SignatureData.rollback] 开始回退个签历史，消息数:', deletedMessageIds.length);
+    logger.debug('phone','[SignatureData.rollback] 开始回退个签历史，消息数:', deletedMessageIds.length);
 
     const data = await loadContactSignature(contactId);
     if (!data || !data.history || data.history.length === 0) {
-      logger.debug('[SignatureData.rollback] 没有个签历史，跳过回退');
+      logger.debug('phone','[SignatureData.rollback] 没有个签历史，跳过回退');
       return { count: 0, deleted: [] };
     }
 
@@ -586,15 +586,15 @@ export async function rollbackSignatureHistory(contactId, deletedMessageIds) {
       if (data.history.length > 0) {
         // 使用剩余历史中最新的个签作为当前个签
         data.currentSignature = data.history[0].signature;
-        logger.debug('[SignatureData.rollback] 当前个签已更新为:', data.currentSignature);
+        logger.debug('phone','[SignatureData.rollback] 当前个签已更新为:', data.currentSignature);
       } else {
         // 如果历史为空，清空当前个签
         data.currentSignature = '';
-        logger.debug('[SignatureData.rollback] 个签历史已清空，当前个签重置');
+        logger.debug('phone','[SignatureData.rollback] 个签历史已清空，当前个签重置');
       }
 
       await saveContactSignature(contactId, data);
-      logger.info('[SignatureData.rollback] 已回退', deletedCount, '条个签记录');
+      logger.info('phone','[SignatureData.rollback] 已回退', deletedCount, '条个签记录');
 
       // 触发通知（回退个签）
       await stateManager.set('signature', {
@@ -608,7 +608,7 @@ export async function rollbackSignatureHistory(contactId, deletedMessageIds) {
         count: deletedCount
       });
     } else {
-      logger.debug('[SignatureData.rollback] 没有需要回退的个签');
+      logger.debug('phone','[SignatureData.rollback] 没有需要回退的个签');
     }
 
     return {
@@ -616,7 +616,7 @@ export async function rollbackSignatureHistory(contactId, deletedMessageIds) {
       deleted: deletedSignatures
     };
   } catch (error) {
-    logger.error('[SignatureData.rollback] 回退失败:', error);
+    logger.error('phone','[SignatureData.rollback] 回退失败:', error);
     throw error;
   }
 }

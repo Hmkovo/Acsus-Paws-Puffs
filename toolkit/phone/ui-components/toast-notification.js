@@ -226,7 +226,7 @@ export function showPhoneToast(message, type = 'success', duration = 3000) {
     dismissToast(toast);
   });
 
-  logger.debug('[PhoneToast] 显示通知:', message);
+  logger.debug('phone','[PhoneToast] 显示通知:', message);
 }
 
 /**
@@ -550,7 +550,7 @@ export function showPhoneMessageNotification(options = {}) {
       // 检查通知是否还在DOM中（用户可能已点击关闭）
       if (!notification.parentElement) {
         // 通知已被移除，创建新通知
-        logger.debug('[PhoneToast] 原通知已关闭，创建新通知');
+        logger.debug('phone','[PhoneToast] 原通知已关闭，创建新通知');
         const newNotification = showPhoneMessageNotification({
           ...options,
           ...newOptions
@@ -595,7 +595,7 @@ export function showPhoneMessageNotification(options = {}) {
         autoHideTimer = null;  // duration=0 表示不自动消失
       }
 
-      logger.debug('[PhoneToast] 通知已无缝更新:', newOptions.title);
+      logger.debug('phone','[PhoneToast] 通知已无缝更新:', newOptions.title);
 
       // 返回自己，支持链式调用
       return this;

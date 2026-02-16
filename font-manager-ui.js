@@ -65,15 +65,15 @@ export class FontManagerUI {
    */
   async init(container) {
     if (!container) {
-      logger.warn('[FontManagerUI.init] 容器元素不存在');
+      logger.warn('font', '[FontManagerUI.init] 容器元素不存在');
       return;
     }
 
-    logger.debug('[FontManagerUI.init] 初始化字体管理UI');
+    logger.debug('font', '[FontManagerUI.init] 初始化字体管理UI');
     this.container = container;
     this.render();
     this.bindEvents();
-    logger.debug('[FontManagerUI.init] 初始化完成');
+    logger.debug('font', '[FontManagerUI.init] 初始化完成');
   }
 
   /**
@@ -463,12 +463,12 @@ body { font-family: "Huiwen-mincho"; }
     const customName = this.container.querySelector('#font-name-input').value.trim();
 
     if (!input) {
-      logger.warn('[FontManagerUI.handleAddFont] 用户未输入字体代码');
+      logger.warn('font', '[FontManagerUI.handleAddFont] 用户未输入字体代码');
       toastr.warning('请输入字体代码');
       return;
     }
 
-    logger.debug('[FontManagerUI.handleAddFont] 开始添加字体，自定义名称:', customName || '无');
+    logger.debug('font', '[FontManagerUI.handleAddFont] 开始添加字体，自定义名称:', customName || '无');
 
     // 先尝试解析（自动识别 @import 或 @font-face 格式）
     let fontData = this.fontManager.parseFont(input, customName);
@@ -478,7 +478,7 @@ body { font-family: "Huiwen-mincho"; }
       // 检查是否是 @import 格式但没有 font-family
       if (input.includes('@import') && !input.includes('font-family')) {
         if (!customName) {
-          logger.warn('[FontManagerUI.handleAddFont] 仅包含@import但未提供自定义名称');
+          logger.warn('font', '[FontManagerUI.handleAddFont] 仅包含@import但未提供自定义名称');
           toastr.warning('检测到仅包含@import链接，请输入自定义字体名称');
           return;
         }
@@ -492,7 +492,7 @@ body { font-family: "Huiwen-mincho"; }
       // 检查是否是 @font-face 格式但没有 font-family
       else if (input.includes('@font-face')) {
         if (!customName) {
-          logger.warn('[FontManagerUI.handleAddFont] @font-face 中未找到 font-family，需要自定义名称');
+          logger.warn('font', '[FontManagerUI.handleAddFont] @font-face 中未找到 font-family，需要自定义名称');
           toastr.warning('无法从代码中提取字体名称，请输入自定义字体名称');
           return;
         }
@@ -502,7 +502,7 @@ body { font-family: "Huiwen-mincho"; }
     }
 
     if (!fontData) {
-      logger.warn('[FontManagerUI.handleAddFont] 解析字体失败，输入:', input.substring(0, 100) + '...');
+      logger.warn('font', '[FontManagerUI.handleAddFont] 解析字体失败，输入:', input.substring(0, 100) + '...');
       toastr.error('无法解析字体代码，请检查格式是否正确');
       return;
     }
@@ -524,10 +524,10 @@ body { font-family: "Huiwen-mincho"; }
       const typeHint = fontData.type === 'fontface'
         ? `（@font-face，${fontData.fontFaceCount || 1} 个变体）`
         : '（@import）';
-      logger.info('[FontManagerUI.handleAddFont] 字体添加成功:', fontData.name, typeHint);
+      logger.info('font', '[FontManagerUI.handleAddFont] 字体添加成功:', fontData.name, typeHint);
       toastr.success(`字体添加成功 ${typeHint}`);
     } else {
-      logger.warn('[FontManagerUI.handleAddFont] 字体添加失败:', fontData.name);
+      logger.warn('font', '[FontManagerUI.handleAddFont] 字体添加失败:', fontData.name);
       toastr.error('字体添加失败，可能已存在同名字体');
     }
   }
@@ -549,27 +549,27 @@ body { font-family: "Huiwen-mincho"; }
   async handleImportFile(event) {
     const file = event.target.files[0];
     if (!file) {
-      logger.debug('[FontManagerUI.handleImportFile] 用户取消选择文件');
+      logger.debug('font', '[FontManagerUI.handleImportFile] 用户取消选择文件');
       return;
     }
 
     const mergeCheckbox = this.container.querySelector('#import-merge');
     const merge = mergeCheckbox ? mergeCheckbox.checked : true;
 
-    logger.debug('[FontManagerUI.handleImportFile] 开始导入文件:', file.name, '大小:', file.size, '字节, 模式:', merge ? '合并' : '替换');
+    logger.debug('font', '[FontManagerUI.handleImportFile] 开始导入文件:', file.name, '大小:', file.size, '字节, 模式:', merge ? '合并' : '替换');
 
     try {
       const text = await file.text();
       const count = await this.fontManager.importFonts(text, merge);
 
       const modeText = merge ? '增加' : '覆盖';
-      logger.info('[FontManagerUI.handleImportFile] 导入成功:', count, '个字体，文件:', file.name);
+      logger.info('font', '[FontManagerUI.handleImportFile] 导入成功:', count, '个字体，文件:', file.name);
       toastr.success(`成功导入 ${count} 个字体（${modeText}模式）`);
 
       event.target.value = '';
       this.refreshFontList();
     } catch (error) {
-      logger.error('[FontManagerUI.handleImportFile] 导入失败:', error.message || error);
+      logger.error('font', '[FontManagerUI.handleImportFile] 导入失败:', error.message || error);
       toastr.error('导入失败: ' + error.message);
       event.target.value = '';
     }
@@ -587,7 +587,7 @@ body { font-family: "Huiwen-mincho"; }
    */
   handleExportFonts() {
     const fontCount = this.fontManager.fonts.size;
-    logger.debug('[FontManagerUI.handleExportFonts] 开始导出', fontCount, '个字体');
+    logger.debug('font', '[FontManagerUI.handleExportFonts] 开始导出', fontCount, '个字体');
 
     const data = this.fontManager.exportFonts();
 
@@ -600,7 +600,7 @@ body { font-family: "Huiwen-mincho"; }
     a.click();
     URL.revokeObjectURL(url);
 
-    logger.info('[FontManagerUI.handleExportFonts] 导出成功:', fontCount, '个字体，文件名:', filename);
+    logger.info('font', '[FontManagerUI.handleExportFonts] 导出成功:', fontCount, '个字体，文件名:', filename);
     toastr.success('字体配置已导出');
   }
 
@@ -1354,7 +1354,7 @@ body { font-family: "Huiwen-mincho"; }
       }
     );
 
-    logger.debug('[FontManagerUI.showGuide] 已显示使用指南');
+    logger.debug('font', '[FontManagerUI.showGuide] 已显示使用指南');
   }
 
   /**
@@ -1375,7 +1375,7 @@ body { font-family: "Huiwen-mincho"; }
     this.render();
     this.bindEvents();
 
-    logger.info('[FontManagerUI.toggleBatchDeleteMode] 批量删除模式:', enable ? '已启用' : '已关闭');
+    logger.info('font', '[FontManagerUI.toggleBatchDeleteMode] 批量删除模式:', enable ? '已启用' : '已关闭');
   }
 
   /**
@@ -1430,7 +1430,7 @@ body { font-family: "Huiwen-mincho"; }
         }
       }
 
-      logger.info(`[FontManagerUI.executeBatchDelete] 批量删除完成: ${deleted} 成功, ${failed} 失败`);
+      logger.info('font', `[FontManagerUI.executeBatchDelete] 批量删除完成: ${deleted} 成功, ${failed} 失败`);
       toastr.success(`已删除 ${deleted} 个字体${failed > 0 ? `，${failed} 个失败` : ''}`);
 
       // 退出批量删除模式

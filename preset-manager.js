@@ -63,7 +63,7 @@ export class PresetManagerModule {
    * 初始化模块
    */
   async init() {
-    logger.debug('[PresetManager.init] 初始化预设管理器...');
+    logger.debug('preset', 'PresetManager.init] 初始化预设管理器...');
 
     // 加载设置
     await this.loadSettings();
@@ -86,7 +86,7 @@ export class PresetManagerModule {
     this.setupSnapshotEvents();
 
     this.initialized = true;
-    logger.info('[PresetManager.init] 预设管理器初始化完成，启用状态:', this.enabled);
+    logger.info('preset', '[PresetManager.init] 预设管理器初始化完成，启用状态:', this.enabled);
 
     // 如果已启用，延迟检查预设页面
     if (this.enabled) {
@@ -102,7 +102,7 @@ export class PresetManagerModule {
    */
   async renderUI(container) {
     if (!container) {
-      logger.warn('[PresetManager.renderUI] 容器元素不存在');
+      logger.warn('preset', '[PresetManager.renderUI] 容器元素不存在');
       return;
     }
 
@@ -110,9 +110,9 @@ export class PresetManagerModule {
       // 实例化UI类（内部管理，不暴露给index.js）
       this.ui = new PresetManagerUI(this);
       await this.ui.init(container);
-      logger.debug('[PresetManager.renderUI] UI渲染成功');
+      logger.debug('preset', 'PresetManager.renderUI] UI渲染成功');
     } catch (error) {
-      logger.error('[PresetManager.renderUI] UI渲染失败:', error.message);
+      logger.error('preset', '[PresetManager.renderUI] UI渲染失败:', error.message);
       throw error;
     }
   }
@@ -128,9 +128,9 @@ export class PresetManagerModule {
       const settings = extension_settings['Acsus-Paws-Puffs'].presetManager;
       this.enabled = settings.enabled !== false;
 
-      logger.debug('[PresetManager.loadSettings] 设置已加载，启用状态:', this.enabled);
+      logger.debug('preset', 'PresetManager.loadSettings] 设置已加载，启用状态:', this.enabled);
     } catch (error) {
-      logger.error('[PresetManager.loadSettings] 加载设置失败:', error.message || error);
+      logger.error('preset', '[PresetManager.loadSettings] 加载设置失败:', error.message || error);
       this.enabled = true;
     }
   }
@@ -145,9 +145,9 @@ export class PresetManagerModule {
       extension_settings['Acsus-Paws-Puffs'].presetManager.enabled = this.enabled;
 
       saveSettingsDebounced();
-      logger.debug('[PresetManager.saveSettings] 设置已保存');
+      logger.debug('preset', 'PresetManager.saveSettings] 设置已保存');
     } catch (error) {
-      logger.error('[PresetManager.saveSettings] 保存设置失败:', error.message || error);
+      logger.error('preset', '[PresetManager.saveSettings] 保存设置失败:', error.message || error);
     }
   }
 
@@ -177,7 +177,7 @@ export class PresetManagerModule {
     }
 
     eventSource.emit('pawsPresetEnabledChanged', enabled);
-    logger.debug(' 预设管理功能', enabled ? '已启用' : '已禁用');
+    logger.debug('preset', '预设管理功能', enabled ? '已启用' : '已禁用');
   }
 
 
@@ -185,21 +185,21 @@ export class PresetManagerModule {
    * 检查并增强预设页面
    */
   checkAndEnhancePresetPage() {
-    logger.debug(' 检查预设页面状态...');
+    logger.debug('preset', '检查预设页面状态...');
     const promptList = document.querySelector('#completion_prompt_manager_list, #prompt_manager_list');
 
     if (promptList) {
-      logger.debug(' 找到预设列表，状态:', {
+      logger.debug('preset', '找到预设列表，状态:', {
         enabled: this.enabled,
         enhanced: promptList.hasAttribute('data-paws-enhanced')
       });
 
       if (!promptList.hasAttribute('data-paws-enhanced')) {
-        logger.debug(' 执行预设页面增强');
+        logger.debug('preset', '执行预设页面增强');
         this.enhancePresetPage();
       }
     } else {
-      logger.debug(' 未找到预设列表');
+      logger.debug('preset', '未找到预设列表');
     }
   }
 
@@ -228,7 +228,7 @@ export class PresetManagerModule {
       // 检查是否需要增强页面
       // 每次 promptManager.render() 都会删除 data-paws-enhanced 标记，所以需要重新增强
       if (!promptList.hasAttribute('data-paws-enhanced')) {
-        logger.debug(' 检测到预设列表需要增强');
+        logger.debug('preset', '检测到预设列表需要增强');
         this.enhancePresetPage();
       }
     });
@@ -270,7 +270,7 @@ export class PresetManagerModule {
       this.stitch.addStitchButton();
     }
 
-    logger.debug(' 预设页面增强完成');
+    logger.debug('preset', '预设页面增强完成');
   }
 
   /**
@@ -306,13 +306,13 @@ export class PresetManagerModule {
 
     if (!footer) {
       // footer 还没创建，用 MutationObserver 监听它的出现
-      logger.debug('[PresetManager] footer 未就绪，监听其出现');
+      logger.debug('preset', 'PresetManager] footer 未就绪，监听其出现');
 
       const observer = new MutationObserver(() => {
         const footer = document.querySelector('.completion_prompt_manager_footer');
         if (footer) {
           observer.disconnect();
-          logger.debug('[PresetManager] 检测到 footer 出现，立即添加按钮');
+          logger.debug('preset', 'PresetManager] 检测到 footer 出现，立即添加按钮');
           this.addSnapshotSaveButton();
         }
       });
@@ -327,7 +327,7 @@ export class PresetManagerModule {
       setTimeout(() => {
         observer.disconnect();
         if (!document.querySelector('.completion_prompt_manager_footer')) {
-          logger.warn('[PresetManager] footer 超时未出现，停止监听');
+          logger.warn('preset', '[PresetManager] footer 超时未出现，停止监听');
         }
       }, 1000);
 
@@ -338,7 +338,7 @@ export class PresetManagerModule {
     const existingBtn = footer.querySelector('#paws-save-snapshot-btn');
     if (existingBtn) {
       existingBtn.remove();
-      logger.debug('[PresetManager] 已删除旧的快照按钮');
+      logger.debug('preset', 'PresetManager] 已删除旧的快照按钮');
     }
 
     // ✅ 创建新按钮
@@ -365,7 +365,7 @@ export class PresetManagerModule {
       footer.appendChild(saveBtn);
     }
 
-    logger.debug('[PresetManager] 快照保存按钮已添加');
+    logger.debug('preset', 'PresetManager] 快照保存按钮已添加');
   }
 
   /**
@@ -380,7 +380,7 @@ export class PresetManagerModule {
       if (saveBtn) {
         saveBtn.style.display = enabled ? '' : 'none';
       }
-      logger.debug('[PresetManager] 快照功能状态变化:', enabled ? '启用' : '禁用');
+      logger.debug('preset', 'PresetManager] 快照功能状态变化:', enabled ? '启用' : '禁用');
     });
   }
 
@@ -416,7 +416,7 @@ export class PresetManagerModule {
     const presetSelect = document.querySelector('#settings_preset_openai, #settings_preset');
     if (presetSelect) {
       this.currentPreset = presetSelect.value;
-      logger.debug(' 当前预设:', this.currentPreset);
+      logger.debug('preset', '当前预设:', this.currentPreset);
     }
   }
 
@@ -460,7 +460,7 @@ export class PresetManagerModule {
     document.addEventListener('change', (e) => {
       if (e.target.matches('#settings_preset_openai, #settings_preset')) {
         this.currentPreset = e.target.value;
-        logger.debug(' 预设已切换到:', this.currentPreset);
+        logger.debug('preset', '预设已切换到:', this.currentPreset);
       }
     });
 

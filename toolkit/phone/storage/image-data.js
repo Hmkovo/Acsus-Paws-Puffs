@@ -38,14 +38,14 @@ export function getUploadedImages() {
         extension_settings.acsusPawsPuffs.phone.uploadedImages = { items: [] };
     } else if (Array.isArray(extension_settings.acsusPawsPuffs.phone.uploadedImages)) {
         // 旧数据是数组格式，迁移到新格式
-        logger.warn('[ImageData] 检测到旧数据格式，正在迁移...');
+        logger.warn('phone','[ImageData] 检测到旧数据格式，正在迁移...');
         const oldData = extension_settings.acsusPawsPuffs.phone.uploadedImages;
         extension_settings.acsusPawsPuffs.phone.uploadedImages = { items: oldData };
-        logger.info('[ImageData] 数据迁移完成，共', oldData.length, '条记录');
+        logger.info('phone','[ImageData] 数据迁移完成，共', oldData.length, '条记录');
 
         // 【关键修复】立即保存迁移后的数据，避免下次刷新又触发迁移
         saveSetting();
-        logger.info('[ImageData] 已保存迁移后的数据到配置文件');
+        logger.info('phone','[ImageData] 已保存迁移后的数据到配置文件');
     }
 
     return extension_settings.acsusPawsPuffs.phone.uploadedImages.items;
@@ -71,11 +71,11 @@ export async function saveImage(image) {
     if (index !== -1) {
         // 更新已有记录
         images[index] = image;
-        logger.info('[ImageData] 已更新图片记录:', image.filename);
+        logger.info('phone','[ImageData] 已更新图片记录:', image.filename);
     } else {
         // 添加新记录
         images.push(image);
-        logger.info('[ImageData] 已添加图片记录:', image.filename);
+        logger.info('phone','[ImageData] 已添加图片记录:', image.filename);
     }
 
     await saveSetting();
@@ -121,14 +121,14 @@ export async function deleteImages(filenames) {
 
             if (response.ok) {
                 successCount++;
-                logger.info('[ImageData] 已删除文件:', image.imagePath);
+                logger.info('phone','[ImageData] 已删除文件:', image.imagePath);
             } else {
                 failCount++;
-                logger.warn('[ImageData] 删除文件失败:', image.imagePath, '状态码:', response.status);
+                logger.warn('phone','[ImageData] 删除文件失败:', image.imagePath, '状态码:', response.status);
             }
         } catch (error) {
             failCount++;
-            logger.error('[ImageData] 删除文件时出错:', image.imagePath, error);
+            logger.error('phone','[ImageData] 删除文件时出错:', image.imagePath, error);
         }
     }
 
@@ -137,7 +137,7 @@ export async function deleteImages(filenames) {
         images.filter(img => !filenames.includes(img.filename));
 
     const deletedCount = beforeCount - extension_settings.acsusPawsPuffs.phone.uploadedImages.items.length;
-    logger.info(`[ImageData] 已删除 ${deletedCount} 条图片记录（文件：成功${successCount}，失败${failCount}）`);
+    logger.info('phone',`[ImageData] 已删除 ${deletedCount} 条图片记录（文件：成功${successCount}，失败${failCount}）`);
 
     await saveSetting();
 
@@ -188,7 +188,7 @@ export async function clearAllImages() {
     extension_settings.acsusPawsPuffs.phone.uploadedImages.items = [];
     await saveSetting();
 
-    logger.info('[ImageData] 已清空所有图片记录，数量:', count);
+    logger.info('phone','[ImageData] 已清空所有图片记录，数量:', count);
 
     // 通知订阅者数据已变化
     await stateManager.set('images', [], {

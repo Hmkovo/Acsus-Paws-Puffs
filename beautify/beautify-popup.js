@@ -139,7 +139,7 @@ let currentSettings = null;
  * 打开设置弹窗
  */
 export function openBeautifyPopup() {
-  logger.info('[BeautifyPopup] 打开设置弹窗');
+  logger.info('beautify', '打开设置弹窗');
 
   // 加载设置
   loadPopupSettings();
@@ -159,7 +159,7 @@ export function openBeautifyPopup() {
 export function closeBeautifyPopup() {
   if (!popupOverlay) return;
 
-  logger.info('[BeautifyPopup] 关闭设置弹窗');
+  logger.info('beautify', '关闭设置弹窗');
 
   // 保存设置
   savePopupSettings();
@@ -190,7 +190,7 @@ export function applyDisplaySettings() {
   stickyHeader.classList.toggle('hide-mesid', !display.showMesId);
   stickyHeader.classList.toggle('hide-avatar', !display.showAvatar);
 
-  logger.debug('[BeautifyPopup] 显示设置已应用:', display);
+  logger.debug('beautify', '[BeautifyPopup] 显示设置已应用:', display);
 }
 
 
@@ -227,7 +227,7 @@ function loadPopupSettings() {
     }
   }
 
-  logger.debug('[BeautifyPopup] 设置已加载:', currentSettings);
+  logger.debug('beautify', '[BeautifyPopup] 设置已加载:', currentSettings);
 }
 
 /**
@@ -239,7 +239,7 @@ function savePopupSettings() {
   extension_settings[EXT_ID].beautify.popup = currentSettings;
   saveSettingsDebounced();
 
-  logger.debug('[BeautifyPopup] 设置已保存');
+  logger.debug('beautify', '[BeautifyPopup] 设置已保存');
 }
 
 
@@ -1158,7 +1158,7 @@ function switchTab(tabName) {
     panel.classList.toggle('active', panel.dataset.panel === tabName);
   });
 
-  logger.debug('[BeautifyPopup] 切换到标签页:', tabName);
+  logger.debug('beautify', '[BeautifyPopup] 切换到标签页:', tabName);
 }
 
 /**
@@ -1295,7 +1295,7 @@ async function saveAsPreset() {
   refreshPresetList();
 
   toastr.success(`预设"${presetName}"已保存`);
-  logger.info('[BeautifyPopup] 预设已保存:', presetName);
+  logger.info('beautify', '预设已保存:', presetName);
 }
 
 /**
@@ -1366,7 +1366,7 @@ function loadPreset(id) {
   savePopupSettings();
 
   toastr.success(`已应用预设"${preset.name}"`);
-  logger.info('[BeautifyPopup] 预设已加载:', preset.name);
+  logger.info('beautify', '预设已加载:', preset.name);
 }
 
 /**
@@ -1387,7 +1387,7 @@ async function deletePreset(id) {
     savePopupSettings();
     refreshPresetList();
     toastr.success(`预设"${preset.name}"已删除`);
-    logger.info('[BeautifyPopup] 预设已删除:', preset.name);
+    logger.info('beautify', '预设已删除:', preset.name);
   }
 }
 
@@ -1517,7 +1517,7 @@ function loadScheme(schemeId) {
   applyDisplaySettings();
   savePopupSettings();
 
-  logger.info('[BeautifyPopup] 已加载方案:', schemeId || '默认');
+  logger.info('beautify', '已加载方案:', schemeId || '默认');
 }
 
 /**
@@ -1546,7 +1546,7 @@ async function saveCurrentScheme() {
   savePopupSettings();
 
   toastr.success(`方案"${schemeName}"已保存`);
-  logger.info('[BeautifyPopup] 方案已保存:', schemeName);
+  logger.info('beautify', '方案已保存:', schemeName);
 }
 
 /**
@@ -1589,7 +1589,7 @@ async function handleSchemeImport(e) {
     refreshSchemeSelect();
 
     toastr.success(`方案"${parsed.name}"已导入`);
-    logger.info('[BeautifyPopup] 方案已导入:', parsed.name);
+    logger.info('beautify', '方案已导入:', parsed.name);
   } catch (error) {
     toastr.error(String(error), '导入失败');
     logger.error('[BeautifyPopup] 导入方案失败:', error);
@@ -1637,7 +1637,7 @@ function exportCurrentScheme() {
   URL.revokeObjectURL(url);
 
   toastr.success(`方案"${scheme.name}"已导出`);
-  logger.info('[BeautifyPopup] 方案已导出:', scheme.name);
+  logger.info('beautify', '方案已导出:', scheme.name);
 }
 
 /**
@@ -1661,7 +1661,7 @@ async function deleteCurrentScheme() {
   refreshSchemeSelect();
 
   toastr.info(`方案"${scheme.name}"已删除`);
-  logger.info('[BeautifyPopup] 方案已删除:', scheme.name);
+  logger.info('beautify', '方案已删除:', scheme.name);
 }
 
 /**
@@ -1705,7 +1705,7 @@ function bindLayoutSettings() {
       currentSettings.layout.avatarPosition = position;
       positionBtns.forEach(b => b.classList.toggle('active', b.dataset.position === position));
       applyLayoutSettings();
-      logger.info('[BeautifyPopup] 头像位置:', position);
+      logger.info('beautify', '头像位置:', position);
     });
   });
 
@@ -1745,7 +1745,7 @@ function bindLayoutSettings() {
     const picker = popupOverlay.querySelector('#beautify-info-color');
     if (picker) picker.color = 'rgba(255,255,255,1)';
     applyLayoutSettings();
-    logger.info('[BeautifyPopup] 信息颜色已重置');
+    logger.info('beautify', '信息颜色已重置');
   });
 
   // === 6. 消息间距面板 ===
@@ -1960,7 +1960,7 @@ function bindBgImageSettings() {
   bgEnabled?.addEventListener('change', (e) => {
     currentSettings.background.enabled = e.target.checked;
     applyBackgroundSettings();
-    logger.info('[BeautifyPopup] 背景图启用:', e.target.checked);
+    logger.info('beautify', '背景图启用:', e.target.checked);
   });
 
   // 清除背景按钮
@@ -1969,7 +1969,7 @@ function bindBgImageSettings() {
     currentSettings.background.imageUrl = '';
     updateBgPreview('');
     applyBackgroundSettings();
-    logger.info('[BeautifyPopup] 背景图已清除');
+    logger.info('beautify', '背景图已清除');
   });
 
   // 来源标签页切换
@@ -2023,7 +2023,7 @@ function bindCarouselSettings() {
   carouselEnabled?.addEventListener('change', (e) => {
     currentSettings.background.carouselEnabled = e.target.checked;
     applyBackgroundSettings();
-    logger.info('[BeautifyPopup] 轮播模式:', e.target.checked ? '启用' : '禁用');
+    logger.info('beautify', '轮播模式:', e.target.checked ? '启用' : '禁用');
   });
 
   // 轮播间隔（下拉框）
@@ -2032,7 +2032,7 @@ function bindCarouselSettings() {
     const value = parseInt(e.target.value) || 5;
     currentSettings.background.carouselInterval = value;
     applyBackgroundSettings();
-    logger.info('[BeautifyPopup] 轮播间隔:', value, '秒');
+    logger.info('beautify', '轮播间隔:', value, '秒');
   });
 
   // 轮播动画效果（下拉框）
@@ -2040,7 +2040,7 @@ function bindCarouselSettings() {
   effectSelect?.addEventListener('change', (e) => {
     currentSettings.background.carouselEffect = e.target.value;
     applyBackgroundSettings();
-    logger.info('[BeautifyPopup] 轮播效果:', e.target.value);
+    logger.info('beautify', '轮播效果:', e.target.value);
   });
 
   // 轮播图片移除
@@ -2085,7 +2085,7 @@ function addToCarousel(url) {
   // 更新UI
   updateCarouselUI();
   applyBackgroundSettings();
-  logger.info('[BeautifyPopup] 添加到轮播:', url);
+  logger.info('beautify', '添加到轮播:', url);
   toastr.success('已添加到轮播');
 }
 
@@ -2103,7 +2103,7 @@ function removeFromCarousel(index) {
   // 更新UI
   updateCarouselUI();
   applyBackgroundSettings();
-  logger.info('[BeautifyPopup] 从轮播移除:', removed[0]);
+  logger.info('beautify', '从轮播移除:', removed[0]);
 }
 
 /**
@@ -2126,7 +2126,7 @@ function bindDecorationSettings() {
   decoEnabled?.addEventListener('change', (e) => {
     currentSettings.decoration.enabled = e.target.checked;
     applyBackgroundSettings();
-    logger.info('[BeautifyPopup] 装饰条启用:', e.target.checked);
+    logger.info('beautify', '装饰条启用:', e.target.checked);
   });
 
   // 清除装饰条按钮
@@ -2135,7 +2135,7 @@ function bindDecorationSettings() {
     currentSettings.decoration.imageUrl = '';
     updateDecoPreview('');
     applyBackgroundSettings();
-    logger.info('[BeautifyPopup] 装饰条已清除');
+    logger.info('beautify', '装饰条已清除');
   });
 
   // 装饰条滑块
@@ -2151,7 +2151,7 @@ function bindDecorationSettings() {
     currentSettings.decoration.borderEnabled = e.target.checked;
     if (borderSettings) borderSettings.style.display = e.target.checked ? 'block' : 'none';
     applyBackgroundSettings();
-    logger.info('[BeautifyPopup] 边框装饰:', e.target.checked ? '启用' : '禁用');
+    logger.info('beautify', '边框装饰:', e.target.checked ? '启用' : '禁用');
   });
 
   // 边框粗细
@@ -2432,9 +2432,9 @@ async function deleteSavedImage(id, type) {
         headers: getRequestHeaders(),
         body: JSON.stringify({ path: image.url })
       });
-      logger.info('[BeautifyPopup] 已删除本地文件:', image.url);
+      logger.info('beautify', '已删除本地文件:', image.url);
     } catch (error) {
-      logger.warn('[BeautifyPopup] 删除本地文件失败:', error);
+      logger.warn('beautify', '删除本地文件失败:', error);
     }
   }
 
@@ -2463,7 +2463,7 @@ async function deleteSavedImage(id, type) {
     refreshSavedGrid(type);
   }
 
-  logger.info('[BeautifyPopup] 存档图片已删除:', id);
+  logger.info('beautify', '存档图片已删除:', id);
 }
 
 /**
@@ -2678,7 +2678,7 @@ export function applyBackgroundSettings() {
     borderDeco.style.display = 'none';
   }
 
-  logger.debug('[BeautifyPopup] 背景设置已应用');
+  logger.debug('beautify', '[BeautifyPopup] 背景设置已应用');
 }
 
 /**
@@ -2835,7 +2835,7 @@ function bindAvatarFrameSettings() {
   enabledCheckbox?.addEventListener('change', (e) => {
     currentSettings.avatarFrame.enabled = e.target.checked;
     applyAvatarFrameSettings();
-    logger.info('[BeautifyPopup] 头像框启用:', e.target.checked);
+    logger.info('beautify', '头像框启用:', e.target.checked);
   });
 
   // 通用滑块绑定函数
@@ -2940,7 +2940,7 @@ async function handleFrameFileUpload(e) {
     // 刷新存档网格
     refreshFrameSavedGrid();
 
-    logger.info('[BeautifyPopup] 头像框已上传:', fileName);
+    logger.info('beautify', '头像框已上传:', fileName);
   } catch (error) {
     logger.error('[BeautifyPopup] 头像框上传失败:', error);
     toastr.error('上传失败，请重试');
@@ -2988,7 +2988,7 @@ function handleFrameUrlAdd() {
   // 清空输入框
   if (input) input.value = '';
 
-  logger.info('[BeautifyPopup] 头像框链接已添加:', url);
+  logger.info('beautify', '头像框链接已添加:', url);
 }
 
 /**
@@ -3005,7 +3005,7 @@ function selectFrameImage(url) {
   if (checkbox) checkbox.checked = true;
 
   applyAvatarFrameSettings();
-  logger.info('[BeautifyPopup] 头像框已选择:', url);
+  logger.info('beautify', '头像框已选择:', url);
 }
 
 /**
@@ -3090,7 +3090,7 @@ export function applyAvatarFrameSettings() {
     frameElement.style.display = 'none';
   }
 
-  logger.debug('[BeautifyPopup] 头像框设置已应用');
+  logger.debug('beautify', '[BeautifyPopup] 头像框设置已应用');
 }
 
 
@@ -3114,7 +3114,7 @@ export function initBeautifyPopup() {
   if (currentSettings?.customCSS) {
     applyCustomCSS(currentSettings.customCSS);
   }
-  logger.info('[BeautifyPopup] 弹窗模块已初始化');
+  logger.info('beautify', '弹窗模块已初始化');
 }
 
 /**
@@ -3130,7 +3130,7 @@ function applyCustomCSS(css) {
     // 清空CSS时移除style标签
     if (styleEl) {
       styleEl.remove();
-      logger.debug('[BeautifyPopup] 用户自定义CSS已移除');
+      logger.debug('beautify', '[BeautifyPopup] 用户自定义CSS已移除');
     }
     return;
   }
@@ -3144,7 +3144,7 @@ function applyCustomCSS(css) {
   }
 
   styleEl.innerHTML = css;
-  logger.debug('[BeautifyPopup] 用户自定义CSS已应用');
+  logger.debug('beautify', '[BeautifyPopup] 用户自定义CSS已应用');
 }
 
 /**
@@ -3311,7 +3311,7 @@ function showCssHelpPopup() {
     });
   }, 100);
 
-  logger.debug('[BeautifyPopup] 显示CSS帮助弹窗');
+  logger.debug('beautify', '[BeautifyPopup] 显示CSS帮助弹窗');
 }
 
 
@@ -3475,7 +3475,7 @@ export function openFloatingBtnImagePopup() {
   // 绑定事件
   bindFloatingBtnPopupEvents(overlay);
 
-  logger.info('[BeautifyPopup] 悬浮按钮图片弹窗已打开');
+  logger.info('beautify', '悬浮按钮图片弹窗已打开');
 }
 
 /**
@@ -3491,7 +3491,7 @@ function closeFloatingBtnImagePopup() {
     overlay.remove();
   }, 300);
 
-  logger.info('[BeautifyPopup] 悬浮按钮图片弹窗已关闭');
+  logger.info('beautify', '悬浮按钮图片弹窗已关闭');
 }
 
 /**
@@ -3594,7 +3594,7 @@ function bindFloatingBtnPopupEvents(overlay) {
     refreshFloatingBtnSavedGrid(overlay);
     // 更新设置面板中的预览
     updateFloatingBtnSettingsPreview('');
-    logger.info('[BeautifyPopup] 悬浮按钮图片已清除');
+    logger.info('beautify', '悬浮按钮图片已清除');
   });
 
   // 存档图片点击
@@ -3623,7 +3623,7 @@ function bindFloatingBtnPopupEvents(overlay) {
     saveFloatingBtnSettings({ currentGifPackId: '' });
     clearGifAnimationPack();
     refreshGifPackUI(overlay);
-    logger.info('[BeautifyPopup] 已取消使用动画库');
+    logger.info('beautify', '已取消使用动画库');
   });
 
   // === 等待动画库相关事件 ===
@@ -3647,7 +3647,7 @@ function bindFloatingBtnPopupEvents(overlay) {
   waitingPackClearBtn?.addEventListener('click', () => {
     saveFloatingBtnSettings({ currentWaitingPackId: '' });
     refreshWaitingPackUI(overlay);
-    logger.info('[BeautifyPopup] 已取消使用等待动画库');
+    logger.info('beautify', '已取消使用等待动画库');
   });
 }
 
@@ -3695,7 +3695,7 @@ function handleFloatingBtnUpload(overlay) {
 
       // 应用图片并保存到存档
       applyFloatingBtnImage(overlay, filePath, file.name, 'local');
-      logger.info('[BeautifyPopup] 悬浮按钮图片已上传:', filePath);
+      logger.info('beautify', '悬浮按钮图片已上传:', filePath);
 
     } catch (error) {
       logger.error('[BeautifyPopup] 上传失败:', error);
@@ -3723,7 +3723,7 @@ function handleFloatingBtnAddUrl(overlay) {
   img.onload = () => {
     const name = url.split('/').pop()?.split('?')[0] || '网络图片';
     applyFloatingBtnImage(overlay, url, name, 'url');
-    logger.info('[BeautifyPopup] 网络图片已添加:', url);
+    logger.info('beautify', '网络图片已添加:', url);
   };
   img.onerror = () => {
     alert('无法加载图片，请检查 URL 是否正确');
@@ -3762,7 +3762,7 @@ function handleFloatingBtnSavedClick(e, overlay) {
       overlay.querySelectorAll('.floating-btn-saved-item').forEach(i => i.classList.remove('active'));
       item.classList.add('active');
 
-      logger.info('[BeautifyPopup] 已选择存档图片');
+      logger.info('beautify', '已选择存档图片');
     }
   }
 }
@@ -3788,9 +3788,9 @@ async function handleFloatingBtnDeleteImage(id, overlay) {
         headers: getRequestHeaders(),
         body: JSON.stringify({ path: imageToDelete.url })
       });
-      logger.info('[BeautifyPopup] 服务器文件已删除:', imageToDelete.url);
+      logger.info('beautify', '服务器文件已删除:', imageToDelete.url);
     } catch (error) {
-      logger.warn('[BeautifyPopup] 删除服务器文件失败:', error);
+      logger.warn('beautify', '删除服务器文件失败:', error);
     }
   }
 
@@ -3807,7 +3807,7 @@ async function handleFloatingBtnDeleteImage(id, overlay) {
   }
 
   refreshFloatingBtnSavedGrid(overlay);
-  logger.info('[BeautifyPopup] 存档图片已删除:', imageToDelete.name);
+  logger.info('beautify', '存档图片已删除:', imageToDelete.name);
 }
 
 /**
@@ -4037,7 +4037,7 @@ function applyGifPack(overlay, packId) {
   const pack = settings.gifPacks?.find(p => p.id === packId);
 
   if (!pack) {
-    logger.warn('[BeautifyPopup] 找不到动画库:', packId);
+    logger.warn('beautify', '找不到动画库:', packId);
     return;
   }
 
@@ -4050,7 +4050,7 @@ function applyGifPack(overlay, packId) {
   // 刷新UI
   refreshGifPackUI(overlay);
 
-  logger.info('[BeautifyPopup] 已应用动画库:', pack.name);
+  logger.info('beautify', '已应用动画库:', pack.name);
 }
 
 /**
@@ -4079,9 +4079,9 @@ async function handleDeleteGifPack(overlay, packId) {
         headers: getRequestHeaders(),
         body: JSON.stringify({ path: fileUrl })
       });
-      logger.info('[BeautifyPopup] 已删除本地文件:', fileUrl);
+      logger.info('beautify', '已删除本地文件:', fileUrl);
     } catch (error) {
-      logger.warn('[BeautifyPopup] 删除文件失败:', fileUrl, error);
+      logger.warn('beautify', '删除文件失败:', fileUrl, error);
     }
   }
 
@@ -4098,7 +4098,7 @@ async function handleDeleteGifPack(overlay, packId) {
   saveFloatingBtnSettings({ gifPacks: newGifPacks, currentGifPackId: newCurrentId });
   refreshGifPackUI(overlay);
 
-  logger.info('[BeautifyPopup] 已删除动画库:', pack.name);
+  logger.info('beautify', '已删除动画库:', pack.name);
 }
 
 /**
@@ -4120,7 +4120,7 @@ function refreshGifPackUI(overlay) {
       saveFloatingBtnSettings({ currentGifPackId: '' });
       clearGifAnimationPack();
       refreshGifPackUI(overlay);
-      logger.info('[BeautifyPopup] 已取消使用动画库');
+      logger.info('beautify', '已取消使用动画库');
     });
   }
 
@@ -4418,7 +4418,7 @@ function handleGifPackFieldUpload(editorOverlay, field) {
         });
         logger.debug('[BeautifyPopup] 已删除旧文件:', oldUrl);
       } catch (error) {
-        logger.warn('[BeautifyPopup] 删除旧文件失败:', oldUrl, error);
+        logger.warn('beautify', '删除旧文件失败:', oldUrl, error);
       }
     }
 
@@ -4454,7 +4454,7 @@ function handleGifPackFieldUpload(editorOverlay, field) {
         hiddenInput.value = filePath;
       }
 
-      logger.info('[BeautifyPopup] GIF动画库图片已上传:', field, filePath);
+      logger.info('beautify', 'GIF动画库图片已上传:', field, filePath);
 
     } catch (error) {
       logger.error('[BeautifyPopup] 上传失败:', error);
@@ -4485,9 +4485,9 @@ async function clearGifPackField(editorOverlay, field) {
         headers: getRequestHeaders(),
         body: JSON.stringify({ path: currentUrl })
       });
-      logger.info('[BeautifyPopup] 已删除本地文件:', currentUrl);
+      logger.info('beautify', '已删除本地文件:', currentUrl);
     } catch (error) {
-      logger.warn('[BeautifyPopup] 删除文件失败:', currentUrl, error);
+      logger.warn('beautify', '删除文件失败:', currentUrl, error);
     }
   }
 
@@ -4565,7 +4565,7 @@ function saveGifPack(mainOverlay, editorOverlay, packId, isNew) {
   closeGifPackEditor(editorOverlay);
   refreshGifPackUI(mainOverlay);
 
-  logger.info('[BeautifyPopup] 动画库已保存:', name);
+  logger.info('beautify', '动画库已保存:', name);
 }
 
 /**
@@ -4603,7 +4603,7 @@ function handleGifPackFieldUrl(editorOverlay, field) {
       hiddenInput.value = url;
     }
 
-    logger.info('[BeautifyPopup] 已添加网络图片:', field, url);
+    logger.info('beautify', '已添加网络图片:', field, url);
   };
   img.onerror = () => {
     alert('无法加载图片，请检查URL是否正确');
@@ -4694,7 +4694,7 @@ async function exportGifPack(editorOverlay) {
 
         logger.debug('[BeautifyPopup] 已添加图片到ZIP:', fileName);
       } catch (error) {
-        logger.warn('[BeautifyPopup] 获取图片失败:', field.url, error);
+        logger.warn('beautify', '获取图片失败:', field.url, error);
         // 失败时尝试用Base64
         configData[field.key] = await urlToBase64(field.url);
       }
@@ -4713,7 +4713,7 @@ async function exportGifPack(editorOverlay) {
     a.click();
 
     URL.revokeObjectURL(url);
-    logger.info('[BeautifyPopup] 动画库已导出为ZIP:', name);
+    logger.info('beautify', '动画库已导出为ZIP:', name);
 
   } catch (error) {
     logger.error('[BeautifyPopup] 导出失败:', error);
@@ -4814,7 +4814,7 @@ function importGifPack(editorOverlay) {
         await importGifPackImage(editorOverlay, 'afterClick', data.afterClick, zipFile);
       }
 
-      logger.info('[BeautifyPopup] 动画库已导入:', data.name);
+      logger.info('beautify', '动画库已导入:', data.name);
       alert('导入成功！请检查内容后点击保存。');
 
     } catch (error) {
@@ -4997,7 +4997,7 @@ async function urlToBase64(url) {
       reader.readAsDataURL(blob);
     });
   } catch (error) {
-    logger.warn('[BeautifyPopup] 转换Base64失败:', url, error);
+    logger.warn('beautify', '转换Base64失败:', url, error);
     return url; // 失败时返回原URL
   }
 }
@@ -5149,7 +5149,7 @@ function applyWaitingPack(overlay, packId) {
   const pack = settings.waitingPacks?.find(p => p.id === packId);
 
   if (!pack) {
-    logger.warn('[BeautifyPopup] 找不到等待动画库:', packId);
+    logger.warn('beautify', '找不到等待动画库:', packId);
     return;
   }
 
@@ -5159,7 +5159,7 @@ function applyWaitingPack(overlay, packId) {
   // 刷新UI
   refreshWaitingPackUI(overlay);
 
-  logger.info('[BeautifyPopup] 已应用等待动画库:', pack.name);
+  logger.info('beautify', '已应用等待动画库:', pack.name);
 }
 
 /**
@@ -5188,9 +5188,9 @@ async function handleDeleteWaitingPack(overlay, packId) {
         headers: getRequestHeaders(),
         body: JSON.stringify({ path: fileUrl })
       });
-      logger.info('[BeautifyPopup] 已删除本地文件:', fileUrl);
+      logger.info('beautify', '已删除本地文件:', fileUrl);
     } catch (error) {
-      logger.warn('[BeautifyPopup] 删除文件失败:', fileUrl, error);
+      logger.warn('beautify', '删除文件失败:', fileUrl, error);
     }
   }
 
@@ -5207,7 +5207,7 @@ async function handleDeleteWaitingPack(overlay, packId) {
   saveFloatingBtnSettings({ waitingPacks: newWaitingPacks, currentWaitingPackId: newCurrentId });
   refreshWaitingPackUI(overlay);
 
-  logger.info('[BeautifyPopup] 已删除等待动画库:', pack.name);
+  logger.info('beautify', '已删除等待动画库:', pack.name);
 }
 
 /**
@@ -5228,7 +5228,7 @@ function refreshWaitingPackUI(overlay) {
     clearBtn?.addEventListener('click', () => {
       saveFloatingBtnSettings({ currentWaitingPackId: '' });
       refreshWaitingPackUI(overlay);
-      logger.info('[BeautifyPopup] 已取消使用等待动画库');
+      logger.info('beautify', '已取消使用等待动画库');
     });
   }
 
@@ -5527,7 +5527,7 @@ function handleWaitingPackFieldUpload(editorOverlay, field) {
         });
         logger.debug('[BeautifyPopup] 已删除旧文件:', oldUrl);
       } catch (error) {
-        logger.warn('[BeautifyPopup] 删除旧文件失败:', oldUrl, error);
+        logger.warn('beautify', '删除旧文件失败:', oldUrl, error);
       }
     }
 
@@ -5564,7 +5564,7 @@ function handleWaitingPackFieldUpload(editorOverlay, field) {
         hiddenInput.value = filePath;
       }
 
-      logger.info('[BeautifyPopup] 等待动画库图片已上传:', field, filePath);
+      logger.info('beautify', '等待动画库图片已上传:', field, filePath);
 
     } catch (error) {
       logger.error('[BeautifyPopup] 上传失败:', error);
@@ -5602,7 +5602,7 @@ function handleWaitingPackFieldUrl(editorOverlay, field) {
       hiddenInput.value = url;
     }
 
-    logger.info('[BeautifyPopup] 已添加网络图片:', field, url);
+    logger.info('beautify', '已添加网络图片:', field, url);
   };
   img.onerror = () => {
     alert('无法加载图片，请检查URL是否正确');
@@ -5630,9 +5630,9 @@ async function clearWaitingPackField(editorOverlay, field) {
         headers: getRequestHeaders(),
         body: JSON.stringify({ path: currentUrl })
       });
-      logger.info('[BeautifyPopup] 已删除本地文件:', currentUrl);
+      logger.info('beautify', '已删除本地文件:', currentUrl);
     } catch (error) {
-      logger.warn('[BeautifyPopup] 删除文件失败:', currentUrl, error);
+      logger.warn('beautify', '删除文件失败:', currentUrl, error);
     }
   }
 
@@ -5718,7 +5718,7 @@ function saveWaitingPack(mainOverlay, editorOverlay, packId, isNew) {
   closeWaitingPackEditor(editorOverlay);
   refreshWaitingPackUI(mainOverlay);
 
-  logger.info('[BeautifyPopup] 等待动画库已保存:', name);
+  logger.info('beautify', '等待动画库已保存:', name);
 }
 
 
@@ -5801,7 +5801,7 @@ async function exportWaitingPack(editorOverlay) {
 
         logger.debug('[BeautifyPopup] 已添加图片到ZIP:', fileName);
       } catch (error) {
-        logger.warn('[BeautifyPopup] 获取图片失败:', field.url, error);
+        logger.warn('beautify', '获取图片失败:', field.url, error);
         // 失败时尝试用Base64
         configData[field.key] = await urlToBase64(field.url);
       }
@@ -5820,7 +5820,7 @@ async function exportWaitingPack(editorOverlay) {
     a.click();
 
     URL.revokeObjectURL(url);
-    logger.info('[BeautifyPopup] 等待动画库已导出为ZIP:', name);
+    logger.info('beautify', '等待动画库已导出为ZIP:', name);
 
   } catch (error) {
     logger.error('[BeautifyPopup] 导出失败:', error);
@@ -5918,7 +5918,7 @@ function importWaitingPack(editorOverlay) {
         await importWaitingPackImage(editorOverlay, 'completeGif', data.completeGif, zipFile);
       }
 
-      logger.info('[BeautifyPopup] 等待动画库已导入:', data.name);
+      logger.info('beautify', '等待动画库已导入:', data.name);
       alert('导入成功！请检查内容后点击保存。');
 
     } catch (error) {
@@ -6075,7 +6075,7 @@ async function importWaitingPackImage(editorOverlay, field, imageData, zipFile =
  * @export
  */
 export function openTagManagerPopup() {
-  logger.info('[BeautifyPopup] 打开标签管理弹窗');
+  logger.info('beautify', '打开标签管理弹窗');
 
   // 创建弹窗 DOM
   const popup = createTagManagerDOM();
@@ -6229,7 +6229,7 @@ function bindTagManagerEvents(overlay) {
     };
   });
 
-  logger.debug('[BeautifyPopup] 标签管理弹窗事件已绑定');
+  logger.debug('beautify', '[BeautifyPopup] 标签管理弹窗事件已绑定');
 }
 
 /**
@@ -6239,7 +6239,7 @@ function closeTagManagerPopup() {
   const overlay = document.querySelector('.beautify-bg-tag-overlay');
   if (!overlay) return;
 
-  logger.info('[BeautifyPopup] 关闭标签管理弹窗');
+  logger.info('beautify', '关闭标签管理弹窗');
   overlay.classList.remove('show');
 
   // 动画结束后移除 DOM
@@ -6515,7 +6515,7 @@ async function showDeleteConfirm(container, index) {
   });
 
   toastr.success(`标签 "${tag.name}" 已删除`);
-  logger.info('[BeautifyPopup] 标签已删除:', tag);
+  logger.info('beautify', '标签已删除:', tag);
 }
 
 /**
@@ -6617,7 +6617,7 @@ async function bindListEvents(container) {
  * @export
  */
 export function openThemeTagManagerPopup() {
-  logger.info('[BeautifyPopup] 打开主题标签管理弹窗');
+  logger.info('beautify', '打开主题标签管理弹窗');
 
   // 创建弹窗 DOM
   const popup = createThemeTagManagerDOM();
@@ -6771,7 +6771,7 @@ function bindThemeTagManagerEvents(overlay) {
     };
   });
 
-  logger.debug('[BeautifyPopup] 主题标签管理弹窗事件已绑定');
+  logger.debug('beautify', '[BeautifyPopup] 主题标签管理弹窗事件已绑定');
 }
 
 /**
@@ -6781,7 +6781,7 @@ function closeThemeTagManagerPopup() {
   const overlay = document.querySelector('.beautify-theme-tag-overlay');
   if (!overlay) return;
 
-  logger.info('[BeautifyPopup] 关闭主题标签管理弹窗');
+  logger.info('beautify', '关闭主题标签管理弹窗');
   overlay.classList.remove('show');
 
   // 动画结束后移除 DOM
@@ -6921,7 +6921,7 @@ function createThemeTag(tagData) {
   saveSettingsDebounced();
 
   toastr.success(`标签 "${tagData.name}" 创建成功`);
-  logger.info('[BeautifyPopup] 主题标签已创建:', newTag);
+  logger.info('beautify', '主题标签已创建:', newTag);
 
   // 通知主题管理模块刷新
   document.dispatchEvent(new CustomEvent('beautify-theme-tags-changed'));
@@ -7131,7 +7131,7 @@ function updateThemeTag(index, tagData) {
   saveSettingsDebounced();
 
   toastr.success(`标签 "${tagData.name}" 已更新`);
-  logger.info('[BeautifyPopup] 主题标签已更新:', tags[index]);
+  logger.info('beautify', '主题标签已更新:', tags[index]);
 
   // 通知主题管理模块刷新
   document.dispatchEvent(new CustomEvent('beautify-theme-tags-changed'));
@@ -7169,7 +7169,7 @@ async function showThemeTagDeleteConfirm(container, index) {
   saveSettingsDebounced();
 
   toastr.success(`标签 "${tag.name}" 已删除`);
-  logger.info('[BeautifyPopup] 主题标签已删除:', tag);
+  logger.info('beautify', '主题标签已删除:', tag);
 
   // 通知主题管理模块刷新
   document.dispatchEvent(new CustomEvent('beautify-theme-tags-changed'));

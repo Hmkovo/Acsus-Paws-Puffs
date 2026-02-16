@@ -34,7 +34,7 @@ import { showContactSelectorPopup } from '../utils/contact-selector-popup.js';
  * 4. 添加多选模式标记类
  */
 export function enterMultiSelectMode(pageContainer) {
-  logger.info('[MultiSelect] 进入多选模式');
+  logger.info('phone','[MultiSelect] 进入多选模式');
 
   // 1. 添加多选模式类（用于CSS控制）
   pageContainer.classList.add('multiselect-mode');
@@ -50,7 +50,7 @@ export function enterMultiSelectMode(pageContainer) {
   if (toolbar) {
     toolbar.style.display = 'flex';
   } else {
-    logger.warn('[MultiSelect] 找不到工具栏元素');
+    logger.warn('phone','[MultiSelect] 找不到工具栏元素');
   }
 
   // 4. 隐藏输入区域
@@ -59,7 +59,7 @@ export function enterMultiSelectMode(pageContainer) {
     inputArea.style.display = 'none';
   }
 
-  logger.debug('[MultiSelect] 多选模式已激活');
+  logger.debug('phone','[MultiSelect] 多选模式已激活');
 }
 
 /**
@@ -75,7 +75,7 @@ export function enterMultiSelectMode(pageContainer) {
  * 5. 移除多选模式标记类
  */
 export function exitMultiSelectMode(pageContainer) {
-  logger.info('[MultiSelect] 退出多选模式');
+  logger.info('phone','[MultiSelect] 退出多选模式');
 
   // 1. 移除多选模式类
   pageContainer.classList.remove('multiselect-mode');
@@ -99,7 +99,7 @@ export function exitMultiSelectMode(pageContainer) {
     inputArea.style.display = 'flex';
   }
 
-  logger.debug('[MultiSelect] 多选模式已退出');
+  logger.debug('phone','[MultiSelect] 多选模式已退出');
 }
 
 /**
@@ -138,14 +138,14 @@ export function getSelectedMessages(pageContainer) {
           Object.assign(messageData, JSON.parse(extraData));
         }
       } catch (error) {
-        logger.warn('[MultiSelect] 解析消息额外数据失败:', error);
+        logger.warn('phone','[MultiSelect] 解析消息额外数据失败:', error);
       }
     }
 
     selectedMessages.push(messageData);
   });
 
-  logger.debug('[MultiSelect] 获取选中的消息:', selectedMessages.length, '条');
+  logger.debug('phone','[MultiSelect] 获取选中的消息:', selectedMessages.length, '条');
   return selectedMessages;
 }
 
@@ -159,7 +159,7 @@ export function clearSelection(pageContainer) {
   checkboxes.forEach(checkbox => {
     checkbox.checked = false;
   });
-  logger.debug('[MultiSelect] 已清空选中状态');
+  logger.debug('phone','[MultiSelect] 已清空选中状态');
 }
 
 /**
@@ -178,7 +178,7 @@ export function clearSelection(pageContainer) {
 export function bindMultiSelectToolbar(pageContainer, contactId) {
   const toolbar = pageContainer.querySelector('.chat-multiselect-toolbar');
   if (!toolbar) {
-    logger.error('[MultiSelect] 找不到工具栏元素，无法绑定事件');
+    logger.error('phone','[MultiSelect] 找不到工具栏元素，无法绑定事件');
     return;
   }
 
@@ -214,7 +214,7 @@ export function bindMultiSelectToolbar(pageContainer, contactId) {
     });
   }
 
-  logger.debug('[MultiSelect] 工具栏事件已绑定');
+  logger.debug('phone','[MultiSelect] 工具栏事件已绑定');
 }
 
 /**
@@ -317,7 +317,7 @@ function createForwardedMessage(messages, originalContactName) {
     messages: formattedMessages
   };
 
-  logger.debug('[MultiSelect] 创建转发消息:', forwardedMessage);
+  logger.debug('phone','[MultiSelect] 创建转发消息:', forwardedMessage);
   return forwardedMessage;
 }
 
@@ -345,7 +345,7 @@ async function handleForward(pageContainer, contactId) {
     return;
   }
 
-  logger.info('[MultiSelect] 开始转发:', selected.length, '条消息');
+  logger.info('phone','[MultiSelect] 开始转发:', selected.length, '条消息');
 
   try {
     // 1. 显示联系人选择弹窗（排除当前角色）
@@ -356,11 +356,11 @@ async function handleForward(pageContainer, contactId) {
     });
 
     if (!targetContactIds || targetContactIds.length === 0) {
-      logger.debug('[MultiSelect] 用户取消转发');
+      logger.debug('phone','[MultiSelect] 用户取消转发');
       return;
     }
 
-    logger.info('[MultiSelect] 选择转发目标:', targetContactIds);
+    logger.info('phone','[MultiSelect] 选择转发目标:', targetContactIds);
 
     // 2. 加载联系人信息
     const contacts = await loadContacts();
@@ -382,9 +382,9 @@ async function handleForward(pageContainer, contactId) {
       try {
         await saveChatMessage(targetId, forwardedMessage);
         successCount++;
-        logger.debug('[MultiSelect] 转发成功:', targetId);
+        logger.debug('phone','[MultiSelect] 转发成功:', targetId);
       } catch (error) {
-        logger.error('[MultiSelect] 转发失败:', targetId, error);
+        logger.error('phone','[MultiSelect] 转发失败:', targetId, error);
       }
     }
 
@@ -405,7 +405,7 @@ async function handleForward(pageContainer, contactId) {
     // 编造的角色标记 isFake: true，使用白色问号头像
 
   } catch (error) {
-    logger.error('[MultiSelect] 转发失败:', error);
+    logger.error('phone','[MultiSelect] 转发失败:', error);
     showErrorToast('转发失败，请重试');
   }
 }
@@ -426,14 +426,14 @@ async function handleFavorite(pageContainer, contactId) {
   }
 
   try {
-    logger.info('[MultiSelect] 批量收藏消息:', selected.length, '条');
+    logger.info('phone','[MultiSelect] 批量收藏消息:', selected.length, '条');
     
     // 加载联系人信息
     const contacts = await loadContacts();
     const contact = contacts.find(c => c.id === contactId);
     
     if (!contact) {
-      logger.error('[MultiSelect] 联系人不存在:', contactId);
+      logger.error('phone','[MultiSelect] 联系人不存在:', contactId);
       showErrorToast('联系人信息获取失败');
       return;
     }
@@ -463,7 +463,7 @@ async function handleFavorite(pageContainer, contactId) {
     exitMultiSelectMode(pageContainer);
     
   } catch (error) {
-    logger.error('[MultiSelect] 批量收藏失败:', error);
+    logger.error('phone','[MultiSelect] 批量收藏失败:', error);
     showErrorToast('收藏失败，请重试');
   }
 }
@@ -492,7 +492,7 @@ async function handleDelete(pageContainer, contactId) {
   if (!confirmed) return;
 
   try {
-    logger.info('[MultiSelect] 批量删除消息:', selected.length, '条');
+    logger.info('phone','[MultiSelect] 批量删除消息:', selected.length, '条');
     
     // 加载聊天记录（返回的是数组，不是对象）
     const history = await loadChatHistory(contactId);
@@ -523,16 +523,16 @@ async function handleDelete(pageContainer, contactId) {
           if (plan) {
             deletePlan(contactId, plan.id);
             deletedPlanCount++;
-            logger.debug('[MultiSelect] 已删除计划:', plan.title);
+            logger.debug('phone','[MultiSelect] 已删除计划:', plan.title);
           }
         }
       }
       
       if (deletedPlanCount > 0) {
-        logger.info('[MultiSelect] 共删除', deletedPlanCount, '个关联计划');
+        logger.info('phone','[MultiSelect] 共删除', deletedPlanCount, '个关联计划');
       }
     } catch (error) {
-      logger.warn('[MultiSelect] 删除计划数据失败（不影响消息删除）:', error);
+      logger.warn('phone','[MultiSelect] 删除计划数据失败（不影响消息删除）:', error);
     }
     
     const deletedCount = originalCount - updatedHistory.length;
@@ -551,7 +551,7 @@ async function handleDelete(pageContainer, contactId) {
     exitMultiSelectMode(pageContainer);
     
   } catch (error) {
-    logger.error('[MultiSelect] 批量删除失败:', error);
+    logger.error('phone','[MultiSelect] 批量删除失败:', error);
     showErrorToast('删除失败，请重试');
   }
 }

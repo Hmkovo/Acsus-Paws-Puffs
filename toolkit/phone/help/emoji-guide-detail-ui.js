@@ -15,7 +15,7 @@ import logger from '../../../logger.js';
  * @returns {Promise<DocumentFragment>} 页面内容片段
  */
 export async function renderEmojiGuideDetail() {
-  logger.info('[EmojiGuideDetail] 开始渲染表情包详细说明页');
+  logger.info('phone','[EmojiGuideDetail] 开始渲染表情包详细说明页');
 
   const fragment = document.createDocumentFragment();
   const container = document.createElement('div');
@@ -146,7 +146,7 @@ export async function renderEmojiGuideDetail() {
 
   fragment.appendChild(container);
 
-  logger.info('[EmojiGuideDetail] 表情包详细说明页渲染完成');
+  logger.info('phone','[EmojiGuideDetail] 表情包详细说明页渲染完成');
   return fragment;
 }
 
@@ -157,7 +157,7 @@ export async function renderEmojiGuideDetail() {
  * @param {HTMLElement} container - 页面容器
  */
 function bindEvents(container) {
-  logger.debug('[EmojiGuideDetail] 绑定事件');
+  logger.debug('phone','[EmojiGuideDetail] 绑定事件');
 
   // 返回按钮
   const backBtn = container.querySelector('.emoji-guide-detail-back-btn');
@@ -169,7 +169,7 @@ function bindEvents(container) {
  * @private
  */
 function handleBack() {
-  logger.info('[EmojiGuideDetail] 点击返回');
+  logger.info('phone','[EmojiGuideDetail] 点击返回');
   const overlayElement = document.querySelector('.phone-overlay');
   if (overlayElement) {
     import('../phone-main-ui.js').then(({ hidePage }) => {

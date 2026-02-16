@@ -37,7 +37,7 @@ import { showCustomPopup } from '../../utils/popup-helper.js';
  * };
  */
 export function renderForwardedMessage(message, contact, contactId) {
-  logger.debug('[ForwardedMessage] 渲染转发消息');
+  logger.debug('phone','[ForwardedMessage]] 渲染转发消息');
 
   const userName = getUserDisplayName();
 
@@ -137,7 +137,7 @@ export function renderForwardedMessage(message, contact, contactId) {
 
   // 长按操作菜单由 message-chat-ui.js 统一绑定
 
-  logger.info('[ForwardedMessage] 转发消息渲染完成:', message.id);
+  logger.info('phone','[ForwardedMessage] 转发消息渲染完成:', message.id);
 }
 
 /**
@@ -213,7 +213,7 @@ function truncateText(text, maxLength) {
  * @param {string} userName - 用户显示名称
  */
 function showForwardedMessagePreview(message, userName) {
-  logger.debug('[ForwardedMessage] 显示全部消息预览');
+  logger.debug('phone','[ForwardedMessage]] 显示全部消息预览');
 
   // 构造弹窗HTML
   const messageListHTML = message.messages.map((msg, index) => {

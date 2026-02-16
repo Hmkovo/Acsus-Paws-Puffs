@@ -38,7 +38,7 @@ export function renderFriendDeletedMessage(message) {
   bubble.appendChild(hint);
   container.appendChild(bubble);
 
-  logger.debug('[FriendDeletedMessage] 渲染删除好友消息');
+  logger.debug('phone','[FriendDeletedMessage] 渲染删除好友消息');
   return container;
 }
 

@@ -366,17 +366,17 @@ export function detectFormatFromModel(model) {
 
     // Gemini 系列
     if (modelLower.includes('gemini')) {
-        logger.debug('[FormatConverter] 检测到 Gemini 模型，使用 google 格式');
+        logger.debug('phone','[FormatConverter] 检测到 Gemini 模型，使用 google 格式');
         return 'google';
     }
 
     // Claude 系列
     if (modelLower.includes('claude')) {
-        logger.debug('[FormatConverter] 检测到 Claude 模型，使用 claude 格式');
+        logger.debug('phone','[FormatConverter] 检测到 Claude 模型，使用 claude 格式');
         return 'claude';
     }
 
     // 默认 OpenAI 兼容
-    logger.debug('[FormatConverter] 使用默认 openai 格式');
+    logger.debug('phone','[FormatConverter] 使用默认 openai 格式');
     return 'openai';
 }

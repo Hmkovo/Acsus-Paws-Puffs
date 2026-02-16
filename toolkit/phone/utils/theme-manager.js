@@ -40,7 +40,7 @@ const STORAGE_KEY = 'settings';
  *                                    如果传入则直接应用，不传则从 document 查找
  */
 export async function initTheme(container) {
-  logger.debug('[ThemeManager] 初始化主题');
+  logger.debug('phone','[ThemeManager] 初始化主题');
 
   // 从存储加载主题
   const savedTheme = await getTheme();
@@ -48,7 +48,7 @@ export async function initTheme(container) {
   // 应用主题（支持传入容器元素）
   applyTheme(savedTheme, container);
 
-  logger.info(`[ThemeManager] 主题已初始化: ${savedTheme}`);
+  logger.info('phone',`[ThemeManager] 主题已初始化: ${savedTheme}`);
 }
 
 /**
@@ -66,7 +66,7 @@ export async function toggleTheme() {
 
   await setTheme(newTheme);
 
-  logger.info(`[ThemeManager] 主题已切换: ${currentTheme} -> ${newTheme}`);
+  logger.info('phone',`[ThemeManager] 主题已切换: ${currentTheme} -> ${newTheme}`);
 
   return newTheme;
 }
@@ -79,7 +79,7 @@ export async function toggleTheme() {
  */
 export async function setTheme(theme) {
   if (theme !== THEME.LIGHT && theme !== THEME.DARK) {
-    logger.warn(`[ThemeManager] 无效的主题: ${theme}，使用默认主题 'light'`);
+    logger.warn('phone',`[ThemeManager] 无效的主题: ${theme}，使用默认主题 'light'`);
     theme = THEME.LIGHT;
   }
 
@@ -89,7 +89,7 @@ export async function setTheme(theme) {
   // 保存到存储
   await saveTheme(theme);
 
-  logger.debug(`[ThemeManager] 主题已设置: ${theme}`);
+  logger.debug('phone',`[ThemeManager] 主题已设置: ${theme}`);
 }
 
 /**
@@ -119,7 +119,7 @@ function applyTheme(theme, container) {
   const phoneContainer = container || document.querySelector('.phone-container');
 
   if (!phoneContainer) {
-    logger.warn('[ThemeManager] 找不到 .phone-container，跳过应用主题');
+    logger.warn('phone','[ThemeManager] 找不到 .phone-container，跳过应用主题');
     return;
   }
 
@@ -130,7 +130,7 @@ function applyTheme(theme, container) {
     phoneContainer.removeAttribute('data-theme');
   }
 
-  logger.debug(`[ThemeManager] 主题已应用到DOM: ${theme}`);
+  logger.debug('phone',`[ThemeManager] 主题已应用到DOM: ${theme}`);
 }
 
 /**
@@ -144,7 +144,7 @@ async function saveTheme(theme) {
   settings.theme = theme;
   await saveData(STORAGE_KEY, settings);
 
-  logger.debug(`[ThemeManager] 主题已保存: ${theme}`);
+  logger.debug('phone',`[ThemeManager] 主题已保存: ${theme}`);
 }
 
 /**

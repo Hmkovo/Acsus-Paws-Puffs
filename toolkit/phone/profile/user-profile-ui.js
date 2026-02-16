@@ -26,7 +26,7 @@ import { toggleTheme, getTheme, getThemeIcon, getThemeText } from '../utils/them
  * @returns {Promise<DocumentFragment>} 用户个人主页内容片段
  */
 export async function renderUserProfile() {
-  logger.debug('[UserProfile] 渲染用户个人主页');
+  logger.debug('phone','[UserProfile] 渲染用户个人主页');
 
   try {
     // 加载用户配置
@@ -52,10 +52,10 @@ export async function renderUserProfile() {
 
     fragment.appendChild(container);
 
-    logger.info('[UserProfile] 用户个人主页渲染完成');
+    logger.info('phone','[UserProfile] 用户个人主页渲染完成');
     return fragment;
   } catch (error) {
-    logger.error('[UserProfile] 渲染用户个人主页失败:', error);
+    logger.error('phone','[UserProfile] 渲染用户个人主页失败:', error);
     return createErrorView();
   }
 }
@@ -133,7 +133,7 @@ function createUserInfoCard(userConfig) {
 
   // 读取用户会员数据并添加徽章（异步）
   addUserMembershipBadge(name).catch(err => {
-    logger.error('[UserProfile] 添加用户会员徽章失败:', err);
+    logger.error('phone','[UserProfile] 添加用户会员徽章失败:', err);
   });
 
   // 个性签名（可点击编辑）
@@ -241,7 +241,7 @@ async function createFooterButtons(userConfig) {
 
   // 添加点击事件
   nightBtn.addEventListener('click', async () => {
-    logger.debug('[UserProfile] 点击夜间模式按钮');
+    logger.debug('phone','[UserProfile] 点击夜间模式按钮');
 
     // 切换主题
     const newTheme = await toggleTheme();
@@ -256,7 +256,7 @@ async function createFooterButtons(userConfig) {
 
     // Toast提示当前模式（不是按钮文字）
     const currentModeText = newTheme === 'dark' ? '夜间' : '日间';
-    logger.info(`[UserProfile] 主题已切换为: ${newTheme}`);
+    logger.info('phone',`[UserProfile] 主题已切换为: ${newTheme}`);
     showSuccessToast(`已切换到${currentModeText}模式`);
   });
 
@@ -292,7 +292,7 @@ async function createFooterButtons(userConfig) {
  * @async
  */
 async function handleClose() {
-  logger.debug('[UserProfile] 关闭用户个人主页');
+  logger.debug('phone','[UserProfile] 关闭用户个人主页');
 
   // 触发返回主页
   const phoneOverlay = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
@@ -310,7 +310,7 @@ async function handleClose() {
  * @async
  */
 async function handleEditSignature() {
-  logger.debug('[UserProfile] 编辑个性签名');
+  logger.debug('phone','[UserProfile] 编辑个性签名');
 
   try {
     // 获取当前签名
@@ -363,12 +363,12 @@ async function handleEditSignature() {
       });
 
       showSuccessToast('个性签名已更新');
-      logger.info('[UserProfile] 个性签名已更新并记录到本轮操作:', newSignature);
+      logger.info('phone','[UserProfile] 个性签名已更新并记录到本轮操作:', newSignature);
     } else {
       showErrorToast('保存失败，请重试');
     }
   } catch (error) {
-    logger.error('[UserProfile] 编辑个性签名失败:', error);
+    logger.error('phone','[UserProfile] 编辑个性签名失败:', error);
     showErrorToast('编辑失败，请重试');
   }
 }
@@ -392,14 +392,14 @@ function updateSignatureDisplay(newSignature) {
  * @async
  */
 async function handleChangeBackground() {
-  logger.debug('[UserProfile] 更换背景图');
+  logger.debug('phone','[UserProfile] 更换背景图');
 
   try {
     // 获取系统背景列表
     const backgrounds = await getSystemBackgrounds();
 
     if (backgrounds.length === 0) {
-      logger.warn('[UserProfile] 没有可用的背景图');
+      logger.warn('phone','[UserProfile] 没有可用的背景图');
       return;
     }
 
@@ -418,9 +418,9 @@ async function handleChangeBackground() {
     // 局部更新DOM
     updateBackgroundDisplay(selectedBg);
 
-    logger.info('[UserProfile] 背景图已更换:', selectedBg);
+    logger.info('phone','[UserProfile] 背景图已更换:', selectedBg);
   } catch (error) {
-    logger.error('[UserProfile] 更换背景图失败:', error);
+    logger.error('phone','[UserProfile] 更换背景图失败:', error);
   }
 }
 
@@ -446,7 +446,7 @@ function updateBackgroundDisplay(bgUrl) {
  * @async
  */
 async function handleOpenSettings() {
-  logger.debug('[UserProfile] 打开设置页');
+  logger.debug('phone','[UserProfile] 打开设置页');
 
   // 直接调用 showPage（不用自定义事件）
   const overlayElement = document.querySelector('.phone-overlay');
@@ -455,7 +455,7 @@ async function handleOpenSettings() {
     await showPage(overlayElement, 'user-settings');
   }
 
-  logger.info('[UserProfile] 已打开设置页');
+  logger.info('phone','[UserProfile] 已打开设置页');
 }
 
 /**
@@ -467,7 +467,7 @@ async function handleOpenSettings() {
  * @async
  */
 async function handleOpenWallet() {
-  logger.debug('[UserProfile] 打开钱包页');
+  logger.debug('phone','[UserProfile] 打开钱包页');
 
   // 直接调用 showPage（不用自定义事件）
   const overlayElement = document.querySelector('.phone-overlay');
@@ -476,7 +476,7 @@ async function handleOpenWallet() {
     await showPage(overlayElement, 'user-wallet');
   }
 
-  logger.info('[UserProfile] 已打开钱包页');
+  logger.info('phone','[UserProfile] 已打开钱包页');
 }
 
 /**
@@ -490,7 +490,7 @@ async function handleOpenWallet() {
  * @async
  */
 async function handleWeatherClick() {
-  logger.debug('[UserProfile] 点击天气按钮');
+  logger.debug('phone','[UserProfile] 点击天气按钮');
 
   try {
     // 加载当前配置
@@ -516,11 +516,11 @@ async function handleWeatherClick() {
     updateWeatherDisplay(weatherData);
 
     showSuccessToast(`天气已更新：${weatherData.temp}° ${weatherData.city}`);
-    logger.info('[UserProfile] 天气更新成功:', weatherData);
+    logger.info('phone','[UserProfile] 天气更新成功:', weatherData);
 
   } catch (error) {
     showErrorToast(`设置天气失败：${error.message}`);
-    logger.error('[UserProfile.handleWeatherClick] 设置天气失败:', error);
+    logger.error('phone','[UserProfile.handleWeatherClick] 设置天气失败:', error);
   }
 }
 
@@ -539,7 +539,7 @@ async function handleWeatherClick() {
  * @returns {Promise<Object|null>} 天气数据 {city, temp, icon} 或null（取消）
  */
 async function showWeatherSettingsPopup(userConfig) {
-  logger.debug('[UserProfile.showWeatherSettingsPopup] 显示天气设置弹窗');
+  logger.debug('phone','[UserProfile.showWeatherSettingsPopup] 显示天气设置弹窗');
 
   // 天气图标列表（Font Awesome）
   const weatherIcons = [
@@ -822,7 +822,7 @@ async function loadUserConfig() {
       lastWeatherUpdate: null
     };
   } catch (error) {
-    logger.error('[UserProfile] 加载用户配置失败:', error);
+    logger.error('phone','[UserProfile] 加载用户配置失败:', error);
     return {
       signature: '',
       backgroundImage: '',
@@ -843,9 +843,9 @@ async function loadUserConfig() {
 async function saveUserConfig(config) {
   try {
     await saveData('userProfile', config);
-    logger.debug('[UserProfile] 用户配置已保存');
+    logger.debug('phone','[UserProfile] 用户配置已保存');
   } catch (error) {
-    logger.error('[UserProfile] 保存用户配置失败:', error);
+    logger.error('phone','[UserProfile] 保存用户配置失败:', error);
     throw error;
   }
 }
@@ -868,7 +868,7 @@ function getUserAvatar() {
  * @async
  */
 async function handleOpenFavorites() {
-  logger.info('[UserProfile] 打开收藏列表');
+  logger.info('phone','[UserProfile] 打开收藏列表');
 
   const overlayElement = document.querySelector('.phone-overlay');
   if (overlayElement) {
@@ -883,7 +883,7 @@ async function handleOpenFavorites() {
  * @async
  */
 async function handleOpenMembershipCenter() {
-  logger.info('[UserProfile] 打开会员中心');
+  logger.info('phone','[UserProfile] 打开会员中心');
 
   const overlayElement = document.querySelector('.phone-overlay');
   if (overlayElement) {
@@ -898,7 +898,7 @@ async function handleOpenMembershipCenter() {
  * @async
  */
 async function handleOpenHelpCenter() {
-  logger.info('[UserProfile] 打开帮助中心');
+  logger.info('phone','[UserProfile] 打开帮助中心');
 
   const overlayElement = document.querySelector('.phone-overlay');
   if (overlayElement) {
@@ -913,7 +913,7 @@ async function handleOpenHelpCenter() {
  * @async
  */
 async function handleOpenSignatureHistory() {
-  logger.info('[UserProfile] 打开历史个签页面');
+  logger.info('phone','[UserProfile] 打开历史个签页面');
 
   const overlayElement = document.querySelector('.phone-overlay');
   if (overlayElement) {
@@ -940,10 +940,10 @@ async function addUserMembershipBadge(nameElement) {
 
     if (membership && membership.type && membership.type !== 'none') {
       addMembershipBadgeToName(nameElement, membership.type);
-      logger.debug('[UserProfile] 已添加用户会员徽章:', membership.type);
+      logger.debug('phone','[UserProfile] 已添加用户会员徽章:', membership.type);
     }
   } catch (error) {
-    logger.error('[UserProfile] 读取用户会员数据失败:', error);
+    logger.error('phone','[UserProfile] 读取用户会员数据失败:', error);
   }
 }
 
@@ -962,18 +962,18 @@ function setupUserMembershipChangeListener(container) {
   // 订阅用户会员数据变化
   // 🔥 修复：键名必须与 stateManager.set 保持一致（都用 'userMembership'）
   stateManager.subscribe(pageId, 'userMembership', async (meta) => {
-    logger.info('[UserProfile] 收到会员数据变化通知', meta);
+    logger.info('phone','[UserProfile] 收到会员数据变化通知', meta);
 
     // 检查页面是否还存在
     if (!document.contains(container)) {
-      logger.debug('[UserProfile] 页面已关闭，跳过刷新');
+      logger.debug('phone','[UserProfile] 页面已关闭，跳过刷新');
       return;
     }
 
     // 查找用户名称元素
     const nameElement = container.querySelector('.user-profile-name');
     if (!nameElement) {
-      logger.warn('[UserProfile] 未找到用户名称元素');
+      logger.warn('phone','[UserProfile] 未找到用户名称元素');
       return;
     }
 
@@ -989,7 +989,7 @@ function setupUserMembershipChangeListener(container) {
     // 重新添加会员徽章
     await addUserMembershipBadge(nameElement);
 
-    logger.debug('[UserProfile] 会员徽章已自动更新');
+    logger.debug('phone','[UserProfile] 会员徽章已自动更新');
   });
 
   // 监听页面移除，自动清理订阅
@@ -999,7 +999,7 @@ function setupUserMembershipChangeListener(container) {
         if (node === container || node.contains?.(container)) {
           stateManager.unsubscribeAll(pageId);
           observer.disconnect();
-          logger.debug('[UserProfile] 页面已关闭，已清理订阅');
+          logger.debug('phone','[UserProfile] 页面已关闭，已清理订阅');
           return;
         }
       }
@@ -1011,7 +1011,7 @@ function setupUserMembershipChangeListener(container) {
     observer.observe(parent, { childList: true, subtree: true });
   }
 
-  logger.debug('[UserProfile] 已订阅用户会员数据变化');
+  logger.debug('phone','[UserProfile] 已订阅用户会员数据变化');
 }
 
 /**
@@ -1027,7 +1027,7 @@ function setupUserMembershipChangeListener(container) {
  * - 即使用户在其他页面购买/升级会员，下次打开装扮页面时价格会自动更新
  */
 function handleOpenCustomization() {
-  logger.info('[UserProfile] 打开个性装扮页面');
+  logger.info('phone','[UserProfile] 打开个性装扮页面');
 
   const overlay = document.querySelector('.phone-overlay');
   import('../phone-main-ui.js').then(({ showPage }) => {

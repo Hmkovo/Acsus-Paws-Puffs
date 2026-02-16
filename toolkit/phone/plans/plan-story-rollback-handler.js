@@ -48,7 +48,7 @@ export function initPlanStoryRollbackHandler() {
         name: '约定计划剧情要点',
         priority: 15, // 优先级中等（在计划回退之后，但在一般消息之前）
         rollback: async (contactId, deletedMessages, deletedMessageIds) => {
-            logger.debug('[PlanStoryRollback] 开始回退计划剧情要点');
+            logger.debug('phone','[PlanStoryRollback] 开始回退计划剧情要点');
 
             let deletedCount = 0;
             const deletedNotes = [];
@@ -57,7 +57,7 @@ export function initPlanStoryRollbackHandler() {
             const completedPlans = getCompletedPlans(contactId);
 
             if (completedPlans.length === 0) {
-                logger.debug('[PlanStoryRollback] 没有已完成的计划，跳过');
+                logger.debug('phone','[PlanStoryRollback] 没有已完成的计划，跳过');
                 return;
             }
 
@@ -69,7 +69,7 @@ export function initPlanStoryRollbackHandler() {
                 const storyData = parsePlanStoryMessage(content);
 
                 if (storyData) {
-                    logger.debug('[PlanStoryRollback] 发现计划剧情消息:', storyData.title, '消息ID:', aiMsg.id);
+                    logger.debug('phone','[PlanStoryRollback] 发现计划剧情消息:', storyData.title, '消息ID:', aiMsg.id);
 
                     // 获取要点类型
                     const noteType = getNoteType(storyData.type);
@@ -83,7 +83,7 @@ export function initPlanStoryRollbackHandler() {
                         const hasNote = latestPlan.notes[noteField];
 
                         if (hasNote) {
-                            logger.debug('[PlanStoryRollback] 发现需要删除的要点:', {
+                            logger.debug('phone','[PlanStoryRollback] 发现需要删除的要点:', {
                                 planId: latestPlan.id,
                                 planTitle: latestPlan.title,
                                 noteType,
@@ -98,17 +98,17 @@ export function initPlanStoryRollbackHandler() {
                                 noteType: storyData.title
                             });
                         } else {
-                            logger.debug('[PlanStoryRollback] 该计划没有对应的要点记录，跳过');
+                            logger.debug('phone','[PlanStoryRollback] 该计划没有对应的要点记录，跳过');
                         }
                     } else {
-                        logger.debug('[PlanStoryRollback] 未找到关联的计划或计划无要点数据');
+                        logger.debug('phone','[PlanStoryRollback] 未找到关联的计划或计划无要点数据');
                     }
                 }
             }
 
             if (deletedCount > 0) {
-                logger.info('[PlanStoryRollback] 共回退', deletedCount, '条计划要点');
-                logger.debug('[PlanStoryRollback] 删除的要点:', deletedNotes.map(n =>
+                logger.info('phone','[PlanStoryRollback] 共回退', deletedCount, '条计划要点');
+                logger.debug('phone','[PlanStoryRollback] 删除的要点:', deletedNotes.map(n =>
                     `${n.planTitle}-${n.noteType}`
                 ).join(', '));
 
@@ -119,12 +119,12 @@ export function initPlanStoryRollbackHandler() {
                     count: deletedCount
                 });
             } else {
-                logger.debug('[PlanStoryRollback] 没有需要回退的计划要点');
+                logger.debug('phone','[PlanStoryRollback] 没有需要回退的计划要点');
             }
         }
     });
 
-    logger.info('[PlanStoryRollback] 约定计划剧情要点回退处理器已初始化');
+    logger.info('phone','[PlanStoryRollback] 约定计划剧情要点回退处理器已初始化');
 }
 
 /**

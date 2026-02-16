@@ -29,7 +29,7 @@ export function renderEmojiMessage(message, contact, contactId) {
   const emoji = findEmojiById(message.content);  // ← 改用ID查找
 
   if (!emoji) {
-    logger.warn('[EmojiMessage] 找不到表情包 ID:', message.content, '名字:', message.emojiName);
+    logger.warn('phone','[EmojiMessage]] 找不到表情包 ID:', message.content, '名字:', message.emojiName);
     // 降级显示文字（表情包被删除，保留表情名字作为语境）
     return renderFallbackMessage(message, contact, contactId);
   }

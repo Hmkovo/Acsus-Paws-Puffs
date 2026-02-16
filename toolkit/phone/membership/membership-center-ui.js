@@ -29,7 +29,7 @@ const MEMBERSHIP_PRICES = {
  * @param {HTMLElement} container - 容器元素
  */
 export async function renderMembershipCenter(container) {
-  logger.info('[MembershipCenter] 渲染会员中心页面');
+  logger.info('phone','[MembershipCenter]] 渲染会员中心页面');
 
   // 清空容器
   container.innerHTML = '';
@@ -64,7 +64,7 @@ export async function renderMembershipCenter(container) {
   // ✅ 注册监听器：会员数据变化时自动刷新
   setupMembershipChangeListener(container);
 
-  logger.debug('[MembershipCenter] 页面渲染完成');
+  logger.debug('phone','[MembershipCenter]] 页面渲染完成');
 }
 
 /**
@@ -93,7 +93,7 @@ function createHeader() {
  * 处理返回
  */
 function handleBack() {
-  logger.info('[MembershipCenter] 点击返回');
+  logger.info('phone','[MembershipCenter]] 点击返回');
   const overlayElement = document.querySelector('.phone-overlay');
   if (overlayElement) {
     import('../phone-main-ui.js').then(({ hidePage }) => {
@@ -438,9 +438,9 @@ async function handlePurchaseMembership(optionKey) {
     await refreshMembershipStatus();
     await refreshBalanceDisplay();
 
-    logger.info('[MembershipCenter] 购买会员成功:', option.label);
+    logger.info('phone','[MembershipCenter]] 购买会员成功:', option.label);
   } catch (error) {
-    logger.error('[MembershipCenter] 购买会员失败:', error);
+    logger.error('phone','[MembershipCenter]] 购买会员失败:', error);
     showErrorToast('购买失败，请稍后重试');
   }
 }
@@ -451,7 +451,7 @@ async function handlePurchaseMembership(optionKey) {
  * @async
  */
 async function handleOpenGiftDialog() {
-  logger.info('[MembershipCenter] 打开送礼对话框');
+  logger.info('phone','[MembershipCenter]] 打开送礼对话框');
   // TODO: 实现送礼对话框
   showSuccessToast('送礼功能开发中，敬请期待');
 }
@@ -462,11 +462,11 @@ async function handleOpenGiftDialog() {
  * @async
  */
 async function refreshMembershipStatus() {
-  logger.debug('[MembershipCenter] 刷新会员状态卡片');
+  logger.debug('phone','[MembershipCenter]] 刷新会员状态卡片');
 
   const statusCard = document.querySelector('.membership-status-card');
   if (!statusCard) {
-    logger.warn('[MembershipCenter] 未找到会员状态卡片');
+    logger.warn('phone','[MembershipCenter]] 未找到会员状态卡片');
     return;
   }
 
@@ -479,7 +479,7 @@ async function refreshMembershipStatus() {
   // 替换旧卡片
   statusCard.replaceWith(newCard);
 
-  logger.debug('[MembershipCenter] 会员状态卡片已更新');
+  logger.debug('phone','[MembershipCenter]] 会员状态卡片已更新');
 }
 
 /**
@@ -488,11 +488,11 @@ async function refreshMembershipStatus() {
  * @async
  */
 async function refreshBalanceDisplay() {
-  logger.debug('[MembershipCenter] 刷新余额显示');
+  logger.debug('phone','[MembershipCenter]] 刷新余额显示');
 
   const balanceElement = document.querySelector('.balance-amount');
   if (!balanceElement) {
-    logger.warn('[MembershipCenter] 未找到余额元素');
+    logger.warn('phone','[MembershipCenter]] 未找到余额元素');
     return;
   }
 
@@ -502,7 +502,7 @@ async function refreshBalanceDisplay() {
   // 更新显示
   balanceElement.textContent = `¥${balance.toFixed(2)}`;
 
-  logger.debug('[MembershipCenter] 余额显示已更新:', balance);
+  logger.debug('phone','[MembershipCenter]] 余额显示已更新:', balance);
 }
 
 /**
@@ -520,18 +520,18 @@ function setupMembershipChangeListener(container) {
   // 订阅用户会员数据变化
   // 🔥 修复：键名必须与 stateManager.set 保持一致（都用 'userMembership'）
   stateManager.subscribe(pageId, 'userMembership', async (meta) => {
-    logger.info('[MembershipCenter] 收到会员数据变化通知', meta);
+    logger.info('phone','[MembershipCenter]] 收到会员数据变化通知', meta);
 
     // 检查页面是否还存在
     if (!document.contains(container)) {
-      logger.debug('[MembershipCenter] 页面已关闭，跳过刷新');
+      logger.debug('phone','[MembershipCenter]] 页面已关闭，跳过刷新');
       return;
     }
 
     // 刷新会员状态卡片
     await refreshMembershipStatus();
 
-    logger.debug('[MembershipCenter] 会员状态已自动更新');
+    logger.debug('phone','[MembershipCenter]] 会员状态已自动更新');
   });
 
   // 监听页面移除，自动清理订阅
@@ -541,7 +541,7 @@ function setupMembershipChangeListener(container) {
         if (node === container || node.contains?.(container)) {
           stateManager.unsubscribeAll(pageId);
           observer.disconnect();
-          logger.debug('[MembershipCenter] 页面已关闭，已清理订阅');
+          logger.debug('phone','[MembershipCenter]] 页面已关闭，已清理订阅');
           return;
         }
       }
@@ -553,5 +553,5 @@ function setupMembershipChangeListener(container) {
     observer.observe(parent, { childList: true, subtree: true });
   }
 
-  logger.debug('[MembershipCenter] 已订阅会员数据变化');
+  logger.debug('phone','[MembershipCenter]] 已订阅会员数据变化');
 }

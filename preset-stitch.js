@@ -33,7 +33,7 @@ export class PresetStitchModule {
    * 初始化模块
    */
   async init() {
-    logger.debug('[PresetStitch.init] 初始化预设缝合器...');
+    logger.debug('preset', 'PresetStitch.init] 初始化预设缝合器...');
 
     // 加载数据
     stitchData.loadData();
@@ -45,7 +45,7 @@ export class PresetStitchModule {
     this.setupEventListeners();
 
     this.initialized = true;
-    logger.info('[PresetStitch.init] 预设缝合器初始化完成，启用状态:', stitchData.isEnabled());
+    logger.info('preset', '[PresetStitch.init] 预设缝合器初始化完成，启用状态:', stitchData.isEnabled());
   }
 
   /**
@@ -63,7 +63,7 @@ export class PresetStitchModule {
 
     // 发送事件通知
     eventSource.emit('pawsStitchEnabledChanged', enabled);
-    logger.debug('[PresetStitch] 功能状态变化:', enabled ? '启用' : '禁用');
+    logger.debug('preset', 'PresetStitch] 功能状态变化:', enabled ? '启用' : '禁用');
   }
 
   /**
@@ -89,13 +89,13 @@ export class PresetStitchModule {
 
     if (!footer) {
       // footer 还没创建，用 MutationObserver 监听它的出现
-      logger.debug('[PresetStitch] footer 未就绪，监听其出现');
+      logger.debug('preset', 'PresetStitch] footer 未就绪，监听其出现');
 
       const observer = new MutationObserver(() => {
         const footer = document.querySelector('.completion_prompt_manager_footer');
         if (footer) {
           observer.disconnect();
-          logger.debug('[PresetStitch] 检测到 footer 出现，立即添加按钮');
+          logger.debug('preset', 'PresetStitch] 检测到 footer 出现，立即添加按钮');
           this.addStitchButton();
         }
       });
@@ -110,7 +110,7 @@ export class PresetStitchModule {
       setTimeout(() => {
         observer.disconnect();
         if (!document.querySelector('.completion_prompt_manager_footer')) {
-          logger.warn('[PresetStitch] footer 超时未出现，停止监听');
+          logger.warn('preset', '[PresetStitch] footer 超时未出现，停止监听');
         }
       }, 1000);
 
@@ -121,7 +121,7 @@ export class PresetStitchModule {
     const existingBtn = footer.querySelector('#paws-stitch-btn');
     if (existingBtn) {
       existingBtn.remove();
-      logger.debug('[PresetStitch] 已删除旧的缝合按钮');
+      logger.debug('preset', 'PresetStitch] 已删除旧的缝合按钮');
     }
 
     // 创建新按钮
@@ -155,14 +155,14 @@ export class PresetStitchModule {
       }
     }
 
-    logger.debug('[PresetStitch] 缝合按钮已添加');
+    logger.debug('preset', 'PresetStitch] 缝合按钮已添加');
   }
 
   /**
    * 打开收藏库弹窗
    */
   openLibraryPopup() {
-    logger.debug('[PresetStitch] 打开收藏库弹窗');
+    logger.debug('preset', 'PresetStitch] 打开收藏库弹窗');
 
     if (this.ui) {
       this.ui.show();
@@ -184,14 +184,14 @@ export class PresetStitchModule {
   getCurrentPresetEntries() {
     try {
       if (!promptManager || !promptManager.activeCharacter) {
-        logger.warn('[PresetStitch] promptManager 或 activeCharacter 不存在');
+        logger.warn('preset', '[PresetStitch] promptManager 或 activeCharacter 不存在');
         return [];
       }
 
       // 使用官方方法获取 prompt_order
       const promptOrder = promptManager.getPromptOrderForCharacter(promptManager.activeCharacter);
       if (!promptOrder || promptOrder.length === 0) {
-        logger.warn('[PresetStitch] 未找到当前预设的条目顺序');
+        logger.warn('preset', '[PresetStitch] 未找到当前预设的条目顺序');
         return [];
       }
 
@@ -219,7 +219,7 @@ export class PresetStitchModule {
 
       return entries;
     } catch (error) {
-      logger.error('[PresetStitch] 获取预设条目失败:', error.message);
+      logger.error('preset', '[PresetStitch] 获取预设条目失败:', error.message);
       return [];
     }
   }
@@ -289,10 +289,10 @@ export class PresetStitchModule {
         promptManager.saveServiceSettings();
       }
 
-      logger.info('[PresetStitch] 已插入条目:', item.name, '位置:', insertIndex);
+      logger.info('preset', '[PresetStitch] 已插入条目:', item.name, '位置:', insertIndex);
       return newIdentifier;
     } catch (error) {
-      logger.error('[PresetStitch] 插入条目失败:', error.message);
+      logger.error('preset', '[PresetStitch] 插入条目失败:', error.message);
       throw error;
     }
   }
@@ -327,6 +327,6 @@ export class PresetStitchModule {
     }
 
     this.initialized = false;
-    logger.debug('[PresetStitch] 模块已销毁');
+    logger.debug('preset', 'PresetStitch] 模块已销毁');
   }
 }

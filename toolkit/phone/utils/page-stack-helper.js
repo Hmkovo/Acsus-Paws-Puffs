@@ -33,7 +33,7 @@ class PageStackManager {
     /** @type {string} 当前主页面 */
     this.currentMainTab = 'messages';
 
-    logger.debug('[PageStack] 页面栈管理器已初始化');
+    logger.debug('phone','[PageStack] 页面栈管理器已初始化');
   }
 
   /**
@@ -53,7 +53,7 @@ class PageStackManager {
     };
 
     this.stack.push(item);
-    logger.debug('[PageStack.push] 进入页面:', pageName, 'ID:', pageId, '来自:', fromMainTab, '栈深度:', this.stack.length);
+    logger.debug('phone','[PageStack.push] 进入页面:', pageName, 'ID:', pageId, '来自:', fromMainTab, '栈深度:', this.stack.length);
   }
 
   /**
@@ -63,12 +63,12 @@ class PageStackManager {
    */
   popPage() {
     if (this.stack.length === 0) {
-      logger.warn('[PageStack.pop] 栈已空，无法出栈');
+      logger.warn('phone','[PageStack.pop] 栈已空，无法出栈');
       return null;
     }
 
     const item = this.stack.pop();
-    logger.debug('[PageStack.pop] 离开页面:', item.pageName, '剩余栈深度:', this.stack.length);
+    logger.debug('phone','[PageStack.pop] 离开页面:', item.pageName, '剩余栈深度:', this.stack.length);
     return item;
   }
 
@@ -120,7 +120,7 @@ class PageStackManager {
    * @param {string} newMainTab - 新的主页面名称
    */
   resetStack(newMainTab) {
-    logger.info('[PageStack.reset] 清空栈，切换到主页面:', newMainTab);
+    logger.info('phone','[PageStack.reset] 清空栈，切换到主页面:', newMainTab);
     this.stack = [];
     this.currentMainTab = newMainTab;
   }
@@ -170,16 +170,16 @@ class PageStackManager {
    */
   popToIndex(targetIndex) {
     if (targetIndex < 0 || targetIndex >= this.stack.length) {
-      logger.warn('[PageStack.popToIndex] 索引无效:', targetIndex);
+      logger.warn('phone','[PageStack.popToIndex] 索引无效:', targetIndex);
       return [];
     }
 
     // 移除目标索引之后的所有页面
     const removed = this.stack.splice(targetIndex + 1);
 
-    logger.info('[PageStack.popToIndex] 出栈到索引', targetIndex, '，移除了', removed.length, '个页面');
+    logger.info('phone','[PageStack.popToIndex] 出栈到索引', targetIndex, '，移除了', removed.length, '个页面');
     removed.forEach(item => {
-      logger.debug('  移除:', item.pageName);
+      logger.debug('phone','  移除:', item.pageName);
     });
 
     return removed;
@@ -198,13 +198,13 @@ class PageStackManager {
     const index = this.findPageIndex(pageId);
 
     if (index === -1) {
-      logger.debug('[PageStack.removePageById] 页面不在栈中:', pageId);
+      logger.debug('phone','[PageStack.removePageById] 页面不在栈中:', pageId);
       return false;
     }
 
     // 从栈中移除该页面
     const removed = this.stack.splice(index, 1)[0];
-    logger.info('[PageStack.removePageById] 已从栈中移除页面:', removed.pageName, '剩余栈深度:', this.stack.length);
+    logger.info('phone','[PageStack.removePageById] 已从栈中移除页面:', removed.pageName, '剩余栈深度:', this.stack.length);
 
     return true;
   }
@@ -213,11 +213,11 @@ class PageStackManager {
    * 调试：打印栈内容
    */
   debugPrintStack() {
-    logger.debug('[PageStack] 当前栈状态:');
-    logger.debug('  主页面:', this.currentMainTab);
-    logger.debug('  栈深度:', this.stack.length);
+    logger.debug('phone','[PageStack] 当前栈状态:');
+    logger.debug('phone','  主页面:', this.currentMainTab);
+    logger.debug('phone','  栈深度:', this.stack.length);
     this.stack.forEach((item, index) => {
-      logger.debug(`  [${index}] ${item.pageName} (from ${item.fromMainTab})`);
+      logger.debug('phone',`  [${index}] ${item.pageName} (from ${item.fromMainTab})`);
     });
   }
 }

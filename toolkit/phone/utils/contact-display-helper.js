@@ -36,7 +36,7 @@ import { name1 } from '../../../../../../../script.js';
  */
 export function getContactDisplayName(contact) {
   if (!contact) {
-    logger.warn('[ContactDisplayHelper] 联系人对象为空');
+    logger.warn('phone','[ContactDisplayHelper] 联系人对象为空');
     return '';
   }
   return contact.remark || contact.name || '';
@@ -58,7 +58,7 @@ export function getContactDisplayName(contact) {
  * @param {string} originalName - 角色原名
  */
 export function syncContactDisplayName(contactId, displayName, originalName) {
-  logger.debug('[ContactDisplayHelper] 同步名称显示:', contactId, displayName);
+  logger.debug('phone','[ContactDisplayHelper] 同步名称显示:', contactId, displayName);
 
   const hasRemark = displayName !== originalName;
 
@@ -66,7 +66,7 @@ export function syncContactDisplayName(contactId, displayName, originalName) {
   const chatTitle = document.querySelector(`#page-chat .phone-header-title[data-contact-id="${contactId}"]`);
   if (chatTitle) {
     chatTitle.textContent = displayName;
-    logger.debug('[ContactDisplayHelper] 已更新聊天页标题');
+    logger.debug('phone','[ContactDisplayHelper] 已更新聊天页标题');
   }
 
   // 2. 个人页名称区
@@ -89,7 +89,7 @@ export function syncContactDisplayName(contactId, displayName, originalName) {
       }
     }
 
-    logger.debug('[ContactDisplayHelper] 已更新个人页名称');
+    logger.debug('phone','[ContactDisplayHelper] 已更新个人页名称');
   }
 
   // 3. 设置页备注显示
@@ -98,7 +98,7 @@ export function syncContactDisplayName(contactId, displayName, originalName) {
     const settingsRemark = settingsItem.querySelector('.contact-settings-remark-text');
     if (settingsRemark) {
       settingsRemark.textContent = displayName;
-      logger.debug('[ContactDisplayHelper] 已更新设置页备注');
+      logger.debug('phone','[ContactDisplayHelper] 已更新设置页备注');
     }
   }
 
@@ -108,7 +108,7 @@ export function syncContactDisplayName(contactId, displayName, originalName) {
     const contactItemName = contactItem.querySelector('.contact-item-name');
     if (contactItemName) {
       contactItemName.textContent = displayName;
-      logger.debug('[ContactDisplayHelper] 已更新联系人列表');
+      logger.debug('phone','[ContactDisplayHelper] 已更新联系人列表');
     }
   }
 
@@ -118,7 +118,7 @@ export function syncContactDisplayName(contactId, displayName, originalName) {
     const msgItemName = msgItem.querySelector('.msg-item-name');
     if (msgItemName) {
       msgItemName.textContent = displayName;
-      logger.debug('[ContactDisplayHelper] 已更新消息列表');
+      logger.debug('phone','[ContactDisplayHelper] 已更新消息列表');
     }
   }
 }
@@ -149,20 +149,20 @@ export function getUserDisplayName() {
  * @param {string} newUserName - 新用户名
  */
 export function syncUserDisplayName(newUserName) {
-  logger.debug('[ContactDisplayHelper] 同步用户名显示:', newUserName);
+  logger.debug('phone','[ContactDisplayHelper] 同步用户名显示:', newUserName);
 
   // 1. 手机顶部栏用户名
   const headerUserName = document.querySelector('.phone-header-user-name');
   if (headerUserName) {
     headerUserName.textContent = newUserName;
-    logger.debug('[ContactDisplayHelper] 已更新顶部栏用户名');
+    logger.debug('phone','[ContactDisplayHelper] 已更新顶部栏用户名');
   }
 
   // 2. 用户个人主页名称
   const profileUserName = document.querySelector('.user-profile-name');
   if (profileUserName) {
     profileUserName.textContent = newUserName;
-    logger.debug('[ContactDisplayHelper] 已更新用户主页名称');
+    logger.debug('phone','[ContactDisplayHelper] 已更新用户主页名称');
   }
 }
 

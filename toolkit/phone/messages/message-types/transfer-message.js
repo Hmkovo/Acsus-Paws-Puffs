@@ -33,31 +33,31 @@ const savedTransferMessages = new Set();
  * @returns {HTMLElement} 消息气泡DOM元素
  */
 export function renderTransferMessage(message, contact, contactId) {
-  logger.debug('[TransferMessage] ==================== 开始渲染转账消息 ====================');
-  logger.debug('[TransferMessage] 消息对象:', message);
-  logger.debug('[TransferMessage] contact:', contact);
-  logger.debug('[TransferMessage] contactId:', contactId);
+  logger.debug('phone','[TransferMessage] ==================== 开始渲染转账消息 ====================');
+  logger.debug('phone','[TransferMessage] 消息对象:', message);
+  logger.debug('phone','[TransferMessage] contact:', contact);
+  logger.debug('phone','[TransferMessage] contactId:', contactId);
   
   const container = document.createElement('div');
   container.className = 'chat-msg';
-  logger.debug('[TransferMessage] container已创建');
+  logger.debug('phone','[TransferMessage] container已创建');
 
   // 判断是发送还是接收
   const isSent = message.sender === 'user';
-  logger.debug('[TransferMessage] isSent:', isSent, 'sender:', message.sender);
+  logger.debug('phone','[TransferMessage] isSent:', isSent, 'sender:', message.sender);
   
   container.classList.add(isSent ? 'chat-msg-sent' : 'chat-msg-received');
   container.setAttribute('data-msg-id', message.id);
   container.setAttribute('data-message-time', message.time.toString());
   
-  logger.debug('[TransferMessage] container类名和属性已设置:', {
+  logger.debug('phone','[TransferMessage] container类名和属性已设置:', {
     className: container.className,
     msgId: message.id,
     time: message.time
   });
 
   // 创建头像（完全照搬 text-message.js）
-  logger.debug('[TransferMessage] 开始创建头像');
+  logger.debug('phone','[TransferMessage] 开始创建头像');
   
   const avatar = document.createElement('img');
   avatar.className = 'chat-msg-avatar';
@@ -66,21 +66,21 @@ export function renderTransferMessage(message, contact, contactId) {
     // 用户头像（从顶部栏获取，完整路径，不压缩）
     const userAvatar = /** @type {HTMLImageElement} */ (document.querySelector('#phone-user-avatar'));
     avatar.src = userAvatar?.src || 'img/default-user.png';
-    logger.debug('[TransferMessage] 用户头像src:', avatar.src);
+    logger.debug('phone','[TransferMessage] 用户头像src:', avatar.src);
   } else {
     // 联系人头像（使用getThumbnailUrl，不压缩）
     avatar.src = getThumbnailUrl('avatar', contact?.avatar) || 'img/default-avatar.png';
-    logger.debug('[TransferMessage] 联系人头像src:', avatar.src);
+    logger.debug('phone','[TransferMessage] 联系人头像src:', avatar.src);
   }
   
-  logger.debug('[TransferMessage] 头像已创建');
+  logger.debug('phone','[TransferMessage] 头像已创建');
 
   // 创建转账气泡
-  logger.debug('[TransferMessage] 开始创建转账气泡');
+  logger.debug('phone','[TransferMessage] 开始创建转账气泡');
   
   const bubble = document.createElement('div');
   bubble.className = 'chat-msg-bubble chat-msg-bubble-transfer';
-  logger.debug('[TransferMessage] bubble已创建，className:', bubble.className);
+  logger.debug('phone','[TransferMessage] bubble已创建，className:', bubble.className);
 
   // 顶部区域（蓝色渐变）
   const header = document.createElement('div');
@@ -101,7 +101,7 @@ export function renderTransferMessage(message, contact, contactId) {
   amount.className = 'chat-msg-transfer-amount';
   amount.textContent = `¥ ${message.amount}`;
   top.appendChild(amount);
-  logger.debug('[TransferMessage] 金额已添加:', message.amount);
+  logger.debug('phone','[TransferMessage] 金额已添加:', message.amount);
 
   // 转账留言（如果有）
   if (message.message && message.message.trim()) {
@@ -109,14 +109,14 @@ export function renderTransferMessage(message, contact, contactId) {
     msg.className = 'chat-msg-transfer-message';
     msg.textContent = message.message;
     top.appendChild(msg);
-    logger.debug('[TransferMessage] 留言已添加:', message.message);
+    logger.debug('phone','[TransferMessage] 留言已添加:', message.message);
   } else {
-    logger.debug('[TransferMessage] 无留言');
+    logger.debug('phone','[TransferMessage] 无留言');
   }
 
   header.appendChild(top);
   bubble.appendChild(header);
-  logger.debug('[TransferMessage] header已添加到bubble');
+  logger.debug('phone','[TransferMessage] header已添加到bubble');
 
   // 底部"转账"标签
   const body = document.createElement('div');
@@ -126,45 +126,45 @@ export function renderTransferMessage(message, contact, contactId) {
   label.textContent = '转账';
   body.appendChild(label);
   bubble.appendChild(body);
-  logger.debug('[TransferMessage] body已添加到bubble');
+  logger.debug('phone','[TransferMessage] body已添加到bubble');
 
   // 组装（统一DOM顺序：头像在前，气泡在后）
   // CSS的 flex-direction: row-reverse 会控制视觉顺序
-  logger.debug('[TransferMessage] 开始组装container');
+  logger.debug('phone','[TransferMessage] 开始组装container');
   container.appendChild(avatar);
   container.appendChild(bubble);
-  logger.debug('[TransferMessage] container组装完成，子元素数量:', container.children.length);
+  logger.debug('phone','[TransferMessage] container组装完成，子元素数量:', container.children.length);
 
   // 长按操作菜单由 message-chat-ui.js 统一绑定
 
-  logger.info('[TransferMessage] ✅ 转账消息渲染完成:', message.id);
-  logger.debug('[TransferMessage] 返回的container:', {
+  logger.info('phone','[TransferMessage] ✅ 转账消息渲染完成:', message.id);
+  logger.debug('phone','[TransferMessage] 返回的container:', {
     tagName: container.tagName,
     className: container.className,
     childrenCount: container.children.length,
     msgId: container.getAttribute('data-msg-id')
   });
-  logger.debug('[TransferMessage] ==================== 渲染转账消息结束 ====================');
+  logger.debug('phone','[TransferMessage] ==================== 渲染转账消息结束 ====================');
 
   // ✅ 自动处理转账到账（双层去重机制）
   // 第一层：内存去重（防止同一会话中重复渲染）
   // 第二层：持久化去重（在receiveTransfer中检查messageId，防止跨会话重复）
   if (message.sender === 'contact') {
     if (savedTransferMessages.has(message.id)) {
-      logger.debug('[TransferMessage] 跳过转账处理（内存去重）msgId:', message.id);
+      logger.debug('phone','[TransferMessage] 跳过转账处理（内存去重）msgId:', message.id);
     } else {
       handleReceiveTransfer(contactId, message);
     }
   }
 
-  logger.info('[TransferMessage] ✅ 转账消息渲染完成:', message.id, '金额:', message.amount);
-  logger.debug('[TransferMessage] 返回的container:', {
+  logger.info('phone','[TransferMessage] ✅ 转账消息渲染完成:', message.id, '金额:', message.amount);
+  logger.debug('phone','[TransferMessage] 返回的container:', {
     tagName: container.tagName,
     className: container.className,
     childrenCount: container.children.length,
     msgId: container.getAttribute('data-msg-id')
   });
-  logger.debug('[TransferMessage] ==================== 渲染转账消息结束 ====================');
+  logger.debug('phone','[TransferMessage] ==================== 渲染转账消息结束 ====================');
 
   return container;
 }
@@ -184,7 +184,7 @@ export function renderTransferMessage(message, contact, contactId) {
  * @param {string} [message.message] - 转账留言
  */
 async function handleReceiveTransfer(contactId, message) {
-  logger.debug('[TransferMessage] 处理接收转账，msgId:', message.id);
+  logger.debug('phone','[TransferMessage] 处理接收转账，msgId:', message.id);
 
   try {
     // 标记为正在处理（防止异步期间重复调用）
@@ -196,9 +196,9 @@ async function handleReceiveTransfer(contactId, message) {
     // 保存转账记录（receiveTransfer 会自动更新余额、保存记录、触发事件）
     await receiveTransfer(contactId, message.amount, message.message || '', message.id);
 
-    logger.info('[TransferMessage] ✅ 转账已自动到账:', message.amount, 'msgId:', message.id);
+    logger.info('phone','[TransferMessage] ✅ 转账已自动到账:', message.amount, 'msgId:', message.id);
   } catch (error) {
-    logger.error('[TransferMessage] ❌ 转账到账失败:', error);
+    logger.error('phone','[TransferMessage] ❌ 转账到账失败:', error);
     // 保存失败时移除标记，允许下次重试
     savedTransferMessages.delete(message.id);
   }

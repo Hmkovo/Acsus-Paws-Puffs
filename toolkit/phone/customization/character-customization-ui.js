@@ -23,7 +23,7 @@ import { getContactDisplayName } from '../utils/contact-display-helper.js';
  */
 export async function renderCharacterCustomizationPage(params) {
   const { contactId } = params;
-  logger.info('[CharacterCustomization] 渲染角色专属装扮页面:', contactId);
+  logger.info('phone','[CharacterCustomization] 渲染角色专属装扮页面:', contactId);
 
   // 加载联系人信息
   const { loadContacts } = await import('../contacts/contact-list-data.js');
@@ -31,7 +31,7 @@ export async function renderCharacterCustomizationPage(params) {
   const contact = contacts.find(c => c.id === contactId);
 
   if (!contact) {
-    logger.error('[CharacterCustomization] 联系人不存在:', contactId);
+    logger.error('phone','[CharacterCustomization] 联系人不存在:', contactId);
     return createErrorView();
   }
 
@@ -115,7 +115,7 @@ export async function renderCharacterCustomizationPage(params) {
 function bindBackButton(container) {
   const backBtn = container.querySelector('.character-customization-back-btn');
   backBtn.addEventListener('click', () => {
-    logger.info('[CharacterCustomization] 点击返回按钮');
+    logger.info('phone','[CharacterCustomization] 点击返回按钮');
     const overlay = document.querySelector('.phone-overlay');
     import('../phone-main-ui.js').then(({ hidePage }) => {
       hidePage(overlay, 'character-customization');
@@ -135,7 +135,7 @@ function bindTabSwitch(container) {
   tabs.forEach(tab => {
     tab.addEventListener('click', async () => {
       const tabName = tab.dataset.tab;
-      logger.debug(`[CharacterCustomization] 切换标签: ${tabName}`);
+      logger.debug('phone',`[CharacterCustomization] 切换标签: ${tabName}`);
 
       // 更新标签激活状态
       tabs.forEach(t => t.classList.remove('active'));
@@ -187,7 +187,7 @@ async function renderBubbleGrid(container, contactId) {
     grid.appendChild(item);
   }
 
-  logger.debug(`[CharacterCustomization] 已渲染 ${ownedBubbles.length} 个气泡`);
+  logger.debug('phone',`[CharacterCustomization] 已渲染 ${ownedBubbles.length} 个气泡`);
 }
 
 /**
@@ -257,7 +257,7 @@ function createBubbleItem(bubble, contactId) {
  * @param {string} contactId - 联系人ID
  */
 async function handleBubbleClick(bubble, contactId) {
-  logger.info(`[CharacterCustomization] 点击气泡: ${bubble.name}`);
+  logger.info('phone',`[CharacterCustomization] 点击气泡: ${bubble.name}`);
 
   // 加载联系人信息
   const { loadContacts } = await import('../contacts/contact-list-data.js');
@@ -309,7 +309,7 @@ async function handleBubbleClick(bubble, contactId) {
   });
 
   if (!result) {
-    logger.debug('[CharacterCustomization] 用户取消应用');
+    logger.debug('phone','[CharacterCustomization] 用户取消应用');
     return;
   }
 
@@ -319,7 +319,7 @@ async function handleBubbleClick(bubble, contactId) {
 
   const targetName = result === 'user' ? '你的消息气泡' : `【${displayName}】的消息气泡`;
   toastr.success(`已应用为${targetName}！`);
-  logger.info('[CharacterCustomization] 装扮已应用:', bubble.name, bubbleType);
+  logger.info('phone','[CharacterCustomization] 装扮已应用:', bubble.name, bubbleType);
 }
 
 /**
@@ -364,7 +364,7 @@ async function applyCharacterBubble(contactId, bubbleType, bubbleId) {
   const { applyBubbleThemeForCharacter } = await import('./customization-apply.js');
   await applyBubbleThemeForCharacter(contactId);
 
-  logger.info('[CharacterCustomization] 角色专属装扮已保存:', contactId, bubbleType, bubbleId);
+  logger.info('phone','[CharacterCustomization] 角色专属装扮已保存:', contactId, bubbleType, bubbleId);
 }
 
 /**

@@ -37,11 +37,11 @@ function getCharacterData(contact) {
   });
 
   if (!character) {
-    logger.warn('[ContextBuilder] 未找到对应的酒馆角色:', charName);
+    logger.warn('phone','[ContextBuilder] 未找到对应的酒馆角色:', charName);
     return null;
   }
 
-  logger.debug('[ContextBuilder] 找到酒馆角色:', character.name);
+  logger.debug('phone','[ContextBuilder] 找到酒馆角色:', character.name);
   return character;
 }
 
@@ -94,11 +94,11 @@ async function getCharacterTavernContext(character, count = 5) {
 
     if (isCurrentCharacter) {
       // 如果是当前角色，直接使用全局chat变量（快速）
-      logger.debug('[ContextBuilder] 使用当前打开的聊天记录:', character.name);
+      logger.debug('phone','[ContextBuilder] 使用当前打开的聊天记录:', character.name);
       chatMessages = chat || [];
     } else {
       // 如果不是当前角色，需要调用API获取该角色的聊天记录
-      logger.debug('[ContextBuilder] 从服务器获取角色聊天记录:', character.name);
+      logger.debug('phone','[ContextBuilder] 从服务器获取角色聊天记录:', character.name);
 
       if (!character.chat) {
         // 该角色还没有聊天记录
@@ -117,7 +117,7 @@ async function getCharacterTavernContext(character, count = 5) {
       });
 
       if (!response.ok) {
-        logger.warn('[ContextBuilder] 获取聊天记录失败:', response.status);
+        logger.warn('phone','[ContextBuilder] 获取聊天记录失败:', response.status);
         return '（无法获取聊天记录）\n';
       }
 
@@ -131,7 +131,7 @@ async function getCharacterTavernContext(character, count = 5) {
 
     // 获取最近N条消息
     const recentMessages = chatMessages.slice(-count);
-    logger.debug(`[ContextBuilder] 获取酒馆上下文: 总消息=${chatMessages.length}条, 请求=${count}条, 实际获取=${recentMessages.length}条`);
+    logger.debug('phone',`[ContextBuilder] 获取酒馆上下文: 总消息=${chatMessages.length}条, 请求=${count}条, 实际获取=${recentMessages.length}条`);
 
     const contactId = `tavern_${character.avatar.replace(/\.[^/.]+$/, '')}`;
     let context = '';
@@ -148,7 +148,7 @@ async function getCharacterTavernContext(character, count = 5) {
     return context;
 
   } catch (error) {
-    logger.error('[ContextBuilder] 获取线下剧情失败:', error);
+    logger.error('phone','[ContextBuilder] 获取线下剧情失败:', error);
     return '（获取线下剧情失败）\n';
   }
 }
@@ -172,7 +172,7 @@ async function applyRegexToContext(text, contactId) {
     const { applyContactRegex } = await import('../data-storage/storage-regex.js');
     return applyContactRegex(text, contactId);
   } catch (error) {
-    logger.error('[ContextBuilder] 应用正则失败:', error);
+    logger.error('phone','[ContextBuilder] 应用正则失败:', error);
     return text;  // 失败时返回原文本
   }
 }
@@ -209,7 +209,7 @@ function formatTimestamp(timestamp) {
  */
 async function extractTriggeredContactIds(allPendingMessages) {
   if (!allPendingMessages || typeof allPendingMessages !== 'object') {
-    logger.warn('[ContextBuilder.extractTriggeredContactIds] allPendingMessages 为空或格式错误');
+    logger.warn('phone','[ContextBuilder.extractTriggeredContactIds] allPendingMessages 为空或格式错误');
     return [];
   }
 
@@ -229,13 +229,13 @@ async function extractTriggeredContactIds(allPendingMessages) {
     // ✅ 合并列表：被删除的角色排在前面，当前聊天角色排在后面，去重
     const allTriggeredIds = [...new Set([...aiTriggeredIds, ...triggeredIds])];
 
-    logger.debug('[ContextBuilder.extractTriggeredContactIds] 提取到', triggeredIds.length, '个有消息的联系人:', triggeredIds);
-    logger.debug('[ContextBuilder.extractTriggeredContactIds] 提取到', aiTriggeredIds.length, '个AI感知删除触发的联系人（按删除时间排序）:', aiTriggeredIds);
-    logger.debug('[ContextBuilder.extractTriggeredContactIds] 合并后共', allTriggeredIds.length, '个被触发的联系人:', allTriggeredIds);
+    logger.debug('phone','[ContextBuilder.extractTriggeredContactIds] 提取到', triggeredIds.length, '个有消息的联系人:', triggeredIds);
+    logger.debug('phone','[ContextBuilder.extractTriggeredContactIds] 提取到', aiTriggeredIds.length, '个AI感知删除触发的联系人（按删除时间排序）:', aiTriggeredIds);
+    logger.debug('phone','[ContextBuilder.extractTriggeredContactIds] 合并后共', allTriggeredIds.length, '个被触发的联系人:', allTriggeredIds);
     return allTriggeredIds;
   }
 
-  logger.debug('[ContextBuilder.extractTriggeredContactIds] 提取到', triggeredIds.length, '个被触发的联系人:', triggeredIds);
+  logger.debug('phone','[ContextBuilder.extractTriggeredContactIds] 提取到', triggeredIds.length, '个被触发的联系人:', triggeredIds);
   return triggeredIds;
 }
 
@@ -269,15 +269,15 @@ async function extractTriggeredContactIds(allPendingMessages) {
  * - 编号每次重新构建，不累积
  */
 export async function buildMessagesArray(contactId, allPendingMessages) {
-  logger.info('[ContextBuilder.buildMessagesArray] 开始构建messages数组 - 主联系人:', contactId);
+  logger.info('phone','[ContextBuilder.buildMessagesArray] 开始构建messages数组 - 主联系人:', contactId);
 
   // ✅ 读取 API 配置源（决定是否使用结构化消息）
   const apiSource = extension_settings.acsusPawsPuffs?.phone?.apiConfig?.source || 'default';
-  logger.info('[ContextBuilder.buildMessagesArray] API配置源:', apiSource, apiSource === 'custom' ? '（支持多模态数组）' : '（仅支持纯文本）');
+  logger.info('phone','[ContextBuilder.buildMessagesArray] API配置源:', apiSource, apiSource === 'custom' ? '（支持多模态数组）' : '（仅支持纯文本）');
 
   // ✅ 提取被触发的联系人ID（有消息的才算触发）
   const triggeredContactIds = await extractTriggeredContactIds(allPendingMessages);
-  logger.info('[ContextBuilder.buildMessagesArray] 共触发', triggeredContactIds.length, '个联系人:', triggeredContactIds);
+  logger.info('phone','[ContextBuilder.buildMessagesArray] 共触发', triggeredContactIds.length, '个联系人:', triggeredContactIds);
 
   // ✅ 创建消息编号映射表（编号 → 消息ID）
   const messageNumberMap = new Map();
@@ -312,15 +312,15 @@ export async function buildMessagesArray(contactId, allPendingMessages) {
       if (chatResult.structuredMessages && apiSource === 'custom') {
         // 🔥 自定义API：直接插入结构化消息到 messages 数组
         messages.push(...chatResult.structuredMessages);
-        logger.info('[ContextBuilder.buildMessagesArray] ✅ 已插入', chatResult.structuredMessages.length, '条结构化消息');
+        logger.info('phone','[ContextBuilder.buildMessagesArray] ✅ 已插入', chatResult.structuredMessages.length, '条结构化消息');
 
         // 🔍 调试：打印每条消息的 role 和是否有签名
         chatResult.structuredMessages.forEach((msg, idx) => {
           const hasSignature = Array.isArray(msg.content) && msg.content.some(part => part.thoughtSignature);
-          logger.debug(`[ContextBuilder.buildMessagesArray] 结构化消息[${idx}] role=${msg.role}, hasSignature=${hasSignature}`);
+          logger.debug('phone',`[ContextBuilder.buildMessagesArray] 结构化消息[${idx}] role=${msg.role}, hasSignature=${hasSignature}`);
           if (hasSignature) {
             const signaturePart = msg.content.find(part => part.thoughtSignature);
-            logger.info(`[ContextBuilder.buildMessagesArray] 🎯 消息[${idx}] 包含 thoughtSignature，长度: ${signaturePart.thoughtSignature.length}`);
+            logger.info('phone',`[ContextBuilder.buildMessagesArray] 🎯 消息[${idx}] 包含 thoughtSignature，长度: ${signaturePart.thoughtSignature.length}`);
           }
         });
 
@@ -335,8 +335,8 @@ export async function buildMessagesArray(contactId, allPendingMessages) {
       // ✅ 收集历史消息中的图片（imageMode='always'时有值）
       if (chatResult.historyImages && chatResult.historyImages.length > 0) {
         collectedImages.push(...chatResult.historyImages);
-        logger.info('[ContextBuilder.buildMessagesArray] 检测到历史图片，数量:', chatResult.historyImages.length);
-        logger.debug('[ContextBuilder.buildMessagesArray] 历史图片列表:', chatResult.historyImages.map(img => img.url));
+        logger.info('phone','[ContextBuilder.buildMessagesArray] 检测到历史图片，数量:', chatResult.historyImages.length);
+        logger.debug('phone','[ContextBuilder.buildMessagesArray] 历史图片列表:', chatResult.historyImages.map(img => img.url));
       }
 
       // ✅ 如果是结构化消息，跳过后续的通用添加逻辑
@@ -363,29 +363,29 @@ export async function buildMessagesArray(contactId, allPendingMessages) {
           role: item.role || 'user',
           content: content || ''
         });
-        logger.debug('[ContextBuilder.buildMessagesArray] ✅ 已添加user-pending-ops消息（含图片）');
+        logger.debug('phone','[ContextBuilder.buildMessagesArray] ✅ 已添加user-pending-ops消息（含图片）');
       } else if (content && content.trim()) {
         // 无图片但有文本：正常添加
         messages.push({
           role: item.role || 'user',
           content: content
         });
-        logger.debug('[ContextBuilder.buildMessagesArray] ✅ 已添加user-pending-ops消息（仅文本）');
+        logger.debug('phone','[ContextBuilder.buildMessagesArray] ✅ 已添加user-pending-ops消息（仅文本）');
       } else {
         // 无图片且无文本：跳过
-        logger.debug('[ContextBuilder.buildMessagesArray] ⏭️ 跳过空的user-pending-ops');
+        logger.debug('phone','[ContextBuilder.buildMessagesArray] ⏭️ 跳过空的user-pending-ops');
       }
 
       // ✅ 保存待发送消息中的图片信息，稍后在事件中附加
       if (imagesToAttach.length > 0) {
         collectedImages.push(...imagesToAttach);  // ← 追加而不是覆盖，以便合并历史图片
-        logger.info('[ContextBuilder.buildMessagesArray] 检测到待发送图片，数量:', imagesToAttach.length);
-        logger.debug('[ContextBuilder.buildMessagesArray] 待发送图片列表:', imagesToAttach.map(img => img.url));
+        logger.info('phone','[ContextBuilder.buildMessagesArray] 检测到待发送图片，数量:', imagesToAttach.length);
+        logger.debug('phone','[ContextBuilder.buildMessagesArray] 待发送图片列表:', imagesToAttach.map(img => img.url));
       }
 
       // ✅ 输出最终图片总数
       if (collectedImages.length > 0) {
-        logger.info('[ContextBuilder.buildMessagesArray] ✅ 图片总数（历史+待发送）:', collectedImages.length, '将在宏替换后通过事件附加');
+        logger.info('phone','[ContextBuilder.buildMessagesArray] ✅ 图片总数（历史+待发送）:', collectedImages.length, '将在宏替换后通过事件附加');
       }
 
       // ✅ user-pending-ops 已处理完毕，跳过后面的通用添加逻辑
@@ -400,7 +400,7 @@ export async function buildMessagesArray(contactId, allPendingMessages) {
       // 获取用户设定描述
       const personaDesc = power_user.persona_description || '';
       content = content.replace(/__AUTO_USER_PERSONA__/g, personaDesc);
-      logger.debug('[ContextBuilder.buildMessagesArray] 已替换用户设定占位符');
+      logger.debug('phone','[ContextBuilder.buildMessagesArray] 已替换用户设定占位符');
     }
 
     // ✅ 变量替换由 SillyTavern 的 MacrosParser 自动处理
@@ -414,12 +414,12 @@ export async function buildMessagesArray(contactId, allPendingMessages) {
         content: content
       });
     } else if (content === '') {
-      logger.debug('[ContextBuilder.buildMessagesArray] 跳过空内容条目:', item.label);
+      logger.debug('phone','[ContextBuilder.buildMessagesArray] 跳过空内容条目:', item.label);
     }
   }
 
-  logger.info('[ContextBuilder.buildMessagesArray] 构建完成，共', messages.length, '条消息');
-  logger.info('[ContextBuilder.buildMessagesArray] 消息编号映射表大小:', messageNumberMap.size);
+  logger.info('phone','[ContextBuilder.buildMessagesArray] 构建完成，共', messages.length, '条消息');
+  logger.info('phone','[ContextBuilder.buildMessagesArray] 消息编号映射表大小:', messageNumberMap.size);
 
   // ✅ 宏替换：使用 substituteParams（自动处理所有宏，包括{{user}}、{{char}}和手机宏）
   try {
@@ -430,16 +430,16 @@ export async function buildMessagesArray(contactId, allPendingMessages) {
         // substituteParams 会自动替换所有宏：酒馆内置宏 + 手机注册的宏
         msg.content = substituteParams(msg.content);
         if (originalContent !== msg.content) {
-          logger.debug('[ContextBuilder.buildMessagesArray] ✅ 宏已替换，样例:', originalContent.substring(0, 50), '→', msg.content.substring(0, 50));
+          logger.debug('phone','[ContextBuilder.buildMessagesArray] ✅ 宏已替换，样例:', originalContent.substring(0, 50), '→', msg.content.substring(0, 50));
         }
       }
     }
-    logger.info('[ContextBuilder.buildMessagesArray] ✅ 所有消息宏替换完成');
+    logger.info('phone','[ContextBuilder.buildMessagesArray] ✅ 所有消息宏替换完成');
   } catch (error) {
-    logger.error('[ContextBuilder.buildMessagesArray] 宏替换失败:', error);
+    logger.error('phone','[ContextBuilder.buildMessagesArray] 宏替换失败:', error);
   }
 
-  logger.debug('[ContextBuilder.buildMessagesArray] messages内容:', JSON.stringify(messages, null, 2));
+  logger.debug('phone','[ContextBuilder.buildMessagesArray] messages内容:', JSON.stringify(messages, null, 2));
 
   return {
     messages,
@@ -472,10 +472,10 @@ export async function buildMessagesArray(contactId, allPendingMessages) {
  * [/角色卡-Jerry Hickfang]
  */
 async function buildAllCharacterInfo(triggeredContactIds, messageNumberMap, startNumber) {
-  logger.info('[ContextBuilder.buildAllCharacterInfo] 开始构建多角色档案，共', triggeredContactIds.length, '个角色');
+  logger.info('phone','[ContextBuilder.buildAllCharacterInfo] 开始构建多角色档案，共', triggeredContactIds.length, '个角色');
 
   if (!triggeredContactIds || triggeredContactIds.length === 0) {
-    logger.warn('[ContextBuilder.buildAllCharacterInfo] 没有被触发的角色，返回空内容');
+    logger.warn('phone','[ContextBuilder.buildAllCharacterInfo] 没有被触发的角色，返回空内容');
     return { content: '', nextNumber: startNumber };
   }
 
@@ -487,7 +487,7 @@ async function buildAllCharacterInfo(triggeredContactIds, messageNumberMap, star
 
   // 遍历每个被触发的联系人
   for (const contactId of triggeredContactIds) {
-    logger.debug('[ContextBuilder.buildAllCharacterInfo] 处理角色:', contactId);
+    logger.debug('phone','[ContextBuilder.buildAllCharacterInfo] 处理角色:', contactId);
 
     // 查找联系人
     let contact = contacts.find(c => c.id === contactId);
@@ -498,7 +498,7 @@ async function buildAllCharacterInfo(triggeredContactIds, messageNumberMap, star
       const character = getContext().characters.find(c => c.avatar === `${characterName}.png`);
 
       if (character) {
-        logger.info('[ContextBuilder.buildAllCharacterInfo] AI感知删除角色，从酒馆直接获取:', characterName);
+        logger.info('phone','[ContextBuilder.buildAllCharacterInfo] AI感知删除角色，从酒馆直接获取:', characterName);
         // 创建临时contact对象
         contact = {
           id: contactId,
@@ -509,7 +509,7 @@ async function buildAllCharacterInfo(triggeredContactIds, messageNumberMap, star
     }
 
     if (!contact) {
-      logger.warn('[ContextBuilder.buildAllCharacterInfo] 联系人不存在，跳过:', contactId);
+      logger.warn('phone','[ContextBuilder.buildAllCharacterInfo] 联系人不存在，跳过:', contactId);
       continue;
     }
 
@@ -523,15 +523,15 @@ async function buildAllCharacterInfo(triggeredContactIds, messageNumberMap, star
     if (charResult.content && charResult.content.trim()) {
       allContent += charResult.content + '\n\n';
       currentNumber = charResult.nextNumber;
-      logger.debug('[ContextBuilder.buildAllCharacterInfo] 角色档案已添加:', contact.name, '当前编号:', currentNumber);
+      logger.debug('phone','[ContextBuilder.buildAllCharacterInfo] 角色档案已添加:', contact.name, '当前编号:', currentNumber);
     }
   }
 
   // 去掉末尾多余的换行
   allContent = allContent.trim();
 
-  logger.info('[ContextBuilder.buildAllCharacterInfo] 多角色档案构建完成，共处理', triggeredContactIds.length, '个角色');
-  logger.debug('[ContextBuilder.buildAllCharacterInfo] 内容长度:', allContent.length, '字符');
+  logger.info('phone','[ContextBuilder.buildAllCharacterInfo] 多角色档案构建完成，共处理', triggeredContactIds.length, '个角色');
+  logger.debug('phone','[ContextBuilder.buildAllCharacterInfo] 内容长度:', allContent.length, '字符');
 
   return {
     content: allContent,
@@ -568,10 +568,10 @@ async function buildAllCharacterInfo(triggeredContactIds, messageNumberMap, star
  * [/角色-Jerry Hickfang]
  */
 async function buildAllChatHistoryInfo(triggeredContactIds, messageNumberMap, startNumber, apiSource = 'default') {
-  logger.info('[ContextBuilder.buildAllChatHistoryInfo] 开始构建多角色聊天记录，共', triggeredContactIds.length, '个角色');
+  logger.info('phone','[ContextBuilder.buildAllChatHistoryInfo] 开始构建多角色聊天记录，共', triggeredContactIds.length, '个角色');
 
   if (!triggeredContactIds || triggeredContactIds.length === 0) {
-    logger.warn('[ContextBuilder.buildAllChatHistoryInfo] 没有被触发的角色，返回空内容');
+    logger.warn('phone','[ContextBuilder.buildAllChatHistoryInfo] 没有被触发的角色，返回空内容');
     return { content: '', nextNumber: startNumber, historyImages: [] };
   }
 
@@ -585,7 +585,7 @@ async function buildAllChatHistoryInfo(triggeredContactIds, messageNumberMap, st
 
   // 遍历每个被触发的联系人
   for (const contactId of triggeredContactIds) {
-    logger.debug('[ContextBuilder.buildAllChatHistoryInfo] 处理角色:', contactId);
+    logger.debug('phone','[ContextBuilder.buildAllChatHistoryInfo] 处理角色:', contactId);
 
     // 查找联系人
     let contact = contacts.find(c => c.id === contactId);
@@ -596,7 +596,7 @@ async function buildAllChatHistoryInfo(triggeredContactIds, messageNumberMap, st
       const character = getContext().characters.find(c => c.avatar === `${characterName}.png`);
 
       if (character) {
-        logger.info('[ContextBuilder.buildAllChatHistoryInfo] AI感知删除角色，从酒馆直接获取:', characterName);
+        logger.info('phone','[ContextBuilder.buildAllChatHistoryInfo] AI感知删除角色，从酒馆直接获取:', characterName);
         // 创建临时contact对象
         contact = {
           id: contactId,
@@ -607,7 +607,7 @@ async function buildAllChatHistoryInfo(triggeredContactIds, messageNumberMap, st
     }
 
     if (!contact) {
-      logger.warn('[ContextBuilder.buildAllChatHistoryInfo] 联系人不存在，跳过:', contactId);
+      logger.warn('phone','[ContextBuilder.buildAllChatHistoryInfo] 联系人不存在，跳过:', contactId);
       continue;
     }
 
@@ -619,12 +619,12 @@ async function buildAllChatHistoryInfo(triggeredContactIds, messageNumberMap, st
       // 🔥 自定义API：收集结构化消息数组（稍后在 buildMessagesArray 中插入）
       allStructuredMessages.push(...chatResult.structuredMessages);
       currentNumber = chatResult.nextNumber;
-      logger.debug('[ContextBuilder.buildAllChatHistoryInfo] 结构化消息已收集:', contact.name, '消息数量:', chatResult.structuredMessages.length);
+      logger.debug('phone','[ContextBuilder.buildAllChatHistoryInfo] 结构化消息已收集:', contact.name, '消息数量:', chatResult.structuredMessages.length);
 
       // ✅ 合并历史图片
       if (chatResult.historyImages && chatResult.historyImages.length > 0) {
         allHistoryImages.push(...chatResult.historyImages);
-        logger.debug('[ContextBuilder.buildAllChatHistoryInfo] 历史图片已添加:', contact.name, '图片数量:', chatResult.historyImages.length);
+        logger.debug('phone','[ContextBuilder.buildAllChatHistoryInfo] 历史图片已添加:', contact.name, '图片数量:', chatResult.historyImages.length);
       }
     } else if (chatResult.parts && chatResult.parts.length > 0) {
       // ✅ 默认API：将 parts 数组转换为纯文本（保持向后兼容）
@@ -636,13 +636,13 @@ async function buildAllChatHistoryInfo(triggeredContactIds, messageNumberMap, st
       if (contentText.trim()) {
         allContent += contentText + '\n\n';
         currentNumber = chatResult.nextNumber;
-        logger.debug('[ContextBuilder.buildAllChatHistoryInfo] 聊天记录已添加:', contact.name, '当前编号:', currentNumber);
+        logger.debug('phone','[ContextBuilder.buildAllChatHistoryInfo] 聊天记录已添加:', contact.name, '当前编号:', currentNumber);
       }
 
       // ✅ 合并历史图片
       if (chatResult.historyImages && chatResult.historyImages.length > 0) {
         allHistoryImages.push(...chatResult.historyImages);
-        logger.debug('[ContextBuilder.buildAllChatHistoryInfo] 历史图片已添加:', contact.name, '图片数量:', chatResult.historyImages.length);
+        logger.debug('phone','[ContextBuilder.buildAllChatHistoryInfo] 历史图片已添加:', contact.name, '图片数量:', chatResult.historyImages.length);
       }
     }
   }
@@ -650,13 +650,13 @@ async function buildAllChatHistoryInfo(triggeredContactIds, messageNumberMap, st
   // 去掉末尾多余的换行
   allContent = allContent.trim();
 
-  logger.info('[ContextBuilder.buildAllChatHistoryInfo] 多角色聊天记录构建完成，共处理', triggeredContactIds.length, '个角色');
+  logger.info('phone','[ContextBuilder.buildAllChatHistoryInfo] 多角色聊天记录构建完成，共处理', triggeredContactIds.length, '个角色');
 
   // ✅ 根据 API 配置源返回不同格式
   if (apiSource === 'custom' && allStructuredMessages.length > 0) {
     // 🔥 自定义API：返回结构化消息数组
-    logger.debug('[ContextBuilder.buildAllChatHistoryInfo] 结构化消息总数:', allStructuredMessages.length);
-    logger.debug('[ContextBuilder.buildAllChatHistoryInfo] 历史图片总数:', allHistoryImages.length);
+    logger.debug('phone','[ContextBuilder.buildAllChatHistoryInfo] 结构化消息总数:', allStructuredMessages.length);
+    logger.debug('phone','[ContextBuilder.buildAllChatHistoryInfo] 历史图片总数:', allHistoryImages.length);
 
     return {
       structuredMessages: allStructuredMessages,  // ← 返回结构化消息数组
@@ -665,8 +665,8 @@ async function buildAllChatHistoryInfo(triggeredContactIds, messageNumberMap, st
     };
   } else {
     // ✅ 默认API：返回纯文本
-    logger.debug('[ContextBuilder.buildAllChatHistoryInfo] 内容长度:', allContent.length, '字符');
-    logger.debug('[ContextBuilder.buildAllChatHistoryInfo] 历史图片总数:', allHistoryImages.length);
+    logger.debug('phone','[ContextBuilder.buildAllChatHistoryInfo] 内容长度:', allContent.length, '字符');
+    logger.debug('phone','[ContextBuilder.buildAllChatHistoryInfo] 历史图片总数:', allHistoryImages.length);
 
     return {
       content: allContent,
@@ -695,12 +695,12 @@ async function buildCharacterInfo(contact, character, messageNumberMap, startNum
 
   if (charPromptConfig && charPromptConfig.items) {
     // 使用角色专属配置构建（传递映射表和编号）
-    logger.debug('[ContextBuilder] 使用角色专属配置构建角色总条目:', contact.name);
+    logger.debug('phone','[ContextBuilder] 使用角色专属配置构建角色总条目:', contact.name);
     return await buildCharacterInfoFromConfig(contact, character, charPromptConfig, messageNumberMap);
   }
 
   // 兼容旧版本：使用默认逻辑（无编号）
-  logger.debug('[ContextBuilder] 使用默认逻辑构建角色总条目:', contact.name);
+  logger.debug('phone','[ContextBuilder] 使用默认逻辑构建角色总条目:', contact.name);
   let content = `[角色卡-${contact.name}]\n`;
 
   if (character) {
@@ -757,9 +757,9 @@ async function buildCharacterInfoFromConfig(contact, character, config, messageN
       case 'tavern-context':
         // 线下剧情（异步获取特定角色的聊天记录）
         const count = item.contextCount || 5;
-        logger.debug(`[ContextBuilder] 酒馆上下文配置: contextCount=${item.contextCount}, 实际使用count=${count}`);
+        logger.debug('phone',`[ContextBuilder] 酒馆上下文配置: contextCount=${item.contextCount}, 实际使用count=${count}`);
         itemContent = await getCharacterTavernContext(character, count);
-        logger.debug(`[ContextBuilder] 酒馆上下文获取结果长度: ${itemContent.length}字符`);
+        logger.debug('phone',`[ContextBuilder] 酒馆上下文获取结果长度: ${itemContent.length}字符`);
         break;
 
       case 'history-chat':
@@ -787,7 +787,7 @@ async function buildCharacterInfoFromConfig(contact, character, config, messageN
 
   content += `[/角色卡-${contact.name}]`;
 
-  logger.debug('[ContextBuilder] 角色总条目构建完成，使用了', enabledItems.length, '个条目');
+  logger.debug('phone','[ContextBuilder] 角色总条目构建完成，使用了', enabledItems.length, '个条目');
 
   return {
     content,
@@ -831,7 +831,7 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
   const { findEmojiById } = await import('../emojis/emoji-manager-data.js');
 
   const imageMode = extension_settings.acsusPawsPuffs?.phone?.imageMode || 'once';
-  logger.debug('[ContextBuilder.buildChatHistoryStructured] imageMode:', imageMode);
+  logger.debug('phone','[ContextBuilder.buildChatHistoryStructured] imageMode:', imageMode);
 
   // 加载历史记录
   const allHistory = await loadChatHistory(contactId);
@@ -857,11 +857,11 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
 
     if (turnSignature) {
       // ✅ 有签名 → 创建独立的 assistant role
-      logger.debug('[ContextBuilder.buildChatHistoryStructured] ✅ Flush 带签名的 contact 轮次，编号范围:', turnStartNumber, '-', currentNumber - 1);
+      logger.debug('phone','[ContextBuilder.buildChatHistoryStructured] ✅ Flush 带签名的 contact 轮次，编号范围:', turnStartNumber, '-', currentNumber - 1);
 
       // 🎯 检查当前 API 源：只有 Gemini (makersuite) 才包含签名
       const isGemini = apiSource === 'makersuite';
-      logger.debug('[ContextBuilder.buildChatHistoryStructured] 当前 API 源:', apiSource, ', 是否包含签名:', isGemini);
+      logger.debug('phone','[ContextBuilder.buildChatHistoryStructured] 当前 API 源:', apiSource, ', 是否包含签名:', isGemini);
 
       const contentPart = {
         type: 'text',
@@ -871,9 +871,9 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
       // 只有 Gemini 才附加签名
       if (isGemini && turnSignature) {
         contentPart.thoughtSignature = turnSignature;
-        logger.debug('[ContextBuilder.buildChatHistoryStructured] ✅ 已附加 thoughtSignature');
+        logger.debug('phone','[ContextBuilder.buildChatHistoryStructured] ✅ 已附加 thoughtSignature');
       } else if (turnSignature) {
-        logger.debug('[ContextBuilder.buildChatHistoryStructured] ⚠️ 跳过附加 thoughtSignature（非 Gemini 模型）');
+        logger.debug('phone','[ContextBuilder.buildChatHistoryStructured] ⚠️ 跳过附加 thoughtSignature（非 Gemini 模型）');
       }
 
       structuredMessages.push({
@@ -882,7 +882,7 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
       });
     } else {
       // ❌ 无签名 → 合并到 textBuffer
-      logger.debug('[ContextBuilder.buildChatHistoryStructured] Flush 无签名的 contact 轮次到 textBuffer');
+      logger.debug('phone','[ContextBuilder.buildChatHistoryStructured] Flush 无签名的 contact 轮次到 textBuffer');
       textBuffer += turnBuffer;
     }
 
@@ -931,7 +931,7 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
           messageId: msg.id,
           round: msg.imageRound
         });
-        logger.debug('[ContextBuilder.buildChatHistoryStructured] 🖼️ 历史图片将拆分:', msg.id, '轮次:', msg.imageRound);
+        logger.debug('phone','[ContextBuilder.buildChatHistoryStructured] 🖼️ 历史图片将拆分:', msg.id, '轮次:', msg.imageRound);
       }
     } else if (msg.type === 'image-fake' || (msg.type === 'image' && !msg.imageUrl)) {
       messageContent = `[图片]${msg.description || '无描述'}`;
@@ -958,14 +958,14 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
       let shouldIncludeImage = false;
       if (imageMode === 'always') {
         shouldIncludeImage = true;
-        logger.debug('[ContextBuilder.buildChatHistoryStructured] ✅ imageMode=always，历史图片将发送给AI，消息ID:', msg.id);
+        logger.debug('phone','[ContextBuilder.buildChatHistoryStructured] ✅ imageMode=always，历史图片将发送给AI，消息ID:', msg.id);
       } else if (imageMode === 'once' && msg.imageRound === currentRound) {
         shouldIncludeImage = true;
-        logger.debug('[ContextBuilder.buildChatHistoryStructured] ✅ imageMode=once，当前轮次图片将发送给AI，消息ID:', msg.id, '轮次:', msg.imageRound);
+        logger.debug('phone','[ContextBuilder.buildChatHistoryStructured] ✅ imageMode=once，当前轮次图片将发送给AI，消息ID:', msg.id, '轮次:', msg.imageRound);
       } else if (imageMode === 'once' && msg.imageRound !== currentRound) {
-        logger.debug('[ContextBuilder.buildChatHistoryStructured] ⏭️ imageMode=once，历史轮次图片不发送，消息ID:', msg.id, '图片轮次:', msg.imageRound, '当前轮次:', currentRound);
+        logger.debug('phone','[ContextBuilder.buildChatHistoryStructured] ⏭️ imageMode=once，历史轮次图片不发送，消息ID:', msg.id, '图片轮次:', msg.imageRound, '当前轮次:', currentRound);
       } else if (imageMode === 'never') {
-        logger.debug('[ContextBuilder.buildChatHistoryStructured] 📵 imageMode=never，图片不发送给AI，消息ID:', msg.id);
+        logger.debug('phone','[ContextBuilder.buildChatHistoryStructured] 📵 imageMode=never，图片不发送给AI，消息ID:', msg.id);
       }
 
       if (shouldIncludeImage) {
@@ -994,9 +994,9 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
         if (msgRole === 'assistant' && msg.metadata?.gemini?.thoughtSignature && isGemini) {
           // ✅ 添加 thoughtSignature 到第一个 part（文本）
           messageParts[0].thoughtSignature = msg.metadata.gemini.thoughtSignature;
-          logger.debug('[ContextBuilder.buildChatHistoryStructured] ✅ 为带图片 assistant 消息附加 thoughtSignature，消息ID:', msg.id);
+          logger.debug('phone','[ContextBuilder.buildChatHistoryStructured] ✅ 为带图片 assistant 消息附加 thoughtSignature，消息ID:', msg.id);
         } else if (msgRole === 'assistant' && msg.metadata?.gemini?.thoughtSignature && !isGemini) {
-          logger.debug('[ContextBuilder.buildChatHistoryStructured] ⚠️ 跳过附加 thoughtSignature（非 Gemini 模型），消息ID:', msg.id);
+          logger.debug('phone','[ContextBuilder.buildChatHistoryStructured] ⚠️ 跳过附加 thoughtSignature（非 Gemini 模型），消息ID:', msg.id);
         }
 
         structuredMessages.push({
@@ -1037,7 +1037,7 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
           // 提取签名（只在第一条消息）
           if (!turnSignature && msg.metadata?.gemini?.thoughtSignature) {
             turnSignature = msg.metadata.gemini.thoughtSignature;
-            logger.debug('[ContextBuilder.buildChatHistoryStructured] 🔍 提取轮次签名，消息ID:', msg.id);
+            logger.debug('phone','[ContextBuilder.buildChatHistoryStructured] 🔍 提取轮次签名，消息ID:', msg.id);
           }
 
           currentNumber++;
@@ -1079,7 +1079,7 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
       // 提取签名（只在第一条消息）
       if (!turnSignature && msg.metadata?.gemini?.thoughtSignature) {
         turnSignature = msg.metadata.gemini.thoughtSignature;
-        logger.debug('[ContextBuilder.buildChatHistoryStructured] 🔍 提取轮次签名，消息ID:', msg.id);
+        logger.debug('phone','[ContextBuilder.buildChatHistoryStructured] 🔍 提取轮次签名，消息ID:', msg.id);
       }
 
       currentNumber++;
@@ -1106,9 +1106,9 @@ async function buildChatHistoryStructured(contactId, contact, messageNumberMap, 
   textBuffer += `----上方对话user已读-----\n[/消息]\n[/角色-${contact.name}]`;
   structuredMessages.push({ role: 'system', content: textBuffer });
 
-  logger.info('[ContextBuilder.buildChatHistoryStructured] 结构化消息构建完成');
-  logger.debug('[ContextBuilder.buildChatHistoryStructured] - 消息数量:', structuredMessages.length);
-  logger.debug('[ContextBuilder.buildChatHistoryStructured] - 历史图片数量:', historyImages.length);
+  logger.info('phone','[ContextBuilder.buildChatHistoryStructured] 结构化消息构建完成');
+  logger.debug('phone','[ContextBuilder.buildChatHistoryStructured] - 消息数量:', structuredMessages.length);
+  logger.debug('phone','[ContextBuilder.buildChatHistoryStructured] - 历史图片数量:', historyImages.length);
 
   return {
     structuredMessages,
@@ -1155,13 +1155,13 @@ export async function buildChatHistoryInfo(contactId, contact, messageNumberMap,
 
   // ✅ 获取图片识别模式
   const imageMode = extension_settings.acsusPawsPuffs?.phone?.imageMode || 'once';
-  logger.debug('[ContextBuilder.buildChatHistoryInfo] imageMode:', imageMode);
+  logger.debug('phone','[ContextBuilder.buildChatHistoryInfo] imageMode:', imageMode);
 
   // ✅ 获取当前轮次（用于排除当前轮次的图片，避免重复）
   const { getCurrentRound } = await import('../messages/message-chat-data.js');
   const currentRound = await getCurrentRound(contactId);
-  logger.debug('[ContextBuilder.buildChatHistoryInfo] currentRound:', currentRound);
-  logger.info('[ContextBuilder.buildChatHistoryInfo] API配置源:', apiSource, apiSource === 'custom' ? '（使用结构化消息）' : '（使用纯文本）');
+  logger.debug('phone','[ContextBuilder.buildChatHistoryInfo] currentRound:', currentRound);
+  logger.info('phone','[ContextBuilder.buildChatHistoryInfo] API配置源:', apiSource, apiSource === 'custom' ? '（使用结构化消息）' : '（使用纯文本）');
 
   // ✅ 根据 API 配置源选择返回格式
   if (apiSource === 'custom') {
@@ -1224,9 +1224,9 @@ export async function buildChatHistoryInfo(contactId, contact, messageNumberMap,
             messageId: msg.id,
             round: msg.imageRound
           });
-          logger.debug('[ContextBuilder.buildChatHistoryInfo] 🖼️ 历史真实图片将重新发送 (imageMode=always):', msg.id, '轮次:', msg.imageRound);
+          logger.debug('phone','[ContextBuilder.buildChatHistoryInfo] 🖼️ 历史真实图片将重新发送 (imageMode=always):', msg.id, '轮次:', msg.imageRound);
         } else if (imageMode === 'always' && msg.imageUrl && msg.imageRound === currentRound) {
-          logger.debug('[ContextBuilder.buildChatHistoryInfo] ⏭️ 跳过当前轮次的图片（由待发送消息处理）:', msg.id, '轮次:', msg.imageRound);
+          logger.debug('phone','[ContextBuilder.buildChatHistoryInfo] ⏭️ 跳过当前轮次的图片（由待发送消息处理）:', msg.id, '轮次:', msg.imageRound);
         }
       } else if (msg.type === 'image-fake') {
         // ✅ 假装图片（新类型）：显示 [图片]描述
@@ -1247,9 +1247,9 @@ export async function buildChatHistoryInfo(contactId, contact, messageNumberMap,
               messageId: msg.id,
               round: msg.imageRound
             });
-            logger.debug('[ContextBuilder.buildChatHistoryInfo] 🖼️ 历史真实图片将重新发送 (imageMode=always, 旧数据):', msg.id, '轮次:', msg.imageRound);
+            logger.debug('phone','[ContextBuilder.buildChatHistoryInfo] 🖼️ 历史真实图片将重新发送 (imageMode=always, 旧数据):', msg.id, '轮次:', msg.imageRound);
           } else if (imageMode === 'always' && msg.imageRound === currentRound) {
-            logger.debug('[ContextBuilder.buildChatHistoryInfo] ⏭️ 跳过当前轮次的图片（由待发送消息处理, 旧数据）:', msg.id, '轮次:', msg.imageRound);
+            logger.debug('phone','[ContextBuilder.buildChatHistoryInfo] ⏭️ 跳过当前轮次的图片（由待发送消息处理, 旧数据）:', msg.id, '轮次:', msg.imageRound);
           }
         } else {
           // 假装图片：显示 [图片]描述
@@ -1314,7 +1314,7 @@ export async function buildChatHistoryInfo(contactId, contact, messageNumberMap,
             type: 'image_placeholder',
             messageId: msg.id
           });
-          logger.debug('[ContextBuilder.buildChatHistoryInfo] 📍 在消息后插入图片占位符:', msg.id);
+          logger.debug('phone','[ContextBuilder.buildChatHistoryInfo] 📍 在消息后插入图片占位符:', msg.id);
         }
 
         parts.push({ type: 'text', text: '\n' });
@@ -1334,9 +1334,9 @@ export async function buildChatHistoryInfo(contactId, contact, messageNumberMap,
   // ✅ 改用 [/消息] [/角色-XXX] 格式
   parts.push({ type: 'text', text: `[/消息]\n[/角色-${contact.name}]` });
 
-  logger.info('[ContextBuilder.buildChatHistoryInfo] 聊天历史构建完成');
-  logger.debug('[ContextBuilder.buildChatHistoryInfo] - parts数量:', parts.length);
-  logger.debug('[ContextBuilder.buildChatHistoryInfo] - 历史图片数量:', historyImages.length);
+  logger.info('phone','[ContextBuilder.buildChatHistoryInfo] 聊天历史构建完成');
+  logger.debug('phone','[ContextBuilder.buildChatHistoryInfo] - parts数量:', parts.length);
+  logger.debug('phone','[ContextBuilder.buildChatHistoryInfo] - 历史图片数量:', historyImages.length);
 
   return {
     parts,  // ← 返回结构化数组
@@ -1500,10 +1500,10 @@ async function buildSignatureHistory() {
 
     content += `[/用户个签历史]`;
 
-    logger.debug('[ContextBuilder] 个签历史已构建，共', history.length, '条');
+    logger.debug('phone','[ContextBuilder] 个签历史已构建，共', history.length, '条');
     return content;
   } catch (error) {
-    logger.error('[ContextBuilder] 构建个签历史失败:', error);
+    logger.error('phone','[ContextBuilder] 构建个签历史失败:', error);
     return '';
   }
 }
@@ -1563,7 +1563,7 @@ async function buildUserPendingOps(pendingMessages, messageNumberMap, startNumbe
 
   // 如果没有待操作，返回空对象
   if (!pendingMessages || Object.keys(pendingMessages).length === 0) {
-    logger.debug('[ContextBuilder.buildUserPendingOps] 没有待发送消息，返回空内容');
+    logger.debug('phone','[ContextBuilder.buildUserPendingOps] 没有待发送消息，返回空内容');
     return {
       content: '',
       nextNumber: startNumber,
@@ -1573,7 +1573,7 @@ async function buildUserPendingOps(pendingMessages, messageNumberMap, startNumbe
 
   // ✅ 获取图片识别模式设置
   const imageMode = extension_settings.acsusPawsPuffs?.phone?.imageMode || 'once';
-  logger.info('[ContextBuilder.buildUserPendingOps] 图片识别模式:', imageMode);
+  logger.info('phone','[ContextBuilder.buildUserPendingOps] 图片识别模式:', imageMode);
 
   // ✅ 收集所有待发送的图片消息（用于后续附加到Message对象）
   const imagesToAttach = [];
@@ -1623,13 +1623,13 @@ async function buildUserPendingOps(pendingMessages, messageNumberMap, startNumbe
         }
       } else if (msg.type === 'image-real') {
         // ✅ 类型1：真实图片（AI识别）
-        logger.info('[ContextBuilder.buildUserPendingOps] 🖼️ 检测到真实图片消息');
-        logger.info('[ContextBuilder.buildUserPendingOps]   - 联系人:', contactId);
-        logger.info('[ContextBuilder.buildUserPendingOps]   - 消息ID:', msg.id);
-        logger.info('[ContextBuilder.buildUserPendingOps]   - 图片URL:', msg.imageUrl);
-        logger.info('[ContextBuilder.buildUserPendingOps]   - 图片描述:', msg.description || '无');
-        logger.info('[ContextBuilder.buildUserPendingOps]   - 图片轮次(imageRound):', msg.imageRound);
-        logger.info('[ContextBuilder.buildUserPendingOps]   - imageMode设置:', imageMode);
+        logger.info('phone','[ContextBuilder.buildUserPendingOps] 🖼️ 检测到真实图片消息');
+        logger.info('phone','[ContextBuilder.buildUserPendingOps]   - 联系人:', contactId);
+        logger.info('phone','[ContextBuilder.buildUserPendingOps]   - 消息ID:', msg.id);
+        logger.info('phone','[ContextBuilder.buildUserPendingOps]   - 图片URL:', msg.imageUrl);
+        logger.info('phone','[ContextBuilder.buildUserPendingOps]   - 图片描述:', msg.description || '无');
+        logger.info('phone','[ContextBuilder.buildUserPendingOps]   - 图片轮次(imageRound):', msg.imageRound);
+        logger.info('phone','[ContextBuilder.buildUserPendingOps]   - imageMode设置:', imageMode);
 
         const description = msg.description || '';
 
@@ -1637,26 +1637,26 @@ async function buildUserPendingOps(pendingMessages, messageNumberMap, startNumbe
         if (imageMode === 'never') {
           // 不发送给AI，显示为假装图片
           messageContent = `[图片]${description || '无描述'}`;
-          logger.info('[ContextBuilder.buildUserPendingOps] 📵 imageMode=never，真实图片按假装图片处理');
+          logger.info('phone','[ContextBuilder.buildUserPendingOps] 📵 imageMode=never，真实图片按假装图片处理');
         } else {
           // 获取当前轮次（用于判断是否发送）
           const { getCurrentRound } = await import('../messages/message-chat-data.js');
           const currentRound = await getCurrentRound(contactId);
-          logger.info('[ContextBuilder.buildUserPendingOps]   - 当前轮次(currentRound):', currentRound);
+          logger.info('phone','[ContextBuilder.buildUserPendingOps]   - 当前轮次(currentRound):', currentRound);
 
           // 判断是否应该发送这张图片
           let shouldInclude = false;
           if (imageMode === 'always') {
             shouldInclude = true;
-            logger.info('[ContextBuilder.buildUserPendingOps] ✅ imageMode=always，包含图片:', msg.imageUrl);
+            logger.info('phone','[ContextBuilder.buildUserPendingOps] ✅ imageMode=always，包含图片:', msg.imageUrl);
           } else if (imageMode === 'once') {
             if (msg.imageRound === currentRound) {
               shouldInclude = true;
-              logger.info('[ContextBuilder.buildUserPendingOps] ✅ imageMode=once，图片属于当前轮次，包含:', msg.imageUrl);
-              logger.info('[ContextBuilder.buildUserPendingOps]   - 图片轮次:', msg.imageRound, '= 当前轮次:', currentRound);
+              logger.info('phone','[ContextBuilder.buildUserPendingOps] ✅ imageMode=once，图片属于当前轮次，包含:', msg.imageUrl);
+              logger.info('phone','[ContextBuilder.buildUserPendingOps]   - 图片轮次:', msg.imageRound, '= 当前轮次:', currentRound);
             } else {
-              logger.warn('[ContextBuilder.buildUserPendingOps] ⏭️ imageMode=once，图片不属于当前轮次，跳过');
-              logger.warn('[ContextBuilder.buildUserPendingOps]   - 图片轮次:', msg.imageRound, '≠ 当前轮次:', currentRound);
+              logger.warn('phone','[ContextBuilder.buildUserPendingOps] ⏭️ imageMode=once，图片不属于当前轮次，跳过');
+              logger.warn('phone','[ContextBuilder.buildUserPendingOps]   - 图片轮次:', msg.imageRound, '≠ 当前轮次:', currentRound);
             }
           }
 
@@ -1671,21 +1671,21 @@ async function buildUserPendingOps(pendingMessages, messageNumberMap, startNumbe
             // ✅ 真实图片：只显示描述文本（Message.addImage()会添加图片）
             // 如果没有描述，保留为空字符串（Message.addImage()会正确处理）
             messageContent = description || '';  // 空描述：空字符串，有描述：显示描述
-            logger.info('[ContextBuilder.buildUserPendingOps] ✅ 已收集待附加图片:', msg.imageUrl);
-            logger.info('[ContextBuilder.buildUserPendingOps]   - 消息文本内容:', messageContent || '（空字符串）');
-            logger.info('[ContextBuilder.buildUserPendingOps]   - imagesToAttach数组长度:', imagesToAttach.length);
+            logger.info('phone','[ContextBuilder.buildUserPendingOps] ✅ 已收集待附加图片:', msg.imageUrl);
+            logger.info('phone','[ContextBuilder.buildUserPendingOps]   - 消息文本内容:', messageContent || '（空字符串）');
+            logger.info('phone','[ContextBuilder.buildUserPendingOps]   - imagesToAttach数组长度:', imagesToAttach.length);
           } else {
             // 不发送给AI，显示为假装图片
             messageContent = `[图片]${description || '无描述'}`;
-            logger.warn('[ContextBuilder.buildUserPendingOps] ⏭️ 图片不符合收集条件，按假装图片处理');
+            logger.warn('phone','[ContextBuilder.buildUserPendingOps] ⏭️ 图片不符合收集条件，按假装图片处理');
           }
         }
       } else if (msg.type === 'image-fake') {
         // ✅ 类型2/3：假装图片（AI过家家）
-        logger.info('[ContextBuilder.buildUserPendingOps] 📝 检测到假装图片消息');
-        logger.info('[ContextBuilder.buildUserPendingOps]   - 联系人:', contactId);
-        logger.info('[ContextBuilder.buildUserPendingOps]   - 消息ID:', msg.id);
-        logger.info('[ContextBuilder.buildUserPendingOps]   - 图片描述:', msg.description);
+        logger.info('phone','[ContextBuilder.buildUserPendingOps] 📝 检测到假装图片消息');
+        logger.info('phone','[ContextBuilder.buildUserPendingOps]   - 联系人:', contactId);
+        logger.info('phone','[ContextBuilder.buildUserPendingOps]   - 消息ID:', msg.id);
+        logger.info('phone','[ContextBuilder.buildUserPendingOps]   - 图片描述:', msg.description);
 
         // 假装图片：显示为文本格式
         messageContent = `[图片]${msg.description || '无描述'}`;
@@ -1816,7 +1816,7 @@ async function buildUserPendingOps(pendingMessages, messageNumberMap, startNumbe
   // ✅ 检查AI感知删除的角色，根据概率触发好友申请
   const triggeredRequests = await checkAndTriggerAIAwareReapply();
   if (triggeredRequests.length > 0) {
-    logger.info('[ContextBuilder.buildUserPendingOperations] 检测到', triggeredRequests.length, '个AI感知删除触发');
+    logger.info('phone','[ContextBuilder.buildUserPendingOperations] 检测到', triggeredRequests.length, '个AI感知删除触发');
 
     // 构建临时任务内容（只包含提示词，不包含角色信息）
     content += `\n[临时任务]\n`;
@@ -1854,26 +1854,26 @@ async function buildUserPendingOps(pendingMessages, messageNumberMap, startNumbe
     content += `4. 申请消息应该符合角色性格和当前情境\n`;
     content += `[/临时任务]\n`;
 
-    logger.info('[ContextBuilder.buildUserPendingOperations] AI感知删除通知已添加到临时任务');
+    logger.info('phone','[ContextBuilder.buildUserPendingOperations] AI感知删除通知已添加到临时任务');
   }
 
   content += `[/{{user}}本轮操作]`;
 
   // ✅ 日志输出筛选结果
-  logger.info('[ContextBuilder.buildUserPendingOps] ========== 用户待操作构建完成 ==========');
-  logger.info('[ContextBuilder.buildUserPendingOps] 消息编号范围:', startNumber, '~', currentNumber - 1);
-  logger.info('[ContextBuilder.buildUserPendingOps] 📊 筛选后待附加图片数量:', imagesToAttach.length);
+  logger.info('phone','[ContextBuilder.buildUserPendingOps] ========== 用户待操作构建完成 ==========');
+  logger.info('phone','[ContextBuilder.buildUserPendingOps] 消息编号范围:', startNumber, '~', currentNumber - 1);
+  logger.info('phone','[ContextBuilder.buildUserPendingOps] 📊 筛选后待附加图片数量:', imagesToAttach.length);
   if (imagesToAttach.length > 0) {
-    logger.info('[ContextBuilder.buildUserPendingOps] 📋 待附加图片列表:');
+    logger.info('phone','[ContextBuilder.buildUserPendingOps] 📋 待附加图片列表:');
     imagesToAttach.forEach((img, index) => {
-      logger.info(`[ContextBuilder.buildUserPendingOps]   ${index + 1}. ${img.url} (轮次${img.round}, 联系人:${img.contactId})`);
+      logger.info('phone',`[ContextBuilder.buildUserPendingOps]   ${index + 1}. ${img.url} (轮次${img.round}, 联系人:${img.contactId})`);
     });
   } else {
-    logger.warn('[ContextBuilder.buildUserPendingOps] ⚠️ 没有收集到任何待附加图片');
-    logger.warn('[ContextBuilder.buildUserPendingOps]   - 可能原因1：没有图片消息（msg.type !== "image"）');
-    logger.warn('[ContextBuilder.buildUserPendingOps]   - 可能原因2：图片消息缺少imageUrl字段');
-    logger.warn('[ContextBuilder.buildUserPendingOps]   - 可能原因3：imageMode="never"');
-    logger.warn('[ContextBuilder.buildUserPendingOps]   - 可能原因4：imageMode="once"但图片不属于当前轮次');
+    logger.warn('phone','[ContextBuilder.buildUserPendingOps] ⚠️ 没有收集到任何待附加图片');
+    logger.warn('phone','[ContextBuilder.buildUserPendingOps]   - 可能原因1：没有图片消息（msg.type !== "image"）');
+    logger.warn('phone','[ContextBuilder.buildUserPendingOps]   - 可能原因2：图片消息缺少imageUrl字段');
+    logger.warn('phone','[ContextBuilder.buildUserPendingOps]   - 可能原因3：imageMode="never"');
+    logger.warn('phone','[ContextBuilder.buildUserPendingOps]   - 可能原因4：imageMode="once"但图片不属于当前轮次');
   }
 
   return {
@@ -1981,7 +1981,7 @@ export async function buildHistoryChatInfo(contactId, contact, messageNumberMap)
     }
   });
 
-  logger.debug('[ContextBuilder] 历史聊天记录构建完成，共', historyMessages.length, '条');
+  logger.debug('phone','[ContextBuilder] 历史聊天记录构建完成，共', historyMessages.length, '条');
 
   return {
     content,
@@ -2010,7 +2010,7 @@ function getPresetData() {
 
   // ✅ 如果不存在promptPreset，使用统一的默认预设
   if (!extension_settings.acsusPawsPuffs.phone.promptPreset) {
-    logger.warn('[ContextBuilder] 预设数据不存在，使用默认预设（来自preset-settings-ui）');
+    logger.warn('phone','[ContextBuilder] 预设数据不存在，使用默认预设（来自preset-settings-ui）');
     extension_settings.acsusPawsPuffs.phone.promptPreset = getDefaultPresets();
     saveSettingsDebounced();
   }
@@ -2031,14 +2031,14 @@ function getPresetData() {
  * 动态生成表情包库标签 + 表情包列表 + 用户提示词
  */
 async function buildEmojiLibrary(userPrompt) {
-  logger.debug('[ContextBuilder.buildEmojiLibrary] 开始构建表情包库');
+  logger.debug('phone','[ContextBuilder.buildEmojiLibrary] 开始构建表情包库');
 
   // 动态导入表情包数据
   const { getEmojiNames } = await import('../emojis/emoji-manager-data.js');
   const emojiNames = getEmojiNames();
 
   if (emojiNames.length === 0) {
-    logger.debug('[ContextBuilder.buildEmojiLibrary] 没有表情包，跳过');
+    logger.debug('phone','[ContextBuilder.buildEmojiLibrary] 没有表情包，跳过');
     return '';  // 没有表情包时返回空字符串（会被过滤掉）
   }
 
@@ -2052,7 +2052,7 @@ async function buildEmojiLibrary(userPrompt) {
     content += userPrompt.trim();
   }
 
-  logger.debug('[ContextBuilder.buildEmojiLibrary] 构建完成，表情包数量:', emojiNames.length);
+  logger.debug('phone','[ContextBuilder.buildEmojiLibrary] 构建完成，表情包数量:', emojiNames.length);
   return content;
 }
 
@@ -2071,7 +2071,7 @@ async function buildEmojiLibrary(userPrompt) {
  * 4. 返回触发的角色列表（包含contactId、contactName、deleteTime等信息）
  */
 async function checkAndTriggerAIAwareReapply() {
-  logger.debug('[ContextBuilder.checkAIAwareReapply] 开始检查AI感知删除触发');
+  logger.debug('phone','[ContextBuilder.checkAIAwareReapply] 开始检查AI感知删除触发');
 
   try {
     // 动态导入数据层函数
@@ -2081,7 +2081,7 @@ async function checkAndTriggerAIAwareReapply() {
     const requests = await getAIAwareDeletedRequests();
 
     if (!requests || requests.length === 0) {
-      logger.debug('[ContextBuilder.checkAIAwareReapply] 没有AI感知删除的申请');
+      logger.debug('phone','[ContextBuilder.checkAIAwareReapply] 没有AI感知删除的申请');
       return [];
     }
 
@@ -2092,11 +2092,11 @@ async function checkAndTriggerAIAwareReapply() {
     });
 
     if (activeRequests.length === 0) {
-      logger.debug('[ContextBuilder.checkAIAwareReapply] 没有允许继续申请的角色');
+      logger.debug('phone','[ContextBuilder.checkAIAwareReapply] 没有允许继续申请的角色');
       return [];
     }
 
-    logger.info('[ContextBuilder.checkAIAwareReapply] 检测到', activeRequests.length, '个可触发角色');
+    logger.info('phone','[ContextBuilder.checkAIAwareReapply] 检测到', activeRequests.length, '个可触发角色');
 
     // 对每个角色独立进行概率判断
     const triggeredRequests = [];
@@ -2104,24 +2104,24 @@ async function checkAndTriggerAIAwareReapply() {
       const probability = request.reapplyConfig.probability || 0;
       const roll = Math.random() * 100;  // 0-100的随机数
 
-      logger.debug('[ContextBuilder.checkAIAwareReapply] 角色:', request.contactName, '概率:', probability, 'roll:', roll.toFixed(2));
+      logger.debug('phone','[ContextBuilder.checkAIAwareReapply] 角色:', request.contactName, '概率:', probability, 'roll:', roll.toFixed(2));
 
       if (roll <= probability) {
         triggeredRequests.push(request);
-        logger.info('[ContextBuilder.checkAIAwareReapply] 触发!', request.contactName, `(${roll.toFixed(2)} <= ${probability})`);
+        logger.info('phone','[ContextBuilder.checkAIAwareReapply] 触发!', request.contactName, `(${roll.toFixed(2)} <= ${probability})`);
       }
     }
 
     if (triggeredRequests.length === 0) {
-      logger.debug('[ContextBuilder.checkAIAwareReapply] 本轮没有角色触发');
+      logger.debug('phone','[ContextBuilder.checkAIAwareReapply] 本轮没有角色触发');
       return [];
     }
 
-    logger.info('[ContextBuilder.checkAIAwareReapply] 已触发', triggeredRequests.length, '个角色的好友申请');
+    logger.info('phone','[ContextBuilder.checkAIAwareReapply] 已触发', triggeredRequests.length, '个角色的好友申请');
     return triggeredRequests;
 
   } catch (error) {
-    logger.error('[ContextBuilder.checkAIAwareReapply] 检查失败:', error);
+    logger.error('phone','[ContextBuilder.checkAIAwareReapply] 检查失败:', error);
     return [];
   }
 }

@@ -109,7 +109,7 @@ class StateManager {
     // 1. 保存到 SillyTavern 持久化
     await saveData(key, value);
     
-    logger.debug(`[StateManager] 数据已保存: ${key}`, meta);
+    logger.debug('phone',`[StateManager] 数据已保存: ${key}`, meta);
     
     // 2. 通知所有订阅者
     await this.notify(key, meta);
@@ -157,12 +157,12 @@ class StateManager {
     const keySubscribers = pageSubscribers.get(key);
     keySubscribers.add(callback);
     
-    logger.debug(`[StateManager] 订阅: ${pageId} → ${key} (共${keySubscribers.size}个)`);
+    logger.debug('phone',`[StateManager] 订阅: ${pageId} → ${key} (共${keySubscribers.size}个)`);
     
     // 返回取消订阅函数
     return () => {
       keySubscribers.delete(callback);
-      logger.debug(`[StateManager] 取消订阅: ${pageId} → ${key}`);
+      logger.debug('phone',`[StateManager] 取消订阅: ${pageId} → ${key}`);
     };
   }
   
@@ -193,13 +193,13 @@ class StateManager {
             await callback(meta);
             notifiedCount++;
           } catch (error) {
-            logger.error(`[StateManager] 订阅者回调出错 (${pageId} → ${key}):`, error);
+            logger.error('phone',`[StateManager] 订阅者回调出错 (${pageId} → ${key}):`, error);
           }
         }
       }
     }
     
-    logger.debug(`[StateManager] 已通知 ${notifiedCount} 个订阅者: ${key}`);
+    logger.debug('phone',`[StateManager] 已通知 ${notifiedCount} 个订阅者: ${key}`);
   }
   
   /**
@@ -225,7 +225,7 @@ class StateManager {
       }
       
       this.subscribers.delete(pageId);
-      logger.info(`[StateManager] 清理页面订阅: ${pageId} (共${totalCount}个)`);
+      logger.info('phone',`[StateManager] 清理页面订阅: ${pageId} (共${totalCount}个)`);
     }
   }
   
@@ -254,7 +254,7 @@ class StateManager {
     }
     
     this.snapshots.set(snapshotId, snapshot);
-    logger.debug(`[StateManager] 保存快照: ${snapshotId}`, keys);
+    logger.debug('phone',`[StateManager] 保存快照: ${snapshotId}`, keys);
   }
   
   /**
@@ -273,7 +273,7 @@ class StateManager {
     const snapshot = this.snapshots.get(snapshotId);
     
     if (!snapshot) {
-      logger.warn(`[StateManager] 快照不存在: ${snapshotId}`);
+      logger.warn('phone',`[StateManager] 快照不存在: ${snapshotId}`);
       return;
     }
     
@@ -282,7 +282,7 @@ class StateManager {
       await this.set(key, value, { action: 'restore', fromSnapshot: true });
     }
     
-    logger.info(`[StateManager] 恢复快照: ${snapshotId}`);
+    logger.info('phone',`[StateManager] 恢复快照: ${snapshotId}`);
   }
   
   /**

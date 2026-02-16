@@ -42,7 +42,7 @@ export class PresetStitchUI {
    * 显示收藏库弹窗
    */
   show() {
-    logger.debug('[PresetStitchUI] 显示收藏库弹窗');
+    logger.debug('preset', 'PresetStitchUI] 显示收藏库弹窗');
     this.createPopup();
   }
 
@@ -637,8 +637,8 @@ export class PresetStitchUI {
     const entries = this.module.getCurrentPresetEntries();
 
     // 调试：打印获取到的条目
-    logger.debug('[PresetStitchUI] 获取到的预设条目数量:', entries.length);
-    logger.debug('[PresetStitchUI] 条目详情:', entries.map(e => ({
+    logger.debug('preset', 'PresetStitchUI] 获取到的预设条目数量:', entries.length);
+    logger.debug('preset', 'PresetStitchUI] 条目详情:', entries.map(e => ({
       name: e.name,
       marker: e.marker,
       contentLength: e.content?.length || 0
@@ -647,7 +647,7 @@ export class PresetStitchUI {
     // 只过滤掉标记（marker: true），保留所有条目（不管有没有内容）
     const userEntries = entries.filter(e => !e.marker);
 
-    logger.debug('[PresetStitchUI] 过滤后的条目数量:', userEntries.length);
+    logger.debug('preset', 'PresetStitchUI] 过滤后的条目数量:', userEntries.length);
 
     if (userEntries.length === 0) {
       toastr.warning('当前预设没有可添加的条目');
@@ -720,7 +720,7 @@ export class PresetStitchUI {
       presetNames = Object.keys(openai_setting_names || {});
       presetSettings = openai_settings || [];
     } catch (error) {
-      logger.error('[PresetStitchUI] 获取预设列表失败:', error);
+      logger.error('preset', '[PresetStitchUI] 获取预设列表失败:', error);
       toastr.error('获取预设列表失败');
       return;
     }
@@ -800,7 +800,7 @@ export class PresetStitchUI {
           // 保存当前预设数据供确认时使用
           popup.dataset.currentPreset = presetName;
         } catch (error) {
-          logger.error('[PresetStitchUI] 加载预设条目失败:', error);
+          logger.error('preset', '[PresetStitchUI] 加载预设条目失败:', error);
           entriesContainer.innerHTML = '<p style="text-align: center; color: #ff6b6b;">加载失败</p>';
         }
       });
@@ -861,7 +861,7 @@ export class PresetStitchUI {
       presetNames = Object.keys(openai_setting_names || {});
       presetSettings = openai_settings || [];
     } catch (error) {
-      logger.error('[PresetStitchUI] 获取预设列表失败:', error);
+      logger.error('preset', '[PresetStitchUI] 获取预设列表失败:', error);
       toastr.error('获取预设列表失败');
       return;
     }
@@ -940,7 +940,7 @@ export class PresetStitchUI {
 
           entriesContainer.innerHTML = `<div class="stitch-picker-list">${listHtml}</div>`;
         } catch (error) {
-          logger.error('[PresetStitchUI] 加载预设条目失败:', error);
+          logger.error('preset', '[PresetStitchUI] 加载预设条目失败:', error);
           entriesContainer.innerHTML = '<p style="text-align: center; color: #ff6b6b;">加载失败</p>';
           currentPresetEntries = [];
         }
@@ -985,7 +985,7 @@ export class PresetStitchUI {
       const { world_names } = await import('../../../world-info.js');
       worldList = world_names || [];
     } catch (error) {
-      logger.error('[PresetStitchUI] 获取世界书列表失败:', error);
+      logger.error('preset', '[PresetStitchUI] 获取世界书列表失败:', error);
       toastr.error('获取世界书列表失败');
       return;
     }
@@ -1055,7 +1055,7 @@ export class PresetStitchUI {
 
           entriesContainer.innerHTML = `<div class="stitch-picker-list">${listHtml}</div>`;
         } catch (error) {
-          logger.error('[PresetStitchUI] 加载世界书条目失败:', error);
+          logger.error('preset', '[PresetStitchUI] 加载世界书条目失败:', error);
           entriesContainer.innerHTML = '<p style="text-align: center; color: #ff6b6b;">加载失败</p>';
         }
       });
@@ -1086,7 +1086,7 @@ export class PresetStitchUI {
                 addedCount++;
               }
             } catch (error) {
-              logger.error('[PresetStitchUI] 添加世界书条目失败:', error);
+              logger.error('preset', '[PresetStitchUI] 添加世界书条目失败:', error);
             }
           }
         }
@@ -1328,7 +1328,7 @@ export class PresetStitchUI {
       await this.module.insertEntryToPreset(item, position);
       toastr.success(`已插入"${item.name}"`);
     } catch (error) {
-      logger.error('[PresetStitchUI] 插入条目失败:', error);
+      logger.error('preset', '[PresetStitchUI] 插入条目失败:', error);
       toastr.error('插入失败');
     }
   }
@@ -1388,7 +1388,7 @@ export class PresetStitchUI {
                 insertedCount++;
               }
             } catch (error) {
-              logger.error('[PresetStitchUI] 批量插入失败:', error);
+              logger.error('preset', '[PresetStitchUI] 批量插入失败:', error);
             }
           }
         }

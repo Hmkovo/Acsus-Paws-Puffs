@@ -76,7 +76,7 @@ export function showMessageActions(messageElement, message, contactId, options =
     triggerElement = null; // 清除触发源标记（500ms后允许气泡点击关闭菜单）
   }, 500);
 
-  logger.debug('[MessageActions] 显示操作菜单', options.disableQuote ? '（禁用引用）' : '');
+  logger.debug('phone','[MessageActions] 显示操作菜单', options.disableQuote ? '（禁用引用）' : '');
 }
 
 /**
@@ -184,7 +184,7 @@ export function closeMessageActions() {
     currentMenu = null;
     triggerElement = null; // 清除触发源标记
     document.removeEventListener('click', handleOutsideClick);
-    logger.debug('[MessageActions] 关闭操作菜单');
+    logger.debug('phone','[MessageActions] 关闭操作菜单');
   }
 }
 
@@ -392,7 +392,7 @@ async function handleRecall(message, contactId, messageElement) {
 
   // 1. 检查是否是用户自己的消息
   if (message.sender !== 'user') {
-    logger.warn('[MessageActions] 只能撤回自己的消息');
+    logger.warn('phone','[MessageActions] 只能撤回自己的消息');
     const { showToast } = await import('../ui-components/toast-notification.js');
     showToast('只能撤回自己的消息', 'warning');
     return;
@@ -403,7 +403,7 @@ async function handleRecall(message, contactId, messageElement) {
   const timeDiff = now - message.time;
 
   if (timeDiff > 120) {
-    logger.warn('[MessageActions] 消息超过2分钟无法撤回，时间差:', timeDiff, '秒');
+    logger.warn('phone','[MessageActions] 消息超过2分钟无法撤回，时间差:', timeDiff, '秒');
     const { showToast } = await import('../ui-components/toast-notification.js');
     showToast('消息发送已超过2分钟，无法撤回', 'warning');
     return;
@@ -451,7 +451,7 @@ async function handleRecall(message, contactId, messageElement) {
   const success = await updateMessage(contactId, message.id, updatedMessage);
 
   if (!success) {
-    logger.error('[MessageActions] 撤回失败，无法更新存储');
+    logger.error('phone','[MessageActions] 撤回失败，无法更新存储');
     const { showToast } = await import('../ui-components/toast-notification.js');
     showToast('撤回失败，请重试', 'error');
     return;
@@ -474,7 +474,7 @@ async function handleRecall(message, contactId, messageElement) {
   // 7. 更新消息列表（刷新最后一条消息预览）
   updateContactItem(contactId);
 
-  logger.info('[MessageActions] 撤回消息成功:', message.id);
+  logger.info('phone','[MessageActions] 撤回消息成功:', message.id);
   const { showToast } = await import('../ui-components/toast-notification.js');
   showToast('已撤回', 'success');
 }
@@ -486,7 +486,7 @@ async function handleRecall(message, contactId, messageElement) {
  * @param {Object} message - 消息对象
  */
 function handleForward(message) {
-  logger.info('[MessageActions] 转发消息（占位符）:', message.content?.substring(0, 20));
+  logger.info('phone','[MessageActions] 转发消息（占位符）:', message.content?.substring(0, 20));
   closeMessageActions();
   // TODO: 实现转发逻辑
 }
@@ -499,8 +499,8 @@ function handleForward(message) {
  * @param {string} contactId - 联系人ID
  */
 async function handleFavorite(message, contactId) {
-  logger.info('[MessageActions] 收藏消息:', message.content?.substring(0, 20), 'type:', message.type);
-  logger.debug('[MessageActions] 完整消息对象:', message);
+  logger.info('phone','[MessageActions] 收藏消息:', message.content?.substring(0, 20), 'type:', message.type);
+  logger.debug('phone','[MessageActions] 完整消息对象:', message);
   closeMessageActions();
 
   const { addFavorite, deleteFavoriteByMessageId, isFavorited } = await import('../favorites/favorites-data.js');
@@ -512,7 +512,7 @@ async function handleFavorite(message, contactId) {
     // 取消收藏
     deleteFavoriteByMessageId(message.id);
     showSuccessToast('已取消收藏');
-    logger.info('[MessageActions] 已取消收藏:', message.id);
+    logger.info('phone','[MessageActions] 已取消收藏:', message.id);
     return;
   }
 
@@ -521,7 +521,7 @@ async function handleFavorite(message, contactId) {
   const contact = contacts.find(c => c.id === contactId);
 
   if (!contact) {
-    logger.warn('[MessageActions] 找不到联系人:', contactId);
+    logger.warn('phone','[MessageActions] 找不到联系人:', contactId);
     return;
   }
 
@@ -556,34 +556,34 @@ async function handleFavorite(message, contactId) {
       const emoji = findEmojiById(message.content);
       favoriteData.emojiName = emoji ? emoji.name : message.content; // 找不到就用ID
     }
-    logger.debug('[MessageActions] emoji收藏，emojiName:', favoriteData.emojiName, 'content:', message.content);
+    logger.debug('phone','[MessageActions] emoji收藏，emojiName:', favoriteData.emojiName, 'content:', message.content);
   }
 
   if (message.type === 'image') {
     favoriteData.description = message.description || '';
     favoriteData.imageUrl = message.imageUrl || '';
-    logger.debug('[MessageActions] image收藏，description:', message.description, 'imageUrl:', message.imageUrl);
+    logger.debug('phone','[MessageActions] image收藏，description:', message.description, 'imageUrl:', message.imageUrl);
   }
 
   if (message.type === 'transfer') {
     favoriteData.amount = message.amount || 0;
     favoriteData.message = message.message || '';
-    logger.debug('[MessageActions] transfer收藏，amount:', message.amount, 'message:', message.message);
+    logger.debug('phone','[MessageActions] transfer收藏，amount:', message.amount, 'message:', message.message);
   }
 
   if (message.type === 'quote') {
     favoriteData.quotedMessage = message.quotedMessage;
     favoriteData.replyContent = message.replyContent || '';
-    logger.debug('[MessageActions] quote收藏，replyContent:', message.replyContent);
+    logger.debug('phone','[MessageActions] quote收藏，replyContent:', message.replyContent);
   }
 
-  logger.debug('[MessageActions] 最终收藏数据:', favoriteData);
+  logger.debug('phone','[MessageActions] 最终收藏数据:', favoriteData);
 
   // 添加收藏
   addFavorite(favoriteData);
 
   showSuccessToast('已添加到收藏');
-  logger.info('[MessageActions] 已添加收藏:', message.id);
+  logger.info('phone','[MessageActions] 已添加收藏:', message.id);
 }
 
 /**
@@ -607,14 +607,14 @@ async function handleDelete(message, contactId, messageElement) {
     const chatContent = page?.querySelector('.chat-content');
     const beforeDomCount = chatContent?.querySelectorAll('.chat-msg').length || 0;
     const beforeDataCount = chatHistory.length;
-    logger.info('📊 [删除前] 数据:', beforeDataCount, '条，DOM:', beforeDomCount, '条，要删除ID:', message.id || '无');
+    logger.info('phone','📊 [删除前] 数据:', beforeDataCount, '条，DOM:', beforeDomCount, '条，要删除ID:', message.id || '无');
 
     let newHistory;
 
     if (message.id) {
       // 新数据：使用ID精确匹配（推荐）
       newHistory = chatHistory.filter(msg => msg.id !== message.id);
-      logger.debug('[MessageActions] 使用ID删除:', message.id);
+      logger.debug('phone','[MessageActions] 使用ID删除:', message.id);
     } else {
       // 旧数据兼容：使用时间戳+发送者+内容组合匹配
       newHistory = chatHistory.filter(msg =>
@@ -622,7 +622,7 @@ async function handleDelete(message, contactId, messageElement) {
           msg.sender === message.sender &&
           msg.content === message.content)
       );
-      logger.debug('[MessageActions] 使用组合匹配删除（旧数据）:', message.time);
+      logger.debug('phone','[MessageActions] 使用组合匹配删除（旧数据）:', message.time);
     }
 
     await saveChatHistory(contactId, newHistory);
@@ -635,12 +635,12 @@ async function handleDelete(message, contactId, messageElement) {
         
         if (plan) {
           deletePlan(contactId, plan.id);
-          logger.info('[MessageActions] 已同步删除计划数据:', plan.title);
+          logger.info('phone','[MessageActions] 已同步删除计划数据:', plan.title);
         } else {
-          logger.debug('[MessageActions] 该计划消息无对应计划数据');
+          logger.debug('phone','[MessageActions] 该计划消息无对应计划数据');
         }
       } catch (error) {
-        logger.warn('[MessageActions] 删除计划数据失败（不影响消息删除）:', error);
+        logger.warn('phone','[MessageActions] 删除计划数据失败（不影响消息删除）:', error);
       }
     }
 
@@ -649,31 +649,31 @@ async function handleDelete(message, contactId, messageElement) {
     const messageContainer = messageElement.closest('.chat-msg');
 
     if (!messageContainer) {
-      logger.error('[MessageActions] ❌ 找不到消息容器！messageElement:', messageElement.className);
-      logger.error('[MessageActions] messageElement的父元素:', messageElement.parentElement?.className);
+      logger.error('phone','[MessageActions] ❌ 找不到消息容器！messageElement:', messageElement.className);
+      logger.error('phone','[MessageActions] messageElement的父元素:', messageElement.parentElement?.className);
       // 降级：直接删除bubbleElement（至少删除气泡）
       messageElement.remove();
     } else {
-      logger.debug('[MessageActions] 找到消息容器，准备删除:', {
+      logger.debug('phone','[MessageActions] 找到消息容器，准备删除:', {
         容器类名: messageContainer.className,
         消息ID: messageContainer.dataset.msgId,
         子元素数量: messageContainer.children.length
       });
       messageContainer.remove();
-      logger.debug('[MessageActions] ✅ 消息容器已删除');
+      logger.debug('phone','[MessageActions] ✅ 消息容器已删除');
     }
 
     // 🔍 详细日志：删除后的DOM状态
     const afterDomCount = chatContent?.querySelectorAll('.chat-msg').length || 0;
-    logger.info('📊 [删除后] 数据:', newHistory.length, '条(-', beforeDataCount - newHistory.length, ')，DOM:', afterDomCount, '条(-', beforeDomCount - afterDomCount, ')');
+    logger.info('phone','📊 [删除后] 数据:', newHistory.length, '条(-', beforeDataCount - newHistory.length, ')，DOM:', afterDomCount, '条(-', beforeDomCount - afterDomCount, ')');
 
     // 3. 更新消息列表预览
     await updateContactItem(contactId);
 
-    logger.info('[MessageActions] 删除消息成功:', message.content?.substring(0, 20));
+    logger.info('phone','[MessageActions] 删除消息成功:', message.content?.substring(0, 20));
     closeMessageActions();
   } catch (error) {
-    logger.error('[MessageActions] 删除消息失败:', error);
+    logger.error('phone','[MessageActions] 删除消息失败:', error);
   }
 }
 
@@ -687,7 +687,7 @@ async function handleDelete(message, contactId, messageElement) {
  * 进入多选模式，显示所有消息的复选框和底部工具栏
  */
 function handleMultiSelect(message) {
-  logger.info('[MessageActions] 进入多选模式');
+  logger.info('phone','[MessageActions] 进入多选模式');
   closeMessageActions();
   
   // 获取当前显示的聊天页面容器
@@ -695,7 +695,7 @@ function handleMultiSelect(message) {
   if (pageContainer) {
     enterMultiSelectMode(pageContainer);
   } else {
-    logger.error('[MessageActions] 找不到聊天页面容器');
+    logger.error('phone','[MessageActions] 找不到聊天页面容器');
   }
 }
 
@@ -738,7 +738,7 @@ function handleQuote(message, contactId) {
       type: 'text',  // 转换为text类型
       content: message.replyContent  // 只引用回复部分
     };
-    logger.debug('[MessageActions] 引用的引用，简化为文本:', message.replyContent?.substring(0, 20));
+    logger.debug('phone','[MessageActions] 引用的引用，简化为文本:', message.replyContent?.substring(0, 20));
   }
 
   // 触发自定义事件，通知聊天页面
@@ -747,7 +747,7 @@ function handleQuote(message, contactId) {
   });
   document.dispatchEvent(event);
 
-  logger.info('[MessageActions] 引用消息:', messageToQuote.content?.substring(0, 20) || `[${messageToQuote.type}]`);
+  logger.info('phone','[MessageActions] 引用消息:', messageToQuote.content?.substring(0, 20) || `[${messageToQuote.type}]`);
   closeMessageActions();
 }
 

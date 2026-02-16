@@ -1,0 +1,241 @@
+/**
+ * 聊天工具 - 导航功能样式
+ */
+
+/* ============================================
+   导航容器
+   ============================================ */
+
+.chat-tools-nav-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+}
+
+/* ============================================
+   搜索框
+   ============================================ */
+
+.chat-tools-nav-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-right: 8px;
+  /* 与跳转部分的间距 */
+}
+
+.chat-tools-nav-search-input {
+  width: 100px;
+  height: 18px;
+  padding: 0 8px;
+  font-size: 0.85em;
+  background: var(--SmartThemeInputBackground);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  color: var(--SmartThemeBodyColor);
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.chat-tools-nav-search-input:focus {
+  border-color: var(--SmartThemeQuoteColor);
+}
+
+.chat-tools-nav-search-input::placeholder {
+  color: var(--SmartThemeMutedTextColor);
+  opacity: 0.6;
+}
+
+/* ============================================
+   跳转输入框
+   ============================================ */
+
+.chat-tools-nav-jump-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+  /* 与搜索框的间距 */
+}
+
+.chat-tools-nav-jump-info {
+  font-size: 0.8em;
+  color: var(--SmartThemeMutedTextColor);
+  white-space: nowrap;
+}
+
+.chat-tools-nav-jump-input {
+  width: 40px;
+  height: 18px;
+  padding: 0 0px;
+  font-size: 0.85em;
+  background: var(--SmartThemeInputBackground);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  color: var(--SmartThemeBodyColor);
+  outline: none;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.chat-tools-nav-jump-input:focus {
+  border-color: var(--SmartThemeQuoteColor);
+}
+
+/* 跳转按钮 - 贴合 SillyTavern 按钮风格 */
+.chat-tools-nav-jump-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 18px;
+  padding: 0 8px;
+  background: var(--SmartThemeButtonBackground);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  color: var(--SmartThemeBodyColor);
+  cursor: pointer;
+  font-size: 0.85em;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.chat-tools-nav-jump-btn:hover {
+  background: var(--SmartThemeHoveredButtonBackground);
+  border-color: var(--SmartThemeQuoteColor);
+  color: var(--SmartThemeQuoteColor);
+}
+
+.chat-tools-nav-jump-btn:active {
+  transform: scale(0.95);
+}
+
+.chat-tools-nav-jump-btn i {
+  pointer-events: none;
+}
+
+.chat-tools-nav-jump-input::placeholder {
+  color: var(--SmartThemeMutedTextColor);
+  opacity: 0.6;
+}
+
+/* 移除数字输入框的上下箭头 */
+.chat-tools-nav-jump-input::-webkit-inner-spin-button,
+.chat-tools-nav-jump-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.chat-tools-nav-jump-input[type=number] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* ============================================
+   搜索结果下拉框 - 悬浮在快捷回复栏上方
+   ============================================ */
+
+.chat-tools-nav-results {
+  position: fixed;
+  z-index: 9999;
+  min-width: 300px;
+  max-width: 400px;
+  max-height: 350px;
+  overflow-y: auto;
+  background: var(--SmartThemeBlurTintColor);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  margin-top: 4px;
+}
+
+.chat-tools-nav-result-empty {
+  padding: 12px 16px;
+  color: var(--SmartThemeMutedTextColor);
+  font-size: 0.85em;
+  text-align: center;
+}
+
+.chat-tools-nav-result-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid var(--SmartThemeBorderColor);
+}
+
+.chat-tools-nav-result-item:last-child {
+  border-bottom: none;
+}
+
+.chat-tools-nav-result-item:hover {
+  background: var(--SmartThemeQuoteColor);
+  color: var(--SmartThemeBlurColor);
+}
+
+.chat-tools-nav-result-floor {
+  flex-shrink: 0;
+  padding: 2px 6px;
+  font-size: 0.75em;
+  color: var(--SmartThemeMutedTextColor);
+  font-weight: bold;
+}
+
+.chat-tools-nav-result-role {
+  flex-shrink: 0;
+  padding: 2px 6px;
+  font-size: 0.75em;
+  border-radius: 3px;
+  background: var(--SmartThemeBorderColor);
+  color: var(--SmartThemeMutedTextColor);
+}
+
+.chat-tools-nav-result-role.user {
+  background: #3498db;
+  color: white;
+}
+
+.chat-tools-nav-result-role.ai {
+  background: #9b59b6;
+  color: white;
+}
+
+.chat-tools-nav-result-item:hover .chat-tools-nav-result-role {
+  background: rgba(255, 255, 255, 0.3);
+  color: inherit;
+}
+
+.chat-tools-nav-result-content {
+  flex: 1;
+  font-size: 0.85em;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.chat-tools-nav-result-content mark {
+  background: #f1c40f;
+  color: inherit;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+/* ============================================
+   消息高亮效果
+   ============================================ */
+
+.chat-tools-nav-highlight {
+  animation: chat-tools-nav-pulse 0.5s ease-out;
+}
+
+@keyframes chat-tools-nav-pulse {
+  0% {
+    background-color: rgba(241, 196, 15, 0.5);
+  }
+
+  100% {
+    background-color: transparent;
+  }
+}

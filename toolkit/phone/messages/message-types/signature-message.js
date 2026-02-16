@@ -32,7 +32,7 @@ export function parseSignatureMessage(content) {
 
     // 检查字数限制
     if (newSignature.length > 80) {
-      logger.warn('[SignatureMessage] 个签超过80字符限制:', newSignature.length);
+      logger.warn('phone','[SignatureMessage] 个签超过80字符限制:', newSignature.length);
       return null;
     }
 
@@ -63,11 +63,11 @@ export function isSignatureMessage(message) {
  * @returns {HTMLElement} 消息元素
  */
 export function renderSignatureMessage(message, contactId, contact = null) {
-  logger.debug('[SignatureMessage] 渲染个签更新消息');
+  logger.debug('phone','[SignatureMessage] 渲染个签更新消息');
 
   const signatureData = parseSignatureMessage(message.content);
   if (!signatureData) {
-    logger.warn('[SignatureMessage] 无法解析个签更新消息:', message.content?.substring(0, 50));
+    logger.warn('phone','[SignatureMessage] 无法解析个签更新消息:', message.content?.substring(0, 50));
     return null;
   }
 
@@ -100,7 +100,7 @@ export function renderSignatureMessage(message, contactId, contact = null) {
     handleSaveSignature(contactId, signatureData.newSignature, message.id, card);
   }
 
-  logger.info('[SignatureMessage] ✅ 个签更新消息渲染完成:', message.id);
+  logger.info('phone','[SignatureMessage] ✅ 个签更新消息渲染完成:', message.id);
   return container;
 }
 
@@ -114,7 +114,7 @@ export function renderSignatureMessage(message, contactId, contact = null) {
  * @param {HTMLElement} card - 卡片元素
  */
 async function handleSaveSignature(contactId, newSignature, msgId, card) {
-  logger.debug('[SignatureMessage] 保存个签到数据，msgId:', msgId);
+  logger.debug('phone','[SignatureMessage] 保存个签到数据，msgId:', msgId);
 
   try {
     // 标记为正在保存（防止异步期间重复调用）
@@ -125,12 +125,12 @@ async function handleSaveSignature(contactId, newSignature, msgId, card) {
     if (historyItem) {
       card.dataset.signatureSaved = 'true';
       card.dataset.signatureId = historyItem.id;
-      logger.info('[SignatureMessage] 个签已保存到数据，msgId:', msgId);
+      logger.info('phone','[SignatureMessage] 个签已保存到数据，msgId:', msgId);
     } else {
-      logger.warn('[SignatureMessage] 个签保存失败（可能已保存过），msgId:', msgId);
+      logger.warn('phone','[SignatureMessage] 个签保存失败（可能已保存过），msgId:', msgId);
     }
   } catch (error) {
-    logger.error('[SignatureMessage] 保存个签失败:', error);
+    logger.error('phone','[SignatureMessage] 保存个签失败:', error);
     // 保存失败时移除标记，允许下次重试
     savedSignatureMessages.delete(msgId);
   }

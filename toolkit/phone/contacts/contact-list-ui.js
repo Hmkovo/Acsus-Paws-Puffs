@@ -30,7 +30,7 @@ import { formatTime } from '../utils/time-helper.js';
  * @returns {Promise<DocumentFragment>} 联系人列表内容片段
  */
 async function renderContactList() {
-  logger.debug('[ContactList] 渲染联系人列表');
+  logger.debug('phone','[ContactList] 渲染联系人列表');
 
   try {
     // 加载联系人数据
@@ -50,10 +50,10 @@ async function renderContactList() {
     const groupsElement = await createContactGroups(contacts);
     fragment.appendChild(groupsElement);
 
-    logger.info('[ContactList] 联系人列表渲染完成，共', contacts.length, '个联系人');
+    logger.info('phone','[ContactList] 联系人列表渲染完成，共', contacts.length, '个联系人');
     return fragment;
   } catch (error) {
-    logger.error('[ContactList] 渲染联系人列表失败:', error);
+    logger.error('phone','[ContactList] 渲染联系人列表失败:', error);
 
     // 返回错误提示
     const fragment = document.createDocumentFragment();
@@ -107,7 +107,7 @@ async function createSpecialItems() {
 
   // 绑定点击事件 - 跳转到新朋友页面
   newFriends.addEventListener('click', () => {
-    logger.info('[ContactList] 点击新朋友');
+    logger.info('phone','[ContactList] 点击新朋友');
     const phoneOverlay = document.querySelector('.phone-overlay');
     if (phoneOverlay) {
       showPage(/** @type {HTMLElement} */(phoneOverlay), 'new-friends');
@@ -179,7 +179,7 @@ async function createContactGroups(contacts) {
     });
 
     // 调试日志：查看每个分组的联系人分配情况
-    logger.debug(`[ContactList] 分组"${group.name}" (${group.id}) 包含 ${groupContacts.length} 个联系人:`,
+    logger.debug('phone',`[ContactList] 分组"${group.name}" (${group.id}) 包含 ${groupContacts.length} 个联系人:`,
       groupContacts.map(c => `${c.name}(groupId: ${c.groupId || '无'})`).join(', '));
 
     // 显示所有分组（包括空分组）
@@ -271,7 +271,7 @@ function createContactItem(contact) {
 
   // 点击事件：跳转到角色个人页
   item.addEventListener('click', () => {
-    logger.debug('[ContactList] 点击联系人:', contact.name);
+    logger.debug('phone','[ContactList] 点击联系人:', contact.name);
     handleContactClick(contact.id);
   });
 
@@ -284,7 +284,7 @@ function createContactItem(contact) {
  * @param {string} contactId - 联系人ID
  */
 function handleContactClick(contactId) {
-  logger.info('[ContactList] 打开角色个人页:', contactId);
+  logger.info('phone','[ContactList] 打开角色个人页:', contactId);
 
   // 获取手机遮罩层元素
   const overlayElement = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
@@ -308,7 +308,7 @@ function handleContactClick(contactId) {
  * @returns {Promise<HTMLElement>} 新朋友页面元素
  */
 export async function renderNewFriendsPage() {
-  logger.debug('[NewFriends] 渲染新朋友页面');
+  logger.debug('phone','[NewFriends] 渲染新朋友页面');
 
   try {
     // 创建页面容器
@@ -334,10 +334,10 @@ export async function renderNewFriendsPage() {
     // 4. 监听AI生成完成事件，自动刷新页面
     bindNewFriendsPageEvents();
 
-    logger.info('[NewFriends] 新朋友页面渲染完成');
+    logger.info('phone','[NewFriends] 新朋友页面渲染完成');
     return page;
   } catch (error) {
-    logger.error('[NewFriends] 渲染新朋友页面失败:', error);
+    logger.error('phone','[NewFriends] 渲染新朋友页面失败:', error);
 
     // 返回错误页面
     const errorPage = document.createElement('div');
@@ -366,7 +366,7 @@ function createNewFriendsHeader() {
   const backBtn = header.querySelector('#newfriend-back-btn');
   if (backBtn) {
     backBtn.addEventListener('click', () => {
-      logger.info('[NewFriends] 点击返回按钮');
+      logger.info('phone','[NewFriends] 点击返回按钮');
       const phoneOverlay = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
       if (phoneOverlay) {
         hidePage(phoneOverlay, 'new-friends');
@@ -415,7 +415,7 @@ function createNewFriendsSearchBar() {
  * @param {string} keyword - 搜索关键词
  */
 function filterFriendRequests(keyword) {
-  logger.debug('[NewFriends] 搜索关键词:', keyword);
+  logger.debug('phone','[NewFriends] 搜索关键词:', keyword);
 
   const allItems = document.querySelectorAll('.newfriend-item');
 
@@ -434,7 +434,7 @@ function filterFriendRequests(keyword) {
     }
   });
 
-  logger.debug('[NewFriends] 搜索完成');
+  logger.debug('phone','[NewFriends] 搜索完成');
 }
 
 /**
@@ -449,7 +449,7 @@ function filterFriendRequests(keyword) {
  * @returns {Promise<HTMLElement>} 申请列表容器
  */
 async function createFriendRequestList() {
-  logger.debug('[NewFriends] 创建好友申请列表');
+  logger.debug('phone','[NewFriends] 创建好友申请列表');
 
   const listContainer = document.createElement('div');
   listContainer.className = 'newfriend-list';
@@ -498,10 +498,10 @@ async function createFriendRequestList() {
       listContainer.appendChild(requestItem);
     }
 
-    logger.info('[NewFriends] 好友申请列表创建完成，AI感知:', aiAwareRequests.length, '普通:', characters.length);
+    logger.info('phone','[NewFriends] 好友申请列表创建完成，AI感知:', aiAwareRequests.length, '普通:', characters.length);
     return listContainer;
   } catch (error) {
-    logger.error('[NewFriends] 创建申请列表失败:', error);
+    logger.error('phone','[NewFriends] 创建申请列表失败:', error);
     return listContainer;
   }
 }
@@ -551,13 +551,13 @@ async function createAIAwareRequestItem(request) {
  * @param {Object} request - 申请对象
  */
 async function handleViewAIAwareRequest(request) {
-  logger.info('[NewFriends] 查看AI感知删除申请:', request.contactName);
+  logger.info('phone','[NewFriends] 查看AI感知删除申请:', request.contactName);
 
   try {
     // 获取手机遮罩层元素
     const overlayElement = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
     if (!overlayElement) {
-      logger.warn('[NewFriends] 未找到手机遮罩层元素');
+      logger.warn('phone','[NewFriends] 未找到手机遮罩层元素');
       return;
     }
 
@@ -565,7 +565,7 @@ async function handleViewAIAwareRequest(request) {
     const { showPage } = await import('../phone-main-ui.js');
     await showPage(overlayElement, 'friend-request-detail', { contactId: request.contactId });
   } catch (error) {
-    logger.error('[NewFriends] 打开详情页失败:', error);
+    logger.error('phone','[NewFriends] 打开详情页失败:', error);
   }
 }
 
@@ -660,7 +660,7 @@ function handleBackToContactList() {
     mainLayout.classList.add('active');
   }
 
-  logger.debug('[NewFriends] 已返回联系人列表');
+  logger.debug('phone','[NewFriends] 已返回联系人列表');
 }
 
 /**
@@ -679,7 +679,7 @@ function handleBackToContactList() {
  * @param {HTMLButtonElement} buttonElement - 按钮元素
  */
 async function handleAgreeRequest(character, buttonElement) {
-  logger.info('[NewFriends] 同意好友申请:', character.name);
+  logger.info('phone','[NewFriends] 同意好友申请:', character.name);
 
   try {
     // 导入所需函数
@@ -691,7 +691,7 @@ async function handleAgreeRequest(character, buttonElement) {
     const success = await saveContact(character);
 
     if (!success) {
-      logger.error('[NewFriends] 保存联系人失败');
+      logger.error('phone','[NewFriends] 保存联系人失败');
       alert('添加失败，请重试');
       return;
     }
@@ -706,7 +706,7 @@ async function handleAgreeRequest(character, buttonElement) {
       content: '{{user}}添加了你为好友',
       time: currentTime
     });
-    logger.info('[NewFriends] 已插入同意好友系统消息');
+    logger.info('phone','[NewFriends] 已插入同意好友系统消息');
 
     // 4. 局部更新按钮状态（最小化影响范围）
     buttonElement.className = 'newfriend-item-btn-agreed';
@@ -719,9 +719,9 @@ async function handleAgreeRequest(character, buttonElement) {
     // 6. 显示成功通知
     showSuccessToast(`已添加 ${character.name} 为联系人`);
 
-    logger.info('[NewFriends] 好友申请已同意:', character.name);
+    logger.info('phone','[NewFriends] 好友申请已同意:', character.name);
   } catch (error) {
-    logger.error('[NewFriends] 处理同意申请失败:', error);
+    logger.error('phone','[NewFriends] 处理同意申请失败:', error);
     alert('操作失败，请查看控制台');
   }
 }
@@ -736,20 +736,20 @@ async function handleAgreeRequest(character, buttonElement) {
  * @async
  */
 async function refreshContactListInBackground() {
-  logger.debug('[NewFriends] 在后台刷新联系人列表');
+  logger.debug('phone','[NewFriends] 在后台刷新联系人列表');
 
   try {
     // 获取手机容器
     const phoneOverlay = document.querySelector('.phone-overlay');
     if (!phoneOverlay) {
-      logger.warn('[NewFriends] 找不到手机容器');
+      logger.warn('phone','[NewFriends] 找不到手机容器');
       return;
     }
 
     // 获取联系人标签页容器
     const tabContainer = phoneOverlay.querySelector('#tab-contacts');
     if (!tabContainer) {
-      logger.warn('[NewFriends] 找不到联系人标签页');
+      logger.warn('phone','[NewFriends] 找不到联系人标签页');
       return;
     }
 
@@ -766,9 +766,9 @@ async function refreshContactListInBackground() {
       }
     }
 
-    logger.info('[NewFriends] 联系人列表已在后台刷新');
+    logger.info('phone','[NewFriends] 联系人列表已在后台刷新');
   } catch (error) {
-    logger.error('[NewFriends] 刷新联系人列表失败:', error);
+    logger.error('phone','[NewFriends] 刷新联系人列表失败:', error);
   }
 }
 
@@ -788,11 +788,11 @@ function bindNewFriendsPageEvents() {
 
     // 刷新新朋友页面
     await refreshNewFriendsPage();
-    logger.debug('[NewFriends] AI生成完成，已刷新页面');
+    logger.debug('phone','[NewFriends] AI生成完成，已刷新页面');
   };
 
   document.addEventListener('phone-ai-generation-complete', handleAIGenerationComplete);
-  logger.debug('[NewFriends] 已绑定AI生成完成事件');
+  logger.debug('phone','[NewFriends] 已绑定AI生成完成事件');
 }
 
 /**
@@ -806,20 +806,20 @@ function bindNewFriendsPageEvents() {
  * @returns {Promise<void>}
  */
 export async function refreshNewFriendsPage() {
-  logger.debug('[NewFriends] 刷新新朋友页面内容');
+  logger.debug('phone','[NewFriends] 刷新新朋友页面内容');
 
   try {
     // 查找新朋友页面
     const page = document.getElementById('page-new-friends');
     if (!page) {
-      logger.debug('[NewFriends] 页面不存在，无需刷新');
+      logger.debug('phone','[NewFriends] 页面不存在，无需刷新');
       return;
     }
 
     // 查找内容容器
     const contentContainer = page.querySelector('.newfriend-content');
     if (!contentContainer) {
-      logger.warn('[NewFriends] 找不到内容容器');
+      logger.warn('phone','[NewFriends] 找不到内容容器');
       return;
     }
 
@@ -831,14 +831,14 @@ export async function refreshNewFriendsPage() {
     if (oldList) {
       // 替换旧列表（最小化DOM操作）
       contentContainer.replaceChild(newList, oldList);
-      logger.info('[NewFriends] 申请列表已刷新');
+      logger.info('phone','[NewFriends] 申请列表已刷新');
     } else {
       // 没有旧列表，直接添加
       contentContainer.appendChild(newList);
-      logger.info('[NewFriends] 申请列表已添加');
+      logger.info('phone','[NewFriends] 申请列表已添加');
     }
   } catch (error) {
-    logger.error('[NewFriends] 刷新页面内容失败:', error);
+    logger.error('phone','[NewFriends] 刷新页面内容失败:', error);
   }
 }
 
@@ -860,7 +860,7 @@ async function loadCollapsedGroups() {
     const collapsed = await loadData(COLLAPSED_GROUPS_KEY);
     return Array.isArray(collapsed) ? collapsed : [];
   } catch (error) {
-    logger.error('[ContactList] 加载折叠状态失败:', error);
+    logger.error('phone','[ContactList] 加载折叠状态失败:', error);
     return [];
   }
 }
@@ -878,9 +878,9 @@ async function loadCollapsedGroups() {
 async function saveCollapsedGroups(collapsedGroups) {
   try {
     await saveData(COLLAPSED_GROUPS_KEY, collapsedGroups);
-    logger.debug('[ContactList] 折叠状态已保存');
+    logger.debug('phone','[ContactList] 折叠状态已保存');
   } catch (error) {
-    logger.error('[ContactList] 保存折叠状态失败:', error);
+    logger.error('phone','[ContactList] 保存折叠状态失败:', error);
   }
 }
 
@@ -895,13 +895,13 @@ async function saveCollapsedGroups(collapsedGroups) {
  * @param {HTMLElement} groupElement - 分组DOM元素
  */
 async function toggleGroupCollapse(groupId, groupElement) {
-  logger.debug('[ContactList] 切换分组折叠状态:', groupId);
+  logger.debug('phone','[ContactList] 切换分组折叠状态:', groupId);
 
   const arrow = /** @type {HTMLElement} */ (groupElement.querySelector('.contact-group-arrow'));
   const friendList = /** @type {HTMLElement} */ (groupElement.querySelector('.contact-friend-list'));
 
   if (!arrow || !friendList) {
-    logger.warn('[ContactList] 找不到箭头或列表元素');
+    logger.warn('phone','[ContactList] 找不到箭头或列表元素');
     return;
   }
 
@@ -919,7 +919,7 @@ async function toggleGroupCollapse(groupId, groupElement) {
     const newCollapsed = collapsedGroups.filter(id => id !== groupId);
     await saveCollapsedGroups(newCollapsed);
 
-    logger.info('[ContactList] 分组已展开:', groupId);
+    logger.info('phone','[ContactList] 分组已展开:', groupId);
   } else {
     // 当前展开 → 折叠
     arrow.classList.remove('fa-caret-down');
@@ -930,7 +930,7 @@ async function toggleGroupCollapse(groupId, groupElement) {
     collapsedGroups.push(groupId);
     await saveCollapsedGroups(collapsedGroups);
 
-    logger.info('[ContactList] 分组已折叠:', groupId);
+    logger.info('phone','[ContactList] 分组已折叠:', groupId);
   }
 }
 

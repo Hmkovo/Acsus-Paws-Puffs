@@ -41,7 +41,7 @@ export async function saveEmoji(emoji) {
   // 检查是否重名
   const exists = emojis.find(e => e.name === emoji.name && e.id !== emoji.id);
   if (exists) {
-    logger.warn('[EmojiData] 表情包名称已存在:', emoji.name);
+    logger.warn('phone','[EmojiData] 表情包名称已存在:', emoji.name);
     return false;
   }
 
@@ -49,10 +49,10 @@ export async function saveEmoji(emoji) {
   const index = emojis.findIndex(e => e.id === emoji.id);
   if (index !== -1) {
     emojis[index] = emoji;
-    logger.info('[EmojiData] 已更新表情包:', emoji.name);
+    logger.info('phone','[EmojiData] 已更新表情包:', emoji.name);
   } else {
     emojis.push(emoji);
-    logger.info('[EmojiData] 已添加表情包:', emoji.name);
+    logger.info('phone','[EmojiData] 已添加表情包:', emoji.name);
   }
 
   await saveSettingsDebounced();
@@ -94,12 +94,12 @@ export async function deleteEmojis(emojiIds) {
       });
 
       if (response.ok) {
-        logger.info('[EmojiData] 已删除文件:', emoji.imagePath);
+        logger.info('phone','[EmojiData] 已删除文件:', emoji.imagePath);
       } else {
-        logger.warn('[EmojiData] 删除文件失败:', emoji.imagePath, '状态码:', response.status);
+        logger.warn('phone','[EmojiData] 删除文件失败:', emoji.imagePath, '状态码:', response.status);
       }
     } catch (error) {
-      logger.error('[EmojiData] 删除文件时出错:', emoji.imagePath, error);
+      logger.error('phone','[EmojiData] 删除文件时出错:', emoji.imagePath, error);
     }
   }
 
@@ -108,7 +108,7 @@ export async function deleteEmojis(emojiIds) {
     emojis.filter(e => !emojiIds.includes(e.id));
 
   const deletedCount = beforeCount - extension_settings.acsusPawsPuffs.phone.emojis.items.length;
-  logger.info(`[EmojiData] 已删除 ${deletedCount} 个表情包`);
+  logger.info('phone',`[EmojiData] 已删除 ${deletedCount} 个表情包`);
 
   await saveSettingsDebounced();
 

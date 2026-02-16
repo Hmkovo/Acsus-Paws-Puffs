@@ -26,7 +26,7 @@ import logger from '../../../logger.js';
  * @returns {HTMLElement} 加号菜单元素（.add-menu）
  */
 export function createPlusMenu() {
-  logger.debug('[PlusMenu] 创建加号菜单');
+  logger.debug('phone','[PlusMenu] 创建加号菜单');
 
   const menu = document.createElement('div');
   menu.className = 'add-menu';
@@ -114,7 +114,7 @@ export function createPlusMenu() {
     menu.appendChild(menuItem);
   });
 
-  logger.info('[PlusMenu] 加号菜单创建完成，共', menuItems.length, '个选项');
+  logger.info('phone','[PlusMenu] 加号菜单创建完成，共', menuItems.length, '个选项');
   return menu;
 }
 
@@ -128,13 +128,13 @@ export function createPlusMenu() {
  * @param {Function} onMenuItemClick - 菜单项点击回调函数
  */
 export function bindPlusMenuEvents(overlayElement, onMenuItemClick) {
-  logger.debug('[PlusMenu] 绑定加号菜单事件');
+  logger.debug('phone','[PlusMenu] 绑定加号菜单事件');
 
   const plusBtn = overlayElement.querySelector('#phone-btn-plus');
   const menu = overlayElement.querySelector('#add-menu');
 
   if (!plusBtn || !menu) {
-    logger.warn('[PlusMenu] 找不到+按钮或菜单元素');
+    logger.warn('phone','[PlusMenu] 找不到+按钮或菜单元素');
     return;
   }
 
@@ -153,11 +153,11 @@ export function bindPlusMenuEvents(overlayElement, onMenuItemClick) {
       const isEnabled = itemElement.style.cursor !== 'not-allowed';
 
       if (!isEnabled) {
-        logger.debug('[PlusMenu] 功能未启用:', action);
+        logger.debug('phone','[PlusMenu] 功能未启用:', action);
         return;
       }
 
-      logger.info('[PlusMenu] 点击菜单项:', action);
+      logger.info('phone','[PlusMenu] 点击菜单项:', action);
 
       // 关闭菜单
       hideMenu(/** @type {HTMLElement} */(menu));
@@ -177,7 +177,7 @@ export function bindPlusMenuEvents(overlayElement, onMenuItemClick) {
     }
   });
 
-  logger.info('[PlusMenu] 加号菜单事件绑定完成');
+  logger.info('phone','[PlusMenu] 加号菜单事件绑定完成');
 }
 
 /**
@@ -186,7 +186,7 @@ export function bindPlusMenuEvents(overlayElement, onMenuItemClick) {
  */
 function showMenu(menu) {
   menu.classList.add('active');
-  logger.debug('[PlusMenu] 菜单已显示');
+  logger.debug('phone','[PlusMenu] 菜单已显示');
 }
 
 /**
@@ -195,7 +195,7 @@ function showMenu(menu) {
  */
 function hideMenu(menu) {
   menu.classList.remove('active');
-  logger.debug('[PlusMenu] 菜单已隐藏');
+  logger.debug('phone','[PlusMenu] 菜单已隐藏');
 }
 
 /**

@@ -37,7 +37,7 @@ let preprocessorSetup = false;
  * @async
  */
 export async function registerAllGlobalMacros() {
-  logger.info('[GlobalMacroRegistry] 开始注册全局宏...');
+  logger.info('variable', '[GlobalMacroRegistry] 开始注册全局宏...');
 
   try {
     // 延迟导入，避免循环依赖
@@ -48,7 +48,7 @@ export async function registerAllGlobalMacros() {
 
     // 调试：打印初始状态
     const ctx = getContext();
-    logger.info('[GlobalMacroRegistry] chatId:', ctx?.chatId);
+    logger.info('variable', '[GlobalMacroRegistry] chatId:', ctx?.chatId);
 
     registerChatFloorMacro();
     await registerAllVariableMacros();
@@ -56,17 +56,17 @@ export async function registerAllGlobalMacros() {
     // 调试：打印已注册的变量宏
     const manager = variableManagerRef();
     const definitions = manager.getDefinitions();
-    logger.info('[GlobalMacroRegistry] 发现变量定义:', definitions.length);
-    logger.debug('[GlobalMacroRegistry] 变量列表:', definitions.map(d => d.name));
+    logger.info('variable', '[GlobalMacroRegistry] 发现变量定义:', definitions.length);
+    logger.debug('variable', '[GlobalMacroRegistry] 变量列表:', definitions.map(d => d.name));
 
     setupMacroPreprocessor();
 
     // 预加载当前聊天的所有变量数据到内存
     await preloadAllVariableValues();
 
-    logger.info('[GlobalMacroRegistry] 全局宏注册完成，已注册:', registeredMacros.size, '个');
+    logger.info('variable', '[GlobalMacroRegistry] 全局宏注册完成，已注册:', registeredMacros.size, '个');
   } catch (error) {
-    logger.error('[GlobalMacroRegistry] 注册失败:', error.message);
+    logger.error('variable', '[GlobalMacroRegistry] 注册失败:', error.message);
   }
 }
 
@@ -78,7 +78,7 @@ export async function registerAllGlobalMacros() {
  */
 export async function preloadAllVariableValues() {
   if (!variableManagerRef || !storageRef) {
-    logger.warn('[GlobalMacroRegistry] 预加载失败：variableManagerRef 或 storageRef 未初始化');
+    logger.warn('variable', '[GlobalMacroRegistry] 预加载失败：variableManagerRef 或 storageRef 未初始化');
     return;
   }
 
@@ -86,14 +86,14 @@ export async function preloadAllVariableValues() {
     const ctx = getContext();
     const chatId = ctx?.chatId;
     if (!chatId) {
-      logger.warn('[GlobalMacroRegistry] 预加载失败：chatId 为空');
+      logger.warn('variable', '[GlobalMacroRegistry] 预加载失败：chatId 为空');
       return;
     }
 
     const variableManager = variableManagerRef();
     const variables = variableManager.getDefinitions();
 
-    logger.debug('[GlobalMacroRegistry] 预加载：发现', variables.length, '个变量');
+    logger.debug('variable', '[GlobalMacroRegistry] 预加载：发现', variables.length, '个变量');
 
     // 只加载缓存中没有的变量
     const unloadedVariables = variables.filter(v => {
@@ -102,20 +102,20 @@ export async function preloadAllVariableValues() {
     });
 
     if (unloadedVariables.length === 0) {
-      logger.debug('[GlobalMacroRegistry] 缓存已存在，跳过预加载');
+      logger.debug('variable', '[GlobalMacroRegistry] 缓存已存在，跳过预加载');
       return;
     }
 
-    logger.debug('[GlobalMacroRegistry] 开始预加载', unloadedVariables.length, '个变量');
+    logger.debug('variable', '[GlobalMacroRegistry] 开始预加载', unloadedVariables.length, '个变量');
 
     // 并行加载未缓存的变量
     await Promise.all(
       unloadedVariables.map(v => storageRef.getValueV2(v.id, chatId))
     );
 
-    logger.debug('[GlobalMacroRegistry] 已预加载', unloadedVariables.length, '个变量值');
+    logger.debug('variable', '[GlobalMacroRegistry] 已预加载', unloadedVariables.length, '个变量值');
   } catch (error) {
-    logger.warn('[GlobalMacroRegistry] 预加载变量值失败:', error.message);
+    logger.warn('variable', '[GlobalMacroRegistry] 预加载变量值失败:', error.message);
   }
 }
 
@@ -140,9 +140,9 @@ function registerChatFloorMacro() {
       unnamedArgs: 0, // 参数可选
     });
     registeredMacros.add(CHAT_FLOOR_MACRO_NAME);
-    logger.debug('[GlobalMacroRegistry] 已注册酒馆楼层宏');
+    logger.debug('variable', '[GlobalMacroRegistry] 已注册酒馆楼层宏');
   } catch (error) {
-    logger.warn('[GlobalMacroRegistry] 酒馆楼层宏注册失败:', error.message);
+    logger.warn('variable', '[GlobalMacroRegistry] 酒馆楼层宏注册失败:', error.message);
   }
 }
 
@@ -204,7 +204,7 @@ export function registerVariableMacro(variableName) {
         unnamedArgs: 0,
       });
       registeredMacros.add(alias);
-      logger.debug('[GlobalMacroRegistry] 已注册变量宏别名:', alias, '→', variableName);
+      logger.debug('variable', '[GlobalMacroRegistry] 已注册变量宏别名:', alias, '→', variableName);
     }
 
     // 也注册原名（可能用于预处理替换后的识别）
@@ -218,9 +218,9 @@ export function registerVariableMacro(variableName) {
       unnamedArgs: 0,
     });
     registeredMacros.add(variableName);
-    logger.debug('[GlobalMacroRegistry] 已注册变量宏:', variableName);
+    logger.debug('variable', '[GlobalMacroRegistry] 已注册变量宏:', variableName);
   } catch (error) {
-    logger.warn('[GlobalMacroRegistry] 变量宏注册失败:', variableName, error.message);
+    logger.warn('variable', '[GlobalMacroRegistry] 变量宏注册失败:', variableName, error.message);
   }
 }
 
@@ -234,7 +234,7 @@ export function unregisterVariableMacro(variableName) {
 
   registeredMacros.delete(variableName);
   macros.registry.unregisterMacro(variableName);
-  logger.debug('[GlobalMacroRegistry] 已注销变量宏:', variableName);
+  logger.debug('variable', '[GlobalMacroRegistry] 已注销变量宏:', variableName);
 }
 
 /**
@@ -276,10 +276,10 @@ function setupMacroPreprocessor() {
   // TEXT_COMPLETION_SETTINGS_READY 在准备生成参数时触发
   // params 对象包含 chat_completion_message_chunks 和 extension_prompts
   eventSource.on(event_types.TEXT_COMPLETION_SETTINGS_READY, (params) => {
-    logger.debug('[GlobalMacroRegistry] TEXT_COMPLETION_SETTINGS_READY 事件触发');
+    logger.debug('variable', '[GlobalMacroRegistry] TEXT_COMPLETION_SETTINGS_READY 事件触发');
 
     if (!params) {
-      logger.debug('[GlobalMacroRegistry] params 为空，跳过预处理');
+      logger.debug('variable', '[GlobalMacroRegistry] params 为空，跳过预处理');
       return;
     }
 
@@ -287,23 +287,23 @@ function setupMacroPreprocessor() {
       // 处理 extension_prompts（扩展提示词）
       if (Array.isArray(params.extension_prompts)) {
         preprocessMacrosInData(params.extension_prompts);
-        logger.debug('[GlobalMacroRegistry] extension_prompts 预处理完成');
+        logger.debug('variable', '[GlobalMacroRegistry] extension_prompts 预处理完成');
       }
 
       // 处理 chat_completion_message_chunks（消息块）
       if (Array.isArray(params.chat_completion_message_chunks)) {
         preprocessMacrosInData(params.chat_completion_message_chunks);
-        logger.debug('[GlobalMacroRegistry] chat_completion_message_chunks 预处理完成');
+        logger.debug('variable', '[GlobalMacroRegistry] chat_completion_message_chunks 预处理完成');
       }
 
-      logger.debug('[GlobalMacroRegistry] 宏预处理完成');
+      logger.debug('variable', '[GlobalMacroRegistry] 宏预处理完成');
     } catch (error) {
-      logger.error('[GlobalMacroRegistry] 预处理宏失败:', error.message);
+      logger.error('variable', '[GlobalMacroRegistry] 预处理宏失败:', error.message);
     }
   });
 
   preprocessorSetup = true;
-  logger.debug('[GlobalMacroRegistry] 宏预处理器已设置（使用 TEXT_COMPLETION_SETTINGS_READY）');
+  logger.debug('variable', '[GlobalMacroRegistry] 宏预处理器已设置（使用 TEXT_COMPLETION_SETTINGS_READY）');
 }
 
 /**
@@ -411,7 +411,7 @@ function getVariableContentForMacro(variableName, rangeStr) {
     // 同步获取变量值（会先确保缓存加载）
     return getVariableValueSync(variable, chatId, rangeStr);
   } catch (error) {
-    logger.error('[GlobalMacroRegistry] 获取变量内容失败:', variableName, error.message);
+    logger.error('variable', '[GlobalMacroRegistry] 获取变量内容失败:', variableName, error.message);
     return '';
   }
 }
@@ -426,19 +426,19 @@ function getVariableContentForMacro(variableName, rangeStr) {
 
 function getVariableValueSync(variable, chatId, rangeStr) {
   if (!storageRef) {
-    logger.warn('[GlobalMacroRegistry] storageRef 未初始化');
+    logger.warn('variable', '[GlobalMacroRegistry] storageRef 未初始化');
     return '';
   }
 
   if (!chatId) {
-    logger.warn('[GlobalMacroRegistry] chatId 为空');
+    logger.warn('variable', '[GlobalMacroRegistry] chatId 为空');
     return '';
   }
 
   const cachedData = storageRef.getCachedValueV2(variable.id, chatId);
 
   if (!cachedData) {
-    logger.debug('[GlobalMacroRegistry] 缓存为空:', variable.name, 'id:', variable.id, 'chatId:', chatId);
+    logger.debug('variable', '[GlobalMacroRegistry] 缓存为空:', variable.name, 'id:', variable.id, 'chatId:', chatId);
     return '';
   }
 
@@ -490,7 +490,7 @@ function getChatFloorContentForMacro(rangeStr) {
 
     return contents.join('\n\n');
   } catch (error) {
-    logger.error('[GlobalMacroRegistry] 获取酒馆楼层失败:', error.message);
+    logger.error('variable', '[GlobalMacroRegistry] 获取酒馆楼层失败:', error.message);
     return '';
   }
 }

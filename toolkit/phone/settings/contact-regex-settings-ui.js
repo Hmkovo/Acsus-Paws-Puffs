@@ -32,7 +32,7 @@ import { extension_settings } from '../../../../../../extensions.js';
  */
 export async function renderContactRegexSettings(params) {
   const { contactId } = params;
-  logger.debug('[RegexUI] 渲染正则配置页:', contactId);
+  logger.debug('phone','[RegexUI] 渲染正则配置页:', contactId);
   
   const fragment = document.createDocumentFragment();
   const container = document.createElement('div');
@@ -49,7 +49,7 @@ export async function renderContactRegexSettings(params) {
   
   fragment.appendChild(container);
   
-  logger.info('[RegexUI] 正则配置页渲染完成');
+  logger.info('phone','[RegexUI] 正则配置页渲染完成');
   
   return fragment;
 }
@@ -238,7 +238,7 @@ function createRegexHTML(contactId) {
  * @param {string} contactId - 联系人ID
  */
 function bindRegexEvents(page, contactId) {
-  logger.debug('[RegexUI] 绑定事件');
+  logger.debug('phone','[RegexUI] 绑定事件');
   
   // 返回按钮
   const backBtn = page.querySelector('.contact-regex-back-btn');
@@ -289,7 +289,7 @@ function bindRegexEvents(page, contactId) {
  * @param {string} contactId - 联系人ID
  */
 async function loadAndRenderConfig(page, contactId) {
-  logger.debug('[RegexUI] 加载正则配置');
+  logger.debug('phone','[RegexUI] 加载正则配置');
   
   const config = getConfig(contactId);
   
@@ -405,7 +405,7 @@ function createScriptItem(contactId, script, type, index) {
  * @param {string} type - 类型（global/preset/character）
  */
 async function handleImport(page, contactId, type) {
-  logger.debug('[RegexUI] 导入正则:', type);
+  logger.debug('phone','[RegexUI] 导入正则:', type);
   
   try {
     let scripts = [];
@@ -438,7 +438,7 @@ async function handleImport(page, contactId, type) {
       showSuccessToast(`已导入 ${selected.length} 个正则`);
     }
   } catch (error) {
-    logger.error('[RegexUI] 导入失败:', error);
+    logger.error('phone','[RegexUI] 导入失败:', error);
     showErrorToast('导入失败：' + error.message);
   }
 }
@@ -541,7 +541,7 @@ function importScripts(contactId, type, scripts) {
   
   saveConfig(contactId, config);
   
-  logger.info('[RegexUI] 导入完成:', newScripts.length, '个脚本');
+  logger.info('phone','[RegexUI] 导入完成:', newScripts.length, '个脚本');
 }
 
 // ============================================================
@@ -555,7 +555,7 @@ function importScripts(contactId, type, scripts) {
  * @param {string} contactId - 联系人ID
  */
 async function handleAddCustom(page, contactId) {
-  logger.debug('[RegexUI] 添加自定义正则');
+  logger.debug('phone','[RegexUI] 添加自定义正则');
   
   const script = await showEditDialog(null);
   
@@ -588,7 +588,7 @@ async function handleAddCustom(page, contactId) {
  * @param {number} index - 索引
  */
 async function handleEdit(contactId, type, index) {
-  logger.debug('[RegexUI] 编辑正则:', type, index);
+  logger.debug('phone','[RegexUI] 编辑正则:', type, index);
   
   const config = getConfig(contactId);
   const script = config.scripts[type]?.[index];
@@ -730,7 +730,7 @@ async function showEditDialog(script) {
  * @param {number} index - 索引
  */
 async function handleDelete(contactId, type, index) {
-  logger.debug('[RegexUI] 删除正则:', type, index);
+  logger.debug('phone','[RegexUI] 删除正则:', type, index);
   
   const config = getConfig(contactId);
   const script = config.scripts[type]?.[index];
@@ -773,7 +773,7 @@ async function handleDelete(contactId, type, index) {
  * @param {number} index - 索引
  */
 function handleToggle(item, contactId, type, index) {
-  logger.debug('[RegexUI] 切换开关:', type, index);
+  logger.debug('phone','[RegexUI] 切换开关:', type, index);
   
   const config = getConfig(contactId);
   const script = config.scripts[type]?.[index];
@@ -800,7 +800,7 @@ function handleToggle(item, contactId, type, index) {
     }
   }
   
-  logger.debug('[RegexUI] 开关已切换:', script.disabled ? '禁用' : '启用');
+  logger.debug('phone','[RegexUI] 开关已切换:', script.disabled ? '禁用' : '启用');
 }
 
 // ============================================================
@@ -883,7 +883,7 @@ async function showHelpDialog() {
  * @param {string} contactId - 联系人ID
  */
 async function handleReset(page, contactId) {
-  logger.debug('[RegexUI] 重置配置');
+  logger.debug('phone','[RegexUI] 重置配置');
   
   const confirmed = await showConfirmPopup(
     '确认重置',
@@ -968,7 +968,7 @@ function saveConfig(contactId, config) {
   extension_settings.acsusPawsPuffs.phone.contactRegex[contactId] = config;
   saveSettingsDebounced();
   
-  logger.debug('[RegexUI] 配置已保存');
+  logger.debug('phone','[RegexUI] 配置已保存');
 }
 
 /**
@@ -992,7 +992,7 @@ function generateId() {
 async function getTavernGlobalScripts() {
   try {
     const scripts = extension_settings.regex || [];
-    logger.debug('[RegexUI] 读取全局正则:', scripts.length, '个');
+    logger.debug('phone','[RegexUI] 读取全局正则:', scripts.length, '个');
     
     // 统一字段名：promptOnly → only_format_prompt
     const normalizedScripts = scripts.map(script => ({
@@ -1002,12 +1002,12 @@ async function getTavernGlobalScripts() {
     
     // 添加日志检查only_format_prompt
     normalizedScripts.forEach((script, index) => {
-      logger.debug(`[RegexUI] 全局正则 ${index}: ${script.scriptName}, only_format_prompt=${script.only_format_prompt}`);
+      logger.debug('phone',`[RegexUI] 全局正则 ${index}: ${script.scriptName}, only_format_prompt=${script.only_format_prompt}`);
     });
     
     return normalizedScripts;
   } catch (error) {
-    logger.error('[RegexUI] 读取全局正则失败:', error);
+    logger.error('phone','[RegexUI] 读取全局正则失败:', error);
     return [];
   }
 }
@@ -1025,7 +1025,7 @@ async function getTavernPresetScripts() {
     // 步骤1：让用户选择预设
     const presetName = await showPresetSelector(main_api);
     if (!presetName) {
-      logger.debug('[RegexUI] 用户取消选择预设');
+      logger.debug('phone','[RegexUI] 用户取消选择预设');
       return [];
     }
     
@@ -1040,7 +1040,7 @@ async function getTavernPresetScripts() {
       name: presetName, 
       path: 'regex_scripts' 
     }) || [];
-    logger.debug('[RegexUI] 从预设', presetName, '读取正则:', scripts.length, '个');
+    logger.debug('phone','[RegexUI] 从预设', presetName, '读取正则:', scripts.length, '个');
     
     // 统一字段名：promptOnly → only_format_prompt
     const normalizedScripts = scripts.map(script => ({
@@ -1050,12 +1050,12 @@ async function getTavernPresetScripts() {
     
     // 添加日志检查only_format_prompt
     normalizedScripts.forEach((script, index) => {
-      logger.debug(`[RegexUI] 预设正则 ${index}: ${script.scriptName}, only_format_prompt=${script.only_format_prompt}`);
+      logger.debug('phone',`[RegexUI] 预设正则 ${index}: ${script.scriptName}, only_format_prompt=${script.only_format_prompt}`);
     });
     
     return normalizedScripts;
   } catch (error) {
-    logger.error('[RegexUI] 读取预设正则失败:', error);
+    logger.error('phone','[RegexUI] 读取预设正则失败:', error);
     return [];
   }
 }
@@ -1113,7 +1113,7 @@ async function showPresetSelector(apiId) {
     
     return result;
   } catch (error) {
-    logger.error('[RegexUI] 显示预设选择器失败:', error);
+    logger.error('phone','[RegexUI] 显示预设选择器失败:', error);
     return null;
   }
 }
@@ -1140,7 +1140,7 @@ async function getTavernCharacterScripts(contactId) {
     }
     
     const scripts = character.data?.extensions?.regex_scripts || [];
-    logger.debug('[RegexUI] 读取角色正则:', scripts.length, '个');
+    logger.debug('phone','[RegexUI] 读取角色正则:', scripts.length, '个');
     
     // 统一字段名：promptOnly → only_format_prompt
     const normalizedScripts = scripts.map(script => ({
@@ -1150,12 +1150,12 @@ async function getTavernCharacterScripts(contactId) {
     
     // 添加日志检查only_format_prompt
     normalizedScripts.forEach((script, index) => {
-      logger.debug(`[RegexUI] 角色正则 ${index}: ${script.scriptName}, only_format_prompt=${script.only_format_prompt}`);
+      logger.debug('phone',`[RegexUI] 角色正则 ${index}: ${script.scriptName}, only_format_prompt=${script.only_format_prompt}`);
     });
     
     return normalizedScripts;
   } catch (error) {
-    logger.error('[RegexUI] 读取角色正则失败:', error);
+    logger.error('phone','[RegexUI] 读取角色正则失败:', error);
     return [];
   }
 }
@@ -1171,7 +1171,7 @@ async function getTavernCharacterScripts(contactId) {
  * @param {string} contactId - 联系人ID
  */
 function handleQuickGen(page, contactId) {
-  logger.debug('[RegexUI] 打开快速生成弹窗');
+  logger.debug('phone','[RegexUI] 打开快速生成弹窗');
   
   const overlay = page.querySelector('.regex-quick-gen-overlay');
   if (!overlay) return;
@@ -1392,7 +1392,7 @@ async function handleGenConfirm(overlay, page, contactId) {
   const { showPhoneToast } = await import('../ui-components/toast-notification.js');
   showPhoneToast(`已生成正则：${scriptName}`, 'success');
   
-  logger.debug('[RegexUI] 快速生成完成:', scriptName);
+  logger.debug('phone','[RegexUI] 快速生成完成:', scriptName);
 }
 
 // ============================================================
@@ -1407,7 +1407,7 @@ async function handleGenConfirm(overlay, page, contactId) {
  * @param {string} type - 类型
  */
 function initSortable(listContainer, contactId, type) {
-  logger.debug('[RegexUI] 初始化拖拽排序:', type);
+  logger.debug('phone','[RegexUI] 初始化拖拽排序:', type);
   
   // 使用 jQuery UI Sortable
   // @ts-ignore - jQuery UI Sortable
@@ -1431,7 +1431,7 @@ function initSortable(listContainer, contactId, type) {
  * @param {string} type - 类型
  */
 function handleSortEnd(listContainer, contactId, type) {
-  logger.debug('[RegexUI] 拖拽排序结束，保存新顺序:', type);
+  logger.debug('phone','[RegexUI] 拖拽排序结束，保存新顺序:', type);
   
   const config = getConfig(contactId);
   const scripts = config.scripts[type];

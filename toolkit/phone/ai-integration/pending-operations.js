@@ -74,7 +74,7 @@ export function addPendingMessage(contactId, message) {
   // ✅ 直接存储完整对象
   pendingOperations.messages[contactId].push(message);
 
-  logger.debug('[PendingOps] 添加待发送消息:', 
+  logger.debug('phone','[PendingOps] 添加待发送消息:', 
     contactId,
     'Type:', message.type,
     'ID:', message.id?.substring(0, 20),
@@ -111,7 +111,7 @@ export function getAllPendingOperations() {
 export function clearPendingMessages(contactId) {
   if (pendingOperations.messages[contactId]) {
     delete pendingOperations.messages[contactId];
-    logger.debug('[PendingOps] 清空待发送消息:', contactId);
+    logger.debug('phone','[PendingOps] 清空待发送消息:', contactId);
   }
 }
 
@@ -123,7 +123,7 @@ export function clearAllPendingOperations() {
   pendingOperations.moments = [];
   pendingOperations.friendRequests = [];
   pendingOperations.signatureActions = [];
-  logger.debug('[PendingOps] 清空所有待处理操作');
+  logger.debug('phone','[PendingOps] 清空所有待处理操作');
 }
 
 /**
@@ -163,7 +163,7 @@ export function addSignatureAction(actionType, data) {
     timestamp: Date.now()
   });
 
-  logger.debug('[PendingOps] 添加个签操作记录:', actionType, data);
+  logger.debug('phone','[PendingOps] 添加个签操作记录:', actionType, data);
 }
 
 /**
@@ -179,7 +179,7 @@ export function getSignatureActions() {
  */
 export function clearSignatureActions() {
   pendingOperations.signatureActions = [];
-  logger.debug('[PendingOps] 清空个签操作记录');
+  logger.debug('phone','[PendingOps] 清空个签操作记录');
 }
 
 /**
@@ -188,6 +188,6 @@ export function clearSignatureActions() {
  */
 export function restoreSignatureActions(actions) {
   pendingOperations.signatureActions = [...actions];
-  logger.debug('[PendingOps] 恢复个签操作记录，共', actions.length, '条');
+  logger.debug('phone','[PendingOps] 恢复个签操作记录，共', actions.length, '条');
 }
 

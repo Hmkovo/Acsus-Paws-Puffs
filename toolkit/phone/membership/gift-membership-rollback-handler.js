@@ -29,7 +29,7 @@ export function initGiftMembershipRollbackHandler() {
     name: '送会员消息',
     priority: 6, // 优先级略低于转账（6 vs 5），但高于其他业务逻辑
     rollback: async (contactId, deletedMessages, deletedMessageIds) => {
-      logger.debug('[GiftMembershipRollback] 开始回退送会员消息');
+      logger.debug('phone','[GiftMembershipRollback] 开始回退送会员消息');
 
       let revokedMemberships = 0;
       let deletedTransactions = 0;
@@ -41,7 +41,7 @@ export function initGiftMembershipRollbackHandler() {
       for (const aiMsg of deletedMessages) {
         if (aiMsg.type !== 'gift-membership') continue;
 
-        logger.debug('[GiftMembershipRollback] 处理送会员消息:', aiMsg.id);
+        logger.debug('phone','[GiftMembershipRollback] 处理送会员消息:', aiMsg.id);
 
         // 1. 撤销会员记录
         if (aiMsg.sender === 'user') {
@@ -57,7 +57,7 @@ export function initGiftMembershipRollbackHandler() {
         // 2. 删除交易记录
         const transaction = allTransactions.find(t => t.relatedMsgId === aiMsg.id);
         if (transaction) {
-          logger.debug('[GiftMembershipRollback] 发现需要删除的交易记录:', {
+          logger.debug('phone','[GiftMembershipRollback] 发现需要删除的交易记录:', {
             transactionId: transaction.id,
             messageId: aiMsg.id,
             direction: transaction.direction,
@@ -68,20 +68,20 @@ export function initGiftMembershipRollbackHandler() {
           if (success) {
             deletedTransactions++;
           } else {
-            logger.warn('[GiftMembershipRollback] 删除交易记录失败:', transaction.id);
+            logger.warn('phone','[GiftMembershipRollback] 删除交易记录失败:', transaction.id);
           }
         }
       }
 
       if (revokedMemberships > 0 || deletedTransactions > 0) {
-        logger.info('[GiftMembershipRollback] 共撤销', revokedMemberships, '个会员，删除', deletedTransactions, '条交易记录');
+        logger.info('phone','[GiftMembershipRollback] 共撤销', revokedMemberships, '个会员，删除', deletedTransactions, '条交易记录');
         
         // 注：deleteTransaction 已通过 stateManager.set 自动触发钱包数据变化通知，不需要重复触发
       } else {
-        logger.debug('[GiftMembershipRollback] 没有需要回退的送会员记录');
+        logger.debug('phone','[GiftMembershipRollback] 没有需要回退的送会员记录');
       }
     }
   });
 
-  logger.info('[GiftMembershipRollback] 送会员消息回退处理器已初始化');
+  logger.info('phone','[GiftMembershipRollback] 送会员消息回退处理器已初始化');
 }

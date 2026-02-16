@@ -85,11 +85,11 @@ export function isPlanStoryMessage(message) {
  * @returns {HTMLElement} 消息元素
  */
 export function renderPlanStoryMessage(message, contactId, cachedPlan = null) {
-  logger.debug('[PlanStoryMessage] 渲染计划剧情消息');
+  logger.debug('phone','[PlanStoryMessage]] 渲染计划剧情消息');
 
   const storyData = parsePlanStoryMessage(message.content);
   if (!storyData) {
-    logger.warn('[PlanStoryMessage] 无法解析计划剧情消息:', message.content?.substring(0, 50));
+    logger.warn('phone','[PlanStoryMessage]] 无法解析计划剧情消息:', message.content?.substring(0, 50));
     return null;
   }
 
@@ -101,7 +101,7 @@ export function renderPlanStoryMessage(message, contactId, cachedPlan = null) {
   }
 
   if (!plan) {
-    logger.warn('[PlanStoryMessage] 未找到关联的计划');
+    logger.warn('phone','[PlanStoryMessage]] 未找到关联的计划');
   }
 
   const container = document.createElement('div');
@@ -179,7 +179,7 @@ export function renderPlanStoryMessage(message, contactId, cachedPlan = null) {
       saveNoteBtn.innerHTML = '<i class="fa-solid fa-bookmark"></i> 记录要点';
       saveNoteBtn.title = '记录要点';
       showSuccessToast('已取消记录');
-      logger.info('[PlanStoryMessage] 取消记录要点:', storyData.title);
+      logger.info('phone','[PlanStoryMessage]] 取消记录要点:', storyData.title);
     } else {
       // 未记录 → 记录要点
       savePlanNote(contactId, plan.id, noteType, storyData.storyContent);
@@ -187,7 +187,7 @@ export function renderPlanStoryMessage(message, contactId, cachedPlan = null) {
       saveNoteBtn.innerHTML = '<i class="fa-solid fa-bookmark"></i> 已记录 ✓';
       saveNoteBtn.title = '已记录要点';
       showSuccessToast('已记录要点');
-      logger.info('[PlanStoryMessage] 记录要点:', storyData.title);
+      logger.info('phone','[PlanStoryMessage]] 记录要点:', storyData.title);
     }
 
     // 🔥 通过状态管理器通知订阅者
@@ -202,7 +202,7 @@ export function renderPlanStoryMessage(message, contactId, cachedPlan = null) {
 
   // 长按操作菜单由 message-chat-ui.js 统一绑定
 
-  logger.info('[PlanStoryMessage] ✅ 计划剧情消息渲染完成:', storyData.title);
+  logger.info('phone','[PlanStoryMessage]] ✅ 计划剧情消息渲染完成:', storyData.title);
   return container;
 }
 

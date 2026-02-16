@@ -19,7 +19,7 @@ import { getThumbnailUrl } from '../../../../../../../script.js';
  * @returns {Promise<Object|null>} 选中的收藏项，取消返回null
  */
 export async function showFavoritesPicker() {
-  logger.debug('[FavoritesPicker] 显示收藏选择器');
+  logger.debug('phone','[FavoritesPicker] 显示收藏选择器');
 
   // 加载收藏列表
   const favorites = loadFavorites();
@@ -62,7 +62,7 @@ export async function showFavoritesPicker() {
             return null;
           }
 
-          logger.info('[FavoritesPicker] 选中收藏:', favorite.id);
+          logger.info('phone','[FavoritesPicker] 选中收藏:', favorite.id);
           return favorite;
         }
 
@@ -225,7 +225,7 @@ function bindPickerEvents(overlay) {
  * @param {HTMLElement} listContainer - 列表容器
  */
 function handlePickerSearch(keyword, listContainer) {
-  logger.debug('[FavoritesPicker] 搜索:', keyword || '(全部)');
+  logger.debug('phone','[FavoritesPicker] 搜索:', keyword || '(全部)');
 
   // 获取搜索结果
   const favorites = keyword ? searchFavorites(keyword) : loadFavorites();

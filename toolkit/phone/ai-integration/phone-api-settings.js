@@ -110,7 +110,7 @@ export class PhoneAPIConfig {
           }
         }
 
-        logger.info('[PhoneAPIConfig] API来源已切换:', source);
+        logger.info('phone','[PhoneAPIConfig] API来源已切换:', source);
       });
     }
 
@@ -127,7 +127,7 @@ export class PhoneAPIConfig {
           }
         });
 
-        logger.info('[PhoneAPIConfig] 流式生成已', apiStreamCheckbox.checked ? '启用' : '禁用');
+        logger.info('phone','[PhoneAPIConfig] 流式生成已', apiStreamCheckbox.checked ? '启用' : '禁用');
       });
     }
 
@@ -144,7 +144,7 @@ export class PhoneAPIConfig {
           }
         });
 
-        logger.info('[PhoneAPIConfig] 工具调用已', apiToolCallingCheckbox.checked ? '启用' : '禁用');
+        logger.info('phone','[PhoneAPIConfig] 工具调用已', apiToolCallingCheckbox.checked ? '启用' : '禁用');
       });
     }
 
@@ -199,7 +199,7 @@ export class PhoneAPIConfig {
       openRouterAuthBtn.addEventListener('click', () => {
         // 打开 OpenRouter OAuth 授权页面
         window.open('https://openrouter.ai/auth?callback_url=' + encodeURIComponent(window.location.origin), '_blank');
-        logger.info('[PhoneAPIConfig] 打开 OpenRouter 授权页面');
+        logger.info('phone','[PhoneAPIConfig] 打开 OpenRouter 授权页面');
       });
     }
 
@@ -274,7 +274,7 @@ export class PhoneAPIConfig {
               }
             }
           });
-          logger.debug('[PhoneAPIConfig] Custom API模型已保存（从下拉框选择）:', customModelSelect.value);
+          logger.debug('phone','[PhoneAPIConfig] Custom API模型已保存（从下拉框选择）:', customModelSelect.value);
         }
       });
     }
@@ -309,7 +309,7 @@ export class PhoneAPIConfig {
               model: value
             }
           });
-          logger.debug('[PhoneAPIConfig] 模型已保存:', value);
+          logger.debug('phone','[PhoneAPIConfig] 模型已保存:', value);
         }
       });
     }
@@ -345,7 +345,7 @@ export class PhoneAPIConfig {
           }
         });
 
-        logger.debug('[PhoneAPIConfig] API格式已切换并保存:', format);
+        logger.debug('phone','[PhoneAPIConfig] API格式已切换并保存:', format);
         this.toggleApiSourceForms(format);  // 切换配置区块显示
         this.renderAdvancedParams(format);
       });
@@ -364,7 +364,7 @@ export class PhoneAPIConfig {
             apiKey: phoneApiKeyInput.value.trim()
           }
         });
-        logger.debug('[PhoneAPIConfig] 通用API密钥已保存');
+        logger.debug('phone','[PhoneAPIConfig] 通用API密钥已保存');
       });
     }
 
@@ -379,7 +379,7 @@ export class PhoneAPIConfig {
             openRouterKey: phoneOpenRouterKeyInput.value.trim()
           }
         });
-        logger.debug('[PhoneAPIConfig] OpenRouter密钥已保存');
+        logger.debug('phone','[PhoneAPIConfig] OpenRouter密钥已保存');
       });
     }
 
@@ -394,7 +394,7 @@ export class PhoneAPIConfig {
             model: apiModelManualInput.value.trim()
           }
         });
-        logger.debug('[PhoneAPIConfig] 手动输入模型已保存:', apiModelManualInput.value.trim());
+        logger.debug('phone','[PhoneAPIConfig] 手动输入模型已保存:', apiModelManualInput.value.trim());
       });
     }
 
@@ -413,7 +413,7 @@ export class PhoneAPIConfig {
             }
           }
         });
-        logger.debug('[PhoneAPIConfig] Custom API端点已保存');
+        logger.debug('phone','[PhoneAPIConfig] Custom API端点已保存');
       });
     }
 
@@ -432,7 +432,7 @@ export class PhoneAPIConfig {
             }
           }
         });
-        logger.debug('[PhoneAPIConfig] Custom API密钥已保存');
+        logger.debug('phone','[PhoneAPIConfig] Custom API密钥已保存');
       });
     }
 
@@ -451,7 +451,7 @@ export class PhoneAPIConfig {
             }
           }
         });
-        logger.debug('[PhoneAPIConfig] Custom API模型已保存');
+        logger.debug('phone','[PhoneAPIConfig] Custom API模型已保存');
       });
     }
 
@@ -488,7 +488,7 @@ export class PhoneAPIConfig {
             vertexConfig: { ...vertexConfig, authMode: mode }
           }
         });
-        logger.debug('[PhoneAPIConfig] Vertex AI 认证模式已切换:', mode);
+        logger.debug('phone','[PhoneAPIConfig] Vertex AI 认证模式已切换:', mode);
       });
     }
 
@@ -515,7 +515,7 @@ export class PhoneAPIConfig {
             vertexConfig: { ...vertexConfig, apiKey: vertexApiKeyInput.value.trim() }
           }
         });
-        logger.debug('[PhoneAPIConfig] Vertex AI API密钥已保存');
+        logger.debug('phone','[PhoneAPIConfig] Vertex AI API密钥已保存');
       });
     }
 
@@ -531,7 +531,7 @@ export class PhoneAPIConfig {
             vertexConfig: { ...vertexConfig, projectId: vertexProjectIdInput.value.trim() }
           }
         });
-        logger.debug('[PhoneAPIConfig] Vertex AI 项目ID已保存');
+        logger.debug('phone','[PhoneAPIConfig] Vertex AI 项目ID已保存');
       });
     }
 
@@ -547,7 +547,7 @@ export class PhoneAPIConfig {
             vertexConfig: { ...vertexConfig, serviceAccount: vertexServiceAccountInput.value.trim() }
           }
         });
-        logger.debug('[PhoneAPIConfig] Vertex AI 服务账号已保存');
+        logger.debug('phone','[PhoneAPIConfig] Vertex AI 服务账号已保存');
       });
     }
 
@@ -563,7 +563,7 @@ export class PhoneAPIConfig {
             vertexConfig: { ...vertexConfig, region: vertexRegionInput.value.trim() }
           }
         });
-        logger.debug('[PhoneAPIConfig] Vertex AI 区域已保存');
+        logger.debug('phone','[PhoneAPIConfig] Vertex AI 区域已保存');
       });
     }
 
@@ -581,7 +581,7 @@ export class PhoneAPIConfig {
             azureConfig: { ...azureConfig, baseUrl: azureBaseUrlInput.value.trim() }
           }
         });
-        logger.debug('[PhoneAPIConfig] Azure Base URL已保存');
+        logger.debug('phone','[PhoneAPIConfig] Azure Base URL已保存');
       });
     }
 
@@ -597,7 +597,7 @@ export class PhoneAPIConfig {
             azureConfig: { ...azureConfig, deploymentName: azureDeploymentNameInput.value.trim() }
           }
         });
-        logger.debug('[PhoneAPIConfig] Azure 部署名称已保存');
+        logger.debug('phone','[PhoneAPIConfig] Azure 部署名称已保存');
       });
     }
 
@@ -613,7 +613,7 @@ export class PhoneAPIConfig {
             azureConfig: { ...azureConfig, apiVersion: azureApiVersionSelect.value }
           }
         });
-        logger.debug('[PhoneAPIConfig] Azure API版本已保存');
+        logger.debug('phone','[PhoneAPIConfig] Azure API版本已保存');
       });
     }
 
@@ -640,7 +640,7 @@ export class PhoneAPIConfig {
             azureConfig: { ...azureConfig, apiKey: azureApiKeyInput.value.trim() }
           }
         });
-        logger.debug('[PhoneAPIConfig] Azure API密钥已保存');
+        logger.debug('phone','[PhoneAPIConfig] Azure API密钥已保存');
       });
     }
 
@@ -656,14 +656,14 @@ export class PhoneAPIConfig {
             azureConfig: { ...azureConfig, modelName: azureModelNameInput.value.trim() }
           }
         });
-        logger.debug('[PhoneAPIConfig] Azure 模型名称已保存');
+        logger.debug('phone','[PhoneAPIConfig] Azure 模型名称已保存');
       });
     }
 
     // 加载现有设置到 UI
     this.loadApiSettingsToUI();
 
-    logger.debug('[PhoneAPIConfig] API设置事件已绑定');
+    logger.debug('phone','[PhoneAPIConfig] API设置事件已绑定');
   }
 
   /**
@@ -805,7 +805,7 @@ export class PhoneAPIConfig {
       }
     }
 
-    logger.debug('[PhoneAPIConfig] API设置已加载到UI');
+    logger.debug('phone','[PhoneAPIConfig] API设置已加载到UI');
   }
 
   /**
@@ -836,7 +836,7 @@ export class PhoneAPIConfig {
       this.loadProxyPreset(settings.apiConfig.currentProxyPreset);
     }
 
-    logger.debug('[PhoneAPIConfig] 反向代理预设列表已刷新，共', presets.length, '个');
+    logger.debug('phone','[PhoneAPIConfig] 反向代理预设列表已刷新，共', presets.length, '个');
   }
 
   /**
@@ -883,7 +883,7 @@ export class PhoneAPIConfig {
       // ✅ 自动展开反向代理区块（让用户看到已加载的配置）
       this.expandReverseProxySection();
 
-      logger.info('[PhoneAPIConfig] 已加载反向代理预设:', presetName);
+      logger.info('phone','[PhoneAPIConfig] 已加载反向代理预设:', presetName);
     }
   }
 
@@ -938,7 +938,7 @@ export class PhoneAPIConfig {
         url: url,
         password: password
       };
-      logger.info('[PhoneAPIConfig] 已更新反向代理预设:', presetName);
+      logger.info('phone','[PhoneAPIConfig] 已更新反向代理预设:', presetName);
     } else {
       // 新增预设
       presets.push({
@@ -946,7 +946,7 @@ export class PhoneAPIConfig {
         url: url,
         password: password
       });
-      logger.info('[PhoneAPIConfig] 已新增反向代理预设:', presetName);
+      logger.info('phone','[PhoneAPIConfig] 已新增反向代理预设:', presetName);
     }
 
     // 保存到 settings
@@ -1006,7 +1006,7 @@ export class PhoneAPIConfig {
     this.loadProxyPreset('');
 
     showSuccessToast(`代理预设「${presetName}」已删除`);
-    logger.info('[PhoneAPIConfig] 已删除反向代理预设:', presetName);
+    logger.info('phone','[PhoneAPIConfig] 已删除反向代理预设:', presetName);
   }
 
   /**
@@ -1059,7 +1059,7 @@ export class PhoneAPIConfig {
     const regionInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#phoneVertexRegion'));
     if (regionInput) regionInput.value = vertexConfig.region || 'us-central1';
 
-    logger.debug('[PhoneAPIConfig] Vertex AI 配置已加载');
+    logger.debug('phone','[PhoneAPIConfig] Vertex AI 配置已加载');
   }
 
   /**
@@ -1089,7 +1089,7 @@ export class PhoneAPIConfig {
     const modelNameInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#phoneAzureModelName'));
     if (modelNameInput) modelNameInput.value = azureConfig.modelName || '';
 
-    logger.debug('[PhoneAPIConfig] Azure OpenAI 配置已加载');
+    logger.debug('phone','[PhoneAPIConfig] Azure OpenAI 配置已加载');
   }
 
   /**
@@ -1110,7 +1110,7 @@ export class PhoneAPIConfig {
     }
 
     showInfoToast('正在获取模型列表...');
-    logger.info('[PhoneAPIConfig] 开始获取 Custom API 模型列表');
+    logger.info('phone','[PhoneAPIConfig] 开始获取 Custom API 模型列表');
 
     try {
       let cleanBaseUrl = baseUrl;
@@ -1166,10 +1166,10 @@ export class PhoneAPIConfig {
       }
 
       showSuccessToast(`已获取 ${models.length} 个模型`);
-      logger.info('[PhoneAPIConfig] Custom API 模型列表已更新，共', models.length, '个');
+      logger.info('phone','[PhoneAPIConfig] Custom API 模型列表已更新，共', models.length, '个');
 
     } catch (error) {
-      logger.error('[PhoneAPIConfig] 获取 Custom API 模型失败:', error);
+      logger.error('phone','[PhoneAPIConfig] 获取 Custom API 模型失败:', error);
       showErrorToast('获取模型列表失败：' + error.message);
     }
   }
@@ -1215,7 +1215,7 @@ export class PhoneAPIConfig {
     };
 
     const detectedFormat = reverseMap[tavernSource] || 'openai';
-    logger.debug('[PhoneAPIConfig.getDefaultFormatFromTavern] 从酒馆API源推断默认格式:', tavernSource, '→', detectedFormat);
+    logger.debug('phone','[PhoneAPIConfig.getDefaultFormatFromTavern] 从酒馆API源推断默认格式:', tavernSource, '→', detectedFormat);
 
     return detectedFormat;
   }
@@ -1330,7 +1330,7 @@ export class PhoneAPIConfig {
         // ✅ 有反向代理：使用反向代理URL和密码（复刻官方逻辑）
         baseUrl = reverseProxyUrl;
         apiKey = reverseProxyPassword;
-        logger.debug('[PhoneAPIConfig] 使用反向代理:', baseUrl);
+        logger.debug('phone','[PhoneAPIConfig] 使用反向代理:', baseUrl);
       } else {
         // 无反向代理：使用默认端点和通用API密钥
         baseUrl = this.getDefaultBaseUrl(format);
@@ -1351,17 +1351,17 @@ export class PhoneAPIConfig {
     }
 
     showInfoToast('正在获取模型列表...');
-    logger.info('[PhoneAPIConfig] 开始获取模型列表, baseUrl:', baseUrl);
+    logger.info('phone','[PhoneAPIConfig] 开始获取模型列表, baseUrl:', baseUrl);
 
     try {
       // 调用 /v1/models API
       let cleanBaseUrl = baseUrl;
       if (cleanBaseUrl.endsWith('/v1')) {
         cleanBaseUrl = cleanBaseUrl.slice(0, -3);
-        logger.debug('[PhoneAPIConfig] 检测到 baseUrl 末尾有 /v1，已去除:', cleanBaseUrl);
+        logger.debug('phone','[PhoneAPIConfig] 检测到 baseUrl 末尾有 /v1，已去除:', cleanBaseUrl);
       }
       const modelsUrl = `${cleanBaseUrl}/v1/models`;
-      logger.debug('[PhoneAPIConfig] 最终模型列表 URL:', modelsUrl);
+      logger.debug('phone','[PhoneAPIConfig] 最终模型列表 URL:', modelsUrl);
 
       const response = await fetch(modelsUrl, {
         headers: {
@@ -1386,7 +1386,7 @@ export class PhoneAPIConfig {
 
       if (models.length === 0) {
         showErrorToast('未获取到模型列表');
-        logger.warn('[PhoneAPIConfig] 模型列表为空');
+        logger.warn('phone','[PhoneAPIConfig] 模型列表为空');
         return;
       }
 
@@ -1416,10 +1416,10 @@ export class PhoneAPIConfig {
       }
 
       showSuccessToast(`已获取 ${models.length} 个模型`);
-      logger.info('[PhoneAPIConfig] 模型列表已更新，共', models.length, '个');
+      logger.info('phone','[PhoneAPIConfig] 模型列表已更新，共', models.length, '个');
 
     } catch (error) {
-      logger.error('[PhoneAPIConfig] 获取失败:', error);
+      logger.error('phone','[PhoneAPIConfig] 获取失败:', error);
       showErrorToast('获取模型列表失败：' + error.message);
     }
   }
@@ -1502,7 +1502,7 @@ export class PhoneAPIConfig {
     }
 
     showInfoToast('正在测试连接...');
-    logger.info('[PhoneAPIConfig] 开始测试 API 连接');
+    logger.info('phone','[PhoneAPIConfig] 开始测试 API 连接');
 
     try {
       // ✅ 修复：构造messages数组而不是字符串（照搬日记）
@@ -1533,14 +1533,14 @@ export class PhoneAPIConfig {
 
       if (responseText && responseText.length > 0) {
         showSuccessToast('API 连接成功！');
-        logger.info('[PhoneAPIConfig] 测试成功，响应长度:', responseText.length);
+        logger.info('phone','[PhoneAPIConfig] 测试成功，响应长度:', responseText.length);
       } else {
         showErrorToast('API 返回空响应');
-        logger.warn('[PhoneAPIConfig] API返回空响应');
+        logger.warn('phone','[PhoneAPIConfig] API返回空响应');
       }
 
     } catch (error) {
-      logger.error('[PhoneAPIConfig] 测试失败:', error);
+      logger.error('phone','[PhoneAPIConfig] 测试失败:', error);
       showErrorToast('连接失败：' + error.message);
     }
   }
@@ -1554,7 +1554,7 @@ export class PhoneAPIConfig {
   readParamsFromUI(format) {
     // 使用临时存储的参数
     const params = { ...this.tempParams };
-    logger.debug('[PhoneAPIConfig.readParamsFromUI] 读取了', Object.keys(params).length, '个参数');
+    logger.debug('phone','[PhoneAPIConfig.readParamsFromUI] 读取了', Object.keys(params).length, '个参数');
     return params;
   }
 
@@ -1571,7 +1571,7 @@ export class PhoneAPIConfig {
 
     for (const paramName of unsupportedParams) {
       delete this.tempParams[paramName];
-      logger.debug('[PhoneAPIConfig.cleanUnsupportedParams] 已删除不支持的参数:', paramName);
+      logger.debug('phone','[PhoneAPIConfig.cleanUnsupportedParams] 已删除不支持的参数:', paramName);
     }
   }
 
@@ -1595,7 +1595,7 @@ export class PhoneAPIConfig {
       /** @type {HTMLElement} */ (element).style.display = shouldShow ? '' : 'none';
     });
 
-    logger.debug('[PhoneAPIConfig.toggleApiSourceForms] 已切换配置区块，当前API类型:', source);
+    logger.debug('phone','[PhoneAPIConfig.toggleApiSourceForms] 已切换配置区块，当前API类型:', source);
   }
 
   /**
@@ -1609,13 +1609,13 @@ export class PhoneAPIConfig {
   renderAdvancedParams(format) {
     const container = this.pageElement.querySelector('#phoneApiParamsContainer');
     if (!container) {
-      logger.warn('[PhoneAPIConfig.renderAdvancedParams] 未找到参数容器');
+      logger.warn('phone','[PhoneAPIConfig.renderAdvancedParams] 未找到参数容器');
       return;
     }
 
     // 获取该格式支持的参数列表
     const supportedParams = getSupportedParams(format);
-    logger.debug('[PhoneAPIConfig.renderAdvancedParams] 开始渲染参数，格式:', format, '参数列表:', supportedParams);
+    logger.debug('phone','[PhoneAPIConfig.renderAdvancedParams] 开始渲染参数，格式:', format, '参数列表:', supportedParams);
 
     // ✅ 关键修复：清理不支持的旧参数（避免格式切换后残留）
     this.cleanUnsupportedParams(format, supportedParams);
@@ -1627,7 +1627,7 @@ export class PhoneAPIConfig {
     for (const paramName of supportedParams) {
       const definition = PARAMS_DEFINITIONS[paramName];
       if (!definition) {
-        logger.warn('[PhoneAPIConfig] 未知参数定义:', paramName);
+        logger.warn('phone','[PhoneAPIConfig] 未知参数定义:', paramName);
         continue;
       }
 
@@ -1692,7 +1692,7 @@ export class PhoneAPIConfig {
     // 加载保存的参数值到UI
     this.loadParamValuesToUI(format);
 
-    logger.info('[PhoneAPIConfig.renderAdvancedParams] ✅ 参数UI已渲染，共', supportedParams.length, '个参数');
+    logger.info('phone','[PhoneAPIConfig.renderAdvancedParams] ✅ 参数UI已渲染，共', supportedParams.length, '个参数');
   }
 
   /**
@@ -1723,7 +1723,7 @@ export class PhoneAPIConfig {
       }
     });
 
-    logger.debug('[PhoneAPIConfig.saveParamValue] 已保存参数:', paramName, '=', value);
+    logger.debug('phone','[PhoneAPIConfig.saveParamValue] 已保存参数:', paramName, '=', value);
   }
 
   /**
@@ -1750,7 +1750,7 @@ export class PhoneAPIConfig {
       if (rangeInput && numberInput) {
         rangeInput.value = String(savedValue);
         numberInput.value = String(savedValue);
-        logger.debug('[PhoneAPIConfig.loadParamValuesToUI] 已加载参数:', paramName, '=', savedValue);
+        logger.debug('phone','[PhoneAPIConfig.loadParamValuesToUI] 已加载参数:', paramName, '=', savedValue);
       }
     }
   }

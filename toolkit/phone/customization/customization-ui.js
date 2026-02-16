@@ -27,7 +27,7 @@ import { showConfirmPopup, showCustomPopupWithData } from '../utils/popup-helper
  * @returns {Promise<DocumentFragment>} 页面DOM片段
  */
 export async function renderCustomizationPage() {
-  logger.info('[Customization] 渲染个性装扮页面');
+  logger.info('phone','[Customization] 渲染个性装扮页面');
 
   const fragment = document.createDocumentFragment();
   const container = document.createElement('div');
@@ -115,7 +115,7 @@ export async function renderCustomizationPage() {
 function bindBackButton(container) {
   const backBtn = container.querySelector('.customization-back-btn');
   backBtn.addEventListener('click', () => {
-    logger.info('[Customization] 点击返回按钮');
+    logger.info('phone','[Customization] 点击返回按钮');
     const overlay = document.querySelector('.phone-overlay');
     import('../phone-main-ui.js').then(({ hidePage }) => {
       hidePage(overlay, 'customization');
@@ -135,7 +135,7 @@ function bindTabSwitch(container) {
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
       const tabName = tab.dataset.tab;
-      logger.debug(`[Customization] 切换标签: ${tabName}`);
+      logger.debug('phone',`[Customization] 切换标签: ${tabName}`);
 
       // 更新标签激活状态
       tabs.forEach(t => t.classList.remove('active'));
@@ -167,7 +167,7 @@ function bindTabSwitch(container) {
  * @param {HTMLElement} container - 页面容器
  */
 async function renderBubbleCategories(container) {
-  logger.debug('[Customization] 渲染气泡分类列表');
+  logger.debug('phone','[Customization] 渲染气泡分类列表');
 
   const categoriesContainer = container.querySelector('.customization-bubble-categories');
 
@@ -193,18 +193,18 @@ async function renderBubbleCategories(container) {
   const pageId = 'customization';
   // 🔥 修复：键名必须与 stateManager.set 保持一致（都用 'userMembership'）
   stateManager.subscribe(pageId, 'userMembership', async (meta) => {
-    logger.info('[Customization] 收到会员数据变化通知', meta);
+    logger.info('phone','[Customization] 收到会员数据变化通知', meta);
 
     // 检查页面是否还存在
     if (!document.contains(container)) {
-      logger.debug('[Customization] 页面已关闭，跳过刷新');
+      logger.debug('phone','[Customization] 页面已关闭，跳过刷新');
       return;
     }
 
     // 刷新所有气泡的价格
     await refreshAllPrices();
 
-    logger.debug('[Customization] 价格已自动更新');
+    logger.debug('phone','[Customization] 价格已自动更新');
   });
 
   // 监听页面移除，自动清理订阅
@@ -214,7 +214,7 @@ async function renderBubbleCategories(container) {
         if (node === container || node.contains?.(container)) {
           stateManager.unsubscribeAll(pageId);
           observer.disconnect();
-          logger.debug('[Customization] 页面已关闭，已清理订阅');
+          logger.debug('phone','[Customization] 页面已关闭，已清理订阅');
           return;
         }
       }
@@ -226,9 +226,9 @@ async function renderBubbleCategories(container) {
     observer.observe(parent, { childList: true, subtree: true });
   }
 
-  logger.debug('[Customization] 已订阅用户会员数据变化');
+  logger.debug('phone','[Customization] 已订阅用户会员数据变化');
 
-  logger.info('[Customization] 气泡列表渲染完成');
+  logger.info('phone','[Customization] 气泡列表渲染完成');
 }
 
 /**
@@ -238,7 +238,7 @@ async function renderBubbleCategories(container) {
  * 会员状态变化时调用，重新计算并更新所有显示的气泡价格
  */
 async function refreshAllPrices() {
-  logger.debug('[Customization] 刷新所有气泡价格');
+  logger.debug('phone','[Customization] 刷新所有气泡价格');
 
   // 获取所有已渲染的气泡包装器
   const allWrappers = document.querySelectorAll('.customization-bubble-wrapper[data-bubble-id]');
@@ -267,7 +267,7 @@ async function refreshAllPrices() {
     }
   }
 
-  logger.info('[Customization] 价格刷新完成');
+  logger.info('phone','[Customization] 价格刷新完成');
 }
 
 /**
@@ -323,7 +323,7 @@ function createFilterTab(id, name, active) {
 
   // 绑定点击事件
   tab.addEventListener('click', () => {
-    logger.debug(`[Customization] 切换标签: ${name}`);
+    logger.debug('phone',`[Customization] 切换标签: ${name}`);
 
     // 更新标签激活状态
     const allTabs = tab.parentElement.querySelectorAll('.customization-filter-tab');
@@ -389,7 +389,7 @@ async function renderBubbleGrid(gridSection, categoryId) {
     grid.appendChild(item);
   }
 
-  logger.debug(`[Customization] 网格显示 ${bubbles.length} 个气泡`);
+  logger.debug('phone',`[Customization] 网格显示 ${bubbles.length} 个气泡`);
 }
 
 /**
@@ -421,7 +421,7 @@ async function createCategorySection(category) {
   moreBtn.className = 'customization-category-more';
   moreBtn.textContent = '…';
   moreBtn.addEventListener('click', () => {
-    logger.info(`[Customization] 点击查看更多: ${category.name}`);
+    logger.info('phone',`[Customization] 点击查看更多: ${category.name}`);
     // TODO: 跳转到分类详情页
     alert(`查看 ${category.name} 的所有气泡\n\n功能开发中...`);
   });
@@ -479,7 +479,7 @@ function createAddCustomBubbleButton() {
   `;
 
   btn.addEventListener('click', () => {
-    logger.info('[Customization] 点击自定义气泡按钮');
+    logger.info('phone','[Customization] 点击自定义气泡按钮');
     // TODO: 打开自定义气泡上传页面
     alert('自定义气泡功能开发中...\n\n普通用户：购买后永久使用\nSVIP用户：免费定制（到期后需购买）\n\n可以上传本地图片或使用网络链接');
   });
@@ -577,7 +577,7 @@ async function createBubbleItem(bubble) {
  */
 function bindBubbleClick(item, bubble) {
   item.addEventListener('click', () => {
-    logger.info(`[Customization] 点击气泡: ${bubble.name}`);
+    logger.info('phone',`[Customization] 点击气泡: ${bubble.name}`);
     handleBubbleClick(bubble);
   });
 }
@@ -593,7 +593,7 @@ function bindBubbleClick(item, bubble) {
  * @param {Object} bubble - 气泡配置
  */
 async function handleBubbleClick(bubble) {
-  logger.debug('[Customization] 点击气泡:', bubble.name);
+  logger.debug('phone','[Customization] 点击气泡:', bubble.name);
 
   // 动态导入购买模块
   const { isItemOwned } = await import('./customization-purchase.js');
@@ -652,7 +652,7 @@ async function showPurchaseDialog(bubble) {
   });
 
   if (!confirmed) {
-    logger.debug('[Customization] 用户取消购买');
+    logger.debug('phone','[Customization] 用户取消购买');
     return;
   }
 
@@ -661,13 +661,13 @@ async function showPurchaseDialog(bubble) {
 
   if (result.success) {
     toastr.success(result.message);
-    logger.info('[Customization] 购买成功:', bubble.name);
+    logger.info('phone','[Customization] 购买成功:', bubble.name);
 
     // 刷新价格显示
     await refreshAllPrices();
   } else {
     toastr.error(result.message);
-    logger.warn('[Customization] 购买失败:', result.message);
+    logger.warn('phone','[Customization] 购买失败:', result.message);
   }
 }
 
@@ -707,7 +707,7 @@ async function showApplyDialog(bubble) {
   });
 
   if (!confirmed) {
-    logger.debug('[Customization] 用户取消应用');
+    logger.debug('phone','[Customization] 用户取消应用');
     return;
   }
 
@@ -715,7 +715,7 @@ async function showApplyDialog(bubble) {
   await applyBubbleTheme(bubble.id, { type: 'all' });
 
   toastr.success('气泡已应用到所有对话！');
-  logger.info('[Customization] 气泡已应用:', bubble.name, '作用范围: 所有对话');
+  logger.info('phone','[Customization] 气泡已应用:', bubble.name, '作用范围: 所有对话');
 }
 
 

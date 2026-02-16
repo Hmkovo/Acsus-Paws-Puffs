@@ -60,7 +60,7 @@ export async function registerPhoneMacros() {
   // 注册所有联系人的宏
   await registerAllContactMacros();
 
-  logger.info('[TavernMacros] 已注册手机宏: {{最新消息}}, {{历史消息}}, {{当前时间}}, {{当前天气}}');
+  logger.info('phone','[TavernMacros] 已注册手机宏: {{最新消息}}, {{历史消息}}, {{当前时间}}, {{当前天气}}');
 
   // 监听联系人变化事件（只监听联系人列表变化）
   setupContactChangeListener();
@@ -92,7 +92,7 @@ async function registerAllContactMacros() {
       const safeName = sanitizeMacroName(contact.name);
 
       if (!safeName) {
-        logger.warn(`[TavernMacros] 联系人名字无效，跳过: ${contact.name}`);
+        logger.warn('phone',`[TavernMacros] 联系人名字无效，跳过: ${contact.name}`);
         continue;
       }
 
@@ -115,9 +115,9 @@ async function registerAllContactMacros() {
       registeredCharacterMacros.add(historyMacroName);
     }
 
-    logger.info(`[TavernMacros] 已为 ${contacts.length} 个联系人注册专属宏`);
+    logger.info('phone',`[TavernMacros] 已为 ${contacts.length} 个联系人注册专属宏`);
   } catch (error) {
-    logger.error('[TavernMacros] 注册联系人宏失败:', error);
+    logger.error('phone','[TavernMacros] 注册联系人宏失败:', error);
   }
 }
 
@@ -132,11 +132,11 @@ async function registerAllContactMacros() {
 function setupContactChangeListener() {
   // 监听联系人列表变化事件（新增/删除联系人时重新注册宏）
   document.addEventListener('phone-contact-list-changed', async () => {
-    logger.debug('[TavernMacros] 检测到联系人变化，重新注册宏');
+    logger.debug('phone','[TavernMacros] 检测到联系人变化，重新注册宏');
     await registerAllContactMacros();
   });
 
-  logger.debug('[TavernMacros] 已设置联系人变化监听器');
+  logger.debug('phone','[TavernMacros] 已设置联系人变化监听器');
 }
 
 /**
@@ -183,7 +183,7 @@ function getRecentMessages() {
 
     return getMessagesByCharName('recent', currentCharName);
   } catch (error) {
-    logger.error('[TavernMacros] 获取最新消息失败:', error);
+    logger.error('phone','[TavernMacros] 获取最新消息失败:', error);
     return '';
   }
 }
@@ -209,7 +209,7 @@ function getHistoryMessages() {
 
     return getMessagesByCharName('history', currentCharName);
   } catch (error) {
-    logger.error('[TavernMacros] 获取历史消息失败:', error);
+    logger.error('phone','[TavernMacros] 获取历史消息失败:', error);
     return '';
   }
 }
@@ -235,13 +235,13 @@ function getMessagesByCharName(type, charName) {
     const contact = contacts.find(c => c.name === charName);
 
     if (!contact) {
-      logger.debug(`[TavernMacros] 角色 ${charName} 没有手机联系人记录`);
+      logger.debug('phone',`[TavernMacros] 角色 ${charName} 没有手机联系人记录`);
       return ''; // 没有手机记录，返回空字符串
     }
 
     return getContactMessages(type, contact.id, contact);
   } catch (error) {
-    logger.error(`[TavernMacros] 获取角色消息失败 (${charName}):`, error);
+    logger.error('phone',`[TavernMacros] 获取角色消息失败 (${charName}):`, error);
     return '';
   }
 }
@@ -296,7 +296,7 @@ function getContactMessages(type, contactId, contact) {
     // 格式化消息（同步版本）
     return formatMessagesForMacro(selectedMessages, contact);
   } catch (error) {
-    logger.error(`[TavernMacros] 获取联系人消息失败 (${contactId}):`, error);
+    logger.error('phone',`[TavernMacros] 获取联系人消息失败 (${contactId}):`, error);
     return '';
   }
 }
@@ -478,7 +478,7 @@ function getCurrentWeather() {
       return `${userProfile.weatherCity} ${userProfile.weatherTemp}°C`;
     }
   } catch (error) {
-    logger.error('[TavernMacros] 获取当前天气失败:', error);
+    logger.error('phone','[TavernMacros] 获取当前天气失败:', error);
     return '';
   }
 }
@@ -512,9 +512,9 @@ export function unregisterPhoneMacros() {
     }
     registeredCharacterMacros.clear();
 
-    logger.info('[TavernMacros] ✅ 已注销所有手机宏');
+    logger.info('phone','[TavernMacros] ✅ 已注销所有手机宏');
   } catch (error) {
-    logger.error('[TavernMacros] 注销宏失败:', error);
+    logger.error('phone','[TavernMacros] 注销宏失败:', error);
   }
 }
 
@@ -532,7 +532,7 @@ export function unregisterPhoneMacros() {
  * await refreshPhoneMacros(); // 手动刷新宏
  */
 export async function refreshPhoneMacros() {
-  logger.info('[TavernMacros] 手动刷新宏...');
+  logger.info('phone','[TavernMacros] 手动刷新宏...');
   await registerAllContactMacros();
 }
 

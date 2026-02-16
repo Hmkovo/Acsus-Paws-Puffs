@@ -51,9 +51,9 @@ export class DiaryDataManager {
    * @async
    */
   async init() {
-    logger.info('[DiaryData] 开始初始化');
+    logger.info('diary', '[DiaryData] 开始初始化');
     this.loadDiaries();
-    logger.info('[DiaryData] 初始化完成，已加载', this.diaries.length, '篇日记');
+    logger.info('diary', '[DiaryData] 初始化完成，已加载', this.diaries.length, '篇日记');
   }
 
   /**
@@ -105,22 +105,22 @@ export class DiaryDataManager {
   loadDiaries() {
     this.currentCharacterId = this.getCurrentCharacterId();
 
-    logger.debug('[DiaryData.loadDiaries] ========== 开始加载日记 ==========');
-    logger.debug('[DiaryData.loadDiaries] 当前角色ID:', this.currentCharacterId);
+    logger.debug('diary', '[DiaryData.loadDiaries] ========== 开始加载日记 ==========');
+    logger.debug('diary', '[DiaryData.loadDiaries] 当前角色ID:', this.currentCharacterId);
 
     if (!this.currentCharacterId) {
-      logger.warn('[DiaryData.loadDiaries] ⚠️ 未选择角色，清空日记列表');
+      logger.warn('diary', '[DiaryData.loadDiaries] ⚠️ 未选择角色，清空日记列表');
       this.diaries = [];
       return;
     }
 
     const allDiaries = extension_settings[EXT_ID]?.[MODULE_NAME]?.diaries || [];
 
-    logger.debug('[DiaryData.loadDiaries] 存储中的总日记数:', allDiaries.length);
+    logger.debug('diary', '[DiaryData.loadDiaries] 存储中的总日记数:', allDiaries.length);
 
     // 输出所有日记的角色ID（用于调试）
     if (allDiaries.length > 0) {
-      logger.debug('[DiaryData.loadDiaries] 存储中的日记列表:');
+      logger.debug('diary', '[DiaryData.loadDiaries] 存储中的日记列表:');
       allDiaries.forEach((d, index) => {
         logger.debug(`  [${index}] ID:${d.id}, title:${d.title}, charId:${d.characterId}, 匹配:${d.characterId === this.currentCharacterId}`);
       });
@@ -129,19 +129,19 @@ export class DiaryDataManager {
     // 过滤当前角色的日记
     this.diaries = allDiaries.filter(d => d.characterId === this.currentCharacterId);
 
-    logger.debug('[DiaryData.loadDiaries] 过滤后（当前角色）:', this.diaries.length, '篇');
+    logger.debug('diary', '[DiaryData.loadDiaries] 过滤后（当前角色）:', this.diaries.length, '篇');
 
     // 按时间排序（最新的在前面）- 降序排序
     // 这样数组[0]是最新的，轮播图会把最新的放在第一张（左侧隐藏）
     // 然后可以通过CSS或初始翻页让最新的显示在大卡片
     this.diaries.sort((a, b) => b.id.localeCompare(a.id));
 
-    logger.debug('[DiaryData.loadDiaries] 排序后的日记ID顺序（最新→最旧）:');
+    logger.debug('diary', '[DiaryData.loadDiaries] 排序后的日记ID顺序（最新→最旧）:');
     this.diaries.forEach((d, index) => {
       logger.debug(`  [${index}] ${d.id} - ${d.title}`);
     });
 
-    logger.debug('[DiaryData.loadDiaries] ========== 加载完成 ==========');
+    logger.debug('diary', '[DiaryData.loadDiaries] ========== 加载完成 ==========');
   }
 
   /**
@@ -157,7 +157,7 @@ export class DiaryDataManager {
     extension_settings[EXT_ID][MODULE_NAME].diaries = [...otherDiaries, ...this.diaries];
 
     saveSettingsDebounced();
-    logger.debug('[DiaryData.saveDiaries] 已保存', this.diaries.length, '篇日记');
+    logger.debug('diary', '[DiaryData.saveDiaries] 已保存', this.diaries.length, '篇日记');
   }
 
   /**
@@ -202,7 +202,7 @@ export class DiaryDataManager {
     this.diaries.push(diary);
     this.saveDiaries();
 
-    logger.info('[DiaryData.createDiary] 已创建日记:', diary.id);
+    logger.info('diary', '[DiaryData.createDiary] 已创建日记:', diary.id);
     return diary;
   }
 
@@ -225,7 +225,7 @@ export class DiaryDataManager {
   updateDiary(id, updates) {
     const diary = this.getDiary(id);
     if (!diary) {
-      logger.warn('[DiaryData.updateDiary] 日记不存在:', id);
+      logger.warn('diary', '[DiaryData.updateDiary] 日记不存在:', id);
       return;
     }
 
@@ -233,7 +233,7 @@ export class DiaryDataManager {
     diary.metadata.updatedAt = Date.now();
     this.saveDiaries();
 
-    logger.debug('[DiaryData.updateDiary] 已更新日记:', id);
+    logger.debug('diary', '[DiaryData.updateDiary] 已更新日记:', id);
   }
 
   /**
@@ -248,29 +248,29 @@ export class DiaryDataManager {
    * 3. 重新加载（确保数据一致）
    */
   deleteDiary(id) {
-    logger.debug('[DiaryData.deleteDiary] ========== 开始删除 ==========');
-    logger.debug('[DiaryData.deleteDiary] 要删除的ID:', id);
-    logger.debug('[DiaryData.deleteDiary] 删除前日记数:', this.diaries.length);
+    logger.debug('diary', '[DiaryData.deleteDiary] ========== 开始删除 ==========');
+    logger.debug('diary', '[DiaryData.deleteDiary] 要删除的ID:', id);
+    logger.debug('diary', '[DiaryData.deleteDiary] 删除前日记数:', this.diaries.length);
 
     const index = this.diaries.findIndex(d => d.id === id);
     if (index === -1) {
-      logger.warn('[DiaryData.deleteDiary] ⚠️ 日记不存在（可能已被删除）');
+      logger.warn('diary', '[DiaryData.deleteDiary] ⚠️ 日记不存在（可能已被删除）');
       return;
     }
 
     const diary = this.diaries[index];
-    logger.debug('[DiaryData.deleteDiary] 找到日记:', diary.title, '索引:', index);
+    logger.debug('diary', '[DiaryData.deleteDiary] 找到日记:', diary.title, '索引:', index);
 
     this.diaries.splice(index, 1);
-    logger.debug('[DiaryData.deleteDiary] 已从数组移除，剩余:', this.diaries.length, '篇');
+    logger.debug('diary', '[DiaryData.deleteDiary] 已从数组移除，剩余:', this.diaries.length, '篇');
 
     this.saveDiaries();
-    logger.debug('[DiaryData.deleteDiary] 已保存到存储');
+    logger.debug('diary', '[DiaryData.deleteDiary] 已保存到存储');
 
     // 重新加载验证
     this.loadDiaries();
-    logger.debug('[DiaryData.deleteDiary] 重新加载后:', this.diaries.length, '篇');
-    logger.debug('[DiaryData.deleteDiary] ========== 删除完成 ==========');
+    logger.debug('diary', '[DiaryData.deleteDiary] 重新加载后:', this.diaries.length, '篇');
+    logger.debug('diary', '[DiaryData.deleteDiary] ========== 删除完成 ==========');
   }
 
   /**
@@ -316,7 +316,7 @@ export class DiaryDataManager {
   addComment(diaryId, comment, parentCommentId = null) {
     const diary = this.getDiary(diaryId);
     if (!diary) {
-      logger.warn('[DiaryData.addComment] 日记不存在:', diaryId);
+      logger.warn('diary', '[DiaryData.addComment] 日记不存在:', diaryId);
       return;
     }
 
@@ -343,7 +343,7 @@ export class DiaryDataManager {
     diary.metadata.updatedAt = Date.now();
     this.saveDiaries();
 
-    logger.info('[DiaryData.addComment] 已添加评论到:', diaryId);
+    logger.info('diary', '[DiaryData.addComment] 已添加评论到:', diaryId);
   }
 
   /**
@@ -375,11 +375,11 @@ export class DiaryDataManager {
   deleteComment(diaryId, commentId) {
     const diary = this.getDiary(diaryId);
     if (!diary) {
-      logger.warn('[DiaryData.deleteComment] 日记不存在:', diaryId);
+      logger.warn('diary', '[DiaryData.deleteComment] 日记不存在:', diaryId);
       return;
     }
 
-    logger.debug('[DiaryData.deleteComment] 开始删除评论:', {
+    logger.debug('diary', '[DiaryData.deleteComment] 开始删除评论:', {
       diaryId,
       commentId,
       删除前评论总数: this.countAllComments(diary.comments)
@@ -390,7 +390,7 @@ export class DiaryDataManager {
       const index = comments.findIndex(c => c.id === commentId);
       if (index !== -1) {
         const deletedComment = comments[index];
-        logger.debug('[DiaryData.deleteComment] 找到目标评论:', {
+        logger.debug('diary', '[DiaryData.deleteComment] 找到目标评论:', {
           level,
           index,
           author: deletedComment.authorName,
@@ -414,13 +414,13 @@ export class DiaryDataManager {
     if (removeComment(diary.comments)) {
       diary.metadata.updatedAt = Date.now();
 
-      logger.debug('[DiaryData.deleteComment] 删除后评论总数:', this.countAllComments(diary.comments));
-      logger.debug('[DiaryData.deleteComment] 删除后的评论结构:', JSON.stringify(diary.comments, null, 2));
+      logger.debug('diary', '[DiaryData.deleteComment] 删除后评论总数:', this.countAllComments(diary.comments));
+      logger.debug('diary', '[DiaryData.deleteComment] 删除后的评论结构:', JSON.stringify(diary.comments, null, 2));
 
       this.saveDiaries();
-      logger.info('[DiaryData.deleteComment] 已删除评论:', commentId);
+      logger.info('diary', '[DiaryData.deleteComment] 已删除评论:', commentId);
     } else {
-      logger.warn('[DiaryData.deleteComment] 未找到评论:', commentId);
+      logger.warn('diary', '[DiaryData.deleteComment] 未找到评论:', commentId);
     }
   }
 
@@ -599,7 +599,7 @@ export class DiaryDataManager {
     // 保存到存储
     saveSettingsDebounced();
 
-    logger.info('[DiaryData.updateSettings] 设置已更新:', newSettings);
+    logger.info('diary', '[DiaryData.updateSettings] 设置已更新:', newSettings);
   }
 }
 

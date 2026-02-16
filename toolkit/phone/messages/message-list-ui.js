@@ -19,7 +19,7 @@ import { bindUnreadBadgeListener } from './unread-badge-manager.js';
  * @returns {Promise<HTMLElement>} 消息列表容器
  */
 export async function renderMessageList() {
-  logger.debug('[MessageList] 渲染消息列表');
+  logger.debug('phone','[MessageList] 渲染消息列表');
 
   const container = document.createElement('div');
   container.id = 'phone-tab-messages';
@@ -43,7 +43,7 @@ export async function renderMessageList() {
   // ✅ 绑定未读徽章UI更新监听器
   bindUnreadBadgeListener(listContainer);
 
-  logger.debug('[MessageList] 消息列表渲染完成');
+  logger.debug('phone','[MessageList] 消息列表渲染完成');
   return container;
 }
 
@@ -71,7 +71,7 @@ async function loadAndRenderChats(listContainer) {
   const recentChats = await loadRecentChats();
 
   if (recentChats.length === 0) {
-    logger.debug('[MessageList] 没有聊天记录');
+    logger.debug('phone','[MessageList] 没有聊天记录');
     listContainer.innerHTML = '<div style="text-align: center; color: #999; padding: 2em;">暂无聊天记录</div>';
     return;
   }
@@ -84,7 +84,7 @@ async function loadAndRenderChats(listContainer) {
     .map(chatItem => {
       const contact = contacts.find(c => c.id === chatItem.contactId);
       if (!contact) {
-        logger.warn('[MessageList] 联系人不存在，跳过:', chatItem.contactId);
+        logger.warn('phone','[MessageList] 联系人不存在，跳过:', chatItem.contactId);
         return null;
       }
       return { contact, chatItem };
@@ -100,7 +100,7 @@ async function loadAndRenderChats(listContainer) {
     listContainer.appendChild(item);
   });
 
-  logger.debug('[MessageList] 渲染完成，共', chatItemsWithContact.length, '个聊天');
+  logger.debug('phone','[MessageList] 渲染完成，共', chatItemsWithContact.length, '个聊天');
 }
 
 /**
@@ -148,7 +148,7 @@ function sortChatItems(chatItemsWithContact) {
 function formatPreviewText(lastMessage) {
   // 防御：检查消息有效性
   if (!lastMessage || typeof lastMessage !== 'object') {
-    logger.warn('[formatPreviewText] 无效的lastMessage:', lastMessage);
+    logger.warn('phone','[formatPreviewText] 无效的lastMessage:', lastMessage);
     return '(消息加载失败)';
   }
 
@@ -203,7 +203,7 @@ function formatPreviewText(lastMessage) {
     // 文字消息：正常截取
     // 防御：检查content有效性
     if (typeof content !== 'string') {
-      logger.warn('[formatPreviewText] content不是字符串:', { type, content });
+      logger.warn('phone','[formatPreviewText] content不是字符串:', { type, content });
       return '(文本消息损坏)';
     }
 
@@ -264,12 +264,12 @@ function createMessageItem(contact, chatItem) {
 
   // 读取角色会员数据并添加徽章
   addCharacterMembershipBadge(item, contact).catch(err => {
-    logger.error('[MessageList] 添加角色会员徽章失败:', err);
+    logger.error('phone','[MessageList] 添加角色会员徽章失败:', err);
   });
 
   // 绑定点击事件
   item.addEventListener('click', async () => {
-    logger.info('[MessageList] 点击聊天项，跳转到聊天页面:', contact.id);
+    logger.info('phone','[MessageList] 点击聊天项，跳转到聊天页面:', contact.id);
 
     const overlay = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
     if (overlay) {
@@ -323,12 +323,12 @@ function formatMessageTime(timestamp) {
  * 复用 formatPreviewText 确保表情消息显示正确（不显示ID码）。
  */
 export async function updateContactItem(contactId) {
-  logger.debug('[MessageList] 更新联系人项:', contactId);
+  logger.debug('phone','[MessageList] 更新联系人项:', contactId);
 
   // 查找对应的DOM元素
   const item = document.querySelector(`.msg-item[data-contact-id="${contactId}"]`);
   if (!item) {
-    logger.warn('[MessageList] 未找到消息项DOM:', contactId);
+    logger.warn('phone','[MessageList] 未找到消息项DOM:', contactId);
     return;
   }
 
@@ -337,7 +337,7 @@ export async function updateContactItem(contactId) {
   const chatItem = recentChats.find(c => c.contactId === contactId);
 
   if (!chatItem) {
-    logger.warn('[MessageList] 未找到聊天数据:', contactId);
+    logger.warn('phone','[MessageList] 未找到聊天数据:', contactId);
     return;
   }
 
@@ -345,7 +345,7 @@ export async function updateContactItem(contactId) {
   const contact = contacts.find(c => c.id === contactId);
 
   if (!contact) {
-    logger.warn('[MessageList] 未找到联系人:', contactId);
+    logger.warn('phone','[MessageList] 未找到联系人:', contactId);
     return;
   }
 
@@ -365,7 +365,7 @@ export async function updateContactItem(contactId) {
   // 注意：未读徽章更新已由 unread-badge-manager 通过事件驱动自动处理
   // 不需要在这里手动更新DOM
 
-  logger.debug('[MessageList] 联系人项已更新');
+  logger.debug('phone','[MessageList] 联系人项已更新');
 }
 
 /**
@@ -379,7 +379,7 @@ export async function updateContactItem(contactId) {
  * 新的设计通过事件驱动自动更新UI，调用 clearUnread() 即可。
  */
 export async function markAsRead(contactId) {
-  logger.warn('[MessageList] markAsRead已废弃，请使用 unread-badge-manager.clearUnread()');
+  logger.warn('phone','[MessageList] markAsRead已废弃，请使用 unread-badge-manager.clearUnread()');
   const { clearUnread } = await import('./unread-badge-manager.js');
   clearUnread(contactId);
 }
@@ -395,12 +395,12 @@ export async function markAsRead(contactId) {
  * 不重新渲染整个列表，只移动单个DOM元素，实现最小化操作。
  */
 export async function updateMessageItemPosition(contactId) {
-  logger.debug('[MessageList] 更新消息项位置:', contactId);
+  logger.debug('phone','[MessageList] 更新消息项位置:', contactId);
 
   // 1. 查找该项的DOM元素
   const itemElement = document.querySelector(`.msg-item[data-contact-id="${contactId}"]`);
   if (!itemElement) {
-    logger.warn('[MessageList] 未找到消息项DOM:', contactId);
+    logger.warn('phone','[MessageList] 未找到消息项DOM:', contactId);
     return;
   }
 
@@ -425,14 +425,14 @@ export async function updateMessageItemPosition(contactId) {
   );
 
   if (correctIndex === -1) {
-    logger.warn('[MessageList] 未找到聊天数据:', contactId);
+    logger.warn('phone','[MessageList] 未找到聊天数据:', contactId);
     return;
   }
 
   // 5. 移动DOM元素到正确位置
   const container = document.querySelector('.msg-list');
   if (!container) {
-    logger.warn('[MessageList] 未找到消息列表容器');
+    logger.warn('phone','[MessageList] 未找到消息列表容器');
     return;
   }
 
@@ -448,9 +448,9 @@ export async function updateMessageItemPosition(contactId) {
       // 目标位置是末尾，直接追加
       container.appendChild(itemElement);
     }
-    logger.debug('[MessageList] 消息项已移动到位置:', correctIndex);
+    logger.debug('phone','[MessageList] 消息项已移动到位置:', correctIndex);
   } else {
-    logger.debug('[MessageList] 消息项位置正确，无需移动');
+    logger.debug('phone','[MessageList] 消息项位置正确，无需移动');
   }
 }
 
@@ -464,11 +464,11 @@ export async function updateMessageItemPosition(contactId) {
  * 如果列表为空，显示"暂无聊天记录"提示。
  */
 export function removeContactItemFromList(contactId) {
-  logger.debug('[MessageList] 从列表移除联系人项:', contactId);
+  logger.debug('phone','[MessageList] 从列表移除联系人项:', contactId);
 
   const item = document.querySelector(`.msg-item[data-contact-id="${contactId}"]`);
   if (!item) {
-    logger.warn('[MessageList] 未找到要移除的消息项:', contactId);
+    logger.warn('phone','[MessageList] 未找到要移除的消息项:', contactId);
     return;
   }
 
@@ -478,11 +478,11 @@ export function removeContactItemFromList(contactId) {
   // 检查列表是否为空
   const listContainer = document.querySelector('.msg-list');
   if (listContainer && listContainer.children.length === 0) {
-    logger.debug('[MessageList] 列表已空，显示空状态提示');
+    logger.debug('phone','[MessageList] 列表已空，显示空状态提示');
     listContainer.innerHTML = '<div style="text-align: center; color: #999; padding: 2em;">暂无聊天记录</div>';
   }
 
-  logger.info('[MessageList] 已从列表移除:', contactId);
+  logger.info('phone','[MessageList] 已从列表移除:', contactId);
 }
 
 /**
@@ -503,7 +503,7 @@ export function removeContactItemFromList(contactId) {
 function bindMessageReceivedListener(listContainer) {
   const handleMessageReceived = async (e) => {
     const { contactId, message } = e.detail;
-    logger.info('[MessageList] 收到全局消息事件，刷新联系人项:', contactId);
+    logger.info('phone','[MessageList] 收到全局消息事件，刷新联系人项:', contactId);
     await updateContactItem(contactId);
     await updateMessageItemPosition(contactId);
   };
@@ -511,7 +511,7 @@ function bindMessageReceivedListener(listContainer) {
   registerListener('message-list', 'phone-message-received', handleMessageReceived, {
     description: '消息接收后刷新列表项'
   });
-  logger.debug('[MessageList] 已绑定全局消息接收事件监听器');
+  logger.debug('phone','[MessageList] 已绑定全局消息接收事件监听器');
 }
 
 /**
@@ -536,17 +536,17 @@ async function addCharacterMembershipBadge(itemElement, contact) {
     const nameElement = itemElement.querySelector('.msg-item-name');
     if (nameElement) {
       addMembershipBadgeToName(nameElement, contact.membership.type);
-      logger.debug('[MessageList] 已添加角色会员徽章:', contact.name, contact.membership.type);
+      logger.debug('phone','[MessageList] 已添加角色会员徽章:', contact.name, contact.membership.type);
       
       // 绑定徽章点击事件
       const badgeElement = nameElement.querySelector('.membership-badge');
       if (badgeElement) {
         await bindMembershipBadgeClick(badgeElement, contact.id, contact.name);
-        logger.debug('[MessageList] 已绑定徽章点击事件:', contact.name);
+        logger.debug('phone','[MessageList] 已绑定徽章点击事件:', contact.name);
       }
     }
   } catch (error) {
-    logger.error('[MessageList] 读取角色会员数据失败:', error);
+    logger.error('phone','[MessageList] 读取角色会员数据失败:', error);
   }
 }
 

@@ -45,14 +45,14 @@ const MEMBERSHIP_PRICES = {
  */
 export async function renderGiftMembershipPage(params) {
   const { contactId } = params;
-  logger.info('[GiftMembershipUI] 开始渲染会员送礼页面:', contactId);
+  logger.info('phone','[GiftMembershipUI] 开始渲染会员送礼页面:', contactId);
 
   // 加载联系人信息
   const contacts = await loadContacts();
   const contact = contacts.find(c => c.id === contactId);
   
   if (!contact) {
-    logger.error('[GiftMembershipUI] 联系人不存在:', contactId);
+    logger.error('phone','[GiftMembershipUI] 联系人不存在:', contactId);
     return createErrorView();
   }
 
@@ -83,7 +83,7 @@ export async function renderGiftMembershipPage(params) {
   // 监听钱包数据变化事件（实时更新余额显示）
   bindWalletChangeListener(container, contactId);
 
-  logger.info('[GiftMembershipUI] 会员送礼页面渲染完成');
+  logger.info('phone','[GiftMembershipUI] 会员送礼页面渲染完成');
   return fragment;
 }
 
@@ -241,7 +241,7 @@ function bindEvents(container, contactId, contact) {
  * 处理返回
  */
 function handleBack() {
-  logger.info('[GiftMembershipUI] 点击返回');
+  logger.info('phone','[GiftMembershipUI] 点击返回');
   const overlayElement = document.querySelector('.phone-overlay');
   if (overlayElement) {
     import('../phone-main-ui.js').then(({ hidePage }) => {
@@ -258,7 +258,7 @@ function handleBack() {
  */
 function handleOptionClick(container, optionElement) {
   const optionKey = optionElement.dataset.option;
-  logger.debug('[GiftMembershipUI] 选择会员选项:', optionKey);
+  logger.debug('phone','[GiftMembershipUI] 选择会员选项:', optionKey);
 
   // 清除其他选项的选中状态
   container.querySelectorAll('.gift-membership-option').forEach(opt => {
@@ -297,7 +297,7 @@ async function handleSubmit(container, contactId, contact) {
   }
 
   const option = MEMBERSHIP_PRICES[optionKey];
-  logger.info('[GiftMembershipUI] 准备送会员:', option);
+  logger.info('phone','[GiftMembershipUI] 准备送会员:', option);
 
   try {
     // 禁用按钮，防止重复提交
@@ -313,14 +313,14 @@ async function handleSubmit(container, contactId, contact) {
 
     // 扣除余额
     await subtractBalance(option.price);
-    logger.debug('[GiftMembershipUI] 余额已扣除:', option.price);
+    logger.debug('phone','[GiftMembershipUI] 余额已扣除:', option.price);
 
     // 给角色开通会员
     await grantCharacterMembership(contactId, option.type, option.duration, {
       from: 'user-gift',
       price: option.price
     });
-    logger.debug('[GiftMembershipUI] 角色会员已开通');
+    logger.debug('phone','[GiftMembershipUI] 角色会员已开通');
 
     // 创建会员送礼消息
     const message = {
@@ -338,28 +338,28 @@ async function handleSubmit(container, contactId, contact) {
     // 1. 保存消息到聊天数据库
     const { saveChatMessage } = await import('./message-chat-data.js');
     await saveChatMessage(contactId, message);
-    logger.debug('[GiftMembershipUI] 消息已保存到ChatData');
+    logger.debug('phone','[GiftMembershipUI] 消息已保存到ChatData');
 
     // 2. 添加到待处理队列
     await addPendingMessage(contactId, message);
-    logger.debug('[GiftMembershipUI] 消息已添加到待处理队列');
+    logger.debug('phone','[GiftMembershipUI] 消息已添加到待处理队列');
 
     // 在聊天页显示用户送会员气泡（如果聊天页存在）
-    logger.debug('[GiftMembershipUI] ========== 在聊天页显示送会员消息 ==========');
+    logger.debug('phone','[GiftMembershipUI] ========== 在聊天页显示送会员消息 ==========');
     const safeChatPageId = `page-chat-${contactId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
     const chatPage = /** @type {HTMLElement} */ (document.querySelector(`#${safeChatPageId}`));
     
     if (chatPage && chatPage.isConnected) {
-      logger.debug('[GiftMembershipUI] 聊天页已连接到DOM，准备添加送会员消息');
+      logger.debug('phone','[GiftMembershipUI] 聊天页已连接到DOM，准备添加送会员消息');
       try {
         const { appendMessageToChat } = await import('./message-chat-ui.js');
         await appendMessageToChat(chatPage, message, contact, contactId);
-        logger.info('[GiftMembershipUI] ✅ 已在聊天页显示用户送会员气泡');
+        logger.info('phone','[GiftMembershipUI] ✅ 已在聊天页显示用户送会员气泡');
       } catch (error) {
-        logger.error('[GiftMembershipUI] ❌ 添加送会员消息到聊天页失败:', error.message);
+        logger.error('phone','[GiftMembershipUI] ❌ 添加送会员消息到聊天页失败:', error.message);
       }
     } else {
-      logger.warn('[GiftMembershipUI] 聊天页未连接到DOM，跳过添加消息');
+      logger.warn('phone','[GiftMembershipUI] 聊天页未连接到DOM，跳过添加消息');
     }
 
     // 显示成功提示
@@ -372,7 +372,7 @@ async function handleSubmit(container, contactId, contact) {
     }, 500);
 
   } catch (error) {
-    logger.error('[GiftMembershipUI] 送会员失败:', error);
+    logger.error('phone','[GiftMembershipUI] 送会员失败:', error);
     showPhoneToast('error', '送会员失败，请稍后重试');
     if (submitBtn) submitBtn.disabled = false;
   }
@@ -389,11 +389,11 @@ function bindWalletChangeListener(container, contactId) {
   
   // 订阅钱包数据变化
   stateManager.subscribe(pageId, 'wallet', async (meta) => {
-    logger.debug('[GiftMembershipUI] 收到钱包数据变化通知', meta);
+    logger.debug('phone','[GiftMembershipUI] 收到钱包数据变化通知', meta);
 
     // 检查页面是否还存在
     if (!document.contains(container)) {
-      logger.debug('[GiftMembershipUI] 页面已关闭，跳过刷新');
+      logger.debug('phone','[GiftMembershipUI] 页面已关闭，跳过刷新');
       return;
     }
     
@@ -406,7 +406,7 @@ function bindWalletChangeListener(container, contactId) {
     const balanceElement = container.querySelector('.gift-membership-balance-amount');
     if (balanceElement) {
       balanceElement.textContent = `￥ ${balance.toFixed(2)}`;
-      logger.debug('[GiftMembershipUI] 余额显示已更新:', balance);
+      logger.debug('phone','[GiftMembershipUI] 余额显示已更新:', balance);
     }
 
     // 更新选项的 disabled 状态
@@ -430,7 +430,7 @@ function bindWalletChangeListener(container, contactId) {
         if (node === container || node.contains?.(container)) {
           stateManager.unsubscribeAll(pageId);
           observer.disconnect();
-          logger.debug('[GiftMembershipUI] 页面已关闭，已清理订阅');
+          logger.debug('phone','[GiftMembershipUI] 页面已关闭，已清理订阅');
           return;
         }
       }

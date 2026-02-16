@@ -48,7 +48,7 @@ export function getPlans(contactId) {
   }
 
   const plans = extension_settings.acsusPawsPuffs.phone.plans[contactId];
-  logger.debug('[PlanData.getPlans] 获取计划列表:', contactId, '计划数:', plans.length, '数据:', plans);
+  logger.debug('phone','[PlanData.getPlans] 获取计划列表:', contactId, '计划数:', plans.length, '数据:', plans);
   return plans;
 }
 
@@ -85,7 +85,7 @@ export async function createPlan(contactId, planData) {
     const existingRecord = history.find(h => h.msgId === planData.messageId);
 
     if (existingRecord) {
-      logger.warn('[PlanData] 该消息已处理过，跳过重复创建 msgId:', planData.messageId);
+      logger.warn('phone','[PlanData] 该消息已处理过，跳过重复创建 msgId:', planData.messageId);
 
       // 返回已存在的计划
       const existingPlan = getPlanByMessageId(contactId, planData.messageId);
@@ -94,7 +94,7 @@ export async function createPlan(contactId, planData) {
       }
 
       // 如果历史记录存在但计划不存在（数据不一致），清理历史记录并继续创建
-      logger.warn('[PlanData] 历史记录存在但计划不存在，清理历史记录');
+      logger.warn('phone','[PlanData] 历史记录存在但计划不存在，清理历史记录');
       const historyIndex = history.findIndex(h => h.msgId === planData.messageId);
       if (historyIndex !== -1) {
         history.splice(historyIndex, 1);
@@ -141,12 +141,12 @@ export async function createPlan(contactId, planData) {
       msgId: planData.messageId,
       timestamp: Date.now()
     });
-    logger.debug('[PlanData] 已记录到历史:', planData.messageId);
+    logger.debug('phone','[PlanData] 已记录到历史:', planData.messageId);
   }
 
   saveSettingsDebounced();
 
-  logger.info('[PlanData] 创建计划:', plan.title, 'ID:', plan.id);
+  logger.info('phone','[PlanData] 创建计划:', plan.title, 'ID:', plan.id);
 
   // 🔥 通过状态管理器通知订阅者
   await stateManager.set('plans', extension_settings.acsusPawsPuffs.phone.plans, {
@@ -171,14 +171,14 @@ export async function updatePlanStatus(contactId, planId, status) {
   const plan = plans.find(p => p.id === planId);
 
   if (!plan) {
-    logger.warn('[PlanData] 未找到计划:', planId);
+    logger.warn('phone','[PlanData] 未找到计划:', planId);
     return false;
   }
 
   plan.status = status;
   saveSettingsDebounced();
 
-  logger.info('[PlanData] 更新计划状态:', plan.title, '→', status);
+  logger.info('phone','[PlanData] 更新计划状态:', plan.title, '→', status);
 
   // 🔥 通过状态管理器通知订阅者
   await stateManager.set('plans', extension_settings.acsusPawsPuffs.phone.plans, {
@@ -207,7 +207,7 @@ export async function updatePlanResult(contactId, planId, result) {
   const plan = plans.find(p => p.id === planId);
 
   if (!plan) {
-    logger.warn('[PlanData] 未找到计划:', planId);
+    logger.warn('phone','[PlanData] 未找到计划:', planId);
     return false;
   }
 
@@ -222,7 +222,7 @@ export async function updatePlanResult(contactId, planId, result) {
   plan.status = 'completed';
   saveSettingsDebounced();
 
-  logger.info('[PlanData] 更新计划结果:', plan.title, '骰子:', plan.diceResult, '结果:', plan.outcome);
+  logger.info('phone','[PlanData] 更新计划结果:', plan.title, '骰子:', plan.diceResult, '结果:', plan.outcome);
 
   // 🔥 通过状态管理器通知订阅者
   await stateManager.set('plans', extension_settings.acsusPawsPuffs.phone.plans, {
@@ -247,7 +247,7 @@ export async function deletePlan(contactId, planId) {
   const index = plans.findIndex(p => p.id === planId);
 
   if (index === -1) {
-    logger.warn('[PlanData] 未找到计划:', planId);
+    logger.warn('phone','[PlanData] 未找到计划:', planId);
     return false;
   }
 
@@ -262,13 +262,13 @@ export async function deletePlan(contactId, planId) {
 
     if (historyIndex !== -1) {
       history.splice(historyIndex, 1);
-      logger.debug('[PlanData] 已删除历史记录:', plan.messageId);
+      logger.debug('phone','[PlanData] 已删除历史记录:', plan.messageId);
     }
   }
 
   saveSettingsDebounced();
 
-  logger.info('[PlanData] 删除计划:', plan.title);
+  logger.info('phone','[PlanData] 删除计划:', plan.title);
 
   // 🔥 通过状态管理器通知订阅者
   await stateManager.set('plans', extension_settings.acsusPawsPuffs.phone.plans, {
@@ -288,7 +288,7 @@ export async function deletePlan(contactId, planId) {
 export function getPendingPlans(contactId) {
   const plans = getPlans(contactId);
   const pendingPlans = plans.filter(p => p.status === 'pending' || p.status === 'accepted');
-  logger.debug('[PlanData.getPendingPlans] 进行中计划:', contactId, '数量:', pendingPlans.length, '数据:', pendingPlans);
+  logger.debug('phone','[PlanData.getPendingPlans] 进行中计划:', contactId, '数量:', pendingPlans.length, '数据:', pendingPlans);
   return pendingPlans;
 }
 
@@ -300,7 +300,7 @@ export function getPendingPlans(contactId) {
 export function getCompletedPlans(contactId) {
   const plans = getPlans(contactId);
   const completedPlans = plans.filter(p => p.status === 'completed');
-  logger.debug('[PlanData.getCompletedPlans] 已完成计划:', contactId, '数量:', completedPlans.length, '数据:', completedPlans);
+  logger.debug('phone','[PlanData.getCompletedPlans] 已完成计划:', contactId, '数量:', completedPlans.length, '数据:', completedPlans);
   return completedPlans;
 }
 
@@ -316,14 +316,14 @@ export function updatePlanStoryGenerated(contactId, planId, generated) {
   const plan = plans.find(p => p.id === planId);
 
   if (!plan) {
-    logger.warn('[PlanData] 未找到计划:', planId);
+    logger.warn('phone','[PlanData] 未找到计划:', planId);
     return false;
   }
 
   plan.storyGenerated = generated;
   saveSettingsDebounced();
 
-  logger.info('[PlanData] 更新剧情生成状态:', plan.title, '→', generated);
+  logger.info('phone','[PlanData] 更新剧情生成状态:', plan.title, '→', generated);
   return true;
 }
 
@@ -341,7 +341,7 @@ export function savePlanNote(contactId, planId, noteType, content) {
   const plan = plans.find(p => p.id === planId);
 
   if (!plan) {
-    logger.warn('[PlanData] 未找到计划:', planId);
+    logger.warn('phone','[PlanData] 未找到计划:', planId);
     return false;
   }
 
@@ -363,14 +363,14 @@ export function savePlanNote(contactId, planId, noteType, content) {
 
   const fieldName = noteFieldMap[noteType];
   if (!fieldName) {
-    logger.error('[PlanData] 无效的要点类型:', noteType);
+    logger.error('phone','[PlanData] 无效的要点类型:', noteType);
     return false;
   }
 
   plan.notes[fieldName] = content;
   saveSettingsDebounced();
 
-  logger.info('[PlanData] 保存计划要点:', plan.title, '类型:', noteType);
+  logger.info('phone','[PlanData] 保存计划要点:', plan.title, '类型:', noteType);
   return true;
 }
 
@@ -387,7 +387,7 @@ export function deletePlanNote(contactId, planId, noteType) {
   const plan = plans.find(p => p.id === planId);
 
   if (!plan) {
-    logger.warn('[PlanData] 未找到计划:', planId);
+    logger.warn('phone','[PlanData] 未找到计划:', planId);
     return false;
   }
 
@@ -404,14 +404,14 @@ export function deletePlanNote(contactId, planId, noteType) {
 
   const fieldName = noteFieldMap[noteType];
   if (!fieldName) {
-    logger.error('[PlanData] 无效的要点类型:', noteType);
+    logger.error('phone','[PlanData] 无效的要点类型:', noteType);
     return false;
   }
 
   plan.notes[fieldName] = null;
   saveSettingsDebounced();
 
-  logger.info('[PlanData] 删除计划要点:', plan.title, '类型:', noteType);
+  logger.info('phone','[PlanData] 删除计划要点:', plan.title, '类型:', noteType);
   return true;
 }
 

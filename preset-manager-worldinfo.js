@@ -71,11 +71,11 @@ export class WorldInfoIntegration {
 
     // ⭐ 阶段3：监听生成事件，在每次发送消息前重新检查关键词匹配
     eventSource.on(event_types.GENERATION_STARTED, () => {
-      logger.debug('🔍 检测到消息生成，重新检查关键词匹配');
+      logger.debug('preset', '🔍 检测到消息生成，重新检查关键词匹配');
       this.injectAllItems();
     });
 
-    logger.info('世界书工具初始化完成');
+    logger.info('preset', '世界书工具初始化完成');
   }
 
   /**
@@ -263,7 +263,7 @@ export class WorldInfoIntegration {
     // 找到预设列表容器
     const promptList = document.querySelector('#completion_prompt_manager_list');
     if (!promptList || !promptList.parentElement) {
-      logger.warn(' 未找到预设列表容器');
+      logger.warn('preset', ' 未找到预设列表容器');
       return;
     }
 
@@ -393,7 +393,7 @@ export class WorldInfoIntegration {
       this.bindDrawerEvents();
       await this.loadWorldBookList();
       this.renderActivatedItems();
-      logger.debug(' 折叠栏已创建');
+      logger.debug('preset', ' 折叠栏已创建');
     }, 100);
   }
 
@@ -425,7 +425,7 @@ export class WorldInfoIntegration {
         mainIcon.classList.add('up', 'fa-circle-chevron-up');
 
         // ⭐ 展开时自动刷新世界书列表
-        logger.debug(' 展开面板，自动刷新世界书列表');
+        logger.debug('preset', ' 展开面板，自动刷新世界书列表');
         await this.loadWorldBookList();
       }
     });
@@ -433,7 +433,7 @@ export class WorldInfoIntegration {
     // 子折叠栏（已激活条目）
     const subDrawer = mainContent.querySelector('.inline-drawer');
     if (!subDrawer) {
-      logger.error(' 未找到已激活条目子折叠栏');
+      logger.error('preset', ' 未找到已激活条目子折叠栏');
       return;
     }
     const subToggle = subDrawer.querySelector('.inline-drawer-toggle');
@@ -467,7 +467,7 @@ export class WorldInfoIntegration {
     // ⭐ 刷新按钮
     const refreshBtn = this.drawerContainer.querySelector('#paws-wb-refresh-btn');
     refreshBtn.addEventListener('click', async () => {
-      logger.debug(' 手动刷新世界书列表');
+      logger.debug('preset', ' 手动刷新世界书列表');
 
       // 显示加载动画
       const originalHTML = refreshBtn.innerHTML;
@@ -482,7 +482,7 @@ export class WorldInfoIntegration {
           toastr.success('世界书列表已刷新');
         }
       } catch (error) {
-        logger.error(' 刷新失败:', error);
+        logger.error('preset', ' 刷新失败:', error);
         if (typeof toastr !== 'undefined') {
           toastr.error('刷新失败');
         }
@@ -546,7 +546,7 @@ export class WorldInfoIntegration {
     const clearBtn = this.drawerContainer.querySelector('#paws-wb-clear-btn');
     clearBtn.addEventListener('click', () => this.clearAllItems());
 
-    logger.debug(' 事件绑定完成');
+    logger.debug('preset', ' 事件绑定完成');
   }
 
   /**
@@ -555,11 +555,11 @@ export class WorldInfoIntegration {
   async loadWorldBookList() {
     const select = this.drawerContainer.querySelector('#paws-wb-select');
     if (!select) {
-      logger.warn('[WorldInfoTool.loadWorldBookList] 选择框不存在');
+      logger.warn('preset', '[WorldInfoTool.loadWorldBookList] 选择框不存在');
       return;
     }
 
-    logger.debug('[WorldInfoTool.loadWorldBookList] 开始加载世界书列表');
+    logger.debug('preset', '[WorldInfoTool.loadWorldBookList] 开始加载世界书列表');
 
     // 保存当前选中的世界书
     const currentValue = select.value;
@@ -594,7 +594,7 @@ export class WorldInfoIntegration {
 
         // ⭐ 清除该世界书的缓存，重新加载条目（以获取最新数据）
         if (this.worldInfoCache.has(currentValue)) {
-          logger.debug(' 清除缓存并重新加载:', currentValue);
+          logger.debug('preset', ' 清除缓存并重新加载:', currentValue);
           this.worldInfoCache.delete(currentValue);
           await this.loadWorldBookEntries(currentValue);
         }
@@ -602,9 +602,9 @@ export class WorldInfoIntegration {
 
       select.disabled = false;
 
-      logger.info('[WorldInfoTool.loadWorldBookList] 已加载世界书列表:', worldList.length, '个');
+      logger.info('preset', '[WorldInfoTool.loadWorldBookList] 已加载世界书列表:', worldList.length, '个');
     } catch (error) {
-      logger.error('[WorldInfoTool.loadWorldBookList] 加载世界书列表失败:', error.message || error);
+      logger.error('preset', '[WorldInfoTool.loadWorldBookList] 加载世界书列表失败:', error.message || error);
       select.innerHTML = '<option value="">加载失败</option>';
       select.disabled = false;
     }
@@ -618,14 +618,14 @@ export class WorldInfoIntegration {
     const countEl = this.drawerContainer.querySelector('#paws-wb-available-count');
 
     if (!worldName) {
-      logger.debug('[WorldInfoTool.loadWorldBookEntries] 未指定世界书');
+      logger.debug('preset', '[WorldInfoTool.loadWorldBookEntries] 未指定世界书');
       listEl.innerHTML = '<div style="text-align: center; padding: 15px; opacity: 0.6; font-size: 0.9em;">请先选择一个世界书</div>';
       countEl.textContent = '可选条目';
       this.hideAvailablePagination();
       return;
     }
 
-    logger.debug('[WorldInfoTool.loadWorldBookEntries] 加载世界书:', worldName);
+    logger.debug('preset', '[WorldInfoTool.loadWorldBookEntries] 加载世界书:', worldName);
 
     // 显示加载中
     listEl.innerHTML = '<div style="text-align: center; padding: 15px; opacity: 0.6; font-size: 0.9em;"><i class="fa-solid fa-spinner fa-spin"></i> 加载中...</div>';
@@ -633,7 +633,7 @@ export class WorldInfoIntegration {
     try {
       // 检查缓存
       if (this.worldInfoCache.has(worldName)) {
-        logger.debug('[WorldInfoTool.loadWorldBookEntries] 使用缓存:', worldName);
+        logger.debug('preset', '[WorldInfoTool.loadWorldBookEntries] 使用缓存:', worldName);
         this.displayAvailableEntries(this.worldInfoCache.get(worldName), worldName);
         return;
       }
@@ -653,10 +653,10 @@ export class WorldInfoIntegration {
       this.worldInfoCache.set(worldName, entries);
       this.displayAvailableEntries(entries, worldName);
 
-      logger.info('[WorldInfoTool.loadWorldBookEntries] 加载成功:', worldName, '条目数:', Object.keys(entries).length);
+      logger.info('preset', '[WorldInfoTool.loadWorldBookEntries] 加载成功:', worldName, '条目数:', Object.keys(entries).length);
 
     } catch (error) {
-      logger.error('[WorldInfoTool.loadWorldBookEntries] 加载失败:', worldName, error.message || error);
+      logger.error('preset', '[WorldInfoTool.loadWorldBookEntries] 加载失败:', worldName, error.message || error);
       listEl.innerHTML = '<div style="text-align: center; padding: 15px; color: #ff6b6b; font-size: 0.9em;"><i class="fa-solid fa-triangle-exclamation"></i> 加载失败</div>';
     }
   }
@@ -806,11 +806,11 @@ export class WorldInfoIntegration {
    */
   addSingleEntry(worldName, uid, entryData) {
     if (!entryData) {
-      logger.warn('[WorldInfoTool.addSingleEntry] 条目数据为空');
+      logger.warn('preset', '[WorldInfoTool.addSingleEntry] 条目数据为空');
       return;
     }
 
-    logger.debug('[WorldInfoTool.addSingleEntry] 添加条目:', entryData.comment || '未命名', '来自世界书:', worldName);
+    logger.debug('preset', '[WorldInfoTool.addSingleEntry] 添加条目:', entryData.comment || '未命名', '来自世界书:', worldName);
 
     // 检查是否已存在
     const exists = this.selectedItems.some(item =>
@@ -818,7 +818,7 @@ export class WorldInfoIntegration {
     );
 
     if (exists) {
-      logger.warn('[WorldInfoTool.addSingleEntry] 条目已存在:', entryData.comment || uid);
+      logger.warn('preset', '[WorldInfoTool.addSingleEntry] 条目已存在:', entryData.comment || uid);
       if (typeof toastr !== 'undefined') {
         toastr.info('该条目已存在');
       }
@@ -868,7 +868,7 @@ export class WorldInfoIntegration {
     this.renderActivatedItems();
     this.injectAllItems();
 
-    logger.info('[WorldInfoTool.addSingleEntry] 已添加条目:', entryData.comment || '未命名条目');
+    logger.info('preset', '[WorldInfoTool.addSingleEntry] 已添加条目:', entryData.comment || '未命名条目');
 
     if (typeof toastr !== 'undefined') {
       toastr.success(`已添加条目：${entryData.comment || '未命名条目'}`);
@@ -1111,11 +1111,11 @@ export class WorldInfoIntegration {
   async editItem(itemId) {
     const item = this.selectedItems.find(i => i.id === itemId);
     if (!item) {
-      logger.warn('[WorldInfoTool.editItem] 条目不存在:', itemId);
+      logger.warn('preset', '[WorldInfoTool.editItem] 条目不存在:', itemId);
       return;
     }
 
-    logger.debug('[WorldInfoTool.editItem] 编辑条目:', item.name);
+    logger.debug('preset', '[WorldInfoTool.editItem] 编辑条目:', item.name);
 
     // ✅ 创建jQuery对象（不是字符串！）
     const $html = $(this.createEditPopupHTML(item));
@@ -1165,7 +1165,7 @@ export class WorldInfoIntegration {
         toastr.success(`已保存"${item.name}"的修改`);
       }
 
-      logger.info('[WorldInfoTool.editItem] 条目已更新:', item.name);
+      logger.info('preset', '[WorldInfoTool.editItem] 条目已更新:', item.name);
     }
   }
 
@@ -1325,11 +1325,11 @@ export class WorldInfoIntegration {
   deleteItem(id) {
     const item = this.selectedItems.find(i => i.id === id);
     if (!item) {
-      logger.warn('[WorldInfoTool.deleteItem] 条目不存在:', id);
+      logger.warn('preset', '[WorldInfoTool.deleteItem] 条目不存在:', id);
       return;
     }
 
-    logger.debug('[WorldInfoTool.deleteItem] 删除条目:', item.name);
+    logger.debug('preset', '[WorldInfoTool.deleteItem] 删除条目:', item.name);
 
     // ✅ 先清空提示词注入
     const key = `paws_wi_${item.id}`;
@@ -1348,7 +1348,7 @@ export class WorldInfoIntegration {
     this.saveSelectedItems();
     this.renderActivatedItems();
 
-    logger.info('[WorldInfoTool.deleteItem] 已删除条目:', item.name);
+    logger.info('preset', '[WorldInfoTool.deleteItem] 已删除条目:', item.name);
 
     if (typeof toastr !== 'undefined') {
       toastr.success('已删除');
@@ -1361,7 +1361,7 @@ export class WorldInfoIntegration {
   toggleItem(id) {
     const item = this.selectedItems.find(i => i.id === id);
     if (!item) {
-      logger.warn('[WorldInfoTool.toggleItem] 条目不存在:', id);
+      logger.warn('preset', '[WorldInfoTool.toggleItem] 条目不存在:', id);
       return;
     }
 
@@ -1372,14 +1372,14 @@ export class WorldInfoIntegration {
     // ✅ 立即更新提示词注入（启用=注入，禁用=清空）
     this.updateItemPrompt(item);
 
-    logger.info('[WorldInfoTool.toggleItem] 条目', item.name, item.enabled ? '已启用' : '已禁用');
+    logger.info('preset', '[WorldInfoTool.toggleItem] 条目', item.name, item.enabled ? '已启用' : '已禁用');
   }
 
   /**
    * 导入条目
    */
   importItems() {
-    logger.debug('[WorldInfoTool.importItems] 开始导入');
+    logger.debug('preset', '[WorldInfoTool.importItems] 开始导入');
 
     const input = document.createElement('input');
     input.type = 'file';
@@ -1388,12 +1388,12 @@ export class WorldInfoIntegration {
     input.onchange = async (e) => {
       const file = e.target.files[0];
       if (!file) {
-        logger.debug('[WorldInfoTool.importItems] 用户取消选择文件');
+        logger.debug('preset', '[WorldInfoTool.importItems] 用户取消选择文件');
         return;
       }
 
       try {
-        logger.debug('[WorldInfoTool.importItems] 读取文件:', file.name, '大小:', file.size, '字节');
+        logger.debug('preset', '[WorldInfoTool.importItems] 读取文件:', file.name, '大小:', file.size, '字节');
 
         const text = await file.text();
         const data = JSON.parse(text);
@@ -1413,7 +1413,7 @@ export class WorldInfoIntegration {
           throw new Error('无效的文件格式：缺少 worldInfoItems 字段');
         }
       } catch (error) {
-        logger.error('[WorldInfoTool.importItems] 导入失败:', error.message || error);
+        logger.error('preset', '[WorldInfoTool.importItems] 导入失败:', error.message || error);
         if (typeof toastr !== 'undefined') {
           toastr.error('导入失败：' + error.message);
         }
@@ -1428,14 +1428,14 @@ export class WorldInfoIntegration {
    */
   exportItems() {
     if (this.selectedItems.length === 0) {
-      logger.warn('[WorldInfoTool.exportItems] 没有可导出的条目');
+      logger.warn('preset', '[WorldInfoTool.exportItems] 没有可导出的条目');
       if (typeof toastr !== 'undefined') {
         toastr.warning('没有可导出的条目');
       }
       return;
     }
 
-    logger.debug('[WorldInfoTool.exportItems] 导出', this.selectedItems.length, '个条目');
+    logger.debug('preset', '[WorldInfoTool.exportItems] 导出', this.selectedItems.length, '个条目');
 
     const data = {
       worldInfoItems: this.selectedItems
@@ -1450,7 +1450,7 @@ export class WorldInfoIntegration {
     a.click();
     URL.revokeObjectURL(url);
 
-    logger.info('[WorldInfoTool.exportItems] 已导出', this.selectedItems.length, '个条目，文件名:', filename);
+    logger.info('preset', '[WorldInfoTool.exportItems] 已导出', this.selectedItems.length, '个条目，文件名:', filename);
 
     if (typeof toastr !== 'undefined') {
       toastr.success('已导出');
@@ -1462,12 +1462,12 @@ export class WorldInfoIntegration {
    */
   clearAllItems() {
     if (this.selectedItems.length === 0) {
-      logger.debug('[WorldInfoTool.clearAllItems] 没有条目需要清空');
+      logger.debug('preset', '[WorldInfoTool.clearAllItems] 没有条目需要清空');
       return;
     }
 
     const count = this.selectedItems.length;
-    logger.debug('[WorldInfoTool.clearAllItems] 准备清空', count, '个条目');
+    logger.debug('preset', '[WorldInfoTool.clearAllItems] 准备清空', count, '个条目');
 
     if (confirm(`确定要清空全部 ${count} 个条目吗？`)) {
       // ✅ 先清空所有条目的提示词注入
@@ -1488,13 +1488,13 @@ export class WorldInfoIntegration {
       this.saveSelectedItems();
       this.renderActivatedItems();
 
-      logger.info('[WorldInfoTool.clearAllItems] 已清空', count, '个条目');
+      logger.info('preset', '[WorldInfoTool.clearAllItems] 已清空', count, '个条目');
 
       if (typeof toastr !== 'undefined') {
         toastr.success('已清空');
       }
     } else {
-      logger.debug('[WorldInfoTool.clearAllItems] 用户取消清空操作');
+      logger.debug('preset', '[WorldInfoTool.clearAllItems] 用户取消清空操作');
     }
   }
 
@@ -1516,9 +1516,9 @@ export class WorldInfoIntegration {
     const saved = extension_settings['Acsus-Paws-Puffs']?.worldBookTool?.items;
     if (saved && Array.isArray(saved)) {
       this.selectedItems = saved;
-      logger.debug('[WorldInfoTool.loadSelectedItems] 已加载', saved.length, '个条目');
+      logger.debug('preset', '[WorldInfoTool.loadSelectedItems] 已加载', saved.length, '个条目');
     } else {
-      logger.debug('[WorldInfoTool.loadSelectedItems] 首次使用，无历史数据');
+      logger.debug('preset', '[WorldInfoTool.loadSelectedItems] 首次使用，无历史数据');
     }
   }
 

@@ -22,13 +22,13 @@ import { getContactDisplayName } from '../utils/contact-display-helper.js';
  * @returns {Promise<void>}
  */
 export async function sendPlanToTavern(plan, contactId) {
-  logger.debug('[PlanTavernSender] 发送计划到酒馆:', plan.title);
+  logger.debug('phone','[PlanTavernSender] 发送计划到酒馆:', plan.title);
 
   try {
     // 查找酒馆输入框
     const tavernTextarea = document.querySelector('#send_textarea');
     if (!tavernTextarea) {
-      logger.warn('[PlanTavernSender] 未找到酒馆输入框');
+      logger.warn('phone','[PlanTavernSender] 未找到酒馆输入框');
       showErrorToast('未找到酒馆输入框，请先打开SillyTavern');
       return;
     }
@@ -49,9 +49,9 @@ export async function sendPlanToTavern(plan, contactId) {
     tavernTextarea.dispatchEvent(new Event('input', { bubbles: true }));
 
     showSuccessToast('已发送到酒馆输入框，请自行发送');
-    logger.info('[PlanTavernSender] ✅ 已发送到酒馆:', plan.title);
+    logger.info('phone','[PlanTavernSender] ✅ 已发送到酒馆:', plan.title);
   } catch (error) {
-    logger.error('[PlanTavernSender] 发送失败:', error);
+    logger.error('phone','[PlanTavernSender] 发送失败:', error);
     showErrorToast('发送失败');
   }
 }

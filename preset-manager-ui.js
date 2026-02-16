@@ -28,15 +28,15 @@ export class PresetManagerUI {
    */
   async init(container) {
     if (!container) {
-      logger.warn('[PresetManagerUI.init] 容器元素不存在');
+      logger.warn('preset', '[PresetManagerUI.init] 容器元素不存在');
       return;
     }
 
-    logger.debug('[PresetManagerUI.init] 初始化预设管理UI');
+    logger.debug('preset', 'PresetManagerUI.init] 初始化预设管理UI');
     this.container = container;
     this.render();
     this.bindEvents();
-    logger.debug('[PresetManagerUI.init] 初始化完成');
+    logger.debug('preset', 'PresetManagerUI.init] 初始化完成');
   }
 
   // ========================================
@@ -328,7 +328,7 @@ export class PresetManagerUI {
     if (enabledCheckbox) {
       enabledCheckbox.addEventListener('change', async (e) => {
         const enabled = e.target.checked;
-        logger.info('[PresetManagerUI] 用户切换世界书工具:', enabled ? '启用' : '禁用');
+        logger.info('preset', '[PresetManagerUI] 用户切换世界书工具:', enabled ? '启用' : '禁用');
 
         await this.presetManager.setEnabled(enabled);
 
@@ -358,7 +358,7 @@ export class PresetManagerUI {
     accordionHeaders.forEach(header => {
       header.addEventListener('click', (e) => {
         const clickedCard = header.dataset.card;
-        logger.debug('[PresetManagerUI] 切换手风琴卡片:', clickedCard);
+        logger.debug('preset', 'PresetManagerUI] 切换手风琴卡片:', clickedCard);
 
         const allCards = this.container.querySelectorAll('.preset-accordion-card');
 
@@ -384,7 +384,7 @@ export class PresetManagerUI {
 
     // 监听快照保存事件，刷新列表
     eventSource.on('pawsSnapshotSaved', ({ presetName }) => {
-      logger.debug('[PresetManagerUI] 收到快照保存事件，刷新列表');
+      logger.debug('preset', 'PresetManagerUI] 收到快照保存事件，刷新列表');
       this.refreshPresetSelector();
       this.renderSnapshotList();
     });
@@ -428,7 +428,7 @@ export class PresetManagerUI {
           icon?.classList.add('fa-chevron-down');
         }
 
-        logger.debug('[PresetManagerUI] 切换折叠分组:', group, isExpanded ? '折叠' : '展开');
+        logger.debug('preset', 'PresetManagerUI] 切换折叠分组:', group, isExpanded ? '折叠' : '展开');
       });
     });
   }
@@ -921,7 +921,7 @@ export class PresetManagerUI {
       });
       select.innerHTML = optionsHtml;
     } catch (error) {
-      logger.error('[ToggleGroup] 加载世界书列表失败:', error.message);
+      logger.error('preset', '[ToggleGroup] 加载世界书列表失败:', error.message);
       select.innerHTML = '<option value="">加载失败</option>';
     }
   }
@@ -974,7 +974,7 @@ export class PresetManagerUI {
       this.renderWorldInfoEntryItems(popupEl, entries, groupId);
 
     } catch (error) {
-      logger.error('[ToggleGroup] 加载世界书条目失败:', error.message);
+      logger.error('preset', '[ToggleGroup] 加载世界书条目失败:', error.message);
       container.innerHTML = '<p class="toggle-group-empty-hint">加载失败，请重试</p>';
     }
   }
@@ -1915,7 +1915,7 @@ export class PresetManagerUI {
     checkbox.addEventListener('change', (e) => {
       const enabled = e.target.checked;
       snapshotData.setEnabled(enabled);
-      logger.info('[PresetManagerUI] 预设快照功能:', enabled ? '启用' : '禁用');
+      logger.info('preset', '[PresetManagerUI] 预设快照功能:', enabled ? '启用' : '禁用');
 
       if (enabled) {
         toastr.success('预设快照已启用');
@@ -1949,7 +1949,7 @@ export class PresetManagerUI {
     checkbox.addEventListener('change', (e) => {
       const enabled = e.target.checked;
       stitchData.setEnabled(enabled);
-      logger.info('[PresetManagerUI] 预设缝合功能:', enabled ? '启用' : '禁用');
+      logger.info('preset', '[PresetManagerUI] 预设缝合功能:', enabled ? '启用' : '禁用');
 
       // 更新按钮显示状态
       if (this.presetManager.stitch) {

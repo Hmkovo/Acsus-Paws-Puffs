@@ -21,7 +21,7 @@ const STORAGE_KEY = 'acsusPawsPuffs';
  * @param {Object} data - 数据对象
  */
 async function saveData(key, data) {
-  logger.debug('[Storage] 保存数据:', key);
+  logger.debug('phone','[Storage] 保存数据:', key);
 
   try {
     // 确保扩展设置对象存在
@@ -39,9 +39,9 @@ async function saveData(key, data) {
     // 调用酒馆官方保存函数（同步到服务器）
     saveSettingsDebounced();
 
-    logger.debug('[Storage] 数据已保存并同步:', key);
+    logger.debug('phone','[Storage] 数据已保存并同步:', key);
   } catch (error) {
-    logger.error('[Storage] 保存数据失败:', error);
+    logger.error('phone','[Storage] 保存数据失败:', error);
     throw error;
   }
 }
@@ -57,31 +57,31 @@ async function saveData(key, data) {
  * @returns {Promise<Object|null>} 数据对象，不存在则返回 null
  */
 async function loadData(key) {
-  logger.debug('[Storage] 读取数据:', key);
+  logger.debug('phone','[Storage] 读取数据:', key);
 
   try {
     // 检查路径是否存在
     if (!extension_settings[STORAGE_KEY]) {
-      logger.debug('[Storage] 扩展设置不存在，返回 null');
+      logger.debug('phone','[Storage] 扩展设置不存在，返回 null');
       return null;
     }
 
     if (!extension_settings[STORAGE_KEY].phone) {
-      logger.debug('[Storage] phone 数据不存在，返回 null');
+      logger.debug('phone','[Storage] phone 数据不存在，返回 null');
       return null;
     }
 
     const data = extension_settings[STORAGE_KEY].phone[key];
 
     if (data === undefined || data === null) {
-      logger.debug('[Storage] 数据不存在:', key);
+      logger.debug('phone','[Storage] 数据不存在:', key);
       return null;
     }
 
-    logger.debug('[Storage] 数据已读取:', key);
+    logger.debug('phone','[Storage] 数据已读取:', key);
     return data;
   } catch (error) {
-    logger.error('[Storage] 读取数据失败:', error);
+    logger.error('phone','[Storage] 读取数据失败:', error);
     return null;
   }
 }

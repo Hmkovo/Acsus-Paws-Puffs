@@ -34,56 +34,56 @@ import logger from '../../../logger.js';
  */
 export async function renderTransferPage(params) {
     const { contactId } = params;
-    logger.info('[TransferUI] 开始渲染转账页面:', contactId);
-    logger.debug('[TransferUI] 收到的params:', params);
+    logger.info('phone','[TransferUI] 开始渲染转账页面:', contactId);
+    logger.debug('phone','[TransferUI] 收到的params:', params);
 
     // 加载联系人信息
     const contacts = await loadContacts();
-    logger.debug('[TransferUI] 已加载联系人列表，总数:', contacts.length);
+    logger.debug('phone','[TransferUI] 已加载联系人列表，总数:', contacts.length);
     
     const contact = contacts.find(c => c.id === contactId);
     
     if (!contact) {
-        logger.error('[TransferUI] 联系人不存在:', contactId);
-        logger.error('[TransferUI] 可用的联系人ID列表:', contacts.map(c => c.id));
+        logger.error('phone','[TransferUI] 联系人不存在:', contactId);
+        logger.error('phone','[TransferUI] 可用的联系人ID列表:', contacts.map(c => c.id));
         return createErrorView();
     }
-    logger.debug('[TransferUI] 找到联系人:', contact);
+    logger.debug('phone','[TransferUI] 找到联系人:', contact);
 
     // 加载当前余额
     const balance = await getBalance();
-    logger.debug('[TransferUI] 当前余额:', balance);
+    logger.debug('phone','[TransferUI] 当前余额:', balance);
     
     const displayName = getContactDisplayName(contact);
-    logger.debug('[TransferUI] 显示名称:', displayName);
+    logger.debug('phone','[TransferUI] 显示名称:', displayName);
 
     const fragment = document.createDocumentFragment();
-    logger.debug('[TransferUI] Fragment已创建，类型:', fragment.constructor.name);
+    logger.debug('phone','[TransferUI] Fragment已创建，类型:', fragment.constructor.name);
 
     // 创建页面内容容器
     const container = document.createElement('div');
     container.className = 'transfer-page';
-    logger.debug('[TransferUI] Container已创建，className:', container.className);
+    logger.debug('phone','[TransferUI] Container已创建，className:', container.className);
 
     // 渲染HTML
     const html = createTransferHTML(displayName, balance);
-    logger.debug('[TransferUI] HTML已生成，长度:', html.length, '字符');
+    logger.debug('phone','[TransferUI] HTML已生成，长度:', html.length, '字符');
     container.innerHTML = html;
-    logger.debug('[TransferUI] HTML已注入container，子元素数量:', container.children.length);
+    logger.debug('phone','[TransferUI] HTML已注入container，子元素数量:', container.children.length);
 
     // 绑定事件
     bindEvents(container, contactId, contact);
-    logger.debug('[TransferUI] 事件已绑定');
+    logger.debug('phone','[TransferUI] 事件已绑定');
 
     // 监听钱包数据变化事件（实时更新余额显示）
     bindWalletChangeListener(container, contactId);
-    logger.debug('[TransferUI] 钱包监听器已绑定');
+    logger.debug('phone','[TransferUI] 钱包监听器已绑定');
 
     fragment.appendChild(container);
-    logger.debug('[TransferUI] Container已添加到Fragment，Fragment.childNodes.length:', fragment.childNodes.length);
+    logger.debug('phone','[TransferUI] Container已添加到Fragment，Fragment.childNodes.length:', fragment.childNodes.length);
 
-    logger.info('[TransferUI] 转账页面渲染完成，联系人:', displayName, '余额:', balance);
-    logger.debug('[TransferUI] 返回的Fragment结构:', {
+    logger.info('phone','[TransferUI] 转账页面渲染完成，联系人:', displayName, '余额:', balance);
+    logger.debug('phone','[TransferUI] 返回的Fragment结构:', {
         nodeType: fragment.nodeType,
         childNodes: fragment.childNodes.length,
         firstChild: fragment.firstChild ? fragment.firstChild.className : 'null'
@@ -159,14 +159,14 @@ function createTransferHTML(contactName, balance) {
  * @param {Object} contact - 联系人对象
  */
 function bindEvents(container, contactId, contact) {
-    logger.debug('[TransferUI.bindEvents] 开始绑定事件，contactId:', contactId);
+    logger.debug('phone','[TransferUI.bindEvents] 开始绑定事件，contactId:', contactId);
     
     // 返回按钮
     const backBtn = container.querySelector('.transfer-btn-back');
-    logger.debug('[TransferUI.bindEvents] 返回按钮:', backBtn ? '找到' : '未找到');
+    logger.debug('phone','[TransferUI.bindEvents] 返回按钮:', backBtn ? '找到' : '未找到');
     
     backBtn?.addEventListener('click', () => {
-        logger.info('[TransferUI] 点击返回按钮');
+        logger.info('phone','[TransferUI] 点击返回按钮');
         handleBack();
     });
 
@@ -175,7 +175,7 @@ function bindEvents(container, contactId, contact) {
     const messageInput = /** @type {HTMLInputElement} */ (container.querySelector('#transfer-message-input'));
     const submitBtn = /** @type {HTMLButtonElement} */ (container.querySelector('#transfer-submit-btn'));
     
-    logger.debug('[TransferUI.bindEvents] 表单元素查找结果:', {
+    logger.debug('phone','[TransferUI.bindEvents] 表单元素查找结果:', {
         amountInput: !!amountInput,
         messageInput: !!messageInput,
         submitBtn: !!submitBtn
@@ -188,7 +188,7 @@ function bindEvents(container, contactId, contact) {
 
     // 转账按钮
     submitBtn?.addEventListener('click', async () => {
-        logger.info('[TransferUI] 点击转账按钮');
+        logger.info('phone','[TransferUI] 点击转账按钮');
         await handleTransfer(amountInput, messageInput, contactId, contact, submitBtn);
     });
 
@@ -207,14 +207,14 @@ function bindEvents(container, contactId, contact) {
         }
     });
     
-    logger.debug('[TransferUI.bindEvents] 所有事件绑定完成');
+    logger.debug('phone','[TransferUI.bindEvents] 所有事件绑定完成');
 }
 
 /**
  * 处理返回
  */
 function handleBack() {
-    logger.debug('[TransferUI] 点击返回按钮');
+    logger.debug('phone','[TransferUI] 点击返回按钮');
     const overlayElement = document.querySelector('.phone-overlay');
     if (overlayElement) {
         import('../phone-main-ui.js').then(({ hidePage }) => {
@@ -264,7 +264,7 @@ async function handleTransfer(amountInput, messageInput, contactId, contact, sub
     const balance = await getBalance();
     if (amount > balance) {
         showPhoneToast('余额不足', 'warning');
-        logger.warn('[TransferUI] 转账失败：余额不足，余额:', balance, '尝试转账:', amount);
+        logger.warn('phone','[TransferUI] 转账失败：余额不足，余额:', balance, '尝试转账:', amount);
         return;
     }
 
@@ -276,7 +276,7 @@ async function handleTransfer(amountInput, messageInput, contactId, contact, sub
         // 执行转账（扣除余额 + 保存记录）
         const result = await executeTransfer(contactId, amount, message);
 
-        logger.info('[TransferUI] 转账成功:', displayName, amount, '新余额:', result.balance);
+        logger.info('phone','[TransferUI] 转账成功:', displayName, amount, '新余额:', result.balance);
 
         // 创建转账消息对象
         const { generateMessageId } = await import('../utils/message-actions-helper.js');
@@ -298,17 +298,17 @@ async function handleTransfer(amountInput, messageInput, contactId, contact, sub
         addPendingMessage(contactId, pendingContent, transferMessage.time, transferMessage.id);
         
         // 3. 在聊天页显示用户转账气泡（如果聊天页存在）
-        logger.debug('[TransferUI] ========== 步骤3：在聊天页显示转账消息 ==========');
-        logger.debug('[TransferUI] contactId:', contactId);
+        logger.debug('phone','[TransferUI] ========== 步骤3：在聊天页显示转账消息 ==========');
+        logger.debug('phone','[TransferUI] contactId:', contactId);
         
         const safeChatPageId = `page-chat-${contactId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
-        logger.debug('[TransferUI] 安全的聊天页ID:', safeChatPageId);
+        logger.debug('phone','[TransferUI] 安全的聊天页ID:', safeChatPageId);
         
         const chatPage = /** @type {HTMLElement} */ (document.querySelector(`#${safeChatPageId}`));
-        logger.debug('[TransferUI] querySelector查找聊天页结果:', !!chatPage);
+        logger.debug('phone','[TransferUI] querySelector查找聊天页结果:', !!chatPage);
         
         if (chatPage) {
-            logger.debug('[TransferUI] 聊天页详情:', {
+            logger.debug('phone','[TransferUI] 聊天页详情:', {
                 id: chatPage.id,
                 classList: Array.from(chatPage.classList),
                 hasActive: chatPage.classList.contains('active'),
@@ -318,25 +318,25 @@ async function handleTransfer(amountInput, messageInput, contactId, contact, sub
             // 注意：转账页在上层时，聊天页会被dimmed（没有active类）
             // 所以不检查active，只要页面存在就添加消息
             if (chatPage.isConnected) {
-                logger.debug('[TransferUI] 聊天页已连接到DOM，准备添加转账消息');
-                logger.debug('[TransferUI] 转账消息对象:', transferMessage);
+                logger.debug('phone','[TransferUI] 聊天页已连接到DOM，准备添加转账消息');
+                logger.debug('phone','[TransferUI] 转账消息对象:', transferMessage);
                 
                 try {
                     const { appendMessageToChat } = await import('./message-chat-ui.js');
-                    logger.debug('[TransferUI] 已导入appendMessageToChat函数');
+                    logger.debug('phone','[TransferUI] 已导入appendMessageToChat函数');
                     
                     await appendMessageToChat(chatPage, transferMessage, contact, contactId);
-                    logger.info('[TransferUI] ✅ 已在聊天页显示用户转账气泡');
+                    logger.info('phone','[TransferUI] ✅ 已在聊天页显示用户转账气泡');
                 } catch (error) {
-                    logger.error('[TransferUI] ❌ 添加转账消息到聊天页失败:', error.message);
-                    logger.error('[TransferUI] 错误堆栈:', error.stack);
+                    logger.error('phone','[TransferUI] ❌ 添加转账消息到聊天页失败:', error.message);
+                    logger.error('phone','[TransferUI] 错误堆栈:', error.stack);
                 }
             } else {
-                logger.warn('[TransferUI] 聊天页未连接到DOM，跳过添加消息');
+                logger.warn('phone','[TransferUI] 聊天页未连接到DOM，跳过添加消息');
             }
         } else {
-            logger.warn('[TransferUI] 未找到聊天页DOM:', safeChatPageId);
-            logger.debug('[TransferUI] 检查所有页面DOM:');
+            logger.warn('phone','[TransferUI] 未找到聊天页DOM:', safeChatPageId);
+            logger.debug('phone','[TransferUI] 检查所有页面DOM:');
             const allPages = document.querySelectorAll('[id^="page-"]');
             allPages.forEach((page, i) => {
                 const el = /** @type {HTMLElement} */ (page);
@@ -344,35 +344,35 @@ async function handleTransfer(amountInput, messageInput, contactId, contact, sub
             });
         }
         
-        logger.debug('[TransferUI] ========== 步骤3结束 ==========');
+        logger.debug('phone','[TransferUI] ========== 步骤3结束 ==========');
 
         // 4. 更新消息列表
-        logger.debug('[TransferUI] 步骤4：更新消息列表');
+        logger.debug('phone','[TransferUI] 步骤4：更新消息列表');
         const { updateContactItem } = await import('./message-list-ui.js');
         await updateContactItem(contactId);
-        logger.debug('[TransferUI] 消息列表已更新');
+        logger.debug('phone','[TransferUI] 消息列表已更新');
 
         // 显示成功提示
-        logger.debug('[TransferUI] 步骤5：显示成功提示');
+        logger.debug('phone','[TransferUI] 步骤5：显示成功提示');
         showPhoneToast(`成功向${displayName}转账 ¥${amount.toFixed(2)}`, 'success');
-        logger.debug('[TransferUI] Toast通知已显示');
+        logger.debug('phone','[TransferUI] Toast通知已显示');
 
         // 关闭转账页面，返回聊天页
-        logger.debug('[TransferUI] 步骤6：500ms后自动返回聊天页');
+        logger.debug('phone','[TransferUI] 步骤6：500ms后自动返回聊天页');
         setTimeout(async () => {
-            logger.debug('[TransferUI] 开始执行自动返回');
+            logger.debug('phone','[TransferUI] 开始执行自动返回');
             const { hidePage } = await import('../phone-main-ui.js');
             const overlay = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
             if (overlay) {
-                logger.debug('[TransferUI] 调用hidePage返回聊天页');
+                logger.debug('phone','[TransferUI] 调用hidePage返回聊天页');
                 hidePage(overlay, 'transfer');
             } else {
-                logger.error('[TransferUI] 找不到.phone-overlay，无法返回');
+                logger.error('phone','[TransferUI] 找不到.phone-overlay，无法返回');
             }
         }, 500);
 
     } catch (error) {
-        logger.error('[TransferUI] 转账失败:', error.message);
+        logger.error('phone','[TransferUI] 转账失败:', error.message);
         showPhoneToast(error.message || '转账失败', 'error');
 
         // 恢复按钮
@@ -391,11 +391,11 @@ function bindWalletChangeListener(container, contactId) {
     
     // 订阅钱包数据变化
     stateManager.subscribe(pageId, 'wallet', async (meta) => {
-        logger.debug('[TransferUI] 收到钱包数据变化通知', meta);
+        logger.debug('phone','[TransferUI] 收到钱包数据变化通知', meta);
         
         // 检查页面是否还存在
         if (!document.contains(container)) {
-            logger.debug('[TransferUI] 页面已关闭，跳过刷新');
+            logger.debug('phone','[TransferUI] 页面已关闭，跳过刷新');
             return;
         }
         
@@ -407,7 +407,7 @@ function bindWalletChangeListener(container, contactId) {
         const balanceElement = container.querySelector('.transfer-balance-amount');
         if (balanceElement) {
             balanceElement.textContent = `￥ ${walletData.balance.toFixed(2)}`;
-            logger.debug('[TransferUI] 余额显示已更新:', walletData.balance);
+            logger.debug('phone','[TransferUI] 余额显示已更新:', walletData.balance);
         }
     });
 
@@ -418,7 +418,7 @@ function bindWalletChangeListener(container, contactId) {
                 if (node === container || node.contains(container)) {
                     stateManager.unsubscribeAll(pageId);
                     observer.disconnect();
-                    logger.debug('[TransferUI] 页面已关闭，已清理订阅');
+                    logger.debug('phone','[TransferUI] 页面已关闭，已清理订阅');
                     return;
                 }
             }

@@ -76,7 +76,7 @@ function generateStoryPrompt(planTitle, diceResult, outcomeType) {
  * @param {Object} planData - 解析后的计划数据
  */
 export async function openPlanExecutor(contactId, message, planData) {
-  logger.debug('[PlanExecutor] 打开执行弹窗:', planData.title);
+  logger.debug('phone','[PlanExecutor] 打开执行弹窗:', planData.title);
 
   const isSentByUser = message.sender === 'user';
   const userName = getUserDisplayName();
@@ -172,7 +172,7 @@ export async function openPlanExecutor(contactId, message, planData) {
 
   // 接受按钮
   acceptBtn?.addEventListener('click', async () => {
-    logger.debug('[PlanExecutor] 接受计划');
+    logger.debug('phone','[PlanExecutor] 接受计划');
 
     // 创建或更新计划数据
     let plan = getPlanByMessageId(contactId, message.id);
@@ -234,7 +234,7 @@ export async function openPlanExecutor(contactId, message, planData) {
 
   // 拒绝按钮
   rejectBtn?.addEventListener('click', async () => {
-    logger.debug('[PlanExecutor] 拒绝计划');
+    logger.debug('phone','[PlanExecutor] 拒绝计划');
 
     // 生成消息ID和时间戳
     const { generateMessageId } = await import('../utils/message-actions-helper.js');
@@ -293,7 +293,7 @@ export async function openPlanExecutor(contactId, message, planData) {
 
     confirmBtn.style.display = 'block';
 
-    logger.info('[PlanExecutor] 掷骰子结果:', diceResult, outcomeType);
+    logger.info('phone','[PlanExecutor] 掷骰子结果:', diceResult, outcomeType);
   });
 
   // 确认完成按钮
@@ -345,7 +345,7 @@ export async function openPlanExecutor(contactId, message, planData) {
     closePopup();
     showSuccessToast('计划已完成，请点击纸飞机发送');
 
-    logger.info('[PlanExecutor] ✅ 计划执行完成:', planData.title);
+    logger.info('phone','[PlanExecutor] ✅ 计划执行完成:', planData.title);
   });
 
   // 取消和关闭按钮
@@ -367,7 +367,7 @@ export async function openPlanExecutor(contactId, message, planData) {
  * @returns {Promise<void>}
  */
 export async function createNewPlan(contactId) {
-  logger.debug('[PlanExecutor] 创建新计划');
+  logger.debug('phone','[PlanExecutor] 创建新计划');
 
   // 创建弹窗遮罩层
   const overlay = document.createElement('div');
@@ -472,7 +472,7 @@ export async function createNewPlan(contactId) {
     closePopup();
     showSuccessToast('计划已发送');
 
-    logger.info('[PlanExecutor] ✅ 发起新计划:', planContent);
+    logger.info('phone','[PlanExecutor] ✅ 发起新计划:', planContent);
   });
 
   // 取消和关闭按钮

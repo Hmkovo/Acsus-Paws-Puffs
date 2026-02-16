@@ -19,7 +19,7 @@ import { getRequestHeaders } from '../../../../../../../script.js';
  * @returns {Promise<DocumentFragment>} 页面内容片段
  */
 export async function renderEmojiManager() {
-  logger.info('[EmojiManager] 开始渲染表情包管理页面');
+  logger.info('phone','[EmojiManager] 开始渲染表情包管理页面');
 
   const fragment = document.createDocumentFragment();
   const container = document.createElement('div');
@@ -55,7 +55,7 @@ export async function renderEmojiManager() {
 
   fragment.appendChild(container);
 
-  logger.info('[EmojiManager] 表情包管理页面渲染完成');
+  logger.info('phone','[EmojiManager] 表情包管理页面渲染完成');
   return fragment;
 }
 
@@ -136,7 +136,7 @@ function createEmojiItem(emoji) {
  * @param {HTMLElement} container - 页面容器
  */
 function bindEvents(container) {
-  logger.debug('[EmojiManager] 绑定事件');
+  logger.debug('phone','[EmojiManager] 绑定事件');
 
   // 返回按钮
   const backBtn = container.querySelector('.emgr-header-back');
@@ -182,7 +182,7 @@ function bindEvents(container) {
  * @private
  */
 function handleBack() {
-  logger.info('[EmojiManager] 点击返回');
+  logger.info('phone','[EmojiManager] 点击返回');
   const overlayElement = document.querySelector('.phone-overlay');
   if (overlayElement) {
     import('../phone-main-ui.js').then(({ hidePage }) => {
@@ -209,12 +209,12 @@ function handleManageToggle(container) {
     manageBtn.textContent = '管理';
     items.forEach(item => item.classList.remove('selected'));
     if (deleteBar) deleteBar.style.display = 'none';
-    logger.debug('[EmojiManager] 退出管理模式');
+    logger.debug('phone','[EmojiManager] 退出管理模式');
   } else {
     // 进入管理模式
     manageBtn.textContent = '完成';
     if (deleteBar) deleteBar.style.display = 'flex';
-    logger.debug('[EmojiManager] 进入管理模式');
+    logger.debug('phone','[EmojiManager] 进入管理模式');
 
     // 绑定选择事件（点击切换选中）
     items.forEach(item => {
@@ -235,7 +235,7 @@ function handleManageToggle(container) {
  * @param {HTMLElement} container - 页面容器
  */
 async function handleAddEmoji(container) {
-  logger.info('[EmojiManager] 点击添加表情包');
+  logger.info('phone','[EmojiManager] 点击添加表情包');
 
   // 自定义弹窗：命名 + 两种添加方式（本地文件 or URL链接）
   const formHTML = `
@@ -384,7 +384,7 @@ async function handleAddEmoji(container) {
               }
             };
             reader.readAsDataURL(file);
-            logger.debug('[EmojiManager] 已选择文件:', file.name);
+            logger.debug('phone','[EmojiManager] 已选择文件:', file.name);
           } else {
             // 重置为初始状态
             filePreview.style.display = 'none';
@@ -411,7 +411,7 @@ async function handleAddEmoji(container) {
         });
       }
 
-      logger.debug('[EmojiManager] 表情包添加弹窗已初始化');
+      logger.debug('phone','[EmojiManager] 表情包添加弹窗已初始化');
     },
     beforeClose: (buttonValue) => {
       if (buttonValue === 'ok') {
@@ -422,7 +422,7 @@ async function handleAddEmoji(container) {
 
         const mode = modeSelect?.value || 'file';
 
-        logger.debug('[EmojiManager] 准备保存表情包:', {
+        logger.debug('phone','[EmojiManager] 准备保存表情包:', {
           mode: mode,
           name: nameInput?.value,
           hasFile: !!fileInput?.files[0],
@@ -443,7 +443,7 @@ async function handleAddEmoji(container) {
   });
 
   if (!result || result.action !== 'ok') {
-    logger.debug('[EmojiManager] 用户取消添加');
+    logger.debug('phone','[EmojiManager] 用户取消添加');
     return;
   }
 
@@ -502,7 +502,7 @@ async function handleAddEmoji(container) {
       showErrorToast('表情包名称已存在');
     }
   } catch (error) {
-    logger.error('[EmojiManager] 添加表情包失败:', error);
+    logger.error('phone','[EmojiManager] 添加表情包失败:', error);
     showErrorToast('添加失败：' + error.message);
   }
 }
@@ -522,7 +522,7 @@ async function handleAddEmoji(container) {
  * 使用 acsus-paws-puffs_emoji_ 前缀来区分表情包图片
  */
 async function uploadEmojiImage(file) {
-  logger.debug('[EmojiManager] 开始上传图片:', file.name);
+  logger.debug('phone','[EmojiManager] 开始上传图片:', file.name);
 
   // 读取文件为 base64
   const base64Data = await fileToBase64(file);
@@ -545,14 +545,14 @@ async function uploadEmojiImage(file) {
 
   if (!response.ok) {
     const errorText = await response.text();
-    logger.error('[EmojiManager] 上传失败，状态码:', response.status, '错误:', errorText);
+    logger.error('phone','[EmojiManager] 上传失败，状态码:', response.status, '错误:', errorText);
     throw new Error(`上传失败（状态码：${response.status}）`);
   }
 
   const result = await response.json();
   const filePath = result.path;
 
-  logger.info('[EmojiManager] 图片上传成功:', filePath);
+  logger.info('phone','[EmojiManager] 图片上传成功:', filePath);
   return filePath;
 }
 
@@ -593,13 +593,13 @@ function fileToBase64(file) {
 async function handleEditEmojiName(item, container) {
   const emojiId = item.dataset.emojiId;
 
-  logger.info('[EmojiManager] 点击编辑表情包:', item.dataset.emojiName);
+  logger.info('phone','[EmojiManager] 点击编辑表情包:', item.dataset.emojiName);
 
   // 获取当前表情包数据
   const emojis = getEmojis();
   const emoji = emojis.find(e => e.id === emojiId);
   if (!emoji) {
-    logger.warn('[EmojiManager] 表情包不存在:', emojiId);
+    logger.warn('phone','[EmojiManager] 表情包不存在:', emojiId);
     return;
   }
 
@@ -612,21 +612,21 @@ async function handleEditEmojiName(item, container) {
 
   // 用户取消
   if (newName === null) {
-    logger.debug('[EmojiManager] 用户取消修改');
+    logger.debug('phone','[EmojiManager] 用户取消修改');
     return;
   }
 
   // 验证1：不能为空
   if (!newName.trim()) {
     showWarningToast('表情名不能为空');
-    logger.warn('[EmojiManager] 表情名为空');
+    logger.warn('phone','[EmojiManager] 表情名为空');
     return;
   }
 
   // 验证2：长度1-20字符
   if (newName.trim().length < 1 || newName.trim().length > 20) {
     showWarningToast('表情名长度需在1-20字符之间');
-    logger.warn('[EmojiManager] 表情名长度不符合要求:', newName.trim().length);
+    logger.warn('phone','[EmojiManager] 表情名长度不符合要求:', newName.trim().length);
     return;
   }
 
@@ -634,7 +634,7 @@ async function handleEditEmojiName(item, container) {
   const exists = emojis.some(e => e.id !== emojiId && e.name === newName.trim());
   if (exists) {
     showWarningToast('表情名已存在，请换一个');
-    logger.warn('[EmojiManager] 表情名重复:', newName.trim());
+    logger.warn('phone','[EmojiManager] 表情名重复:', newName.trim());
     return;
   }
 
@@ -650,11 +650,11 @@ async function handleEditEmojiName(item, container) {
       img.alt = emoji.name;
     }
 
-    logger.info('[EmojiManager] 表情名已修改:', emoji.name);
+    logger.info('phone','[EmojiManager] 表情名已修改:', emoji.name);
     // 不显示成功提示（视觉反馈足够）
   } else {
     showErrorToast('修改失败，请重试');
-    logger.error('[EmojiManager] 修改表情名失败:', emojiId);
+    logger.error('phone','[EmojiManager] 修改表情名失败:', emojiId);
   }
 }
 
@@ -706,7 +706,7 @@ async function handleDeleteSelected(container) {
       if (deleteBar) deleteBar.style.display = 'none';
     }
   } catch (error) {
-    logger.error('[EmojiManager] 删除表情包失败:', error);
+    logger.error('phone','[EmojiManager] 删除表情包失败:', error);
     showErrorToast('删除失败：' + error.message);
   }
 }

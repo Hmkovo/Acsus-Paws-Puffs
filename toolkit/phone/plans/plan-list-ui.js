@@ -27,7 +27,7 @@ import { stateManager } from '../utils/state-manager.js';
  */
 export async function renderPlanList(params) {
     const { contactId } = params;
-    logger.debug('[PlanListUI] 渲染计划列表页:', contactId);
+    logger.debug('phone','[PlanListUI]] 渲染计划列表页:', contactId);
 
     try {
         // 加载联系人数据
@@ -35,7 +35,7 @@ export async function renderPlanList(params) {
         const contact = contacts.find(c => c.id === contactId);
 
         if (!contact) {
-            logger.warn('[PlanListUI] 未找到联系人:', contactId);
+            logger.warn('phone','[PlanListUI] 未找到联系人:', contactId);
             return createErrorView();
         }
 
@@ -58,10 +58,10 @@ export async function renderPlanList(params) {
         // 4. 监听计划数据变化（实时刷新列表）
         setupPlanDataListener(contactId);
 
-        logger.info('[PlanListUI] 页面渲染完成');
+        logger.info('phone','[PlanListUI] 页面渲染完成');
         return fragment;
     } catch (error) {
-        logger.error('[PlanListUI] 渲染失败:', error);
+        logger.error('phone','[PlanListUI] 渲染失败:', error);
         return createErrorView();
     }
 }
@@ -143,7 +143,7 @@ async function createPlanListContainer(contactId) {
 
     // 进行中的计划
     const pendingPlans = getPendingPlans(contactId);
-    logger.debug('[PlanListUI.createPlanListContainer] 进行中计划数:', pendingPlans.length);
+    logger.debug('phone','[PlanListUI].createPlanListContainer] 进行中计划数:', pendingPlans.length);
     const pendingList = document.createElement('div');
     pendingList.className = 'plan-list-pending';
 
@@ -151,14 +151,14 @@ async function createPlanListContainer(contactId) {
         pendingList.innerHTML = '<div class="plan-list-empty">暂无进行中的计划</div>';
     } else {
         pendingPlans.forEach(plan => {
-            logger.debug('[PlanListUI.createPlanListContainer] 渲染进行中计划:', plan.id, plan.title);
+            logger.debug('phone','[PlanListUI].createPlanListContainer] 渲染进行中计划:', plan.id, plan.title);
             pendingList.appendChild(createPlanItem(plan, contactId, 'pending'));
         });
     }
 
     // 已完成的计划
     const completedPlans = getCompletedPlans(contactId);
-    logger.debug('[PlanListUI.createPlanListContainer] 已完成计划数:', completedPlans.length);
+    logger.debug('phone','[PlanListUI].createPlanListContainer] 已完成计划数:', completedPlans.length);
     const completedList = document.createElement('div');
     completedList.className = 'plan-list-completed';
     completedList.style.display = 'none';
@@ -167,7 +167,7 @@ async function createPlanListContainer(contactId) {
         completedList.innerHTML = '<div class="plan-list-empty">暂无已完成的计划</div>';
     } else {
         completedPlans.forEach(plan => {
-            logger.debug('[PlanListUI.createPlanListContainer] 渲染已完成计划:', plan.id, plan.title);
+            logger.debug('phone','[PlanListUI].createPlanListContainer] 渲染已完成计划:', plan.id, plan.title);
             completedList.appendChild(createPlanItem(plan, contactId, 'completed'));
         });
     }
@@ -269,7 +269,7 @@ function createErrorView() {
  * 处理返回操作
  */
 function handleBack() {
-    logger.info('[PlanListUI] 点击返回');
+    logger.info('phone','[PlanListUI] 点击返回');
     const overlayElement = document.querySelector('.phone-overlay');
     if (overlayElement) {
         import('../phone-main-ui.js').then(({ hidePage }) => {
@@ -297,18 +297,18 @@ function setupPlanDataListener(contactId) {
             return;
         }
 
-        logger.debug('[PlanListUI] 检测到计划数据变化，刷新列表', meta);
+        logger.debug('phone','[PlanListUI]] 检测到计划数据变化，刷新列表', meta);
 
         // 查找列表容器
         const container = document.querySelector('.plan-list-page');
         if (!container) {
-            logger.warn('[PlanListUI] 未找到列表容器，跳过刷新');
+            logger.warn('phone','[PlanListUI] 未找到列表容器，跳过刷新');
             return;
         }
 
         // 检查页面是否还在DOM中
         if (!document.contains(container)) {
-            logger.debug('[PlanListUI] 页面已关闭，跳过刷新');
+            logger.debug('phone','[PlanListUI]] 页面已关闭，跳过刷新');
             return;
         }
 
@@ -317,11 +317,11 @@ function setupPlanDataListener(contactId) {
         if (oldListContainer) {
             const newListContainer = await createPlanListContainer(contactId);
             oldListContainer.replaceWith(newListContainer);
-            logger.info('[PlanListUI] 列表已刷新');
+            logger.info('phone','[PlanListUI] 列表已刷新');
         }
     });
 
-    logger.debug('[PlanListUI] 已设置计划数据监听器（状态管理器）');
+    logger.debug('phone','[PlanListUI]] 已设置计划数据监听器（状态管理器）');
 }
 
 /**
@@ -333,6 +333,6 @@ function setupPlanDataListener(contactId) {
 export function cleanupPlanListUI() {
     // 🔥 使用状态管理器清理
     stateManager.unsubscribeAll('plan-list');
-    logger.debug('[PlanListUI] 已清理计划数据监听器（状态管理器）');
+    logger.debug('phone','[PlanListUI]] 已清理计划数据监听器（状态管理器）');
 }
 

@@ -1,0 +1,214 @@
+/**
+ * 聊天工具 - 消息折叠功能样式
+ * 简化版：只显示折叠栏头部，不包含预览内容
+ */
+
+/* ============================================
+   折叠栏容器
+   ============================================ */
+
+.chat-tools-fold-bar {
+  margin: 4px 0;
+  padding: 6px 12px;
+  background: var(--SmartThemeBlurTintColor);
+  border-left: 3px solid var(--SmartThemeQuoteColor);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.chat-tools-fold-bar:hover {
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 85%, var(--SmartThemeQuoteColor) 15%);
+}
+
+/* ============================================
+   折叠栏头部
+   ============================================ */
+
+.chat-tools-fold-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 展开/收起箭头按钮 */
+.chat-tools-fold-preview {
+  background: transparent;
+  border: none;
+  color: var(--SmartThemeMutedTextColor);
+  cursor: pointer;
+  font-size: 0.75em;
+  padding: 2px 4px;
+  transition: color 0.2s;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-tools-fold-preview:hover {
+  color: var(--SmartThemeQuoteColor);
+}
+
+/* 标题显示 */
+.chat-tools-fold-title {
+  color: var(--SmartThemeMutedTextColor);
+  opacity: 0.6;
+  font-size: 0.9em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 标题输入框 */
+.chat-tools-fold-title-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  color: var(--SmartThemeBodyColor);
+  font-size: 0.85em;
+  padding: 2px 4px;
+  outline: none;
+  min-width: 80px;
+}
+
+.chat-tools-fold-title-input:focus {
+  border-bottom-color: var(--SmartThemeQuoteColor);
+}
+
+.chat-tools-fold-title-input::placeholder {
+  color: var(--SmartThemeBorderColor);
+  opacity: 0.6;
+}
+
+/* 编辑区域容器 */
+.chat-tools-fold-edit-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+/* 操作按钮容器 */
+.chat-tools-fold-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* 操作按钮 */
+.chat-tools-fold-btn {
+  background: transparent;
+  border: none;
+  color: var(--SmartThemeMutedTextColor);
+  cursor: pointer;
+  font-size: 0.8em;
+  padding: 2px 4px;
+  transition: color 0.2s;
+}
+
+.chat-tools-fold-btn:hover {
+  color: var(--SmartThemeQuoteColor);
+}
+
+.chat-tools-fold-btn i {
+  pointer-events: none;
+}
+
+/* 删除按钮 hover 警告色 */
+.chat-tools-fold-delete:hover {
+  color: #e74c3c;
+}
+
+/* ============================================
+   设置界面 - 预设管理
+   ============================================ */
+
+.chat-tools-presets-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.chat-tools-presets-input-row {
+  display: flex;
+  gap: 6px;
+}
+
+.chat-tools-presets-input-row input {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 0.9em;
+}
+
+.chat-tools-presets-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chat-tools-preset-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--SmartThemeQuoteColor);
+  color: var(--SmartThemeBlurColor);
+  border-radius: 12px;
+  font-size: 0.85em;
+}
+
+.chat-tools-preset-remove {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.8em;
+  opacity: 0.7;
+  display: flex;
+  align-items: center;
+}
+
+.chat-tools-preset-remove:hover {
+  opacity: 1;
+}
+
+/* ============================================
+   预设下拉列表
+   ============================================ */
+
+.chat-tools-fold-preset-dropdown {
+  position: absolute;
+  z-index: 1000;
+  background: var(--SmartThemeBlurTintColor);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-height: 150px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+
+.chat-tools-fold-preset-list {
+  padding: 4px 0;
+}
+
+.chat-tools-fold-preset-item {
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.chat-tools-fold-preset-item:hover {
+  background: var(--SmartThemeQuoteColor);
+  color: var(--SmartThemeBlurColor);
+}
+
+.chat-tools-fold-preset-empty {
+  padding: 8px 12px;
+  color: var(--SmartThemeMutedTextColor);
+  font-size: 0.85em;
+  text-align: center;
+}

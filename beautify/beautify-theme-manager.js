@@ -127,7 +127,7 @@ function initThemeManager() {
   // 从设置中读取每页显示数量
   itemsPerPage = getItemsPerPage();
 
-  logger.info('[ThemeManager] 开始初始化...');
+  logger.info('beautify', '[ThemeManager] 开始初始化...');
 
   fetchOfficialThemes().then(themes => {
     themesCache = themes;
@@ -149,9 +149,9 @@ function initThemeManager() {
     }
 
     initialized = true;
-    logger.info('[ThemeManager] 初始化完成，共', themes.length, '个主题');
+    logger.info('beautify', '[ThemeManager] 初始化完成，共', themes.length, '个主题');
   }).catch(error => {
-    logger.error('[ThemeManager] 初始化失败:', error);
+    logger.error('beautify', '[ThemeManager] 初始化失败:', error);
   });
 }
 
@@ -168,14 +168,14 @@ function destroyThemeManager() {
   document.removeEventListener('beautify-theme-tags-changed', handleThemeTagsChanged);
 
   initialized = false;
-  logger.info('[ThemeManager] 已销毁');
+  logger.info('beautify', '[ThemeManager] 已销毁');
 }
 
 /**
  * 处理弹窗中标签变更事件
  */
 function handleThemeTagsChanged() {
-  logger.debug('[ThemeManager] 检测到标签变更，刷新列表');
+  logger.debug('beautify', '[ThemeManager] 检测到标签变更，刷新列表');
   renderTagFilter();
   renderThemeList();
 }
@@ -231,7 +231,7 @@ function createContainer() {
     if (titleH4) {
       const container = buildContainerDOM();
       titleH4.after(container);
-      logger.debug('[ThemeManager] 容器已创建在 UI Theme h4 下方');
+      logger.debug('beautify', '容器已创建在 UI Theme h4 下方');
       return;
     }
   }
@@ -243,7 +243,7 @@ function createContainer() {
     if (drawerContainer && drawerContainer.parentElement) {
       const container = buildContainerDOM();
       drawerContainer.parentElement.insertBefore(container, drawerContainer);
-      logger.debug('[ThemeManager] 容器已创建在主题颜色折叠栏上方');
+      logger.debug('beautify', '容器已创建在主题颜色折叠栏上方');
       return;
     }
   }
@@ -253,10 +253,10 @@ function createContainer() {
   if (!uiThemeBlock) {
     const themesSelect = document.getElementById('themes');
     if (!themesSelect) {
-      logger.warn('[ThemeManager] 未找到 UI-presets-block、主题颜色折叠栏和 #themes');
+      logger.warn('beautify', '未找到 UI - presets - block、主题颜色折叠栏和 #themes');
       return;
     }
-    logger.warn('[ThemeManager] 未找到 UI-presets-block，降级插入');
+    logger.warn('beautify', '未找到 UI - presets - block，降级插入');
     const container = buildContainerDOM();
     const parentBlock = themesSelect.closest('.inline-drawer-content, div');
     if (parentBlock) parentBlock.after(container);
@@ -265,7 +265,7 @@ function createContainer() {
 
   const container = buildContainerDOM();
   uiThemeBlock.after(container);
-  logger.debug('[ThemeManager] 容器已创建（#UI-Theme-Block 降级方案）');
+  logger.debug('beautify', '容器已创建（#UI - Theme - Block 降级方案）');
 }
 
 /**
@@ -341,7 +341,7 @@ function bindEvents() {
         if (!extension_settings[EXT_ID].beautify) extension_settings[EXT_ID].beautify = {};
         extension_settings[EXT_ID].beautify.themeManagerCollapsed = isCollapsed;
         saveSettingsDebounced();
-        logger.debug('[ThemeManager] 折叠状态已同步:', isCollapsed);
+        logger.debug('beautify', '折叠状态已同步:', isCollapsed);
       }
     });
 
@@ -374,7 +374,7 @@ function bindEvents() {
   if (confirmCheckbox) {
     confirmCheckbox.addEventListener('change', function () {
       setConfirmBeforeDelete(this.checked);
-      logger.debug('[ThemeManager] 删除确认:', this.checked);
+      logger.debug('beautify', '删除确认:', this.checked);
     });
   }
 
@@ -480,7 +480,7 @@ function handleApplyTheme(themeName) {
   themesSelect.dispatchEvent(new Event('change', { bubbles: true }));
 
   toastr.success(`已切换到主题: ${themeName}`);
-  logger.info('[ThemeManager] 已应用主题:', themeName);
+  logger.info('beautify', '已应用主题:', themeName);
 }
 
 
@@ -542,9 +542,9 @@ async function handleDeleteTheme(themeName) {
     renderThemeList();
 
     toastr.success(`主题 "${themeName}" 已删除`);
-    logger.info('[ThemeManager] 主题已删除:', themeName);
+    logger.info('beautify', '主题已删除:', themeName);
   } catch (error) {
-    logger.error('[ThemeManager] 删除主题失败:', error);
+    logger.error('beautify', '删除主题失败:', error);
     toastr.error('删除主题时出错');
   }
 }
@@ -611,7 +611,7 @@ function removeThemeFromAllTags(themeName) {
     extension_settings[EXT_ID].beautify.themeTags = tags;
     saveSettingsDebounced();
     renderTagFilter();
-    logger.debug('[ThemeManager] 已从标签中移除主题:', themeName);
+    logger.debug('beautify', '已从标签中移除主题:', themeName);
   }
 }
 
@@ -671,7 +671,7 @@ async function handleRenameTheme(oldName) {
     });
 
     if (!delResp.ok) {
-      logger.warn('[ThemeManager] 删除旧主题文件失败，但新文件已保存:', delResp.status);
+      logger.warn('beautify', '删除旧主题文件失败，但新文件已保存:', delResp.status);
     }
 
     // 4. 更新 SillyTavern 全局 themes 缓存（关键！不更新则切换时找不到数据）
@@ -698,9 +698,9 @@ async function handleRenameTheme(oldName) {
     renderThemeList();
 
     toastr.success(`已重命名为 "${newName}"`);
-    logger.info('[ThemeManager] 主题已重命名:', oldName, '→', newName);
+    logger.info('beautify', '主题已重命名:', oldName, '→', newName);
   } catch (error) {
-    logger.error('[ThemeManager] 重命名失败:', error);
+    logger.error('beautify', '重命名失败:', error);
     toastr.error('重命名时出错');
   }
 }
@@ -780,18 +780,18 @@ function getFullThemeData(themeName) {
 
     // 如果找到且是完整对象（有颜色字段等，不只是 name）
     if (found && typeof found === 'object' && ('main_text_color' in found || 'blur_strength' in found)) {
-      logger.debug('[ThemeManager] 从全局 themes 缓存获取到完整主题数据:', themeName);
+      logger.debug('beautify', '从全局 themes 缓存获取到完整主题数据:', themeName);
       return found;
     }
   }
 
   // 方式2：从 power_user 构建（只适用于当前主题）
   if (power_user && power_user.theme === themeName) {
-    logger.debug('[ThemeManager] 从 power_user 构建主题数据:', themeName);
+    logger.debug('beautify', '从 power_user 构建主题数据:', themeName);
     return buildThemeFromPowerUser(themeName);
   }
 
-  logger.warn('[ThemeManager] 无法获取主题数据:', themeName);
+  logger.warn('beautify', '无法获取主题数据:', themeName);
   return null;
 }
 
@@ -845,10 +845,10 @@ function updateGlobalThemesCache(oldName, newThemeData) {
     } else {
       themes[idx] = newThemeData;
     }
-    logger.debug('[ThemeManager] 全局 themes 缓存已更新:', oldName, '→', newThemeData.name);
+    logger.debug('beautify', '全局 themes 缓存已更新:', oldName, '→', newThemeData.name);
   } else {
     themes.push(typeof themes[0] === 'string' ? newThemeData.name : newThemeData);
-    logger.debug('[ThemeManager] 全局 themes 缓存中追加新主题:', newThemeData.name);
+    logger.debug('beautify', '全局 themes 缓存中追加新主题:', newThemeData.name);
   }
 }
 
@@ -908,7 +908,7 @@ function renameThemeInAllTags(oldName, newName) {
     extension_settings[EXT_ID].beautify.themeTags = tags;
     saveSettingsDebounced();
     renderTagFilter();
-    logger.debug('[ThemeManager] 标签中的主题引用已更新:', oldName, '→', newName);
+    logger.debug('beautify', '标签中的主题引用已更新:', oldName, '→', newName);
   }
 }
 
@@ -1151,7 +1151,7 @@ function appendTagManageButton(tagContainer) {
       const { openThemeTagManagerPopup } = await import('./beautify-popup.js');
       openThemeTagManagerPopup();
     } catch (error) {
-      logger.error('[ThemeManager] 打开标签管理弹窗失败:', error);
+      logger.error('beautify', '打开标签管理弹窗失败:', error);
     }
   });
 
@@ -1180,44 +1180,59 @@ function openInfoPopup() {
   const existingOverlay = document.querySelector('.beautify-theme-manager-info-overlay');
   if (existingOverlay) existingOverlay.remove();
 
-  const overlay = document.createElement('div');
-  overlay.className = 'beautify-theme-manager-info-overlay';
-  overlay.innerHTML = `
-    <div class="beautify-theme-manager-info-popup">
-      <div class="beautify-theme-manager-info-header">
-        <h3>美化主题管理 - 使用说明</h3>
-        <button class="beautify-theme-manager-info-close"><i class="fa-solid fa-xmark"></i></button>
+  const dialog = document.createElement('dialog');
+  dialog.className = 'popup popup--animation-fast';
+  dialog.innerHTML = `
+    <div class="popup-body">
+      <div class="popup-content">
+        <div class="beautify-theme-manager-info-inner" style="max-height: 400px; overflow-y: auto; line-height: 1.6; font-size: 0.9em;">
+          <h3 style="color: var(--SmartThemeQuoteColor); margin-top: 0;">
+            <i class="fa-solid fa-palette" style="margin-right: 8px;"></i>美化主题管理 - 使用说明
+          </h3>
+
+          <p><strong>功能介绍</strong></p>
+          <p>美化主题管理可以帮助你更好地整理和筛选官方UI主题。</p>
+
+          <hr style="border: none; border-top: 1px solid var(--SmartThemeBorderColor); margin: 15px 0; opacity: 0.3;">
+
+          <p><strong>标签管理</strong></p>
+          <ul style="padding-left: 20px; margin: 10px 0;">
+            <li>点击标签可筛选对应的主题</li>
+            <li>点击"+"打开标签管理弹窗</li>
+            <li>一个主题可以打多个标签</li>
+          </ul>
+
+          <hr style="border: none; border-top: 1px solid var(--SmartThemeBorderColor); margin: 15px 0; opacity: 0.3;">
+
+          <p><strong>删除主题</strong></p>
+          <ul style="padding-left: 20px; margin: 10px 0;">
+            <li>点击垃圾桶图标可删除主题</li>
+            <li>勾选"删除确认"开关后，删除前会弹窗确认</li>
+            <li>当前使用中的主题不能删除</li>
+            <li>删除操作不可恢复</li>
+          </ul>
+        </div>
       </div>
-      <div class="beautify-theme-manager-info-content">
-        <h4>功能介绍</h4>
-        <p>美化主题管理可以帮助你更好地整理和筛选官方UI主题。</p>
-        <h4>标签管理</h4>
-        <ul>
-          <li>点击标签可筛选对应的主题</li>
-          <li>点击"+"打开标签管理弹窗</li>
-          <li>一个主题可以打多个标签</li>
-        </ul>
-        <h4>删除主题</h4>
-        <ul>
-          <li>点击垃圾桶图标可删除主题</li>
-          <li>勾选"删除确认"开关后，删除前会弹窗确认</li>
-          <li>当前使用中的主题不能删除</li>
-          <li>删除操作不可恢复</li>
-        </ul>
+      <div class="popup-crop-wrap" style="display: none;"></div>
+      <textarea class="popup-input text_pole result-control auto-select" rows="1" data-result="1" data-result-event="submit" style="display: none;"></textarea>
+      <div class="popup-inputs" style="display: none;"></div>
+      <div class="popup-controls">
+        <div class="popup-button-ok menu_button result-control menu_button_default interactable" data-result="1" autofocus tabindex="0" role="button">知道了</div>
+        <div class="popup-button-cancel menu_button result-control interactable" data-result="0" style="display: none;" tabindex="0" role="button">取消</div>
       </div>
     </div>
   `;
 
-  document.body.appendChild(overlay);
-  requestAnimationFrame(() => overlay.classList.add('show'));
+  document.body.appendChild(dialog);
+  dialog.showModal();
 
-  const closeBtn = overlay.querySelector('.beautify-theme-manager-info-close');
   const close = () => {
-    overlay.classList.remove('show');
-    setTimeout(() => overlay.remove(), 300);
+    dialog.close();
+    dialog.remove();
   };
-  closeBtn.addEventListener('click', close);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+  dialog.querySelector('.popup-button-ok').addEventListener('click', close);
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) close(); });
 }
 
 
@@ -1262,7 +1277,7 @@ export function createThemeTag(tagData) {
   renderThemeList();
 
   toastr.success(`标签 "${tagData.name}" 创建成功`);
-  logger.info('[ThemeManager] 新标签已创建:', newTag);
+  logger.info('beautify', '新标签已创建:', newTag);
 }
 
 /**
@@ -1286,7 +1301,7 @@ export function updateThemeTag(index, tagData) {
   renderThemeList();
 
   toastr.success(`标签 "${tagData.name}" 已更新`);
-  logger.info('[ThemeManager] 标签已更新:', tags[index]);
+  logger.info('beautify', '标签已更新:', tags[index]);
 }
 
 /**
@@ -1315,7 +1330,7 @@ export async function deleteThemeTag(index) {
         renderThemeList();
 
         toastr.success(`标签 "${tag.name}" 已删除`);
-        logger.info('[ThemeManager] 标签已删除:', tag);
+        logger.info('beautify', '标签已删除:', tag);
       },
     }
   );

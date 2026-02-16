@@ -236,7 +236,7 @@ export class DiaryUIFilter {
     // 刷新日记列表
     refreshCallback();
 
-    logger.debug('[DiaryUIFilter.handleFilterChange] 筛选类型已切换:', filterType);
+    logger.debug('diary', '[DiaryUIFilter.handleFilterChange] 筛选类型已切换:', filterType);
   }
 
   /**

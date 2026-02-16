@@ -12,7 +12,7 @@ import logger from '../../../logger.js';
  * @returns {Promise<DocumentFragment>} 页面内容片段
  */
 export async function renderMacroGuideDetail() {
-  logger.info('[MacroGuideDetail] 开始渲染宏变量使用教程页');
+  logger.info('phone','[MacroGuideDetail] 开始渲染宏变量使用教程页');
 
   const fragment = document.createDocumentFragment();
   const container = document.createElement('div');
@@ -281,7 +281,7 @@ export async function renderMacroGuideDetail() {
 
   fragment.appendChild(container);
 
-  logger.info('[MacroGuideDetail] 宏变量使用教程页渲染完成');
+  logger.info('phone','[MacroGuideDetail] 宏变量使用教程页渲染完成');
   return fragment;
 }
 
@@ -292,7 +292,7 @@ export async function renderMacroGuideDetail() {
  * @param {HTMLElement} container - 页面容器
  */
 function bindEvents(container) {
-  logger.debug('[MacroGuideDetail] 绑定事件');
+  logger.debug('phone','[MacroGuideDetail] 绑定事件');
 
   // 返回按钮
   const backBtn = container.querySelector('.macro-guide-detail-back-btn');
@@ -313,7 +313,7 @@ function bindEvents(container) {
  * @private
  */
 function handleBack() {
-  logger.info('[MacroGuideDetail] 点击返回');
+  logger.info('phone','[MacroGuideDetail] 点击返回');
   const overlayElement = document.querySelector('.phone-overlay');
   if (overlayElement) {
     import('../phone-main-ui.js').then(({ hidePage }) => {
@@ -349,8 +349,8 @@ async function handleCopy(text, button) {
       button.classList.remove('copied');
     }, 2000);
 
-    logger.info('[MacroGuideDetail] 复制成功');
+    logger.info('phone','[MacroGuideDetail] 复制成功');
   } catch (error) {
-    logger.error('[MacroGuideDetail] 复制失败:', error);
+    logger.error('phone','[MacroGuideDetail] 复制失败:', error);
   }
 }

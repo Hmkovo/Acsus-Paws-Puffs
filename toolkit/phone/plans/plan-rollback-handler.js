@@ -22,7 +22,7 @@ export function initPlanRollbackHandler() {
         name: '约定计划',
         priority: 10, // 优先级较高，尽早删除计划数据
         rollback: async (contactId, deletedMessages, deletedMessageIds) => {
-            logger.debug('[PlanRollback] 开始回退约定计划');
+            logger.debug('phone','[PlanRollback] 开始回退约定计划');
 
             let deletedCount = 0;
             const deletedPlanTitles = [];
@@ -38,24 +38,24 @@ export function initPlanRollbackHandler() {
 
                     if (plan) {
                         // 删除计划数据
-                        logger.debug('[PlanRollback] 发现需要删除的计划:', plan.title, 'ID:', plan.id, '消息ID:', aiMsg.id);
+                        logger.debug('phone','[PlanRollback] 发现需要删除的计划:', plan.title, 'ID:', plan.id, '消息ID:', aiMsg.id);
                         deletePlan(contactId, plan.id);
                         deletedCount++;
                         deletedPlanTitles.push(plan.title);
                     } else {
-                        logger.debug('[PlanRollback] 消息无对应计划数据:', aiMsg.id, '内容:', content.substring(0, 50));
+                        logger.debug('phone','[PlanRollback] 消息无对应计划数据:', aiMsg.id, '内容:', content.substring(0, 50));
                     }
                 }
             }
 
             if (deletedCount > 0) {
-                logger.info('[PlanRollback] 共删除', deletedCount, '个计划:', deletedPlanTitles.join(', '));
+                logger.info('phone','[PlanRollback] 共删除', deletedCount, '个计划:', deletedPlanTitles.join(', '));
             } else {
-                logger.debug('[PlanRollback] 没有需要删除的计划');
+                logger.debug('phone','[PlanRollback] 没有需要删除的计划');
             }
         }
     });
 
-    logger.info('[PlanRollback] 约定计划回退处理器已初始化');
+    logger.info('phone','[PlanRollback] 约定计划回退处理器已初始化');
 }
 

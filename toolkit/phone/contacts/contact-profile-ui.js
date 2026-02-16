@@ -23,8 +23,8 @@ import { stateManager } from '../utils/state-manager.js';
  * @returns {Promise<DocumentFragment>} 角色个人页内容片段
  */
 export async function renderContactProfile(contactId) {
-  logger.info('[ContactProfile] ========== 开始渲染角色个人页 ==========');
-  logger.debug('[ContactProfile] contactId:', contactId);
+  logger.info('phone','[ContactProfile] ========== 开始渲染角色个人页 ==========');
+  logger.debug('phone','[ContactProfile] contactId:', contactId);
 
   try {
     // 加载联系人数据
@@ -32,7 +32,7 @@ export async function renderContactProfile(contactId) {
     const contact = contacts.find(c => c.id === contactId);
 
     if (!contact) {
-      logger.warn('[ContactProfile] 未找到联系人:', contactId);
+      logger.warn('phone','[ContactProfile] 未找到联系人:', contactId);
       return createErrorView();
     }
 
@@ -56,10 +56,10 @@ export async function renderContactProfile(contactId) {
     // 4. 为会员徽章绑定点击事件
     await bindMembershipBadgeClickEvent(container, contact);
 
-    logger.info('[ContactProfile] 角色个人页渲染完成:', contact.name);
+    logger.info('phone','[ContactProfile] 角色个人页渲染完成:', contact.name);
     return fragment;
   } catch (error) {
-    logger.error('[ContactProfile] 渲染角色个人页失败:', error);
+    logger.error('phone','[ContactProfile] 渲染角色个人页失败:', error);
     return createErrorView();
   }
 }
@@ -284,7 +284,7 @@ function createSignatureRow(contact) {
  * @param {string} contactId - 角色ID
  */
 async function handleOpenSignatureHistory(contactId) {
-  logger.debug('[ContactProfile] 打开个签历史页:', contactId);
+  logger.debug('phone','[ContactProfile] 打开个签历史页:', contactId);
 
   const overlayElement = document.querySelector('.phone-overlay');
   if (overlayElement) {
@@ -398,21 +398,21 @@ function createBottomButtons(contact) {
   const buttons = buttonsDiv.querySelectorAll('button');
   const messageBtn = buttons[2]; // 第3个按钮是"发消息"
 
-  logger.debug('[ContactProfile] 创建底部按钮，contactId:', contact.id);
-  logger.debug('[ContactProfile] 发消息按钮元素:', messageBtn);
+  logger.debug('phone','[ContactProfile] 创建底部按钮，contactId:', contact.id);
+  logger.debug('phone','[ContactProfile] 发消息按钮元素:', messageBtn);
 
   // "发消息"按钮：跳转到聊天页面
   messageBtn.addEventListener('click', (e) => {
-    logger.info('[ContactProfile] ========== 点击发消息按钮 ==========');
-    logger.info('[ContactProfile] contactId:', contact.id);
-    logger.debug('[ContactProfile] 按钮元素:', messageBtn);
-    logger.debug('[ContactProfile] 事件对象:', e);
+    logger.info('phone','[ContactProfile] ========== 点击发消息按钮 ==========');
+    logger.info('phone','[ContactProfile] contactId:', contact.id);
+    logger.debug('phone','[ContactProfile] 按钮元素:', messageBtn);
+    logger.debug('phone','[ContactProfile] 事件对象:', e);
 
     const profilePage = document.querySelector('#page-contact-profile');
     const profileClasses = Array.from(profilePage?.classList || []);
     const profilePointerEvents = profilePage ? window.getComputedStyle(profilePage).pointerEvents : 'unknown';
 
-    logger.debug('[ContactProfile] 个人页DOM状态:', {
+    logger.debug('phone','[ContactProfile] 个人页DOM状态:', {
       exists: !!profilePage,
       classList: profileClasses,
       pointerEvents: profilePointerEvents,
@@ -422,30 +422,30 @@ function createBottomButtons(contact) {
 
     // 检查所有active页面（诊断用）
     const allActivePages = Array.from(document.querySelectorAll('.phone-page.active'));
-    logger.warn('[ContactProfile] ⚠️ 当前所有active页面:', {
+    logger.warn('phone','[ContactProfile] ⚠️ 当前所有active页面:', {
       count: allActivePages.length,
       pageIds: allActivePages.map(p => p.id)
     });
 
     if (allActivePages.length > 1) {
-      logger.error('[ContactProfile] ❌ 发现多个active页面！按钮可能被遮挡！');
+      logger.error('phone','[ContactProfile] ❌ 发现多个active页面！按钮可能被遮挡！');
     }
 
-    logger.info('[ContactProfile] 准备调用 handleSendMessage');
+    logger.info('phone','[ContactProfile] 准备调用 handleSendMessage');
     handleSendMessage(contact.id);
   });
 
-  logger.debug('[ContactProfile] 发消息按钮事件监听器已绑定');
+  logger.debug('phone','[ContactProfile] 发消息按钮事件监听器已绑定');
 
   // 其他按钮：暂时占位
   buttons[0].addEventListener('click', (e) => {
     e.preventDefault();
-    logger.debug('[ContactProfile] 音视频通话功能待实现');
+    logger.debug('phone','[ContactProfile] 音视频通话功能待实现');
   });
 
   buttons[1].addEventListener('click', (e) => {
     e.preventDefault();
-    logger.debug('[ContactProfile] 送礼物功能待实现');
+    logger.debug('phone','[ContactProfile] 送礼物功能待实现');
   });
 
   return buttonsDiv;
@@ -461,14 +461,14 @@ function createBottomButtons(contact) {
  * @param {string} contactId - 联系人ID
  */
 async function handleChangeBackground(contactId) {
-  logger.debug('[ContactProfile] 点击更换背景图:', contactId);
+  logger.debug('phone','[ContactProfile] 点击更换背景图:', contactId);
 
   try {
     // 获取系统背景列表
     const backgrounds = await getSystemBackgrounds();
 
     if (!backgrounds || backgrounds.length === 0) {
-      logger.warn('[ContactProfile] 未获取到系统背景列表');
+      logger.warn('phone','[ContactProfile] 未获取到系统背景列表');
       return;
     }
 
@@ -480,7 +480,7 @@ async function handleChangeBackground(contactId) {
       await applyBackgroundImage(contactId, selectedBg);
     }
   } catch (error) {
-    logger.error('[ContactProfile] 更换背景失败:', error);
+    logger.error('phone','[ContactProfile] 更换背景失败:', error);
   }
 }
 
@@ -488,7 +488,7 @@ async function handleChangeBackground(contactId) {
  * 处理返回
  */
 function handleBack() {
-  logger.debug('[ContactProfile] 点击返回');
+  logger.debug('phone','[ContactProfile] 点击返回');
 
   // 获取手机遮罩层元素
   const overlayElement = document.querySelector('.phone-overlay');
@@ -515,7 +515,7 @@ function handleBack() {
  * @param {string} contactId - 联系人ID
  */
 async function handleSettings(contactId) {
-  logger.debug('[ContactProfile] 打开设置页:', contactId);
+  logger.debug('phone','[ContactProfile] 打开设置页:', contactId);
 
   // 直接调用 showPage（不用自定义事件）
   const overlayElement = document.querySelector('.phone-overlay');
@@ -532,7 +532,7 @@ async function handleSettings(contactId) {
  * @param {string} contactId - 联系人ID
  */
 async function handleSendMessage(contactId) {
-  logger.info('[ContactProfile] 发消息，跳转到聊天页面:', contactId);
+  logger.info('phone','[ContactProfile] 发消息，跳转到聊天页面:', contactId);
 
   // 获取 overlay 元素
   const overlayElement = document.querySelector('.phone-overlay');
@@ -552,7 +552,7 @@ async function handleSendMessage(contactId) {
  * @param {Object} contact - 联系人对象
  */
 async function handleEditRemark(contact) {
-  logger.debug('[ContactProfile] 点击编辑备注:', contact.name);
+  logger.debug('phone','[ContactProfile] 点击编辑备注:', contact.name);
 
   try {
     // 弹出输入框（使用自定义弹窗）
@@ -569,7 +569,7 @@ async function handleEditRemark(contact) {
 
     // 用户取消
     if (newRemark === null) {
-      logger.debug('[ContactProfile] 用户取消编辑备注');
+      logger.debug('phone','[ContactProfile] 用户取消编辑备注');
       return;
     }
 
@@ -582,7 +582,7 @@ async function handleEditRemark(contact) {
     // 保存到存储
     const success = await saveContact(contact);
     if (success) {
-      logger.info('[ContactProfile] 备注已保存:', trimmedRemark || '(清空备注)');
+      logger.info('phone','[ContactProfile] 备注已保存:', trimmedRemark || '(清空备注)');
 
       // 获取显示名称
       const displayName = contact.remark || contact.name;
@@ -590,10 +590,10 @@ async function handleEditRemark(contact) {
       // 同步更新所有位置的名称显示（使用统一工具函数）
       syncContactDisplayName(contact.id, displayName, contact.name);
     } else {
-      logger.error('[ContactProfile] 备注保存失败');
+      logger.error('phone','[ContactProfile] 备注保存失败');
     }
   } catch (error) {
-    logger.error('[ContactProfile] 编辑备注失败:', error);
+    logger.error('phone','[ContactProfile] 编辑备注失败:', error);
   }
 }
 
@@ -606,7 +606,7 @@ async function handleEditRemark(contact) {
  * @param {Object} contact - 联系人对象
  */
 function updateProfileNameDisplay(contact) {
-  logger.debug('[ContactProfile] 局部更新名称显示:', contact.name);
+  logger.debug('phone','[ContactProfile] 局部更新名称显示:', contact.name);
 
   const infoText = document.querySelector('.contact-profile-info-text');
   if (!infoText) return;
@@ -651,7 +651,7 @@ function updateProfileNameDisplay(contact) {
  * @param {Object} contact - 联系人对象
  */
 function updateContactListItemName(contact) {
-  logger.debug('[ContactProfile] 同步更新联系人列表:', contact.name);
+  logger.debug('phone','[ContactProfile] 同步更新联系人列表:', contact.name);
 
   // 通过 data-contact-id 查找对应的联系人项
   const contactItem = document.querySelector(`.contact-friend-item[data-contact-id="${contact.id}"]`);
@@ -662,10 +662,10 @@ function updateContactListItemName(contact) {
     if (nameElement) {
       const displayName = contact.remark || contact.name;
       nameElement.textContent = displayName;
-      logger.debug('[ContactProfile] 已更新联系人列表项名称:', displayName);
+      logger.debug('phone','[ContactProfile] 已更新联系人列表项名称:', displayName);
     }
   } else {
-    logger.debug('[ContactProfile] 联系人列表中未找到该项（可能未渲染）');
+    logger.debug('phone','[ContactProfile] 联系人列表中未找到该项（可能未渲染）');
   }
 }
 
@@ -681,7 +681,7 @@ function updateContactListItemName(contact) {
  * @param {string} bgUrl - 背景图URL（空字符串表示恢复默认）
  */
 async function applyBackgroundImage(contactId, bgUrl) {
-  logger.debug('[ContactProfile] 应用背景图:', bgUrl || '(默认白色)');
+  logger.debug('phone','[ContactProfile] 应用背景图:', bgUrl || '(默认白色)');
 
   try {
     // 加载联系人数据
@@ -689,7 +689,7 @@ async function applyBackgroundImage(contactId, bgUrl) {
     const contact = contacts.find(c => c.id === contactId);
 
     if (!contact) {
-      logger.warn('[ContactProfile] 未找到联系人:', contactId);
+      logger.warn('phone','[ContactProfile] 未找到联系人:', contactId);
       return;
     }
 
@@ -699,7 +699,7 @@ async function applyBackgroundImage(contactId, bgUrl) {
     // 保存到存储
     const success = await saveContact(contact);
     if (success) {
-      logger.info('[ContactProfile] 背景图已保存');
+      logger.info('phone','[ContactProfile] 背景图已保存');
 
       // 局部更新背景图显示
       const topBg = document.querySelector('.contact-profile-top-bg');
@@ -713,10 +713,10 @@ async function applyBackgroundImage(contactId, bgUrl) {
         }
       }
     } else {
-      logger.error('[ContactProfile] 背景图保存失败');
+      logger.error('phone','[ContactProfile] 背景图保存失败');
     }
   } catch (error) {
-    logger.error('[ContactProfile] 应用背景图失败:', error);
+    logger.error('phone','[ContactProfile] 应用背景图失败:', error);
   }
 }
 
@@ -752,18 +752,18 @@ function setupSignatureUpdateListener(contactId) {
       return;
     }
 
-    logger.debug('[ContactProfile] 检测到个签更新，刷新显示');
+    logger.debug('phone','[ContactProfile] 检测到个签更新，刷新显示');
 
     // 查找个签行元素
     const signatureRow = document.querySelector(`.contact-profile-signature-row[data-contact-id="${contactId}"]`);
     if (!signatureRow) {
-      logger.warn('[ContactProfile] 未找到个签行元素');
+      logger.warn('phone','[ContactProfile] 未找到个签行元素');
       return;
     }
 
     // 检查元素是否还在DOM中
     if (!document.contains(signatureRow)) {
-      logger.debug('[ContactProfile] 页面已关闭，跳过刷新');
+      logger.debug('phone','[ContactProfile] 页面已关闭，跳过刷新');
       return;
     }
 
@@ -774,7 +774,7 @@ function setupSignatureUpdateListener(contactId) {
       const data = await stateManager.get('signature');
       const signature = data?.signature || '';
       signatureText.textContent = signature;
-      logger.info('[ContactProfile] 个签显示已更新');
+      logger.info('phone','[ContactProfile] 个签显示已更新');
     }
   });
 
@@ -787,7 +787,7 @@ function setupSignatureUpdateListener(contactId) {
           if (node === profilePage || node.contains?.(profilePage)) {
             stateManager.unsubscribeAll(pageId);
             observer.disconnect();
-            logger.debug('[ContactProfile] 页面已关闭，已清理订阅');
+            logger.debug('phone','[ContactProfile] 页面已关闭，已清理订阅');
             return;
           }
         }
@@ -801,7 +801,7 @@ function setupSignatureUpdateListener(contactId) {
     }
   }
 
-  logger.debug('[ContactProfile] 已订阅个签数据变化');
+  logger.debug('phone','[ContactProfile] 已订阅个签数据变化');
 }
 
 /**
@@ -820,16 +820,16 @@ async function bindMembershipBadgeClickEvent(container, contact) {
   // 查找徽章元素
   const badgeElement = container.querySelector('.membership-badge');
   if (!badgeElement) {
-    logger.warn('[ContactProfile] 未找到会员徽章元素');
+    logger.warn('phone','[ContactProfile] 未找到会员徽章元素');
     return;
   }
 
   try {
     const { bindMembershipBadgeClick } = await import('../utils/membership-badge-helper.js');
     await bindMembershipBadgeClick(badgeElement, contact.id, contact.name);
-    logger.debug('[ContactProfile] 已绑定会员徽章点击事件:', contact.name);
+    logger.debug('phone','[ContactProfile] 已绑定会员徽章点击事件:', contact.name);
   } catch (error) {
-    logger.error('[ContactProfile] 绑定会员徽章点击事件失败:', error);
+    logger.error('phone','[ContactProfile] 绑定会员徽章点击事件失败:', error);
   }
 }
 

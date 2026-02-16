@@ -15,7 +15,7 @@ import logger from '../../../logger.js';
  * @returns {Promise<DocumentFragment>} 页面内容片段
  */
 export async function renderFaqDetail() {
-  logger.info('[FaqDetail] 开始渲染常见问题详细页');
+  logger.info('phone','[FaqDetail] 开始渲染常见问题详细页');
 
   const fragment = document.createDocumentFragment();
   const container = document.createElement('div');
@@ -118,7 +118,7 @@ export async function renderFaqDetail() {
 
   fragment.appendChild(container);
 
-  logger.info('[FaqDetail] 常见问题详细页渲染完成');
+  logger.info('phone','[FaqDetail] 常见问题详细页渲染完成');
   return fragment;
 }
 
@@ -129,7 +129,7 @@ export async function renderFaqDetail() {
  * @param {HTMLElement} container - 页面容器
  */
 function bindEvents(container) {
-  logger.debug('[FaqDetail] 绑定事件');
+  logger.debug('phone','[FaqDetail] 绑定事件');
 
   // 返回按钮
   const backBtn = container.querySelector('.faq-detail-back-btn');
@@ -141,14 +141,14 @@ function bindEvents(container) {
  * @private
  */
 function handleBack() {
-  logger.info('[FaqDetail] 点击返回');
+  logger.info('phone','[FaqDetail] 点击返回');
   const overlayElement = document.querySelector('.phone-overlay');
   if (overlayElement instanceof HTMLElement) {
     import('../phone-main-ui.js').then(({ hidePage }) => {
       hidePage(overlayElement, 'faq-detail');
     });
   } else {
-    logger.warn('[FaqDetail] 未找到可用的 overlayElement，返回动作被跳过');
+    logger.warn('phone','[FaqDetail] 未找到可用的 overlayElement，返回动作被跳过');
   }
 }
 

@@ -52,8 +52,8 @@ export class PhoneAPI {
    * 初始化
    */
   async init() {
-    logger.info('[PhoneAPI] 开始初始化');
-    logger.info('[PhoneAPI] 初始化完成');
+    logger.info('phone','[PhoneAPI] 开始初始化');
+    logger.info('phone','[PhoneAPI] 初始化完成');
   }
 
   /**
@@ -65,7 +65,7 @@ export class PhoneAPI {
       this.currentAbortController = null;
       this.isGenerating = false;
       this.currentGeneratingContactId = null;  // ← 清空正在生成的联系人ID
-      logger.info('[PhoneAPI.abort] 已中止生成');
+      logger.info('phone','[PhoneAPI.abort] 已中止生成');
     }
   }
 
@@ -100,7 +100,7 @@ export class PhoneAPI {
    */
   resetRenderedState(contactId) {
     this.renderedMessageIds.delete(contactId);
-    logger.debug('[PhoneAPI.resetRenderedState] 已重置渲染状态:', contactId);
+    logger.debug('phone','[PhoneAPI.resetRenderedState] 已重置渲染状态:', contactId);
   }
 
   /**
@@ -152,7 +152,7 @@ export class PhoneAPI {
         if (preset && preset.url) {
           baseUrl = preset.url;
           apiKey = preset.password || '';
-          logger.debug('[PhoneAPI.getCurrentCustomConfig] 使用反向代理预设:', currentProxyPreset);
+          logger.debug('phone','[PhoneAPI.getCurrentCustomConfig] 使用反向代理预设:', currentProxyPreset);
         }
       }
 
@@ -167,7 +167,7 @@ export class PhoneAPI {
 
     // 验证必填项
     if (!baseUrl) {
-      logger.warn('[PhoneAPI.getCurrentCustomConfig] 未配置 API 端点');
+      logger.warn('phone','[PhoneAPI.getCurrentCustomConfig] 未配置 API 端点');
       return null;
     }
 
@@ -185,7 +185,7 @@ export class PhoneAPI {
       params: mergedParams
     };
 
-    logger.debug('[PhoneAPI.getCurrentCustomConfig] 返回配置:', {
+    logger.debug('phone','[PhoneAPI.getCurrentCustomConfig] 返回配置:', {
       format: config.format,
       baseUrl: config.baseUrl ? config.baseUrl.substring(0, 30) + '...' : '',
       model: config.model,
@@ -253,7 +253,7 @@ export class PhoneAPI {
    * - 否则自动从暂存队列或聊天历史中获取
    */
   async sendToAI(contactId, onMessageReceived, onComplete, onError, options = {}) {
-    logger.info('[PhoneAPI.sendToAI] 开始发送到AI:', contactId);
+    logger.info('phone','[PhoneAPI.sendToAI] 开始发送到AI:', contactId);
 
     // ✅ 检查是否启用工具调用
     const phoneSettings = this.getSettings();
@@ -262,12 +262,12 @@ export class PhoneAPI {
 
     // 工具调用仅在自定义API模式下可用
     if (useToolCalling && apiSource === 'custom') {
-      logger.info('[PhoneAPI.sendToAI] 使用工具调用模式');
+      logger.info('phone','[PhoneAPI.sendToAI] 使用工具调用模式');
       return await this.sendToAIWithToolCalling(contactId, onMessageReceived, onComplete, onError, options);
     }
 
     // 否则使用传统的标签解析模式
-    logger.info('[PhoneAPI.sendToAI] 使用传统标签解析模式');
+    logger.info('phone','[PhoneAPI.sendToAI] 使用传统标签解析模式');
 
     try {
       // 获取待发送消息（先从暂存队列读取）
@@ -275,13 +275,13 @@ export class PhoneAPI {
 
       // 如果暂存队列为空（刷新页面后），尝试从聊天历史中读取
       if (pendingMessages.length === 0) {
-        logger.debug('[PhoneAPI] 暂存队列为空，从聊天历史查找待回复消息');
+        logger.debug('phone','[PhoneAPI] 暂存队列为空，从聊天历史查找待回复消息');
 
         // 从聊天历史中找最后的用户消息
         const chatHistory = await loadChatHistory(contactId);
 
         if (chatHistory.length === 0) {
-          logger.warn('[PhoneAPI] 没有聊天历史');
+          logger.warn('phone','[PhoneAPI] 没有聊天历史');
           onError?.('请先发送消息');
           return;
         }
@@ -290,7 +290,7 @@ export class PhoneAPI {
         const lastUserMessageIndex = chatHistory.findLastIndex(msg => msg.sender === 'user');
 
         if (lastUserMessageIndex === -1) {
-          logger.warn('[PhoneAPI] 没有用户消息');
+          logger.warn('phone','[PhoneAPI] 没有用户消息');
           onError?.('请先发送消息');
           return;
         }
@@ -300,7 +300,7 @@ export class PhoneAPI {
 
         if (hasAIReplyAfter) {
           // 最后的用户消息已经有AI回复了，需要发新消息
-          logger.warn('[PhoneAPI] 最后的用户消息已有AI回复');
+          logger.warn('phone','[PhoneAPI] 最后的用户消息已有AI回复');
           onError?.('请先发送新消息');
           return;
         }
@@ -328,20 +328,20 @@ export class PhoneAPI {
         const previewText = lastUserMessage.content
           ? lastUserMessage.content.substring(0, 20)
           : (lastUserMessage.replyContent ? `[引用]${lastUserMessage.replyContent.substring(0, 20)}` : '[无内容]');
-        logger.info('[PhoneAPI] 从聊天历史中找到待回复消息:', previewText);
+        logger.info('phone','[PhoneAPI] 从聊天历史中找到待回复消息:', previewText);
       } else {
-        logger.debug('[PhoneAPI] 从暂存队列获取待发送消息，共', pendingMessages.length, '条');
+        logger.debug('phone','[PhoneAPI] 从暂存队列获取待发送消息，共', pendingMessages.length, '条');
       }
 
       // ✅ 获取所有待操作（支持从 options 传入，用于重roll场景）
       let allPendingMessages;
       if (options.allPendingMessages) {
         allPendingMessages = options.allPendingMessages;
-        logger.info('[PhoneAPI] 使用传入的多联系人消息（重roll模式），共', Object.keys(allPendingMessages).length, '个联系人');
+        logger.info('phone','[PhoneAPI] 使用传入的多联系人消息（重roll模式），共', Object.keys(allPendingMessages).length, '个联系人');
       } else {
         const allPendingOps = getAllPendingOperations();
         allPendingMessages = allPendingOps.messages;
-        logger.debug('[PhoneAPI] 从暂存队列获取多联系人消息');
+        logger.debug('phone','[PhoneAPI] 从暂存队列获取多联系人消息');
       }
 
       // 构建messages数组（新版，返回messages和编号映射表）
@@ -350,13 +350,13 @@ export class PhoneAPI {
       const messageNumberMap = buildResult.messageNumberMap;
       const imagesToAttach = buildResult.imagesToAttach || [];
 
-      logger.debug('[PhoneAPI] messages数组构建完成，共', messages.length, '条，编号映射表大小:', messageNumberMap.size);
+      logger.debug('phone','[PhoneAPI] messages数组构建完成，共', messages.length, '条，编号映射表大小:', messageNumberMap.size);
       if (imagesToAttach.length > 0) {
-        logger.info('[PhoneAPI] 检测到待附加图片，数量:', imagesToAttach.length);
+        logger.info('phone','[PhoneAPI] 检测到待附加图片，数量:', imagesToAttach.length);
       }
 
       // ✅ 移除手动宏替换：generateRaw 会自动处理
-      logger.debug('[PhoneAPI] 跳过手动宏替换（由 generateRaw 内部处理）');
+      logger.debug('phone','[PhoneAPI] 跳过手动宏替换（由 generateRaw 内部处理）');
 
       // 创建终止控制器
       this.currentAbortController = new AbortController();
@@ -367,7 +367,7 @@ export class PhoneAPI {
       document.dispatchEvent(new CustomEvent('phone-ai-generation-start', {
         detail: { contactId }
       }));
-      logger.debug('[PhoneAPI] 已触发 phone-ai-generation-start 事件');
+      logger.debug('phone','[PhoneAPI] 已触发 phone-ai-generation-start 事件');
 
       // 获取API配置（完全照搬日记）
       const phoneSettings = this.getSettings();
@@ -384,7 +384,7 @@ export class PhoneAPI {
         const currentConfig = this.getCurrentCustomConfig();
 
         if (!currentConfig || !currentConfig.baseUrl) {
-          logger.error('[PhoneAPI.sendToAI] 未找到API配置');
+          logger.error('phone','[PhoneAPI.sendToAI] 未找到API配置');
           throw new Error('未找到API配置，请先在设置中保存一个配置');
         }
 
@@ -397,7 +397,7 @@ export class PhoneAPI {
           params: currentConfig.params || {}
         };
 
-        logger.debug('[PhoneAPI.sendToAI] 使用自定义API配置:', {
+        logger.debug('phone','[PhoneAPI.sendToAI] 使用自定义API配置:', {
           baseUrl: currentConfig.baseUrl ? currentConfig.baseUrl.substring(0, 30) + '...' : '',
           model: currentConfig.model,
           format: currentConfig.format || 'openai (默认)',
@@ -405,10 +405,10 @@ export class PhoneAPI {
         });
       }
 
-      logger.debug('[PhoneAPI] ========== 发送给AI的messages ==========');
-      logger.debug(JSON.stringify(messages, null, 2));
-      logger.debug('[PhoneAPI] ========== messages结束 ==========');
-      logger.debug('[PhoneAPI] API配置:', apiConfig.source, '流式:', apiConfig.stream);
+      logger.debug('phone','[PhoneAPI] ========== 发送给AI的messages ==========');
+      logger.debug('phone',JSON.stringify(messages, null, 2));
+      logger.debug('phone','[PhoneAPI] ========== messages结束 ==========');
+      logger.debug('phone','[PhoneAPI] API配置:', apiConfig.source, '流式:', apiConfig.stream);
 
       // ✅ 临时绕过酒馆的 image_inlining 开关（2025-11-16新增）
       // 原因：手机的图片识别设置应独立于酒馆的全局设置
@@ -417,17 +417,17 @@ export class PhoneAPI {
 
       // 如果手机需要发送图片（imageMode != 'never'），临时开启酒馆的图片发送
       if (phoneImageMode !== 'never') {
-        logger.info('[PhoneAPI] 临时开启酒馆的 image_inlining（手机图片模式:', phoneImageMode, '）');
-        logger.debug('[PhoneAPI] 原始 image_inlining 状态:', originalImageInlining);
+        logger.info('phone','[PhoneAPI] 临时开启酒馆的 image_inlining（手机图片模式:', phoneImageMode, '）');
+        logger.debug('phone','[PhoneAPI] 原始 image_inlining 状态:', originalImageInlining);
         oai_settings.image_inlining = true;
       } else {
-        logger.info('[PhoneAPI] 手机图片模式为 never，不修改 image_inlining（当前:', originalImageInlining, '）');
+        logger.info('phone','[PhoneAPI] 手机图片模式为 never，不修改 image_inlining（当前:', originalImageInlining, '）');
       }
 
       // ✅ 图片处理逻辑：区分自定义API和默认API
       if (apiConfig.source === 'custom') {
         // 🔥 自定义API：直接在 messages 中转换图片URL为base64
-        logger.info('[PhoneAPI] 自定义API：开始转换结构化消息中的图片');
+        logger.info('phone','[PhoneAPI] 自定义API：开始转换结构化消息中的图片');
 
         let successCount = 0;
         let failCount = 0;
@@ -443,7 +443,7 @@ export class PhoneAPI {
 
                 // 如果已经是base64，保留
                 if (imageUrl.startsWith('data:image/')) {
-                  logger.debug('[PhoneAPI] 图片已是base64格式，保留:', imageUrl.substring(0, 50));
+                  logger.debug('phone','[PhoneAPI] 图片已是base64格式，保留:', imageUrl.substring(0, 50));
                   partsToKeep.push(part);
                   continue;
                 }
@@ -451,7 +451,7 @@ export class PhoneAPI {
                 // 尝试转换图片
                 try {
                   const fullUrl = imageUrl.startsWith('http') ? imageUrl : `${window.location.origin}${imageUrl}`;
-                  logger.debug('[PhoneAPI] 正在转换图片:', fullUrl);
+                  logger.debug('phone','[PhoneAPI] 正在转换图片:', fullUrl);
                   const response = await fetch(fullUrl, { method: 'GET', cache: 'force-cache' });
 
                   if (!response.ok) {
@@ -469,11 +469,11 @@ export class PhoneAPI {
                   part.image_url.url = imageBase64;
                   partsToKeep.push(part);
                   successCount++;
-                  logger.debug('[PhoneAPI] ✅ 图片转换成功');
+                  logger.debug('phone','[PhoneAPI] ✅ 图片转换成功');
                 } catch (error) {
                   // ❌ 转换失败，移除此图片
                   failCount++;
-                  logger.warn('[PhoneAPI] ⚠️ 图片转换失败，已从请求中移除:', imageUrl, error.message);
+                  logger.warn('phone','[PhoneAPI] ⚠️ 图片转换失败，已从请求中移除:', imageUrl, error.message);
                 }
               } else {
                 // 非图片内容，保留
@@ -487,21 +487,21 @@ export class PhoneAPI {
         }
 
         if (successCount > 0 || failCount > 0) {
-          logger.info(`[PhoneAPI] 图片转换完成: ${successCount} 成功, ${failCount} 失败（已移除）`);
+          logger.info('phone',`[PhoneAPI] 图片转换完成: ${successCount} 成功, ${failCount} 失败（已移除）`);
         } else {
-          logger.debug('[PhoneAPI] 没有检测到需要转换的图片');
+          logger.debug('phone','[PhoneAPI] 没有检测到需要转换的图片');
         }
       }
 
       // ✅ 默认API：提前转换图片为 base64（在注册事件之前）
       let convertedImages = [];
       if (apiConfig.source === 'default' && imagesToAttach.length > 0 && phoneImageMode !== 'never') {
-        logger.info('[PhoneAPI] 默认API：开始转换图片为 base64');
+        logger.info('phone','[PhoneAPI] 默认API：开始转换图片为 base64');
         try {
           for (const img of imagesToAttach) {
             // ✅ 如果是相对路径，转换为绝对路径
             const fullUrl = img.url.startsWith('http') ? img.url : `${window.location.origin}${img.url}`;
-            logger.debug('[PhoneAPI] 正在转换图片:', fullUrl);
+            logger.debug('phone','[PhoneAPI] 正在转换图片:', fullUrl);
             const response = await fetch(fullUrl, { method: 'GET', cache: 'force-cache' });
             if (!response.ok) throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
             const blob = await response.blob();
@@ -511,11 +511,11 @@ export class PhoneAPI {
               reader.readAsDataURL(blob);
             });
             convertedImages.push({ ...img, base64: imageBase64 });
-            logger.debug('[PhoneAPI] 图片转换完成');
+            logger.debug('phone','[PhoneAPI] 图片转换完成');
           }
-          logger.info('[PhoneAPI] ✅ 默认API图片已转换为 base64，数量:', convertedImages.length);
+          logger.info('phone','[PhoneAPI] ✅ 默认API图片已转换为 base64，数量:', convertedImages.length);
         } catch (error) {
-          logger.error('[PhoneAPI] ❌ 默认API图片转换失败:', error);
+          logger.error('phone','[PhoneAPI] ❌ 默认API图片转换失败:', error);
           convertedImages = []; // 转换失败，清空
         }
       }
@@ -528,7 +528,7 @@ export class PhoneAPI {
       if (apiConfig.source === 'default' && convertedImages.length > 0) {
         const attachImageHandler = (eventData) => {  // ← 同步函数！
           try {
-            logger.info('[PhoneAPI] 🖼️ 开始在事件中附加图片');
+            logger.info('phone','[PhoneAPI] 🖼️ 开始在事件中附加图片');
 
             // 找到最后一条 user 消息
             let lastUserMessageIndex = -1;
@@ -556,44 +556,44 @@ export class PhoneAPI {
 
               userMessage.content = contentArray;
 
-              logger.info('[PhoneAPI] ✅ 图片已附加到用户消息');
-              logger.debug('[PhoneAPI] 附加图片数量:', convertedImages.length);
-              logger.debug('[PhoneAPI] 图片URL列表:', convertedImages.map(img => img.url));
-              logger.debug('[PhoneAPI] 多模态content长度:', userMessage.content.length)
+              logger.info('phone','[PhoneAPI] ✅ 图片已附加到用户消息');
+              logger.debug('phone','[PhoneAPI] 附加图片数量:', convertedImages.length);
+              logger.debug('phone','[PhoneAPI] 图片URL列表:', convertedImages.map(img => img.url));
+              logger.debug('phone','[PhoneAPI] 多模态content长度:', userMessage.content.length)
             } else {
-              logger.warn('[PhoneAPI] 未找到 user 消息，无法附加图片');
+              logger.warn('phone','[PhoneAPI] 未找到 user 消息，无法附加图片');
             }
           } catch (error) {
-            logger.error('[PhoneAPI] ❌ 图片附加失败:', error);
+            logger.error('phone','[PhoneAPI] ❌ 图片附加失败:', error);
             // 图片附加失败不影响整体流程，继续执行
           }
         };
 
         eventSource.once(event_types.CHAT_COMPLETION_PROMPT_READY, attachImageHandler);
-        logger.info('[PhoneAPI] 已注册同步图片附加事件监听器');
+        logger.info('phone','[PhoneAPI] 已注册同步图片附加事件监听器');
       }
 
       // ✅ 打印最终发送的 messages 结构（调试用）
-      logger.info('[PhoneAPI] ========== 最终发送给AI的messages ==========');
-      logger.info('[PhoneAPI] API源:', apiConfig.source);
-      logger.info('[PhoneAPI] messages数量:', messages.length);
+      logger.info('phone','[PhoneAPI] ========== 最终发送给AI的messages ==========');
+      logger.info('phone','[PhoneAPI] API源:', apiConfig.source);
+      logger.info('phone','[PhoneAPI] messages数量:', messages.length);
       for (let i = 0; i < messages.length; i++) {
         const msg = messages[i];
         if (Array.isArray(msg.content)) {
-          logger.debug(`[PhoneAPI] [${i}] role: ${msg.role}, content: 数组(${msg.content.length}项)`);
+          logger.debug('phone',`[PhoneAPI] [${i}] role: ${msg.role}, content: 数组(${msg.content.length}项)`);
           msg.content.forEach((part, j) => {
             if (part.type === 'text') {
-              logger.debug(`  [${j}] type: text, text: ${part.text.substring(0, 50)}...`);
+              logger.debug('phone',`  [${j}] type: text, text: ${part.text.substring(0, 50)}...`);
             } else if (part.type === 'image_url') {
               const url = part.image_url?.url || '';
-              logger.debug(`  [${j}] type: image_url, url: ${url.substring(0, 60)}...`);
+              logger.debug('phone',`  [${j}] type: image_url, url: ${url.substring(0, 60)}...`);
             }
           });
         } else {
-          logger.debug(`[PhoneAPI] [${i}] role: ${msg.role}, content: ${typeof msg.content === 'string' ? msg.content.substring(0, 100) + '...' : msg.content}`);
+          logger.debug('phone',`[PhoneAPI] [${i}] role: ${msg.role}, content: ${typeof msg.content === 'string' ? msg.content.substring(0, 100) + '...' : msg.content}`);
         }
       }
-      logger.info('[PhoneAPI] =============================================');
+      logger.info('phone','[PhoneAPI] =============================================');
 
       // ⭐ Gemini 格式转换（已禁用）
       // ❌ 原因：大多数代理的 Gemini 渠道不支持 Google AI Studio 原生格式（inlineData）
@@ -607,25 +607,25 @@ export class PhoneAPI {
       /*
       const imageFormat = extension_settings.acsusPawsPuffs?.phone?.imageFormat || 'openai';
       if (apiConfig.source === 'custom' && imageFormat === 'gemini') {
-        logger.info('[PhoneAPI] 🎯 检测到 Gemini 格式设置，开始转换');
+        logger.info('phone','[PhoneAPI] 🎯 检测到 Gemini 格式设置，开始转换');
         messages = convertToGeminiFormat(messages);
 
         // 打印转换后的格式（仅显示包含图片的消息）
-        logger.info('[PhoneAPI] ========== 转换后的 Gemini 格式 ==========');
+        logger.info('phone','[PhoneAPI] ========== 转换后的 Gemini 格式 ==========');
         for (let i = 0; i < messages.length; i++) {
           const msg = messages[i];
           if (Array.isArray(msg.content) && msg.content.some(p => p.inlineData)) {
-            logger.debug(`[PhoneAPI] [${i}] role: ${msg.role}, content: 数组(${msg.content.length}项)`);
+            logger.debug('phone',`[PhoneAPI] [${i}] role: ${msg.role}, content: 数组(${msg.content.length}项)`);
             msg.content.forEach((part, j) => {
               if (part.type === 'text') {
-                logger.debug(`  [${j}] type: text, text: ${part.text.substring(0, 50)}...`);
+                logger.debug('phone',`  [${j}] type: text, text: ${part.text.substring(0, 50)}...`);
               } else if (part.inlineData) {
-                logger.debug(`  [${j}] inlineData: { mimeType: '${part.inlineData.mimeType}', data: '${part.inlineData.data.substring(0, 30)}...' }`);
+                logger.debug('phone',`  [${j}] inlineData: { mimeType: '${part.inlineData.mimeType}', data: '${part.inlineData.data.substring(0, 30)}...' }`);
               }
             });
           }
         }
-        logger.info('[PhoneAPI] =============================================');
+        logger.info('phone','[PhoneAPI] =============================================');
       }
       */
 
@@ -646,7 +646,7 @@ export class PhoneAPI {
             throw new Error('请先在API设置中配置自定义API');
           }
 
-          logger.info('[PhoneAPI] 使用自定义API模式，通过事件拦截注入配置');
+          logger.info('phone','[PhoneAPI] 使用自定义API模式，通过事件拦截注入配置');
 
           // 设置一次性事件拦截器
           eventHandler = (data) => {
@@ -658,7 +658,7 @@ export class PhoneAPI {
             // currentConfig.format 对应官方的 chat_completion_sources（如 'openai', 'claude', 'makersuite' 等）
             if (currentConfig.format && currentConfig.format !== 'custom') {
               data.chat_completion_source = currentConfig.format;
-              logger.debug('[PhoneAPI] 已注入 chat_completion_source:', currentConfig.format);
+              logger.debug('phone','[PhoneAPI] 已注入 chat_completion_source:', currentConfig.format);
             }
 
             // 注入自定义参数（根据API类型支持的参数）
@@ -680,7 +680,7 @@ export class PhoneAPI {
               if (currentConfig.params.min_p !== undefined) data.min_p = currentConfig.params.min_p;
               if (currentConfig.params.top_a !== undefined) data.top_a = currentConfig.params.top_a;
             }
-            logger.debug('[PhoneAPI] 事件拦截注入自定义配置完成:', {
+            logger.debug('phone','[PhoneAPI] 事件拦截注入自定义配置完成:', {
               reverse_proxy: data.reverse_proxy,
               model: data.model,
               chat_completion_source: data.chat_completion_source,
@@ -696,14 +696,14 @@ export class PhoneAPI {
           // ========================================
           // 跟随酒馆设置：直接调用，不拦截任何参数
           // ========================================
-          logger.info('[PhoneAPI] 使用跟随酒馆设置模式，直接调用官方API');
+          logger.info('phone','[PhoneAPI] 使用跟随酒馆设置模式，直接调用官方API');
           response = await sendOpenAIRequest('quiet', messages, this.currentAbortController.signal);
 
         } else {
           // ========================================
           // 未知来源：回退到默认模式
           // ========================================
-          logger.warn('[PhoneAPI] 未知的API来源:', apiConfig.source, '，回退到默认模式');
+          logger.warn('phone','[PhoneAPI] 未知的API来源:', apiConfig.source, '，回退到默认模式');
           response = await sendOpenAIRequest('quiet', messages, this.currentAbortController.signal);
         }
 
@@ -715,7 +715,7 @@ export class PhoneAPI {
 
         // 检查是否是终止异常
         if (error.name === 'AbortError' || this.currentAbortController?.signal?.aborted) {
-          logger.info('[PhoneAPI] 生成已被终止');
+          logger.info('phone','[PhoneAPI] 生成已被终止');
           onError?.('生成已终止');
           return;
         }
@@ -725,13 +725,13 @@ export class PhoneAPI {
         // ✅ 关键：恢复原始 image_inlining 设置（无论成功或失败）
         if (phoneImageMode !== 'never') {
           oai_settings.image_inlining = originalImageInlining;
-          logger.debug('[PhoneAPI] 已恢复原始 image_inlining 状态:', originalImageInlining);
+          logger.debug('phone','[PhoneAPI] 已恢复原始 image_inlining 状态:', originalImageInlining);
         }
       }
 
       // 再次检查是否被终止
       if (this.currentAbortController.signal.aborted) {
-        logger.info('[PhoneAPI] 生成已被终止');
+        logger.info('phone','[PhoneAPI] 生成已被终止');
         onError?.('生成已终止');
         return;
       }
@@ -744,26 +744,26 @@ export class PhoneAPI {
       if (typeof response === 'string') {
         // 流式模式：直接是字符串
         responseText = response;
-        logger.debug('[PhoneAPI] AI回复接收完成（流式），长度:', responseText.length);
+        logger.debug('phone','[PhoneAPI] AI回复接收完成（流式），长度:', responseText.length);
       } else if (typeof response === 'object') {
         // 非流式模式：返回原始JSON对象，需要提取文本
         responseText = extractMessageFromData(response);
-        logger.debug('[PhoneAPI] AI回复接收完成（非流式），长度:', responseText?.length || 0);
+        logger.debug('phone','[PhoneAPI] AI回复接收完成（非流式），长度:', responseText?.length || 0);
 
         // 尝试提取元数据（如果有）
         if (response.metadata) {
           responseMetadata = response.metadata;
-          logger.info('[PhoneAPI] 响应包含元数据:', Object.keys(responseMetadata));
+          logger.info('phone','[PhoneAPI] 响应包含元数据:', Object.keys(responseMetadata));
         }
       } else {
-        logger.error('[PhoneAPI] 未知的响应类型:', typeof response);
+        logger.error('phone','[PhoneAPI] 未知的响应类型:', typeof response);
         onError?.('API返回格式错误');
         return;
       }
 
       // 检查提取结果
       if (!responseText) {
-        logger.error('[PhoneAPI] 无法从响应中提取文本，原始响应:', response);
+        logger.error('phone','[PhoneAPI] 无法从响应中提取文本，原始响应:', response);
         onError?.('API返回空响应');
         return;
       }
@@ -774,13 +774,13 @@ export class PhoneAPI {
 
       // 验证格式
       if (!validateAIResponse(responseText)) {
-        logger.error('[PhoneAPI] AI回复格式错误');
+        logger.error('phone','[PhoneAPI] AI回复格式错误');
 
         // ✅ 触发生成错误事件（修复按钮状态不恢复的bug）
         document.dispatchEvent(new CustomEvent('phone-ai-generation-error', {
           detail: { contactId, error: 'AI回复格式错误' }
         }));
-        logger.debug('[PhoneAPI] 已触发 phone-ai-generation-error 事件');
+        logger.debug('phone','[PhoneAPI] 已触发 phone-ai-generation-error 事件');
 
         onError?.('AI回复格式错误');
         return;
@@ -790,13 +790,13 @@ export class PhoneAPI {
       const parsedMessages = await parseAIResponse(responseText, contactId, messageNumberMap);
 
       if (parsedMessages.length === 0) {
-        logger.warn('[PhoneAPI] 未解析到任何消息');
+        logger.warn('phone','[PhoneAPI] 未解析到任何消息');
 
         // ✅ 触发生成错误事件
         document.dispatchEvent(new CustomEvent('phone-ai-generation-error', {
           detail: { contactId, error: 'AI未返回有效消息' }
         }));
-        logger.debug('[PhoneAPI] 已触发 phone-ai-generation-error 事件');
+        logger.debug('phone','[PhoneAPI] 已触发 phone-ai-generation-error 事件');
 
         onError?.('AI未返回有效消息');
         return;
@@ -807,7 +807,7 @@ export class PhoneAPI {
 
       // ✅ 如果有新的 API 元数据（如 Gemini 签名），先清除所有联系人的旧签名
       if (Object.keys(responseMetadata).length > 0) {
-        logger.info('[PhoneAPI] 检测到新的 API 元数据，开始清除旧签名...');
+        logger.info('phone','[PhoneAPI] 检测到新的 API 元数据，开始清除旧签名...');
         const { loadChatHistory, saveChatHistory } = await import('../messages/message-chat-data.js');
 
         // 获取本次响应涉及的所有角色（从 parsedMessages 提取）
@@ -846,11 +846,11 @@ export class PhoneAPI {
           // 如果有旧签名被删除，保存更新后的历史记录
           if (hasOldSignature) {
             await saveChatHistory(cid, history);
-            logger.info(`[PhoneAPI] 已清除联系人 ${cid} 的旧签名`);
+            logger.info('phone',`[PhoneAPI] 已清除联系人 ${cid} 的旧签名`);
           }
         }
 
-        logger.info('[PhoneAPI] 旧签名清除完成，准备保存新签名');
+        logger.info('phone','[PhoneAPI] 旧签名清除完成，准备保存新签名');
       }
 
       // ✅ 收集所有触发的联系人ID（用于清空待发送消息）
@@ -865,7 +865,7 @@ export class PhoneAPI {
           // 从角色名推导contactId（格式：tavern_角色名）
           const friendRequestContactId = `tavern_${msg.role}`;
 
-          logger.debug('[PhoneAPI] 处理好友申请消息:', msg.role, '→', friendRequestContactId);
+          logger.debug('phone','[PhoneAPI] 处理好友申请消息:', msg.role, '→', friendRequestContactId);
 
           // 保存消息到聊天记录
           const message = {
@@ -880,17 +880,17 @@ export class PhoneAPI {
 
           // 模拟打字间隔（好友申请消息不需要太长间隔）
           const typingDelay = 800;
-          logger.debug('[PhoneAPI] 模拟打字中...', typingDelay, 'ms（好友申请）');
+          logger.debug('phone','[PhoneAPI] 模拟打字中...', typingDelay, 'ms（好友申请）');
           await new Promise(resolve => setTimeout(resolve, typingDelay));
 
           // ✅ 好友申请消息不应在当前聊天界面显示（因为是其他联系人的消息）
           // 只触发全局消息列表刷新事件（显示小红点）
-          logger.debug('[PhoneAPI] 触发全局消息列表刷新');
+          logger.debug('phone','[PhoneAPI] 触发全局消息列表刷新');
           document.dispatchEvent(new CustomEvent('phone-message-received', {
             detail: { contactId: friendRequestContactId, message }
           }));
 
-          logger.info('[PhoneAPI] 好友申请消息已保存，不在当前界面显示');
+          logger.info('phone','[PhoneAPI] 好友申请消息已保存，不在当前界面显示');
           continue;  // 跳过后续的普通消息处理逻辑
         }
 
@@ -898,7 +898,7 @@ export class PhoneAPI {
         const matchedContactId = matchContactId(msg.role, contacts);
 
         if (!matchedContactId) {
-          logger.warn('[PhoneAPI] 跳过未知角色的消息:', msg.role);
+          logger.warn('phone','[PhoneAPI] 跳过未知角色的消息:', msg.role);
           continue;
         }
 
@@ -909,7 +909,7 @@ export class PhoneAPI {
         triggeredContactIds.add(matchedContactId);
 
         if (!isCurrentChat) {
-          logger.info('[PhoneAPI] 检测到其他联系人的消息，将保存并触发通知:', msg.role);
+          logger.info('phone','[PhoneAPI] 检测到其他联系人的消息，将保存并触发通知:', msg.role);
         }
 
         // 保存消息到数据库（保留解析器返回的ID和时间戳，避免误删）
@@ -982,11 +982,11 @@ export class PhoneAPI {
 
         // ✅ 为第一条 assistant 消息添加 API 元数据（如 Gemini 的 thoughtSignature）
         // 官方要求：签名附加到整个回复的第一个 part
-        logger.debug(`[PhoneAPI] 检查元数据附加条件: i=${i}, msg.sender=${msg.sender}, responseMetadata.keys=${Object.keys(responseMetadata)}, 条件满足=${i === 0 && msg.sender === 'contact' && Object.keys(responseMetadata).length > 0}`);
+        logger.debug('phone',`[PhoneAPI] 检查元数据附加条件: i=${i}, msg.sender=${msg.sender}, responseMetadata.keys=${Object.keys(responseMetadata)}, 条件满足=${i === 0 && msg.sender === 'contact' && Object.keys(responseMetadata).length > 0}`);
 
         if (i === 0 && msg.sender === 'contact' && Object.keys(responseMetadata).length > 0) {
           messageToSave.metadata = responseMetadata;
-          logger.info('[PhoneAPI] ✅ 第一条 assistant 消息已附加 API 元数据:', Object.keys(responseMetadata));
+          logger.info('phone','[PhoneAPI] ✅ 第一条 assistant 消息已附加 API 元数据:', Object.keys(responseMetadata));
         }
 
         // ✅ 保存到目标联系人的聊天记录（不是当前界面的contactId）
@@ -1000,55 +1000,55 @@ export class PhoneAPI {
         // 如果不是第一条消息，先延迟（模拟打字时间）
         if (i > 0) {
           const delay = this.calculateTypingDelay(message);
-          logger.debug('[PhoneAPI] 模拟打字中...', delay, 'ms（字数:', message.content?.length || 0, '）');
+          logger.debug('phone','[PhoneAPI] 模拟打字中...', delay, 'ms（字数:', message.content?.length || 0, '）');
           await this.sleep(delay);
         }
 
         // ✅ 判断是否需要立即显示（只有当前聊天界面的消息才立即显示）
         if (isCurrentChat) {
           // 触发回调（显示气泡）
-          logger.debug('[PhoneAPI] 触发onMessageReceived回调，消息类型:', message.type);
+          logger.debug('phone','[PhoneAPI] 触发onMessageReceived回调，消息类型:', message.type);
           if (onMessageReceived) {
             try {
               // ✅ 只传递 message 参数，contactId 可以从 message.contactId 获取
               await onMessageReceived(message);
-              logger.debug('[PhoneAPI] 消息已显示');
+              logger.debug('phone','[PhoneAPI] 消息已显示');
             } catch (error) {
-              logger.error('[PhoneAPI] onMessageReceived回调执行失败:', error);
+              logger.error('phone','[PhoneAPI] onMessageReceived回调执行失败:', error);
               throw error;
             }
           } else {
-            logger.warn('[PhoneAPI] onMessageReceived回调未定义！');
+            logger.warn('phone','[PhoneAPI] onMessageReceived回调未定义！');
           }
         } else {
           // ✅ 其他联系人的消息：触发全局事件（更新消息列表小红点）
-          logger.debug('[PhoneAPI] 触发全局消息列表刷新');
+          logger.debug('phone','[PhoneAPI] 触发全局消息列表刷新');
           document.dispatchEvent(new CustomEvent('phone-message-received', {
             detail: { contactId: matchedContactId, message }
           }));
-          logger.info('[PhoneAPI] 其他联系人消息已保存并触发通知:', msg.role);
+          logger.info('phone','[PhoneAPI] 其他联系人消息已保存并触发通知:', msg.role);
         }
       }
 
       // ✅ 清空所有触发联系人的待发送消息
       triggeredContactIds.forEach(triggeredId => {
         clearPendingMessages(triggeredId);
-        logger.debug('[PhoneAPI] 已清空待发送消息:', triggeredId);
+        logger.debug('phone','[PhoneAPI] 已清空待发送消息:', triggeredId);
       });
 
       // ✅ 触发生成完成事件
       document.dispatchEvent(new CustomEvent('phone-ai-generation-complete', {
         detail: { contactId }
       }));
-      logger.debug('[PhoneAPI] 已触发 phone-ai-generation-complete 事件');
+      logger.debug('phone','[PhoneAPI] 已触发 phone-ai-generation-complete 事件');
 
       // 完成回调（保持向后兼容）
       onComplete?.();
 
-      logger.info('[PhoneAPI] 发送流程完成');
+      logger.info('phone','[PhoneAPI] 发送流程完成');
 
     } catch (error) {
-      logger.error('[PhoneAPI] 发送失败:', error);
+      logger.error('phone','[PhoneAPI] 发送失败:', error);
 
       // ✅ 保存错误信息到调试器
       const { saveDebugVersion } = await import('../messages/message-debug-ui.js');
@@ -1059,7 +1059,7 @@ export class PhoneAPI {
       document.dispatchEvent(new CustomEvent('phone-ai-generation-error', {
         detail: { contactId, error: error.message || '发送失败' }
       }));
-      logger.debug('[PhoneAPI] 已触发 phone-ai-generation-error 事件');
+      logger.debug('phone','[PhoneAPI] 已触发 phone-ai-generation-error 事件');
 
       // 错误回调（保持向后兼容）
       onError?.(error.message || '发送失败');
@@ -1086,13 +1086,13 @@ export class PhoneAPI {
    */
   async callAPIWithStreaming(messages, apiConfig, signal, contactId) {
     // 🔍 调试日志：记录传入的完整 apiConfig（完全照搬日记）
-    logger.debug('[PhoneAPI.callAPIWithStreaming] === 自定义API调试开始 ===');
-    logger.debug('[PhoneAPI.callAPIWithStreaming] 传入的 apiConfig:', JSON.stringify(apiConfig, null, 2));
-    logger.debug('[PhoneAPI.callAPIWithStreaming] apiConfig.source:', apiConfig.source);
-    logger.debug('[PhoneAPI.callAPIWithStreaming] apiConfig.baseUrl:', `"${apiConfig.baseUrl}"`, '(类型:', typeof apiConfig.baseUrl, ', 长度:', apiConfig.baseUrl?.length || 0, ')');
-    logger.debug('[PhoneAPI.callAPIWithStreaming] apiConfig.model:', apiConfig.model);
-    logger.debug('[PhoneAPI.callAPIWithStreaming] apiConfig.apiKey:', apiConfig.apiKey ? '已设置(已隐藏)' : '未设置');
-    logger.debug('[PhoneAPI.callAPIWithStreaming] messages数组长度:', messages.length);
+    logger.debug('phone','[PhoneAPI.callAPIWithStreaming] === 自定义API调试开始 ===');
+    logger.debug('phone','[PhoneAPI.callAPIWithStreaming] 传入的 apiConfig:', JSON.stringify(apiConfig, null, 2));
+    logger.debug('phone','[PhoneAPI.callAPIWithStreaming] apiConfig.source:', apiConfig.source);
+    logger.debug('phone','[PhoneAPI.callAPIWithStreaming] apiConfig.baseUrl:', `"${apiConfig.baseUrl}"`, '(类型:', typeof apiConfig.baseUrl, ', 长度:', apiConfig.baseUrl?.length || 0, ')');
+    logger.debug('phone','[PhoneAPI.callAPIWithStreaming] apiConfig.model:', apiConfig.model);
+    logger.debug('phone','[PhoneAPI.callAPIWithStreaming] apiConfig.apiKey:', apiConfig.apiKey ? '已设置(已隐藏)' : '未设置');
+    logger.debug('phone','[PhoneAPI.callAPIWithStreaming] messages数组长度:', messages.length);
 
     // 获取当前使用的 API 源
     let currentSource;
@@ -1114,20 +1114,20 @@ export class PhoneAPI {
 
       if (userFormat === 'custom') {
         currentSource = oai_settings.chat_completion_source || chat_completion_sources.OPENAI;
-        logger.debug('[PhoneAPI] 自定义API - 自动检测模式，使用酒馆API源:', currentSource);
+        logger.debug('phone','[PhoneAPI] 自定义API - 自动检测模式，使用酒馆API源:', currentSource);
       } else {
         currentSource = formatMap[userFormat] || chat_completion_sources.OPENAI;  // ← 默认改为 OPENAI
-        logger.debug('[PhoneAPI] 自定义API - 用户选择格式:', userFormat, '→ 映射到:', currentSource);
+        logger.debug('phone','[PhoneAPI] 自定义API - 用户选择格式:', userFormat, '→ 映射到:', currentSource);
       }
     } else {
       currentSource = oai_settings.chat_completion_source || chat_completion_sources.OPENAI;
-      logger.debug('[PhoneAPI] 使用酒馆API源:', currentSource);
+      logger.debug('phone','[PhoneAPI] 使用酒馆API源:', currentSource);
     }
 
     let model = apiConfig.model;
     if (!model) {
       model = oai_settings.openai_model || 'gpt-4o-mini';
-      logger.warn('[PhoneAPI.callAPIWithStreaming] 未设置模型，使用官方默认:', model);
+      logger.warn('phone','[PhoneAPI.callAPIWithStreaming] 未设置模型，使用官方默认:', model);
     }
 
     // ✅ 移除 models/ 前缀（避免 URL 重复：/models/models/xxx）
@@ -1135,10 +1135,10 @@ export class PhoneAPI {
     if (model && model.startsWith('models/')) {
       const originalModel = model;
       model = model.replace('models/', '');
-      logger.debug('[PhoneAPI.callAPIWithStreaming] 移除 models/ 前缀:', originalModel, '→', model);
+      logger.debug('phone','[PhoneAPI.callAPIWithStreaming] 移除 models/ 前缀:', originalModel, '→', model);
     }
 
-    logger.debug('[PhoneAPI.callAPIWithStreaming] 最终使用的 model:', model);
+    logger.debug('phone','[PhoneAPI.callAPIWithStreaming] 最终使用的 model:', model);
 
     // ✅ 核心修复：区分 default 模式和 custom 模式的参数读取
     let bodyParams = {};
@@ -1183,7 +1183,7 @@ export class PhoneAPI {
         bodyParams.top_a = savedParams.top_a;
       }
 
-      logger.info('[PhoneAPI.callAPIWithStreaming] ✅ 使用自定义参数配置:', bodyParams);
+      logger.info('phone','[PhoneAPI.callAPIWithStreaming] ✅ 使用自定义参数配置:', bodyParams);
     } else {
       // ✅ default 模式：使用酒馆配置
       bodyParams.temperature = Number(oai_settings.temp_openai) || 1.0;
@@ -1195,7 +1195,7 @@ export class PhoneAPI {
       const topK = Number(oai_settings.top_k_openai);
       if (topK) bodyParams.top_k = topK;
 
-      logger.info('[PhoneAPI.callAPIWithStreaming] ✅ 使用酒馆参数配置:', bodyParams);
+      logger.info('phone','[PhoneAPI.callAPIWithStreaming] ✅ 使用酒馆参数配置:', bodyParams);
     }
 
     const body = {
@@ -1210,42 +1210,42 @@ export class PhoneAPI {
     };
 
     if (apiConfig.source === 'custom') {
-      logger.debug('[PhoneAPI.callAPIWithStreaming] 🔍 进入自定义API分支');
-      logger.debug('[PhoneAPI.callAPIWithStreaming] 检查前 - apiConfig.baseUrl:', `"${apiConfig.baseUrl}"`, ', trim后:', `"${apiConfig.baseUrl?.trim()}"`);
-      logger.debug('[PhoneAPI.callAPIWithStreaming] 检查前 - apiConfig.model:', `"${apiConfig.model}"`, ', trim后:', `"${apiConfig.model?.trim()}"`);
+      logger.debug('phone','[PhoneAPI.callAPIWithStreaming] 🔍 进入自定义API分支');
+      logger.debug('phone','[PhoneAPI.callAPIWithStreaming] 检查前 - apiConfig.baseUrl:', `"${apiConfig.baseUrl}"`, ', trim后:', `"${apiConfig.baseUrl?.trim()}"`);
+      logger.debug('phone','[PhoneAPI.callAPIWithStreaming] 检查前 - apiConfig.model:', `"${apiConfig.model}"`, ', trim后:', `"${apiConfig.model?.trim()}"`);
 
       // ✅ 修复：检查必填字段，避免传递空值导致 Invalid URL
       if (!apiConfig.baseUrl || !apiConfig.baseUrl.trim()) {
         const error = new Error('自定义API配置错误：缺少 API 端点 (Base URL)');
-        logger.error('[PhoneAPI.callAPIWithStreaming]', error.message);
-        logger.error('[PhoneAPI.callAPIWithStreaming] baseUrl 值:', apiConfig.baseUrl, ', 类型:', typeof apiConfig.baseUrl);
+        logger.error('phone','[PhoneAPI.callAPIWithStreaming]', error.message);
+        logger.error('phone','[PhoneAPI.callAPIWithStreaming] baseUrl 值:', apiConfig.baseUrl, ', 类型:', typeof apiConfig.baseUrl);
         throw error;
       }
       if (!apiConfig.model || !apiConfig.model.trim()) {
         const error = new Error('自定义API配置错误：缺少模型名称');
-        logger.error('[PhoneAPI.callAPIWithStreaming]', error.message);
-        logger.error('[PhoneAPI.callAPIWithStreaming] model 值:', apiConfig.model, ', 类型:', typeof apiConfig.model);
+        logger.error('phone','[PhoneAPI.callAPIWithStreaming]', error.message);
+        logger.error('phone','[PhoneAPI.callAPIWithStreaming] model 值:', apiConfig.model, ', 类型:', typeof apiConfig.model);
         throw error;
       }
 
-      logger.debug('[PhoneAPI.callAPIWithStreaming] ✅ 验证通过，开始设置 API 端点');
+      logger.debug('phone','[PhoneAPI.callAPIWithStreaming] ✅ 验证通过，开始设置 API 端点');
 
       // ✅ 修复：使用 reverse_proxy 模式让后端使用我们的 proxy_password
       // 原因：CUSTOM 源会从本地密钥文件读取，忽略 proxy_password，导致 401 认证失败
       // 现在使用 OPENAI 源（见上方映射），后端会检查 reverse_proxy 并使用 proxy_password
       body.reverse_proxy = apiConfig.baseUrl.trim();
-      logger.debug('[PhoneAPI.callAPIWithStreaming] body.reverse_proxy 已设置为:', `"${body.reverse_proxy}"`);
+      logger.debug('phone','[PhoneAPI.callAPIWithStreaming] body.reverse_proxy 已设置为:', `"${body.reverse_proxy}"`);
 
       if (apiConfig.apiKey) {
         body.proxy_password = apiConfig.apiKey.trim();
-        logger.debug('[PhoneAPI.callAPIWithStreaming] body.proxy_password 已设置（后端将使用此密钥）');
+        logger.debug('phone','[PhoneAPI.callAPIWithStreaming] body.proxy_password 已设置（后端将使用此密钥）');
       }
     } else {
-      logger.debug('[PhoneAPI.callAPIWithStreaming] 跳过自定义API分支 (source !== "custom")');
+      logger.debug('phone','[PhoneAPI.callAPIWithStreaming] 跳过自定义API分支 (source !== "custom")');
     }
 
     // 🔍 最终检查：记录 body 中的 reverse_proxy
-    logger.debug('[PhoneAPI.callAPIWithStreaming] 最终 body.reverse_proxy:', body.reverse_proxy);
+    logger.debug('phone','[PhoneAPI.callAPIWithStreaming] 最终 body.reverse_proxy:', body.reverse_proxy);
 
     // 🎯 检查 messages 中是否有 thoughtSignature
     let hasSignatureInRequest = false;
@@ -1254,18 +1254,18 @@ export class PhoneAPI {
         const signaturePart = msg.content.find(part => part.thoughtSignature);
         if (signaturePart) {
           hasSignatureInRequest = true;
-          logger.info(`[PhoneAPI.callAPIWithStreaming] 🎯 请求中包含 thoughtSignature: messages[${idx}].role=${msg.role}, 签名长度=${signaturePart.thoughtSignature.length}`);
-          logger.debug(`[PhoneAPI.callAPIWithStreaming] 签名内容（前100字符）: ${signaturePart.thoughtSignature.substring(0, 100)}...`);
+          logger.info('phone',`[PhoneAPI.callAPIWithStreaming] 🎯 请求中包含 thoughtSignature: messages[${idx}].role=${msg.role}, 签名长度=${signaturePart.thoughtSignature.length}`);
+          logger.debug('phone',`[PhoneAPI.callAPIWithStreaming] 签名内容（前100字符）: ${signaturePart.thoughtSignature.substring(0, 100)}...`);
         }
       }
     });
     if (!hasSignatureInRequest) {
-      logger.debug('[PhoneAPI.callAPIWithStreaming] 请求中不包含 thoughtSignature');
+      logger.debug('phone','[PhoneAPI.callAPIWithStreaming] 请求中不包含 thoughtSignature');
     }
 
-    logger.debug('[PhoneAPI.callAPIWithStreaming] 完整 body 对象:', JSON.stringify(body, null, 2));
+    logger.debug('phone','[PhoneAPI.callAPIWithStreaming] 完整 body 对象:', JSON.stringify(body, null, 2));
 
-    logger.info('[PhoneAPI.callAPIWithStreaming] 最终请求配置:', {
+    logger.info('phone','[PhoneAPI.callAPIWithStreaming] 最终请求配置:', {
       扩展API配置源: apiConfig.source,
       酒馆API源: currentSource,
       流式传输: body.stream,
@@ -1295,15 +1295,15 @@ export class PhoneAPI {
       }
 
       // ✅ 记录到日志（格式化 JSON）
-      logger.error('[PhoneAPI] ========== API 错误详情 ==========');
-      logger.error('[PhoneAPI] 状态码:', response.status);
-      logger.error('[PhoneAPI] 状态文本:', response.statusText);
+      logger.error('phone','[PhoneAPI] ========== API 错误详情 ==========');
+      logger.error('phone','[PhoneAPI] 状态码:', response.status);
+      logger.error('phone','[PhoneAPI] 状态文本:', response.statusText);
       if (errorJson) {
-        logger.error('[PhoneAPI] 错误内容（JSON）:', JSON.stringify(errorJson, null, 2));
+        logger.error('phone','[PhoneAPI] 错误内容（JSON）:', JSON.stringify(errorJson, null, 2));
       } else {
-        logger.error('[PhoneAPI] 错误内容（纯文本）:', errorText);
+        logger.error('phone','[PhoneAPI] 错误内容（纯文本）:', errorText);
       }
-      logger.error('[PhoneAPI] ======================================');
+      logger.error('phone','[PhoneAPI] ======================================');
 
       // ✅ 保存完整响应到调试器（让用户可以在 debug-textarea 中查看）
       if (contactId) {
@@ -1350,19 +1350,19 @@ export class PhoneAPI {
     let fullText = '';
     const state = { reasoning: '', image: '' };
 
-    logger.debug('[PhoneAPI.handleStreamResponse] 使用API源解析流式响应:', currentSource);
+    logger.debug('phone','[PhoneAPI.handleStreamResponse] 使用API源解析流式响应:', currentSource);
 
     try {
       while (true) {
         if (signal.aborted) {
-          logger.info('[PhoneAPI] 流式生成被中止');
+          logger.info('phone','[PhoneAPI] 流式生成被中止');
           break;
         }
 
         const { done, value } = await reader.read();
 
         if (done || !value?.data || value.data === '[DONE]') {
-          logger.debug('[PhoneAPI] 流式生成完成');
+          logger.debug('phone','[PhoneAPI] 流式生成完成');
           break;
         }
 
@@ -1370,7 +1370,7 @@ export class PhoneAPI {
         try {
           parsed = JSON.parse(value.data);
         } catch (error) {
-          logger.warn('[PhoneAPI] 解析SSE数据失败:', error);
+          logger.warn('phone','[PhoneAPI] 解析SSE数据失败:', error);
           continue;
         }
 
@@ -1380,7 +1380,7 @@ export class PhoneAPI {
 
         if (typeof chunk === 'string' && chunk) {
           fullText += chunk;
-          logger.debug('[PhoneAPI] 收到文本块，当前长度:', fullText.length);
+          logger.debug('phone','[PhoneAPI] 收到文本块，当前长度:', fullText.length);
         }
       }
 
@@ -1388,7 +1388,7 @@ export class PhoneAPI {
 
     } catch (error) {
       if (error.name === 'AbortError' || signal.aborted) {
-        logger.info('[PhoneAPI] 流式生成被中止，返回部分文本');
+        logger.info('phone','[PhoneAPI] 流式生成被中止，返回部分文本');
         return fullText;
       }
 
@@ -1398,7 +1398,7 @@ export class PhoneAPI {
       try {
         reader.releaseLock?.();
       } catch (error) {
-        logger.warn('[PhoneAPI] 释放读取器失败:', error);
+        logger.warn('phone','[PhoneAPI] 释放读取器失败:', error);
       }
     }
   }
@@ -1443,7 +1443,7 @@ export class PhoneAPI {
    * @returns {Promise<void>}
    */
   async sendToAIWithToolCalling(contactId, onMessageReceived, onComplete, onError, options = {}) {
-    logger.info('[PhoneAPI.sendToAIWithToolCalling] 使用工具调用模式发送到AI:', contactId);
+    logger.info('phone','[PhoneAPI.sendToAIWithToolCalling] 使用工具调用模式发送到AI:', contactId);
 
     try {
       // 获取待发送消息（复用原有逻辑）
@@ -1480,11 +1480,11 @@ export class PhoneAPI {
       let allPendingMessages;
       if (options.allPendingMessages) {
         allPendingMessages = options.allPendingMessages;
-        logger.info('[PhoneAPI] 工具调用模式 - 使用传入的多联系人消息（重roll模式），共', Object.keys(allPendingMessages).length, '个联系人');
+        logger.info('phone','[PhoneAPI] 工具调用模式 - 使用传入的多联系人消息（重roll模式），共', Object.keys(allPendingMessages).length, '个联系人');
       } else {
         const allPendingOps = getAllPendingOperations();
         allPendingMessages = allPendingOps.messages;
-        logger.debug('[PhoneAPI] 工具调用模式 - 从暂存队列获取多联系人消息');
+        logger.debug('phone','[PhoneAPI] 工具调用模式 - 从暂存队列获取多联系人消息');
       }
 
       // 构建 messages 数组（返回messages和编号映射表）
@@ -1492,7 +1492,7 @@ export class PhoneAPI {
       const messages = buildResult.messages;
       const messageNumberMap = buildResult.messageNumberMap;
 
-      logger.debug('[PhoneAPI] 工具调用模式 - messages 构建完成，共', messages.length, '条，编号映射表大小:', messageNumberMap.size);
+      logger.debug('phone','[PhoneAPI] 工具调用模式 - messages 构建完成，共', messages.length, '条，编号映射表大小:', messageNumberMap.size);
 
       // ✅ 替换宏（{{user}}、{{当前时间}}、{{当前天气}} 等）
       try {
@@ -1503,10 +1503,10 @@ export class PhoneAPI {
               message.content = substituteParams(message.content);
             }
           }
-          logger.debug('[PhoneAPI] 已替换所有宏变量（工具调用模式）');
+          logger.debug('phone','[PhoneAPI] 已替换所有宏变量（工具调用模式）');
         }
       } catch (error) {
-        logger.warn('[PhoneAPI] 宏替换失败（继续发送）:', error);
+        logger.warn('phone','[PhoneAPI] 宏替换失败（继续发送）:', error);
       }
 
       // 创建终止控制器
@@ -1518,18 +1518,18 @@ export class PhoneAPI {
       document.dispatchEvent(new CustomEvent('phone-ai-generation-start', {
         detail: { contactId }
       }));
-      logger.debug('[PhoneAPI] 已触发 phone-ai-generation-start 事件（工具调用模式）');
+      logger.debug('phone','[PhoneAPI] 已触发 phone-ai-generation-start 事件（工具调用模式）');
 
       // 获取工具定义
       const tools = getToolDefinitions();
-      logger.debug('[PhoneAPI] 工具定义已加载，共', tools.length, '个工具');
+      logger.debug('phone','[PhoneAPI] 工具定义已加载，共', tools.length, '个工具');
 
       // 调用 API（直接调用，不走 SillyTavern）
       const phoneSettings = this.getSettings();
       const apiSettings = phoneSettings.apiConfig || {};
       const format = apiSettings.customConfigs?.find(c => c.id === apiSettings.currentConfigId)?.format || 'openai';
 
-      logger.info('[PhoneAPI] 使用工具调用，API格式:', format);
+      logger.info('phone','[PhoneAPI] 使用工具调用，API格式:', format);
 
       // 调用 API
       const result = await this.callDirectAPIWithTools(messages, tools, format, this.currentAbortController.signal);
@@ -1548,7 +1548,7 @@ export class PhoneAPI {
       }
 
       if (!toolCalls || toolCalls.length === 0) {
-        logger.warn('[PhoneAPI] AI 未调用任何工具');
+        logger.warn('phone','[PhoneAPI] AI 未调用任何工具');
         onError?.('AI 未返回消息');
         return;
       }
@@ -1556,7 +1556,7 @@ export class PhoneAPI {
       // 执行工具调用
       const executionResults = await executeToolCalls(toolCalls, contactId);
 
-      logger.info('[PhoneAPI] 工具执行完成，共', executionResults.length, '条结果');
+      logger.info('phone','[PhoneAPI] 工具执行完成，共', executionResults.length, '条结果');
 
       // 触发回调（显示消息气泡）
       let index = 0;
@@ -1572,7 +1572,7 @@ export class PhoneAPI {
           // 如果不是第一条消息，先延迟（模拟打字时间）
           if (index > 0) {
             const delay = this.calculateTypingDelay(message);
-            logger.debug('[PhoneAPI] [工具调用] 模拟打字中...', delay, 'ms（字数:', message.content?.length || 0, '）');
+            logger.debug('phone','[PhoneAPI] [工具调用] 模拟打字中...', delay, 'ms（字数:', message.content?.length || 0, '）');
             await this.sleep(delay);
           }
 
@@ -1588,21 +1588,21 @@ export class PhoneAPI {
       document.dispatchEvent(new CustomEvent('phone-ai-generation-complete', {
         detail: { contactId }
       }));
-      logger.debug('[PhoneAPI] 已触发 phone-ai-generation-complete 事件（工具调用模式）');
+      logger.debug('phone','[PhoneAPI] 已触发 phone-ai-generation-complete 事件（工具调用模式）');
 
       // 完成回调（保持向后兼容）
       onComplete?.();
 
-      logger.info('[PhoneAPI] 工具调用流程完成');
+      logger.info('phone','[PhoneAPI] 工具调用流程完成');
 
     } catch (error) {
-      logger.error('[PhoneAPI] 工具调用失败:', error);
+      logger.error('phone','[PhoneAPI] 工具调用失败:', error);
 
       // ✅ 触发生成错误事件
       document.dispatchEvent(new CustomEvent('phone-ai-generation-error', {
         detail: { contactId, error: error.message || '发送失败' }
       }));
-      logger.debug('[PhoneAPI] 已触发 phone-ai-generation-error 事件（工具调用模式）');
+      logger.debug('phone','[PhoneAPI] 已触发 phone-ai-generation-error 事件（工具调用模式）');
 
       // 错误回调（保持向后兼容）
       onError?.(error.message || '发送失败');
@@ -1634,7 +1634,7 @@ export class PhoneAPI {
 
     const { baseUrl, apiKey, model } = currentConfig;
 
-    logger.info('[PhoneAPI.callDirectAPIWithTools] 调用第三方 API:', { baseUrl, model, format });
+    logger.info('phone','[PhoneAPI.callDirectAPIWithTools] 调用第三方 API:', { baseUrl, model, format });
 
     // 根据格式构建请求
     let url, headers, body;
@@ -1674,8 +1674,8 @@ export class PhoneAPI {
       };
     }
 
-    logger.debug('[PhoneAPI] 请求 URL:', url);
-    logger.debug('[PhoneAPI] 请求 body:', JSON.stringify(body, null, 2));
+    logger.debug('phone','[PhoneAPI] 请求 URL:', url);
+    logger.debug('phone','[PhoneAPI] 请求 body:', JSON.stringify(body, null, 2));
 
     const response = await fetch(url, {
       method: 'POST',
@@ -1686,12 +1686,12 @@ export class PhoneAPI {
 
     if (!response.ok) {
       const errorText = await response.text();
-      logger.error('[PhoneAPI] API 调用失败:', response.status, errorText);
+      logger.error('phone','[PhoneAPI] API 调用失败:', response.status, errorText);
       throw new Error(`API 调用失败: ${response.status}`);
     }
 
     const data = await response.json();
-    logger.debug('[PhoneAPI] API 响应:', JSON.stringify(data, null, 2));
+    logger.debug('phone','[PhoneAPI] API 响应:', JSON.stringify(data, null, 2));
 
     return data;
   }
@@ -1754,18 +1754,18 @@ export class PhoneAPI {
       metadata.gemini = {};
 
       // 🔍 调试：打印接收到的 data 结构
-      logger.debug('[PhoneAPI.extractAPIMetadata] 🔍 接收到的 data 对象键:', Object.keys(data));
-      logger.debug('[PhoneAPI.extractAPIMetadata] 🔍 data.candidates:', data.candidates ? '存在' : '不存在');
-      logger.debug('[PhoneAPI.extractAPIMetadata] 🔍 data.usageMetadata:', data.usageMetadata ? JSON.stringify(data.usageMetadata) : '不存在');
+      logger.debug('phone','[PhoneAPI.extractAPIMetadata] 🔍 接收到的 data 对象键:', Object.keys(data));
+      logger.debug('phone','[PhoneAPI.extractAPIMetadata] 🔍 data.candidates:', data.candidates ? '存在' : '不存在');
+      logger.debug('phone','[PhoneAPI.extractAPIMetadata] 🔍 data.usageMetadata:', data.usageMetadata ? JSON.stringify(data.usageMetadata) : '不存在');
 
       // 🔍 检查是否是 OpenAI 格式（SillyTavern 转换后）
       if (data.choices && data.responseContent) {
-        logger.debug('[PhoneAPI.extractAPIMetadata] 🔍 检测到 OpenAI 格式，尝试从 responseContent 提取');
+        logger.debug('phone','[PhoneAPI.extractAPIMetadata] 🔍 检测到 OpenAI 格式，尝试从 responseContent 提取');
 
         // SillyTavern 返回的 responseContent 直接是 content 对象：{ parts: [...], role: '...' }
         // 需要重构为 Gemini 原始格式：{ candidates: [{ content: {...} }] }
         if (data.responseContent.parts) {
-          logger.info('[PhoneAPI.extractAPIMetadata] 🎯 从 responseContent.parts 重构 Gemini 响应');
+          logger.info('phone','[PhoneAPI.extractAPIMetadata] 🎯 从 responseContent.parts 重构 Gemini 响应');
           data = {
             candidates: [{
               content: data.responseContent
@@ -1776,16 +1776,16 @@ export class PhoneAPI {
       }
 
       if (data.candidates) {
-        logger.debug('[PhoneAPI.extractAPIMetadata] 🔍 candidates[0]:', data.candidates[0] ? '存在' : '不存在');
+        logger.debug('phone','[PhoneAPI.extractAPIMetadata] 🔍 candidates[0]:', data.candidates[0] ? '存在' : '不存在');
         if (data.candidates[0]) {
-          logger.debug('[PhoneAPI.extractAPIMetadata] 🔍 candidates[0] 键:', Object.keys(data.candidates[0]));
-          logger.debug('[PhoneAPI.extractAPIMetadata] 🔍 candidates[0].content:', data.candidates[0].content ? '存在' : '不存在');
+          logger.debug('phone','[PhoneAPI.extractAPIMetadata] 🔍 candidates[0] 键:', Object.keys(data.candidates[0]));
+          logger.debug('phone','[PhoneAPI.extractAPIMetadata] 🔍 candidates[0].content:', data.candidates[0].content ? '存在' : '不存在');
           if (data.candidates[0].content) {
-            logger.debug('[PhoneAPI.extractAPIMetadata] 🔍 content 键:', Object.keys(data.candidates[0].content));
-            logger.debug('[PhoneAPI.extractAPIMetadata] 🔍 content.parts:', data.candidates[0].content.parts ? `存在，长度: ${data.candidates[0].content.parts.length}` : '不存在');
+            logger.debug('phone','[PhoneAPI.extractAPIMetadata] 🔍 content 键:', Object.keys(data.candidates[0].content));
+            logger.debug('phone','[PhoneAPI.extractAPIMetadata] 🔍 content.parts:', data.candidates[0].content.parts ? `存在，长度: ${data.candidates[0].content.parts.length}` : '不存在');
             if (data.candidates[0].content.parts?.[0]) {
-              logger.debug('[PhoneAPI.extractAPIMetadata] 🔍 parts[0] 键:', Object.keys(data.candidates[0].content.parts[0]));
-              logger.debug('[PhoneAPI.extractAPIMetadata] 🔍 parts[0].thoughtSignature:', data.candidates[0].content.parts[0].thoughtSignature ? '存在' : '不存在');
+              logger.debug('phone','[PhoneAPI.extractAPIMetadata] 🔍 parts[0] 键:', Object.keys(data.candidates[0].content.parts[0]));
+              logger.debug('phone','[PhoneAPI.extractAPIMetadata] 🔍 parts[0].thoughtSignature:', data.candidates[0].content.parts[0].thoughtSignature ? '存在' : '不存在');
             }
           }
         }
@@ -1796,22 +1796,22 @@ export class PhoneAPI {
         const thoughtSignature = data.candidates?.[0]?.content?.parts?.[0]?.thoughtSignature;
         if (thoughtSignature) {
           metadata.gemini.thoughtSignature = thoughtSignature;
-          logger.info('[PhoneAPI.extractAPIMetadata] ✅ 提取到 Gemini thoughtSignature');
-          logger.debug('[PhoneAPI.extractAPIMetadata] Signature 长度:', thoughtSignature.length);
+          logger.info('phone','[PhoneAPI.extractAPIMetadata] ✅ 提取到 Gemini thoughtSignature');
+          logger.debug('phone','[PhoneAPI.extractAPIMetadata] Signature 长度:', thoughtSignature.length);
         } else {
-          logger.warn('[PhoneAPI.extractAPIMetadata] ❌ 未找到 thoughtSignature');
+          logger.warn('phone','[PhoneAPI.extractAPIMetadata] ❌ 未找到 thoughtSignature');
         }
 
         // 提取 thinking tokens 统计
         const thinkingTokens = data.usageMetadata?.thoughtsTokenCount;
         if (thinkingTokens) {
           metadata.gemini.thinkingTokens = thinkingTokens;
-          logger.debug('[PhoneAPI.extractAPIMetadata] Thinking tokens:', thinkingTokens);
+          logger.debug('phone','[PhoneAPI.extractAPIMetadata] Thinking tokens:', thinkingTokens);
         } else {
-          logger.debug('[PhoneAPI.extractAPIMetadata] 未找到 thoughtsTokenCount');
+          logger.debug('phone','[PhoneAPI.extractAPIMetadata] 未找到 thoughtsTokenCount');
         }
       } catch (error) {
-        logger.warn('[PhoneAPI.extractAPIMetadata] Gemini 元数据提取失败:', error.message);
+        logger.warn('phone','[PhoneAPI.extractAPIMetadata] Gemini 元数据提取失败:', error.message);
       }
     }
 
@@ -1827,7 +1827,7 @@ export class PhoneAPI {
     //   // 提取 OpenAI 特有元数据
     // }
 
-    logger.debug('[PhoneAPI.extractAPIMetadata] 元数据提取完成:', Object.keys(metadata));
+    logger.debug('phone','[PhoneAPI.extractAPIMetadata] 元数据提取完成:', Object.keys(metadata));
     return metadata;
   }
 }
@@ -1871,7 +1871,7 @@ export class PhoneAPI {
  * ]}
  */
 function convertToGeminiFormat(messages) {
-  logger.info('[FormatConverter] 🔄 开始转换为 Gemini 格式');
+  logger.info('phone','[FormatConverter] 🔄 开始转换为 Gemini 格式');
   let convertedImageCount = 0;
 
   const converted = messages.map((msg, msgIndex) => {
@@ -1897,20 +1897,20 @@ function convertToGeminiFormat(messages) {
 
         // 拆分 data URL
         if (!url.startsWith('data:')) {
-          logger.warn('[FormatConverter] ⚠️ 图片 URL 不是 data URL，跳过:', url.substring(0, 50));
+          logger.warn('phone','[FormatConverter] ⚠️ 图片 URL 不是 data URL，跳过:', url.substring(0, 50));
           return part;
         }
 
         const [header, data] = url.split(',');
         if (!header || !data) {
-          logger.error('[FormatConverter] ❌ 无法解析图片 URL:', url.substring(0, 50));
+          logger.error('phone','[FormatConverter] ❌ 无法解析图片 URL:', url.substring(0, 50));
           return part;
         }
 
         const mimeType = header.split(';')[0].split(':')[1];
 
         convertedImageCount++;
-        logger.debug(`[FormatConverter] ✅ [消息${msgIndex}/部分${partIndex}] ${mimeType}, 数据长度 ${data.length}`);
+        logger.debug('phone',`[FormatConverter] ✅ [消息${msgIndex}/部分${partIndex}] ${mimeType}, 数据长度 ${data.length}`);
 
         // ✅ 修复：删除 type 字段，只保留 inlineData（与 SillyTavern 官方一致）
         return {
@@ -1929,6 +1929,6 @@ function convertToGeminiFormat(messages) {
     };
   });
 
-  logger.info(`[FormatConverter] ✅ Gemini 格式转换完成，共转换 ${convertedImageCount} 张图片`);
+  logger.info('phone',`[FormatConverter] ✅ Gemini 格式转换完成，共转换 ${convertedImageCount} 张图片`);
   return converted;
 }

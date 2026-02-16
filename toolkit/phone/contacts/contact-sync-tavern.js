@@ -21,14 +21,14 @@ import { loadContacts, saveContact, deleteContact } from './contact-list-data.js
  * // [{ id: 'char_1', name: 'Alice', avatar: 'alice.png', signature: '...' }]
  */
 async function getTavernCharacters() {
-  logger.debug('[Sync] 获取酒馆角色列表');
+  logger.debug('phone','[Sync] 获取酒馆角色列表');
 
   try {
     // 获取 SillyTavern 角色列表
     const characters = getContext().characters;
 
     if (!characters || !Array.isArray(characters)) {
-      logger.warn('[Sync] 无法获取角色列表');
+      logger.warn('phone','[Sync] 无法获取角色列表');
       return [];
     }
 
@@ -37,10 +37,10 @@ async function getTavernCharacters() {
       return convertCharacterToContact(character, index);
     });
 
-    logger.info('[Sync] 成功获取角色列表，共', contacts.length, '个角色');
+    logger.info('phone','[Sync] 成功获取角色列表，共', contacts.length, '个角色');
     return contacts;
   } catch (error) {
-    logger.error('[Sync] 获取角色列表失败:', error);
+    logger.error('phone','[Sync] 获取角色列表失败:', error);
     return [];
   }
 }
@@ -77,7 +77,7 @@ function convertCharacterToContact(character, index) {
  * @returns {Promise<Object>} 同步结果 { added: number, removed: number }
  */
 async function syncContacts() {
-  logger.info('[Sync] 开始同步联系人');
+  logger.info('phone','[Sync] 开始同步联系人');
 
   try {
     // 1. 获取酒馆角色列表
@@ -100,7 +100,7 @@ async function syncContacts() {
 
         // 生成新的唯一 ID
         const newId = `${baseId}_${idCounts[baseId]}`;
-        logger.warn(`[Sync] 检测到同名角色，ID已调整: ${contact.id} → ${newId}`);
+        logger.warn('phone',`[Sync] 检测到同名角色，ID已调整: ${contact.id} → ${newId}`);
         contact.id = newId;
       }
 
@@ -127,14 +127,14 @@ async function syncContacts() {
       await deleteContact(contact.id);
     }
 
-    logger.info(`[Sync] 同步完成: 新增 ${addedIds.length} 个，删除 ${removedIds.length} 个`);
+    logger.info('phone',`[Sync] 同步完成: 新增 ${addedIds.length} 个，删除 ${removedIds.length} 个`);
 
     return {
       added: addedIds.length,
       removed: removedIds.length
     };
   } catch (error) {
-    logger.error('[Sync] 同步失败:', error);
+    logger.error('phone','[Sync] 同步失败:', error);
     return {
       added: 0,
       removed: 0

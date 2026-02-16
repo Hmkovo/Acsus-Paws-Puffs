@@ -25,7 +25,7 @@ export async function getWalletData() {
 
   // 确保数据结构正确
   if (!data || typeof data !== 'object') {
-    logger.warn('[WalletStorage] 钱包数据不存在或格式错误，初始化为默认值');
+    logger.warn('phone','[WalletStorage] 钱包数据不存在或格式错误，初始化为默认值');
     return {
       balance: 0,
       transactions: []
@@ -69,7 +69,7 @@ export async function getBalance() {
  */
 export async function updateBalance(newBalance) {
   if (typeof newBalance !== 'number' || newBalance < 0) {
-    logger.error('[WalletStorage] 余额必须是非负数:', newBalance);
+    logger.error('phone','[WalletStorage] 余额必须是非负数:', newBalance);
     throw new Error('余额必须是非负数');
   }
 
@@ -77,7 +77,7 @@ export async function updateBalance(newBalance) {
   wallet.balance = newBalance;
   await saveWalletData(wallet);
 
-  logger.info('[WalletStorage] 余额已更新:', newBalance);
+  logger.info('phone','[WalletStorage] 余额已更新:', newBalance);
 }
 
 /**
@@ -87,7 +87,7 @@ export async function updateBalance(newBalance) {
  */
 export async function addBalance(amount) {
   if (typeof amount !== 'number' || amount <= 0) {
-    logger.error('[WalletStorage] 增加金额必须是正数:', amount);
+    logger.error('phone','[WalletStorage] 增加金额必须是正数:', amount);
     throw new Error('增加金额必须是正数');
   }
 
@@ -95,7 +95,7 @@ export async function addBalance(amount) {
   wallet.balance += amount;
   await saveWalletData(wallet);
 
-  logger.info('[WalletStorage] 余额增加:', amount, '新余额:', wallet.balance);
+  logger.info('phone','[WalletStorage] 余额增加:', amount, '新余额:', wallet.balance);
   return wallet.balance;
 }
 
@@ -107,7 +107,7 @@ export async function addBalance(amount) {
  */
 export async function subtractBalance(amount) {
   if (typeof amount !== 'number' || amount <= 0) {
-    logger.error('[WalletStorage] 减少金额必须是正数:', amount);
+    logger.error('phone','[WalletStorage] 减少金额必须是正数:', amount);
     throw new Error('减少金额必须是正数');
   }
 
@@ -115,14 +115,14 @@ export async function subtractBalance(amount) {
 
   // 检查余额是否足够
   if (wallet.balance < amount) {
-    logger.warn('[WalletStorage] 余额不足，当前余额:', wallet.balance, '尝试扣除:', amount);
+    logger.warn('phone','[WalletStorage] 余额不足，当前余额:', wallet.balance, '尝试扣除:', amount);
     throw new Error('余额不足');
   }
 
   wallet.balance -= amount;
   await saveWalletData(wallet);
 
-  logger.info('[WalletStorage] 余额减少:', amount, '新余额:', wallet.balance);
+  logger.info('phone','[WalletStorage] 余额减少:', amount, '新余额:', wallet.balance);
   return wallet.balance;
 }
 
@@ -153,12 +153,12 @@ function generateTransactionId() {
 export async function addTransaction(transaction) {
   // 验证必需字段
   if (!transaction.contactId || !transaction.type || !transaction.direction) {
-    logger.error('[WalletStorage] 转账记录缺少必需字段:', transaction);
+    logger.error('phone','[WalletStorage] 转账记录缺少必需字段:', transaction);
     throw new Error('转账记录缺少必需字段');
   }
 
   if (transaction.direction !== 'sent' && transaction.direction !== 'received') {
-    logger.error('[WalletStorage] 转账方向必须是 sent 或 received:', transaction.direction);
+    logger.error('phone','[WalletStorage] 转账方向必须是 sent 或 received:', transaction.direction);
     throw new Error('转账方向无效');
   }
 
@@ -166,14 +166,14 @@ export async function addTransaction(transaction) {
   // 转账和红包必须有金额，礼物可以没有（如送会员、送表情）
   if (transaction.type === 'transfer' || transaction.type === 'redpacket') {
     if (typeof transaction.amount !== 'number' || transaction.amount <= 0) {
-      logger.error('[WalletStorage] 转账/红包金额必须是正数:', transaction.amount);
+      logger.error('phone','[WalletStorage] 转账/红包金额必须是正数:', transaction.amount);
       throw new Error('金额无效');
     }
   } else if (transaction.type === 'gift') {
     // 礼物类型：金额可选，默认为 0
     transaction.amount = typeof transaction.amount === 'number' ? transaction.amount : 0;
   } else {
-    logger.error('[WalletStorage] 不支持的交易类型:', transaction.type);
+    logger.error('phone','[WalletStorage] 不支持的交易类型:', transaction.type);
     throw new Error('不支持的交易类型');
   }
 
@@ -203,7 +203,7 @@ export async function addTransaction(transaction) {
     contactId: transaction.contactId
   });
 
-  logger.info('[WalletStorage] 已添加转账记录:', fullTransaction.id, '方向:', fullTransaction.direction, '金额:', fullTransaction.amount);
+  logger.info('phone','[WalletStorage] 已添加转账记录:', fullTransaction.id, '方向:', fullTransaction.direction, '金额:', fullTransaction.amount);
 
   return fullTransaction;
 }
@@ -278,7 +278,7 @@ export async function deleteTransaction(transactionId) {
   const index = wallet.transactions.findIndex(t => t.id === transactionId);
 
   if (index === -1) {
-    logger.warn('[WalletStorage] 转账记录不存在:', transactionId);
+    logger.warn('phone','[WalletStorage] 转账记录不存在:', transactionId);
     return false;
   }
 
@@ -288,11 +288,11 @@ export async function deleteTransaction(transactionId) {
   if (deleted.direction === 'received') {
     // 删除收入记录，减少余额
     wallet.balance = Math.max(0, wallet.balance - deleted.amount);
-    logger.info('[WalletStorage] 恢复余额（删除收入）：-', deleted.amount, '新余额:', wallet.balance);
+    logger.info('phone','[WalletStorage] 恢复余额（删除收入）：-', deleted.amount, '新余额:', wallet.balance);
   } else if (deleted.direction === 'sent') {
     // 删除支出记录，增加余额
     wallet.balance += deleted.amount;
-    logger.info('[WalletStorage] 恢复余额（删除支出）：+', deleted.amount, '新余额:', wallet.balance);
+    logger.info('phone','[WalletStorage] 恢复余额（删除支出）：+', deleted.amount, '新余额:', wallet.balance);
   }
 
   await saveWalletData(wallet, {
@@ -302,7 +302,7 @@ export async function deleteTransaction(transactionId) {
     contactId: deleted.contactId
   });
 
-  logger.info('[WalletStorage] 已删除转账记录:', transactionId);
+  logger.info('phone','[WalletStorage] 已删除转账记录:', transactionId);
 
   return true;
 }
@@ -338,7 +338,7 @@ export async function calculateTotals(options = {}) {
 // function triggerWalletChangedEvent(detail) {
 //   const event = new CustomEvent('wallet-data-changed', { detail });
 //   document.dispatchEvent(event);
-//   logger.debug('[WalletStorage] 已触发钱包数据变化事件:', detail);
+//   logger.debug('phone','[WalletStorage] 已触发钱包数据变化事件:', detail);
 // }
 
 /**
@@ -370,7 +370,7 @@ export async function executeTransfer(contactId, amount, message = '') {
       transaction
     };
   } catch (error) {
-    logger.error('[WalletStorage] 转账失败:', error.message);
+    logger.error('phone','[WalletStorage] 转账失败:', error.message);
     throw error;
   }
 }
@@ -395,7 +395,7 @@ export async function receiveTransfer(contactId, amount, message = '', messageId
     if (messageId) {
       const existing = await findTransactionByMessageId(messageId);
       if (existing) {
-        logger.info('[WalletStorage] ⏭️  转账记录已存在，跳过保存 msgId:', messageId);
+        logger.info('phone','[WalletStorage] ⏭️  转账记录已存在，跳过保存 msgId:', messageId);
         const currentBalance = await getBalance();
         return {
           success: true,
@@ -426,7 +426,7 @@ export async function receiveTransfer(contactId, amount, message = '', messageId
       skipped: false  // 标记为新保存
     };
   } catch (error) {
-    logger.error('[WalletStorage] 接收转账失败:', error.message);
+    logger.error('phone','[WalletStorage] 接收转账失败:', error.message);
     throw error;
   }
 }

@@ -68,7 +68,7 @@ export function incrementUnread(contactId) {
     unreadCounts[contactId] = newCount;
     saveSettingsDebounced();
 
-    logger.info('[UnreadBadge] 未读计数+1:', contactId, `${prevCount} → ${newCount}`);
+    logger.info('phone','[UnreadBadge] 未读计数+1:', contactId, `${prevCount} → ${newCount}`);
 
     // 触发事件通知UI更新
     triggerUnreadChangedEvent(contactId, newCount);
@@ -97,12 +97,12 @@ export function clearUnread(contactId) {
         unreadCounts[contactId] = 0;
         saveSettingsDebounced();
 
-        logger.info('[UnreadBadge] 已清除未读计数:', contactId, `${prevCount} → 0`);
+        logger.info('phone','[UnreadBadge] 已清除未读计数:', contactId, `${prevCount} → 0`);
 
         // 触发事件通知UI移除红点
         triggerUnreadChangedEvent(contactId, 0);
     } else {
-        logger.debug('[UnreadBadge] 未读计数已为0，无需清除:', contactId);
+        logger.debug('phone','[UnreadBadge] 未读计数已为0，无需清除:', contactId);
     }
 }
 
@@ -193,7 +193,7 @@ export function getAllUnreadCounts() {
  * ```
  */
 function triggerUnreadChangedEvent(contactId, newCount) {
-    logger.debug('[UnreadBadge] 触发未读变化事件:', contactId, '计数:', newCount);
+    logger.debug('phone','[UnreadBadge] 触发未读变化事件:', contactId, '计数:', newCount);
 
     document.dispatchEvent(new CustomEvent('unread-count-changed', {
         detail: { contactId, count: newCount }
@@ -225,11 +225,11 @@ function triggerUnreadChangedEvent(contactId, newCount) {
  * }
  */
 export function bindUnreadBadgeListener(listContainer) {
-    logger.debug('[UnreadBadge] 绑定未读徽章UI更新监听器');
+    logger.debug('phone','[UnreadBadge] 绑定未读徽章UI更新监听器');
 
     const handleUnreadChanged = (e) => {
         const { contactId, count } = e.detail;
-        logger.debug('[UnreadBadge] 收到未读变化事件，更新UI:', contactId, '计数:', count);
+        logger.debug('phone','[UnreadBadge] 收到未读变化事件，更新UI:', contactId, '计数:', count);
         updateBadgeUI(contactId, count);
     };
 
@@ -256,7 +256,7 @@ function updateBadgeUI(contactId, count) {
     // 查找消息列表中的对应项
     const item = document.querySelector(`.msg-item[data-contact-id="${contactId}"]`);
     if (!item) {
-        logger.debug('[UnreadBadge] 未找到消息项DOM，跳过UI更新:', contactId);
+        logger.debug('phone','[UnreadBadge] 未找到消息项DOM，跳过UI更新:', contactId);
         return;
     }
 
@@ -271,18 +271,18 @@ function updateBadgeUI(contactId, count) {
                 badge.className = 'msg-item-badge';
                 badge.textContent = String(count);
                 wrapper.appendChild(badge);
-                logger.debug('[UnreadBadge] 已创建徽章:', contactId, '计数:', count);
+                logger.debug('phone','[UnreadBadge] 已创建徽章:', contactId, '计数:', count);
             }
         } else {
             // 更新徽章数字
             badgeEl.textContent = String(count);
-            logger.debug('[UnreadBadge] 已更新徽章数字:', contactId, '计数:', count);
+            logger.debug('phone','[UnreadBadge] 已更新徽章数字:', contactId, '计数:', count);
         }
     } else {
         // 移除徽章
         if (badgeEl) {
             badgeEl.remove();
-            logger.debug('[UnreadBadge] 已移除徽章:', contactId);
+            logger.debug('phone','[UnreadBadge] 已移除徽章:', contactId);
         }
     }
 }

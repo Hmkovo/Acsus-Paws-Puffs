@@ -52,7 +52,7 @@ export function parsePlanMessage(content, message = {}) {
     if (acceptMatch) {
       // ⚠️ 只有通过引用格式（带 quotedPlanId）的响应才显示特殊气泡
       if (message.quotedPlanId) {
-        logger.debug('[PlanMessage] 检测到计划响应（有引用关联），显示特殊气泡');
+        logger.debug('phone','[PlanMessage] 检测到计划响应（有引用关联），显示特殊气泡');
         return {
           type: 'plan-response',
           accepter: acceptMatch[1].trim(),
@@ -61,7 +61,7 @@ export function parsePlanMessage(content, message = {}) {
         };
       } else {
         // 没有引用编号，降级为 null（会被当作普通文本显示）
-        logger.warn('[PlanMessage] 检测到计划响应格式但缺少引用关联（quotedPlanId），降级为普通文本');
+        logger.warn('phone','[PlanMessage] 检测到计划响应格式但缺少引用关联（quotedPlanId），降级为普通文本');
         return null;
       }
     }
@@ -102,11 +102,11 @@ export function isPlanMessage(message) {
  * @returns {HTMLElement} 消息气泡DOM元素
  */
 export async function renderPlanMessage(message, contact, contactId) {
-  logger.debug('[PlanMessage] 渲染计划消息:', message.content, '是否有引用关联:', !!message.quotedPlanId);
+  logger.debug('phone','[PlanMessage] 渲染计划消息:', message.content, '是否有引用关联:', !!message.quotedPlanId);
 
   const planData = parsePlanMessage(message.content, message);
   if (!planData) {
-    logger.warn('[PlanMessage] 无法解析计划消息:', message.content);
+    logger.warn('phone','[PlanMessage] 无法解析计划消息:', message.content);
     return null;
   }
 
@@ -124,9 +124,9 @@ export async function renderPlanMessage(message, contact, contactId) {
         initiator: message.sender === 'user' ? 'user' : 'char',
         timestamp: message.time || Date.now()
       });
-      logger.info('[PlanMessage] ✅ 已自动创建计划数据:', planData.title);
+      logger.info('phone','[PlanMessage] ✅ 已自动创建计划数据:', planData.title);
     } else {
-      logger.debug('[PlanMessage] 计划数据已存在，跳过创建:', planData.title);
+      logger.debug('phone','[PlanMessage] 计划数据已存在，跳过创建:', planData.title);
     }
   }
 
@@ -180,7 +180,7 @@ export async function renderPlanMessage(message, contact, contactId) {
       const actionBtn = bubble.querySelector('.chat-msg-plan-action-btn');
       actionBtn?.addEventListener('click', async (e) => {
         e.stopPropagation(); // 阻止事件冒泡到气泡
-        logger.debug('[PlanMessage] 点击执行按钮:', planData.title);
+        logger.debug('phone','[PlanMessage] 点击执行按钮:', planData.title);
         const { openPlanExecutor } = await import('../../plans/plan-executor.js');
         await openPlanExecutor(contactId, message, planData);
       });
@@ -193,6 +193,6 @@ export async function renderPlanMessage(message, contact, contactId) {
 
   // 长按操作菜单由 message-chat-ui.js 统一绑定
 
-  logger.info('[PlanMessage] ✅ 约定计划消息渲染完成:', message.id);
+  logger.info('phone','[PlanMessage] ✅ 约定计划消息渲染完成:', message.id);
   return container;
 }

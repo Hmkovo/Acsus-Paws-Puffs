@@ -34,7 +34,7 @@ let archiveSystem = {
  * @returns {Promise<Object>} 返回系统状态对象
  */
 export async function initChatArchive() {
-    logger.info('[ChatArchive] 开始初始化聊天记录系统');
+    logger.info('archive', '[ChatArchive] 开始初始化聊天记录系统');
 
     try {
         // 从设置中读取启用状态
@@ -50,10 +50,10 @@ export async function initChatArchive() {
             });
         }
 
-        logger.info('[ChatArchive] 聊天记录系统初始化完成');
+        logger.info('archive', '[ChatArchive] 聊天记录系统初始化完成');
         return archiveSystem;
     } catch (error) {
-        logger.error('[ChatArchive] 聊天记录系统初始化失败:', error);
+        logger.error('archive', '[ChatArchive] 聊天记录系统初始化失败:', error);
         throw error;
     }
 }
@@ -76,18 +76,18 @@ export function getChatArchiveSystem() {
 function registerMenuEntry() {
     eventSource.on(event_types.APP_READY, () => {
         try {
-            logger.debug('[ChatArchive] 注册扩展菜单入口');
+            logger.debug('archive', '[ChatArchive] 注册扩展菜单入口');
 
             // 获取扩展菜单容器
             const extensionsMenu = document.querySelector('#extensionsMenu');
             if (!extensionsMenu) {
-                logger.warn('[ChatArchive] 找不到扩展菜单容器');
+                logger.warn('archive', '[ChatArchive] 找不到扩展菜单容器');
                 return;
             }
 
             // 检查是否已存在
             if (document.getElementById('chat-archive-menu-entry')) {
-                logger.debug('[ChatArchive] 菜单入口已存在，跳过');
+                logger.debug('archive', '[ChatArchive] 菜单入口已存在，跳过');
                 return;
             }
 
@@ -102,16 +102,16 @@ function registerMenuEntry() {
 
             // 绑定点击事件
             menuItem.addEventListener('click', () => {
-                logger.info('[ChatArchive] 用户从扩展菜单打开聊天记录');
+                logger.info('archive', '[ChatArchive] 用户从扩展菜单打开聊天记录');
                 openArchiveUI();
             });
 
             // 添加到菜单
             extensionsMenu.appendChild(menuItem);
 
-            logger.info('[ChatArchive] 扩展菜单入口已注册');
+            logger.info('archive', '[ChatArchive] 扩展菜单入口已注册');
         } catch (error) {
-            logger.error('[ChatArchive] 注册扩展菜单失败:', error);
+            logger.error('archive', '[ChatArchive] 注册扩展菜单失败:', error);
         }
     });
 }
@@ -122,12 +122,12 @@ function registerMenuEntry() {
  * @returns {void}
  */
 export function openArchiveUI() {
-    logger.info('[ChatArchive] 打开聊天记录界面');
+    logger.info('archive', '[ChatArchive] 打开聊天记录界面');
 
     // 检查是否已经打开
     const existingOverlay = document.querySelector('.chat-archive-overlay');
     if (existingOverlay) {
-        logger.warn('[ChatArchive] 界面已经打开，忽略重复调用');
+        logger.warn('archive', '[ChatArchive] 界面已经打开，忽略重复调用');
         return;
     }
 
@@ -138,9 +138,9 @@ export function openArchiveUI() {
         // 添加到页面
         document.body.appendChild(archiveOverlay);
 
-        logger.info('[ChatArchive] 聊天记录界面已打开');
+        logger.info('archive', '[ChatArchive] 聊天记录界面已打开');
     } catch (error) {
-        logger.error('[ChatArchive] 打开界面失败:', error);
+        logger.error('archive', '[ChatArchive] 打开界面失败:', error);
         throw error;
     }
 }
@@ -151,7 +151,7 @@ export function openArchiveUI() {
  * @returns {void}
  */
 export function closeArchiveUI() {
-    logger.info('[ChatArchive] 关闭聊天记录界面');
+    logger.info('archive', '[ChatArchive] 关闭聊天记录界面');
     closeUI();
 }
 
@@ -180,7 +180,7 @@ export async function enableChatArchive() {
     // 启动消息按钮注入
     initMessageInject();
 
-    logger.info('[ChatArchive] 聊天记录系统已启用');
+    logger.info('archive', '[ChatArchive] 聊天记录系统已启用');
 }
 
 /**
@@ -210,7 +210,7 @@ export function disableChatArchive() {
     stopMessageInject();
 
     hideMenuEntry();
-    logger.info('[ChatArchive] 聊天记录系统已禁用');
+    logger.info('archive', '[ChatArchive] 聊天记录系统已禁用');
 }
 
 /**
@@ -240,10 +240,10 @@ export function showMenuEntry() {
 
         if (menuItem) {
             menuItem.style.display = '';
-            logger.debug('[ChatArchive] 扩展菜单图标已显示');
+            logger.debug('archive', '[ChatArchive] 扩展菜单图标已显示');
         }
     } catch (error) {
-        logger.error('[ChatArchive] 显示菜单图标失败:', error);
+        logger.error('archive', '[ChatArchive] 显示菜单图标失败:', error);
     }
 }
 
@@ -255,9 +255,9 @@ export function hideMenuEntry() {
         const menuItem = document.getElementById('chat-archive-menu-entry');
         if (menuItem) {
             menuItem.style.display = 'none';
-            logger.debug('[ChatArchive] 扩展菜单图标已隐藏');
+            logger.debug('archive', '[ChatArchive] 扩展菜单图标已隐藏');
         }
     } catch (error) {
-        logger.error('[ChatArchive] 隐藏菜单图标失败:', error);
+        logger.error('archive', '[ChatArchive] 隐藏菜单图标失败:', error);
     }
 }

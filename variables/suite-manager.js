@@ -53,7 +53,7 @@ export class SuiteManager {
     init(suites, activeSuiteId) {
         this.suites = suites || {};
         this.activeSuiteId = activeSuiteId;
-        logger.info('[SuiteManager] 初始化完成，已加载', Object.keys(this.suites).length, '个套装');
+        logger.info('variable', '[SuiteManager] 初始化完成，已加载', Object.keys(this.suites).length, '个套装');
     }
 
     // ========================================
@@ -94,7 +94,7 @@ export class SuiteManager {
         if (this.suites[id]) {
             this.activeSuiteId = id;
             this._save();
-            logger.info('[SuiteManager] 切换到套装:', this.suites[id].name);
+            logger.info('variable', '[SuiteManager] 切换到套装:', this.suites[id].name);
         }
     }
 
@@ -126,7 +126,7 @@ export class SuiteManager {
         }
 
         this._save();
-        logger.info('[SuiteManager] 创建套装:', suite.name);
+        logger.info('variable', '[SuiteManager] 创建套装:', suite.name);
         return suite;
     }
 
@@ -139,7 +139,7 @@ export class SuiteManager {
     updateSuite(id, updates) {
         const suite = this.suites[id];
         if (!suite) {
-            logger.warn('[SuiteManager] 套装不存在:', id);
+            logger.warn('variable', '[SuiteManager] 套装不存在:', id);
             return false;
         }
 
@@ -148,7 +148,7 @@ export class SuiteManager {
 
         Object.assign(suite, safeUpdates, { updatedAt: Date.now() });
         this._save();
-        logger.info('[SuiteManager] 更新套装:', suite.name);
+        logger.info('variable', '[SuiteManager] 更新套装:', suite.name);
         return true;
     }
 
@@ -159,7 +159,7 @@ export class SuiteManager {
      */
     deleteSuite(id) {
         if (!this.suites[id]) {
-            logger.warn('[SuiteManager] 套装不存在:', id);
+            logger.warn('variable', '[SuiteManager] 套装不存在:', id);
             return false;
         }
 
@@ -173,7 +173,7 @@ export class SuiteManager {
         }
 
         this._save();
-        logger.info('[SuiteManager] 删除套装:', name);
+        logger.info('variable', '[SuiteManager] 删除套装:', name);
         return true;
     }
 
@@ -213,7 +213,7 @@ export class SuiteManager {
 
         suite.updatedAt = Date.now();
         this._save();
-        logger.debug('[SuiteManager] 添加提示词条目到套装:', suite.name);
+        logger.debug('variable', '[SuiteManager] 添加提示词条目到套装:', suite.name);
         return item;
     }
 
@@ -233,7 +233,7 @@ export class SuiteManager {
             item => item.type === 'variable' && item.id === variableId
         );
         if (exists) {
-            logger.warn('[SuiteManager] 变量已在套装中:', variableId);
+            logger.warn('variable', '[SuiteManager] 变量已在套装中:', variableId);
             return null;
         }
 
@@ -252,7 +252,7 @@ export class SuiteManager {
 
         suite.updatedAt = Date.now();
         this._save();
-        logger.debug('[SuiteManager] 添加变量条目到套装:', suite.name);
+        logger.debug('variable', '[SuiteManager] 添加变量条目到套装:', suite.name);
         return item;
     }
 
@@ -278,7 +278,7 @@ export class SuiteManager {
         suite.items.splice(index, 1);
         suite.updatedAt = Date.now();
         this._save();
-        logger.debug('[SuiteManager] 移除条目:', itemId);
+        logger.debug('variable', '[SuiteManager] 移除条目:', itemId);
         return true;
     }
 
@@ -305,7 +305,7 @@ export class SuiteManager {
 
         suite.updatedAt = Date.now();
         this._save();
-        logger.debug('[SuiteManager] 更新提示词条目:', itemId, 'enabled:', item.enabled);
+        logger.debug('variable', '[SuiteManager] 更新提示词条目:', itemId, 'enabled:', item.enabled);
         return true;
     }
 
@@ -376,7 +376,7 @@ export class SuiteManager {
 
         suite.updatedAt = Date.now();
         this._save();
-        logger.debug('[SuiteManager] 添加正文条目到套装:', suite.name);
+        logger.debug('variable', '[SuiteManager] 添加正文条目到套装:', suite.name);
         return item;
     }
 
@@ -405,7 +405,7 @@ export class SuiteManager {
 
         suite.updatedAt = Date.now();
         this._save();
-        logger.debug('[SuiteManager] 更新正文条目:', itemId, 'enabled:', item.enabled);
+        logger.debug('variable', '[SuiteManager] 更新正文条目:', itemId, 'enabled:', item.enabled);
         return true;
     }
 
@@ -433,14 +433,14 @@ export class SuiteManager {
 
         // 确保没有丢失条目
         if (newItems.length !== suite.items.length) {
-            logger.warn('[SuiteManager] 重排序条目数量不匹配');
+            logger.warn('variable', '[SuiteManager] 重排序条目数量不匹配');
             return false;
         }
 
         suite.items = newItems;
         suite.updatedAt = Date.now();
         this._save();
-        logger.debug('[SuiteManager] 重排序条目:', suite.name);
+        logger.debug('variable', '[SuiteManager] 重排序条目:', suite.name);
         return true;
     }
 
@@ -512,13 +512,13 @@ export class SuiteManager {
             if (suite.items.length !== originalLength) {
                 removedCount++;
                 suite.updatedAt = Date.now();
-                logger.debug('[SuiteManager] 从套装移除变量引用:', suite.name, '变量ID:', variableId);
+                logger.debug('variable', '[SuiteManager] 从套装移除变量引用:', suite.name, '变量ID:', variableId);
             }
         }
 
         if (removedCount > 0) {
             this._save();
-            logger.info('[SuiteManager] 从', removedCount, '个套装移除了变量引用');
+            logger.info('variable', '[SuiteManager] 从', removedCount, '个套装移除了变量引用');
         }
     }
 

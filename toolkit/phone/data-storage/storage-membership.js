@@ -107,13 +107,13 @@ export async function getCharacterMembership(contactId) {
  * @returns {Promise<Object>} 更新后的会员数据
  */
 export async function grantUserMembership(type, duration, options = {}) {
-    logger.debug('[MembershipStorage] 为用户开通会员:', type, duration, '天', options.msgId ? `msgId: ${options.msgId}` : '');
+    logger.debug('phone','[MembershipStorage] 为用户开通会员:', type, duration, '天', options.msgId ? `msgId: ${options.msgId}` : '');
 
     const membership = await getUserMembership();
 
     // ✅ 持久化去重：检查是否已处理过该消息
     if (options.msgId && membership.purchaseHistory.some(h => h.msgId === options.msgId)) {
-        logger.warn('[MembershipStorage] 该消息已处理过，跳过重复开通 msgId:', options.msgId);
+        logger.warn('phone','[MembershipStorage] 该消息已处理过，跳过重复开通 msgId:', options.msgId);
         return membership;
     }
 
@@ -121,7 +121,7 @@ export async function grantUserMembership(type, duration, options = {}) {
     const currentLevel = getMembershipLevel(membership.type);
     const newLevel = getMembershipLevel(type);
 
-    logger.debug('[MembershipStorage] 会员等级比较:', {
+    logger.debug('phone','[MembershipStorage] 会员等级比较:', {
         当前会员: membership.type,
         当前等级: currentLevel,
         新会员: type,
@@ -132,14 +132,14 @@ export async function grantUserMembership(type, duration, options = {}) {
 
     // ✅ 情况1：当前无会员或已过期
     if (membership.type === 'none' || membership.expireTime < now) {
-        logger.info('[MembershipStorage] 首次开通会员或已过期，直接开通');
+        logger.info('phone','[MembershipStorage] 首次开通会员或已过期，直接开通');
         membership.type = type;
         membership.expireTime = now + duration * 24 * 3600;
         membership.queue = [];  // 清空队列
     }
     // ✅ 情况2：新会员等级 > 当前会员（高等级插队）
     else if (newLevel > currentLevel) {
-        logger.info('[MembershipStorage] 高等级插队：新会员等级更高，立即生效');
+        logger.info('phone','[MembershipStorage] 高等级插队：新会员等级更高，立即生效');
 
         // 计算当前会员剩余天数
         const remainingSeconds = membership.expireTime - now;
@@ -152,7 +152,7 @@ export async function grantUserMembership(type, duration, options = {}) {
                 duration: remainingDays,
                 msgId: membership.grantedByMsgId  // 🔥 保存msgId用于撤销
             });
-            logger.debug('[MembershipStorage] 当前会员加入队列:', membership.type, remainingDays, '天', 'msgId:', membership.grantedByMsgId);
+            logger.debug('phone','[MembershipStorage] 当前会员加入队列:', membership.type, remainingDays, '天', 'msgId:', membership.grantedByMsgId);
         }
 
         // 新会员立即生效
@@ -161,7 +161,7 @@ export async function grantUserMembership(type, duration, options = {}) {
     }
     // ✅ 情况3：新会员等级 < 当前会员（低等级排队）
     else if (newLevel < currentLevel) {
-        logger.info('[MembershipStorage] 低等级排队：新会员等级较低，加入队列等待');
+        logger.info('phone','[MembershipStorage] 低等级排队：新会员等级较低，加入队列等待');
 
         // 🔥 不合并，直接加入队列（每个会员独立保存，UI显示时自动合并）
         membership.queue.push({
@@ -169,11 +169,11 @@ export async function grantUserMembership(type, duration, options = {}) {
             duration: duration,
             msgId: options.msgId  // 🔥 保存msgId用于撤销
         });
-        logger.debug('[MembershipStorage] 新会员已加入队列，队列长度:', membership.queue.length, 'msgId:', options.msgId);
+        logger.debug('phone','[MembershipStorage] 新会员已加入队列，队列长度:', membership.queue.length, 'msgId:', options.msgId);
     }
     // ✅ 情况4：同等级叠加（直接延长时间）
     else {
-        logger.info('[MembershipStorage] 同等级叠加：直接延长到期时间');
+        logger.info('phone','[MembershipStorage] 同等级叠加：直接延长到期时间');
         membership.expireTime += duration * 24 * 3600;
     }
 
@@ -193,7 +193,7 @@ export async function grantUserMembership(type, duration, options = {}) {
         msgId: options.msgId || null
     });
 
-    logger.info('[MembershipStorage] 用户会员已更新:', {
+    logger.info('phone','[MembershipStorage] 用户会员已更新:', {
         当前会员: membership.type,
         到期时间: new Date(membership.expireTime * 1000).toLocaleString(),
         队列长度: membership.queue.length
@@ -226,13 +226,13 @@ export async function grantUserMembership(type, duration, options = {}) {
  * @returns {Promise<Object>} 更新后的会员数据
  */
 export async function grantCharacterMembership(contactId, type, duration, options = {}) {
-    logger.debug('[MembershipStorage] 为角色开通会员:', contactId, type, duration, '天', options.msgId ? `msgId: ${options.msgId}` : '');
+    logger.debug('phone','[MembershipStorage] 为角色开通会员:', contactId, type, duration, '天', options.msgId ? `msgId: ${options.msgId}` : '');
 
     const contacts = await loadContacts();
     const contact = contacts.find(c => c.id === contactId);
 
     if (!contact) {
-        logger.error('[MembershipStorage] 角色不存在:', contactId);
+        logger.error('phone','[MembershipStorage] 角色不存在:', contactId);
         throw new Error('角色不存在');
     }
 
@@ -253,7 +253,7 @@ export async function grantCharacterMembership(contactId, type, duration, option
 
     // ✅ 持久化去重：检查是否已处理过该消息
     if (options.msgId && contact.membership.purchaseHistory.some(h => h.msgId === options.msgId)) {
-        logger.warn('[MembershipStorage] 该消息已处理过，跳过重复开通 msgId:', options.msgId);
+        logger.warn('phone','[MembershipStorage] 该消息已处理过，跳过重复开通 msgId:', options.msgId);
         return contact.membership;
     }
 
@@ -261,7 +261,7 @@ export async function grantCharacterMembership(contactId, type, duration, option
     const currentLevel = getMembershipLevel(contact.membership.type);
     const newLevel = getMembershipLevel(type);
 
-    logger.debug('[MembershipStorage] 角色会员等级比较:', {
+    logger.debug('phone','[MembershipStorage] 角色会员等级比较:', {
         角色: contact.name,
         当前会员: contact.membership.type,
         当前等级: currentLevel,
@@ -271,14 +271,14 @@ export async function grantCharacterMembership(contactId, type, duration, option
 
     // ✅ 情况1：当前无会员或已过期
     if (contact.membership.type === 'none' || contact.membership.expireTime < now) {
-        logger.info('[MembershipStorage] 角色首次开通会员或已过期，直接开通');
+        logger.info('phone','[MembershipStorage] 角色首次开通会员或已过期，直接开通');
         contact.membership.type = type;
         contact.membership.expireTime = now + duration * 24 * 3600;
         contact.membership.queue = [];
     }
     // ✅ 情况2：高等级插队
     else if (newLevel > currentLevel) {
-        logger.info('[MembershipStorage] 角色高等级插队');
+        logger.info('phone','[MembershipStorage] 角色高等级插队');
         const remainingSeconds = contact.membership.expireTime - now;
         const remainingDays = Math.ceil(remainingSeconds / 86400);
 
@@ -295,7 +295,7 @@ export async function grantCharacterMembership(contactId, type, duration, option
     }
     // ✅ 情况3：低等级排队
     else if (newLevel < currentLevel) {
-        logger.info('[MembershipStorage] 角色低等级排队');
+        logger.info('phone','[MembershipStorage] 角色低等级排队');
 
         // 🔥 不合并，直接加入队列（每个会员独立保存，UI显示时自动合并）
         contact.membership.queue.push({
@@ -303,11 +303,11 @@ export async function grantCharacterMembership(contactId, type, duration, option
             duration: duration,
             msgId: options.msgId  // 🔥 保存msgId用于撤销
         });
-        logger.debug('[MembershipStorage] 角色新会员已加入队列，队列长度:', contact.membership.queue.length, 'msgId:', options.msgId);
+        logger.debug('phone','[MembershipStorage] 角色新会员已加入队列，队列长度:', contact.membership.queue.length, 'msgId:', options.msgId);
     }
     // ✅ 情况4：同等级叠加
     else {
-        logger.info('[MembershipStorage] 角色同等级叠加');
+        logger.info('phone','[MembershipStorage] 角色同等级叠加');
         contact.membership.expireTime += duration * 24 * 3600;
     }
 
@@ -327,7 +327,7 @@ export async function grantCharacterMembership(contactId, type, duration, option
         msgId: options.msgId || null
     });
 
-    logger.info('[MembershipStorage] 角色会员已更新:', {
+    logger.info('phone','[MembershipStorage] 角色会员已更新:', {
         角色: contact.name,
         当前会员: contact.membership.type,
         到期时间: new Date(contact.membership.expireTime * 1000).toLocaleString(),
@@ -369,18 +369,18 @@ export async function checkMembershipExpiry(targetType, contactId = null) {
         const membership = await getUserMembership();
 
         if (membership.type !== 'none' && membership.expireTime < now) {
-            logger.info('[MembershipStorage] 用户会员已过期，检查队列');
+            logger.info('phone','[MembershipStorage] 用户会员已过期，检查队列');
 
             // ✅ 检查队列中是否有待激活的会员
             if (membership.queue && membership.queue.length > 0) {
                 const nextMembership = membership.queue.shift();  // 取出队列第一个
-                logger.info('[MembershipStorage] 激活队列中的下一个会员:', nextMembership);
+                logger.info('phone','[MembershipStorage] 激活队列中的下一个会员:', nextMembership);
 
                 membership.type = nextMembership.type;
                 membership.expireTime = now + nextMembership.duration * 24 * 3600;
             } else {
                 // 队列为空，重置为none
-                logger.info('[MembershipStorage] 队列为空，重置为none');
+                logger.info('phone','[MembershipStorage] 队列为空，重置为none');
                 membership.type = 'none';
                 membership.expireTime = 0;
             }
@@ -397,7 +397,7 @@ export async function checkMembershipExpiry(targetType, contactId = null) {
         return membership.type !== 'none';
     } else {
         if (!contactId) {
-            logger.error('[MembershipStorage] 检查角色会员时未提供contactId');
+            logger.error('phone','[MembershipStorage] 检查角色会员时未提供contactId');
             return false;
         }
 
@@ -409,18 +409,18 @@ export async function checkMembershipExpiry(targetType, contactId = null) {
         }
 
         if (contact.membership.type !== 'none' && contact.membership.expireTime < now) {
-            logger.info('[MembershipStorage] 角色会员已过期:', contact.name, '检查队列');
+            logger.info('phone','[MembershipStorage] 角色会员已过期:', contact.name, '检查队列');
 
             // ✅ 检查队列中是否有待激活的会员
             if (contact.membership.queue && contact.membership.queue.length > 0) {
                 const nextMembership = contact.membership.queue.shift();
-                logger.info('[MembershipStorage] 激活队列中的下一个会员:', nextMembership);
+                logger.info('phone','[MembershipStorage] 激活队列中的下一个会员:', nextMembership);
 
                 contact.membership.type = nextMembership.type;
                 contact.membership.expireTime = now + nextMembership.duration * 24 * 3600;
             } else {
                 // 队列为空，重置为none
-                logger.info('[MembershipStorage] 队列为空，重置为none');
+                logger.info('phone','[MembershipStorage] 队列为空，重置为none');
                 contact.membership.type = 'none';
                 contact.membership.expireTime = 0;
             }
@@ -448,7 +448,7 @@ export async function checkMembershipExpiry(targetType, contactId = null) {
  * @returns {Promise<void>}
  */
 export async function checkAllMembershipsExpiry() {
-    logger.debug('[MembershipStorage] 检查所有会员是否过期');
+    logger.debug('phone','[MembershipStorage] 检查所有会员是否过期');
 
     // 检查用户会员
     await checkMembershipExpiry('user');
@@ -461,7 +461,7 @@ export async function checkAllMembershipsExpiry() {
         }
     }
 
-    logger.info('[MembershipStorage] 会员过期检查完成');
+    logger.info('phone','[MembershipStorage] 会员过期检查完成');
 }
 
 /**
@@ -479,13 +479,13 @@ export async function checkAllMembershipsExpiry() {
  * @returns {Promise<boolean>} 是否成功撤销
  */
 export async function revokeUserMembership(msgId) {
-    logger.debug('[MembershipStorage] 撤销用户会员，msgId:', msgId);
+    logger.debug('phone','[MembershipStorage] 撤销用户会员，msgId:', msgId);
 
     const membership = await getUserMembership();
 
     // 检查会员是否由该消息开通
     if (!membership || membership.type === 'none') {
-        logger.debug('[MembershipStorage] 用户无会员记录，跳过撤销');
+        logger.debug('phone','[MembershipStorage] 用户无会员记录，跳过撤销');
         return false;
     }
 
@@ -496,20 +496,20 @@ export async function revokeUserMembership(msgId) {
     const queueIndex = membership.queue.findIndex(item => item.msgId === msgId);
 
     if (!isCurrentMembership && queueIndex === -1) {
-        logger.debug('[MembershipStorage] 该消息ID既不是当前会员，也不在队列中，跳过撤销', msgId);
+        logger.debug('phone','[MembershipStorage] 该消息ID既不是当前会员，也不在队列中，跳过撤销', msgId);
         return false;
     }
 
     // 🔥 情况1：如果是队列中的会员，直接从队列删除
     if (queueIndex !== -1) {
         const removedItem = membership.queue.splice(queueIndex, 1)[0];
-        logger.info('[MembershipStorage] 从队列中删除会员:', removedItem.type, removedItem.duration, '天', 'msgId:', msgId);
+        logger.info('phone','[MembershipStorage] 从队列中删除会员:', removedItem.type, removedItem.duration, '天', 'msgId:', msgId);
 
         // 🔥 同时删除购买历史中的记录（重要：支持重新应用）
         const historyIndex = membership.purchaseHistory.findIndex(h => h.msgId === msgId);
         if (historyIndex !== -1) {
             membership.purchaseHistory.splice(historyIndex, 1);
-            logger.debug('[MembershipStorage] 已删除购买历史记录');
+            logger.debug('phone','[MembershipStorage] 已删除购买历史记录');
         }
 
         // 保存数据并通知（从队列删除）
@@ -524,7 +524,7 @@ export async function revokeUserMembership(msgId) {
     // 🔥 情况2：如果是当前会员，检查队列中是否有待激活的会员
     if (membership.queue && membership.queue.length > 0) {
         const nextMembership = membership.queue.shift();  // 取出队列第一个
-        logger.info('[MembershipStorage] 撤销后激活队列中的下一个会员:', nextMembership);
+        logger.info('phone','[MembershipStorage] 撤销后激活队列中的下一个会员:', nextMembership);
 
         const now = Math.floor(Date.now() / 1000);
         membership.type = nextMembership.type;
@@ -532,7 +532,7 @@ export async function revokeUserMembership(msgId) {
         membership.grantedByMsgId = nextMembership.msgId || null;  // 🔥 使用队列中的msgId
     } else {
         // 队列为空，重置为无会员
-        logger.info('[MembershipStorage] 队列为空，重置为无会员');
+        logger.info('phone','[MembershipStorage] 队列为空，重置为无会员');
         membership.type = 'none';
         membership.expireTime = 0;
         membership.grantedByMsgId = null;
@@ -542,10 +542,10 @@ export async function revokeUserMembership(msgId) {
     const historyIndex = membership.purchaseHistory.findIndex(h => h.msgId === msgId);
     if (historyIndex !== -1) {
         membership.purchaseHistory.splice(historyIndex, 1);
-        logger.debug('[MembershipStorage] 已删除购买历史记录');
+        logger.debug('phone','[MembershipStorage] 已删除购买历史记录');
     }
 
-    logger.info('[MembershipStorage] ✅ 已撤销用户会员，msgId:', msgId);
+    logger.info('phone','[MembershipStorage] ✅ 已撤销用户会员，msgId:', msgId);
 
     // 保存数据并通知（撤销当前会员）
     // 🔥 修复：键名必须与 loadData/subscribe 保持一致（都用 'userMembership'）
@@ -573,13 +573,13 @@ export async function revokeUserMembership(msgId) {
  * @returns {Promise<boolean>} 是否成功撤销
  */
 export async function revokeCharacterMembership(contactId, msgId) {
-    logger.debug('[MembershipStorage] 撤销角色会员，contactId:', contactId, 'msgId:', msgId);
+    logger.debug('phone','[MembershipStorage] 撤销角色会员，contactId:', contactId, 'msgId:', msgId);
 
     const contacts = await loadContacts();
     const contact = contacts.find(c => c.id === contactId);
 
     if (!contact || !contact.membership) {
-        logger.debug('[MembershipStorage] 角色无会员记录，跳过撤销');
+        logger.debug('phone','[MembershipStorage] 角色无会员记录，跳过撤销');
         return false;
     }
 
@@ -590,20 +590,20 @@ export async function revokeCharacterMembership(contactId, msgId) {
     const queueIndex = contact.membership.queue.findIndex(item => item.msgId === msgId);
 
     if (!isCurrentMembership && queueIndex === -1) {
-        logger.debug('[MembershipStorage] 该消息ID既不是角色当前会员，也不在队列中，跳过撤销', msgId);
+        logger.debug('phone','[MembershipStorage] 该消息ID既不是角色当前会员，也不在队列中，跳过撤销', msgId);
         return false;
     }
 
     // 🔥 情况1：如果是队列中的会员，直接从队列删除
     if (queueIndex !== -1) {
         const removedItem = contact.membership.queue.splice(queueIndex, 1)[0];
-        logger.info('[MembershipStorage] 从角色队列中删除会员:', removedItem.type, removedItem.duration, '天', 'msgId:', msgId);
+        logger.info('phone','[MembershipStorage] 从角色队列中删除会员:', removedItem.type, removedItem.duration, '天', 'msgId:', msgId);
 
         // 🔥 同时删除购买历史中的记录（重要：支持重新应用）
         const historyIndex = contact.membership.purchaseHistory.findIndex(h => h.msgId === msgId);
         if (historyIndex !== -1) {
             contact.membership.purchaseHistory.splice(historyIndex, 1);
-            logger.debug('[MembershipStorage] 已删除角色购买历史记录');
+            logger.debug('phone','[MembershipStorage] 已删除角色购买历史记录');
         }
 
         await saveContact(contact);
@@ -623,7 +623,7 @@ export async function revokeCharacterMembership(contactId, msgId) {
     // 🔥 情况2：如果是当前会员，检查队列中是否有待激活的会员
     if (contact.membership.queue && contact.membership.queue.length > 0) {
         const nextMembership = contact.membership.queue.shift();
-        logger.info('[MembershipStorage] 撤销后激活队列中的下一个会员:', nextMembership);
+        logger.info('phone','[MembershipStorage] 撤销后激活队列中的下一个会员:', nextMembership);
 
         const now = Math.floor(Date.now() / 1000);
         contact.membership.type = nextMembership.type;
@@ -631,7 +631,7 @@ export async function revokeCharacterMembership(contactId, msgId) {
         contact.membership.grantedByMsgId = nextMembership.msgId || null;  // 🔥 使用队列中的msgId
     } else {
         // 队列为空，重置为无会员（保留购买历史和队列结构）
-        logger.info('[MembershipStorage] 队列为空，重置角色为无会员');
+        logger.info('phone','[MembershipStorage] 队列为空，重置角色为无会员');
         contact.membership.type = 'none';
         contact.membership.expireTime = 0;
         contact.membership.grantedByMsgId = null;
@@ -641,12 +641,12 @@ export async function revokeCharacterMembership(contactId, msgId) {
     const historyIndex = contact.membership.purchaseHistory.findIndex(h => h.msgId === msgId);
     if (historyIndex !== -1) {
         contact.membership.purchaseHistory.splice(historyIndex, 1);
-        logger.debug('[MembershipStorage] 已删除角色购买历史记录');
+        logger.debug('phone','[MembershipStorage] 已删除角色购买历史记录');
     }
 
     await saveContact(contact);
 
-    logger.info('[MembershipStorage] ✅ 已撤销角色会员，contactId:', contactId, 'msgId:', msgId);
+    logger.info('phone','[MembershipStorage] ✅ 已撤销角色会员，contactId:', contactId, 'msgId:', msgId);
 
     // 触发通知（撤销当前会员）
     await stateManager.set('character-membership', {
@@ -672,7 +672,7 @@ export async function revokeCharacterMembership(contactId, msgId) {
  * @returns {Promise<void>}
  */
 export async function clearAllMemberships() {
-    logger.warn('[MembershipStorage] 清空所有会员数据');
+    logger.warn('phone','[MembershipStorage] 清空所有会员数据');
 
     // 1. 清空用户会员状态
     const userMembership = {
@@ -718,12 +718,12 @@ export async function clearAllMemberships() {
 
         // 保存清理后的钱包数据
         await saveData('wallet', wallet);
-        logger.info(`[MembershipStorage] 已清空 ${deletedCount} 条会员交易记录`);
+        logger.info('phone',`[MembershipStorage] 已清空 ${deletedCount} 条会员交易记录`);
     } catch (error) {
-        logger.error('[MembershipStorage] 清空会员交易记录失败:', error);
+        logger.error('phone','[MembershipStorage] 清空会员交易记录失败:', error);
     }
 
-    logger.info('[MembershipStorage] 所有会员数据已清空（包括交易记录）');
+    logger.info('phone','[MembershipStorage] 所有会员数据已清空（包括交易记录）');
 
     // 触发用户会员变化通知（刷新会员中心、用户主页）
     // 🔥 修复：键名必须与 loadData/subscribe 保持一致（都用 'userMembership'）

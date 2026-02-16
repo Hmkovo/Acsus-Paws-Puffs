@@ -44,7 +44,7 @@ import { getThumbnailUrl } from '../../../../../../../../script.js';
  * };
  */
 export function renderImageFakeMessage(message, contact, contactId) {
-  logger.debug('[ImageFakeMessage] 渲染假装图片消息:', message);
+  logger.debug('phone','[ImageFakeMessage]] 渲染假装图片消息:', message);
 
   const container = document.createElement('div');
   container.className = 'chat-msg';

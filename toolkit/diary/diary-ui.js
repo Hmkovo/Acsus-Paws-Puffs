@@ -117,7 +117,7 @@ export class DiaryUI {
    * 初始化UI
    */
   async init() {
-    logger.info('[DiaryUI] 开始初始化');
+    logger.info('diary', '[DiaryUI] 开始初始化');
 
     await this.loadTemplate();
     this.createPanel();
@@ -129,7 +129,7 @@ export class DiaryUI {
 
     this.bindEvents();
 
-    logger.info('[DiaryUI] 初始化完成');
+    logger.info('diary', '[DiaryUI] 初始化完成');
   }
 
   /**
@@ -170,7 +170,7 @@ export class DiaryUI {
     // 注入面板管理器引用到预设UI（用于双向同步）
     this.presetUI.setPanelsManager(this.panelsModule);
 
-    logger.debug('[DiaryUI.initSubModules] 子模块已初始化');
+    logger.debug('diary', '[DiaryUI.initSubModules] 子模块已初始化');
   }
 
   /**
@@ -181,9 +181,9 @@ export class DiaryUI {
       const response = await fetch('/scripts/extensions/third-party/Acsus-Paws-Puffs/toolkit/diary/diary-panel.html');
       if (!response.ok) throw new Error('加载模板失败');
       this.templateHTML = await response.text();
-      logger.debug('[DiaryUI.loadTemplate] HTML模板已加载');
+      logger.debug('diary', '[DiaryUI.loadTemplate] HTML模板已加载');
     } catch (error) {
-      logger.error('[DiaryUI.loadTemplate] 加载失败:', error);
+      logger.error('diary', '[DiaryUI.loadTemplate] 加载失败:', error);
       this.templateHTML = this.getInlineTemplate();
     }
   }
@@ -238,7 +238,7 @@ export class DiaryUI {
       this.sliderElement = this.panelElement.querySelector('#diarySlider');
     }
 
-    logger.debug('[DiaryUI.createPanel] 面板DOM已创建');
+    logger.debug('diary', '[DiaryUI.createPanel] 面板DOM已创建');
   }
 
   /**
@@ -355,7 +355,7 @@ export class DiaryUI {
       datePicker.addEventListener('change', (e) => {
         this.filter.selectedDate = /** @type {HTMLInputElement} */ (e.target).value;
         this.refreshDiaries();
-        logger.info('[DiaryUI] 已选择日期:', this.filter.selectedDate);
+        logger.info('diary', '[DiaryUI] 已选择日期:', this.filter.selectedDate);
       });
     }
     if (dateClearBtn) {
@@ -363,7 +363,7 @@ export class DiaryUI {
         if (datePicker) /** @type {HTMLInputElement} */ (datePicker).value = '';
         this.filter.selectedDate = '';
         this.refreshDiaries();
-        logger.info('[DiaryUI] 已清除日期筛选');
+        logger.info('diary', '[DiaryUI] 已清除日期筛选');
       });
     }
 
@@ -376,7 +376,7 @@ export class DiaryUI {
         this.filter.dateRangeStart = /** @type {HTMLInputElement} */ (e.target).value;
         this.dataManager.updateSettings({ dateRangeStart: this.filter.dateRangeStart });
         this.refreshDiaries();
-        logger.info('[DiaryUI] 日期范围开始:', this.filter.dateRangeStart);
+        logger.info('diary', '[DiaryUI] 日期范围开始:', this.filter.dateRangeStart);
       });
     }
     if (dateRangeEnd) {
@@ -384,7 +384,7 @@ export class DiaryUI {
         this.filter.dateRangeEnd = /** @type {HTMLInputElement} */ (e.target).value;
         this.dataManager.updateSettings({ dateRangeEnd: this.filter.dateRangeEnd });
         this.refreshDiaries();
-        logger.info('[DiaryUI] 日期范围结束:', this.filter.dateRangeEnd);
+        logger.info('diary', '[DiaryUI] 日期范围结束:', this.filter.dateRangeEnd);
       });
     }
     if (dateRangeClearBtn) {
@@ -395,7 +395,7 @@ export class DiaryUI {
         this.filter.dateRangeEnd = '';
         this.dataManager.updateSettings({ dateRangeStart: '', dateRangeEnd: '' });
         this.refreshDiaries();
-        logger.info('[DiaryUI] 已清除日期范围筛选');
+        logger.info('diary', '[DiaryUI] 已清除日期范围筛选');
       });
     }
 
@@ -422,7 +422,7 @@ export class DiaryUI {
     // 全局评论事件委托
     this.bindGlobalCommentEvents();
 
-    logger.debug('[DiaryUI.bindEvents] 事件已绑定（重构版）');
+    logger.debug('diary', '[DiaryUI.bindEvents] 事件已绑定（重构版）');
   }
 
   /**
@@ -487,7 +487,7 @@ export class DiaryUI {
    */
   openPanel() {
     if (!this.panelElement) {
-      logger.error('[DiaryUI.openPanel] 面板未初始化');
+      logger.error('diary', '[DiaryUI.openPanel] 面板未初始化');
       return;
     }
 
@@ -538,7 +538,7 @@ export class DiaryUI {
       this.panelElement.classList.add('active');
     }, 10);
 
-    logger.info('[DiaryUI.openPanel] 面板已打开');
+    logger.info('diary', '[DiaryUI.openPanel] 面板已打开');
   }
 
   /**
@@ -552,7 +552,7 @@ export class DiaryUI {
       this.panelElement.style.display = 'none';
     }, 300);
 
-    logger.info('[DiaryUI.closePanel] 面板已关闭');
+    logger.info('diary', '[DiaryUI.closePanel] 面板已关闭');
   }
 
   /**
@@ -572,9 +572,9 @@ export class DiaryUI {
   refreshDiaries(keepPosition = false) {
     this.dataManager.loadDiaries();
     const diaries = this.dataManager.diaries;
-    logger.debug('[DiaryUI.refreshDiaries] 加载了', diaries.length, '篇日记');
+    logger.debug('diary', '[DiaryUI.refreshDiaries] 加载了', diaries.length, '篇日记');
     this.renderDiaries(keepPosition);
-    logger.debug('[DiaryUI.refreshDiaries] 日记列表已刷新');
+    logger.debug('diary', '[DiaryUI.refreshDiaries] 日记列表已刷新');
   }
 
   /**
@@ -583,7 +583,7 @@ export class DiaryUI {
   refreshAndStayAtDiary(targetDiaryId) {
     this.dataManager.loadDiaries();
 
-    logger.debug('[DiaryUI.refreshAndStayAtDiary] 目标日记ID:', targetDiaryId);
+    logger.debug('diary', '[DiaryUI.refreshAndStayAtDiary] 目标日记ID:', targetDiaryId);
 
     const allCards = this.sliderElement.querySelectorAll('.diary-card');
     let targetCard = null;
@@ -596,24 +596,24 @@ export class DiaryUI {
     });
 
     if (!targetCard) {
-      logger.warn('[DiaryUI.refreshAndStayAtDiary] 目标日记卡片不在DOM中，执行完整刷新');
+      logger.warn('diary', '[DiaryUI.refreshAndStayAtDiary] 目标日记卡片不在DOM中，执行完整刷新');
       this.refreshDiaries(true);
       return;
     }
 
     const diary = this.dataManager.getDiary(targetDiaryId);
     if (!diary) {
-      logger.warn('[DiaryUI.refreshAndStayAtDiary] 目标日记不存在');
+      logger.warn('diary', '[DiaryUI.refreshAndStayAtDiary] 目标日记不存在');
       return;
     }
 
     const commentsEl = targetCard.querySelector('.diary-comments');
     if (commentsEl) {
       commentsEl.innerHTML = this.renderComments(diary.comments);
-      logger.debug('[DiaryUI.refreshAndStayAtDiary] 已更新评论区，无视觉跳跃');
+      logger.debug('diary', '[DiaryUI.refreshAndStayAtDiary] 已更新评论区，无视觉跳跃');
     }
 
-    logger.debug('[DiaryUI.refreshAndStayAtDiary] 刷新完成，停留在目标日记');
+    logger.debug('diary', '[DiaryUI.refreshAndStayAtDiary] 刷新完成，停留在目标日记');
   }
 
   /**
@@ -625,8 +625,8 @@ export class DiaryUI {
     // 使用子模块获取过滤后的日记
     const diaries = this.filterModule.getFilteredDiaries(this.filter);
 
-    logger.debug('[DiaryUI.renderDiaries] 筛选后日记数:', diaries.length);
-    logger.debug('[DiaryUI.renderDiaries] 当前筛选:', this.filter);
+    logger.debug('diary', '[DiaryUI.renderDiaries] 筛选后日记数:', diaries.length);
+    logger.debug('diary', '[DiaryUI.renderDiaries] 当前筛选:', this.filter);
 
     if (diaries.length === 0) {
       this.sliderElement.innerHTML = `
@@ -645,7 +645,7 @@ export class DiaryUI {
       if (allCards.length >= 2) {
         const currentCard = /** @type {HTMLElement} */ (allCards[1]);
         currentDiaryId = currentCard.dataset.diaryId;
-        logger.debug('[DiaryUI.renderDiaries] 记住当前显示的日记ID:', currentDiaryId);
+        logger.debug('diary', '[DiaryUI.renderDiaries] 记住当前显示的日记ID:', currentDiaryId);
       }
     }
 
@@ -675,16 +675,16 @@ export class DiaryUI {
             this.sliderElement.appendChild(allCards[i]);
           }
         }
-        logger.debug('[DiaryUI.renderDiaries] 已调整卡片顺序，保持显示:', currentDiaryId);
+        logger.debug('diary', '[DiaryUI.renderDiaries] 已调整卡片顺序，保持显示:', currentDiaryId);
       }
     } else if (diaries.length >= 2 && !keepPosition) {
       setTimeout(() => {
         this.prevPage();
-        logger.debug('[DiaryUI.renderDiaries] 已自动翻页，最新日记显示在大卡片');
+        logger.debug('diary', '[DiaryUI.renderDiaries] 已自动翻页，最新日记显示在大卡片');
       }, 50);
     }
 
-    logger.debug('[DiaryUI.renderDiaries] 已渲染', diaries.length, '篇日记');
+    logger.debug('diary', '[DiaryUI.renderDiaries] 已渲染', diaries.length, '篇日记');
   }
 
   /**
@@ -738,7 +738,7 @@ export class DiaryUI {
 
       privacyBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        logger.debug('[DiaryUI] 隐私按钮被点击 - diaryId:', diary.id);
+        logger.debug('diary', '[DiaryUI] 隐私按钮被点击 - diaryId:', diary.id);
         this.editModule.togglePrivacy(diary.id);
       });
     }
@@ -747,7 +747,7 @@ export class DiaryUI {
     if (editBtn) {
       editBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        logger.debug('[DiaryUI] 编辑按钮被点击 - diaryId:', diary.id);
+        logger.debug('diary', '[DiaryUI] 编辑按钮被点击 - diaryId:', diary.id);
         this.editModule.toggleEditMode(card, diary);
       });
     }
@@ -861,7 +861,7 @@ export class DiaryUI {
     if (cards.length === 0) return;
 
     this.sliderElement.prepend(cards[cards.length - 1]);
-    logger.debug('[DiaryUI.prevPage] 上一页');
+    logger.debug('diary', '[DiaryUI.prevPage] 上一页');
   }
 
   /**
@@ -874,7 +874,7 @@ export class DiaryUI {
     if (cards.length === 0) return;
 
     this.sliderElement.appendChild(cards[0]);
-    logger.debug('[DiaryUI.nextPage] 下一页');
+    logger.debug('diary', '[DiaryUI.nextPage] 下一页');
   }
 
   /**
@@ -952,7 +952,7 @@ export class DiaryUI {
         // 确保只处理最近的评论项，不影响嵌套的子评论
         const clickedComment = target.closest('.comment-content') || target.closest('.comment-header');
         if (!clickedComment || clickedComment.closest('.comment-item') !== commentItem) {
-          logger.debug('[DiaryUI] 点击位置不在评论主体，跳过');
+          logger.debug('diary', '[DiaryUI] 点击位置不在评论主体，跳过');
           return;
         }
 
@@ -962,7 +962,7 @@ export class DiaryUI {
 
         // 阻止事件冒泡到父评论
         e.stopPropagation();
-        logger.debug('[DiaryUI] 已阻止事件冒泡');
+        logger.debug('diary', '[DiaryUI] 已阻止事件冒泡');
 
         // 隐藏之前的按钮
         if (activeComment && activeComment !== commentItem) {
@@ -999,7 +999,7 @@ export class DiaryUI {
         const diaryId = /** @type {HTMLElement} */ (card).dataset.diaryId;
         if (!diaryId) return;
 
-        logger.debug('[DiaryUI] 回复按钮被点击 - commentId:', commentId);
+        logger.debug('diary', '[DiaryUI] 回复按钮被点击 - commentId:', commentId);
         await this.replyToComment(diaryId, commentId);
         return;
       }
@@ -1014,7 +1014,7 @@ export class DiaryUI {
         const diaryId = /** @type {HTMLElement} */ (card).dataset.diaryId;
         if (!diaryId) return;
 
-        logger.debug('[DiaryUI] 删除按钮被点击 - commentId:', commentId);
+        logger.debug('diary', '[DiaryUI] 删除按钮被点击 - commentId:', commentId);
         await this.deleteComment(diaryId, commentId);
         return;
       }
@@ -1023,13 +1023,13 @@ export class DiaryUI {
       const addCommentBtn = target.closest('.diary-add-comment-btn');
       if (addCommentBtn) {
         e.stopPropagation();
-        logger.debug('[DiaryUI] 添加评论按钮被点击');
+        logger.debug('diary', '[DiaryUI] 添加评论按钮被点击');
         await this.addCommentToCurrentDiary();
         return;
       }
     });
 
-    logger.debug('[DiaryUI.bindGlobalCommentEvents] 全局评论事件已绑定');
+    logger.debug('diary', '[DiaryUI.bindGlobalCommentEvents] 全局评论事件已绑定');
   }
 
   /**
@@ -1047,7 +1047,7 @@ export class DiaryUI {
 
     const replyText = String(replyContent || '');
     if (!replyText.trim()) {
-      logger.debug('[DiaryUI.replyToComment] 用户取消或内容为空');
+      logger.debug('diary', '[DiaryUI.replyToComment] 用户取消或内容为空');
       return;
     }
 
@@ -1065,7 +1065,7 @@ export class DiaryUI {
     this.refreshAndStayAtDiary(diaryId);
 
     showSuccessToast('回复已添加');
-    logger.info('[DiaryUI.replyToComment] 回复已添加到评论:', commentId);
+    logger.info('diary', '[DiaryUI.replyToComment] 回复已添加到评论:', commentId);
   }
 
   /**
@@ -1080,13 +1080,13 @@ export class DiaryUI {
     const currentCard = this.getCurrentCard();
     if (!currentCard) {
       showErrorToast('没有当前日记');
-      logger.warn('[DiaryUI.addCommentToCurrentDiary] 没有当前日记');
+      logger.warn('diary', '[DiaryUI.addCommentToCurrentDiary] 没有当前日记');
       return;
     }
 
     const diaryId = currentCard.dataset.diaryId;
     if (!diaryId) {
-      logger.warn('[DiaryUI.addCommentToCurrentDiary] 卡片缺少diaryId');
+      logger.warn('diary', '[DiaryUI.addCommentToCurrentDiary] 卡片缺少diaryId');
       return;
     }
 
@@ -1101,7 +1101,7 @@ export class DiaryUI {
 
     const commentText = String(commentContent || '');
     if (!commentText.trim()) {
-      logger.debug('[DiaryUI.addCommentToCurrentDiary] 用户取消或内容为空');
+      logger.debug('diary', '[DiaryUI.addCommentToCurrentDiary] 用户取消或内容为空');
       return;
     }
 
@@ -1119,7 +1119,7 @@ export class DiaryUI {
     this.refreshAndStayAtDiary(diaryId);
 
     showSuccessToast('评论已添加');
-    logger.info('[DiaryUI.addCommentToCurrentDiary] 评论已添加到日记:', diaryId);
+    logger.info('diary', '[DiaryUI.addCommentToCurrentDiary] 评论已添加到日记:', diaryId);
   }
 
   /**
@@ -1138,7 +1138,7 @@ export class DiaryUI {
       this.dataManager.deleteComment(diaryId, commentId);
       this.refreshAndStayAtDiary(diaryId);
       showInfoToast('评论已删除');
-      logger.info('[DiaryUI.deleteComment] 评论已删除（跳过确认）:', commentId);
+      logger.info('diary', '[DiaryUI.deleteComment] 评论已删除（跳过确认）:', commentId);
       return;
     }
 
@@ -1163,7 +1163,7 @@ export class DiaryUI {
       if (skipCheckbox) {
         skipCheckbox.addEventListener('change', (e) => {
           skipConfirmChecked = e.target.checked;
-          logger.debug('[DiaryUI.deleteComment] 用户勾选"不再提示":', skipConfirmChecked);
+          logger.debug('diary', '[DiaryUI.deleteComment] 用户勾选"不再提示":', skipConfirmChecked);
         });
       }
     }, 50);
@@ -1176,7 +1176,7 @@ export class DiaryUI {
     );
 
     if (!confirmed) {
-      logger.debug('[DiaryUI.deleteComment] 用户取消删除');
+      logger.debug('diary', '[DiaryUI.deleteComment] 用户取消删除');
       return;
     }
 
@@ -1184,13 +1184,13 @@ export class DiaryUI {
     if (skipConfirmChecked) {
       // 保存设置
       this.dataManager.updateSettings({ skipDeleteConfirm: true });
-      logger.info('[DiaryUI.deleteComment] 已设置跳过删除确认');
+      logger.info('diary', '[DiaryUI.deleteComment] 已设置跳过删除确认');
 
       // 同步更新设置面板的复选框
       const settingsCheckbox = this.panelElement.querySelector('#diarySkipDeleteConfirm');
       if (settingsCheckbox) {
         settingsCheckbox.checked = true;
-        logger.debug('[DiaryUI.deleteComment] 已同步设置面板复选框');
+        logger.debug('diary', '[DiaryUI.deleteComment] 已同步设置面板复选框');
       }
     }
 
@@ -1198,7 +1198,7 @@ export class DiaryUI {
     this.refreshAndStayAtDiary(diaryId);
 
     showSuccessToast('评论已删除');
-    logger.info('[DiaryUI.deleteComment] 评论已删除:', commentId);
+    logger.info('diary', '[DiaryUI.deleteComment] 评论已删除:', commentId);
   }
 
   // ========================================
@@ -1211,7 +1211,7 @@ export class DiaryUI {
   createNewDiary() {
     if (this.editor) {
       this.editor.open(null);
-      logger.info('[DiaryUI.createNewDiary] 打开编辑器');
+      logger.info('diary', '[DiaryUI.createNewDiary] 打开编辑器');
     }
   }
 
@@ -1221,7 +1221,7 @@ export class DiaryUI {
   async completeCurrentDiary() {
     const currentCard = this.getCurrentCard();
     if (!currentCard) {
-      logger.warn('[DiaryUI.completeCurrentDiary] 没有当前日记');
+      logger.warn('diary', '[DiaryUI.completeCurrentDiary] 没有当前日记');
       return;
     }
 
@@ -1240,15 +1240,15 @@ export class DiaryUI {
     );
 
     if (!confirmed) {
-      logger.debug('[DiaryUI.completeCurrentDiary] 用户取消');
+      logger.debug('diary', '[DiaryUI.completeCurrentDiary] 用户取消');
       return;
     }
 
     try {
       await this.api.requestCommentAsync(diaryId);
-      logger.info('[DiaryUI.completeCurrentDiary] 后台生成已启动');
+      logger.info('diary', '[DiaryUI.completeCurrentDiary] 后台生成已启动');
     } catch (error) {
-      logger.error('[DiaryUI.completeCurrentDiary] 启动失败:', error);
+      logger.error('diary', '[DiaryUI.completeCurrentDiary] 启动失败:', error);
       showErrorToast('请求评论失败：' + error.message);
     }
   }
@@ -1259,7 +1259,7 @@ export class DiaryUI {
   async deleteCurrentDiary() {
     const currentCard = this.getCurrentCard();
     if (!currentCard) {
-      logger.warn('[DiaryUI.deleteCurrentDiary] 没有当前日记');
+      logger.warn('diary', '[DiaryUI.deleteCurrentDiary] 没有当前日记');
       return;
     }
 
@@ -1275,7 +1275,7 @@ export class DiaryUI {
     );
 
     if (!confirmed) {
-      logger.debug('[DiaryUI.deleteCurrentDiary] 用户取消');
+      logger.debug('diary', '[DiaryUI.deleteCurrentDiary] 用户取消');
       return;
     }
 
@@ -1286,7 +1286,7 @@ export class DiaryUI {
       toastr.success('日记已删除');
     }
 
-    logger.info('[DiaryUI.deleteCurrentDiary] 日记已删除:', diaryId);
+    logger.info('diary', '[DiaryUI.deleteCurrentDiary] 日记已删除:', diaryId);
   }
 
   /**
@@ -1391,7 +1391,7 @@ export class DiaryUI {
           }
         });
 
-        logger.info('[DiaryUI.showSelectSendPanel] 用户选择了', selectedIds.length, '篇日记');
+        logger.info('diary', '[DiaryUI.showSelectSendPanel] 用户选择了', selectedIds.length, '篇日记');
 
         if (selectedIds.length === 0) {
           if (typeof toastr !== 'undefined') {
@@ -1403,7 +1403,7 @@ export class DiaryUI {
         // 直接触发生成评论（不保存状态，不显示通知）
         if (this.api) {
           this.api.requestCommentForSelectedDiaries(selectedIds);
-          logger.info('[DiaryUI.showSelectSendPanel] 已触发批量生成');
+          logger.info('diary', '[DiaryUI.showSelectSendPanel] 已触发批量生成');
         }
 
         // 关闭弹窗
@@ -1423,12 +1423,12 @@ export class DiaryUI {
           // 当前全选 → 取消全选
           checkboxes.forEach(cb => cb.checked = false);
           selectAllBtn.textContent = '全选';
-          logger.debug('[DiaryUI.showSelectSendPanel] 取消全选');
+          logger.debug('diary', '[DiaryUI.showSelectSendPanel] 取消全选');
         } else {
           // 未全选 → 全选
           checkboxes.forEach(cb => cb.checked = true);
           selectAllBtn.textContent = '取消全选';
-          logger.debug('[DiaryUI.showSelectSendPanel] 全选日记');
+          logger.debug('diary', '[DiaryUI.showSelectSendPanel] 全选日记');
         }
       };
 
@@ -1551,7 +1551,7 @@ export class DiaryUI {
       this.panelElement.remove();
       this.panelElement = null;
     }
-    logger.debug('[DiaryUI.destroy] UI已销毁');
+    logger.debug('diary', '[DiaryUI.destroy] UI已销毁');
   }
 }
 

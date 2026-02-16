@@ -131,7 +131,7 @@ async function showPeekPopup(message, contact) {
   const { showCustomPopup } = await import('../../utils/popup-helper.js');
   const { getUserDisplayName } = await import('../../utils/contact-display-helper.js');
 
-  logger.info('[RecalledMessage] 偷看撤回的消息，类型:', message.originalType);
+  logger.info('phone','[RecalledMessage] 偷看撤回的消息，类型:', message.originalType);
 
   // 根据原始类型渲染内容
   let content = '';

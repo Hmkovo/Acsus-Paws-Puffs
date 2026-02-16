@@ -42,6 +42,8 @@ import { VisualEditor } from "./visual-editor/visual-editor.js";
 import { SimulatedLifeModule } from "./simulated-life/simulated-life.js";
 import { initDiarySystem } from "./toolkit/diary/diary.js";
 import { initPhone, openPhoneUI, closePhoneUI, enablePhone, disablePhone } from "./toolkit/phone/index.js";
+// 聊天工具模块
+import { initChatTools, bindFoldSettings, bindNavSettings } from "./chat-tools/index.js";
 // 聊天记录模块暂时禁用，开发中
 // import {
 //   initChatArchive,
@@ -141,25 +143,25 @@ let variablesSystem = null;  // 动态变量系统实例
  */
 async function initPawsPuffs() {
   try {
-    logger.info('[Main] Acsus-Paws-Puffs 开始初始化...');
+    logger.info('main', '[Main] Acsus-Paws-Puffs 开始初始化...');
 
     // 5.1 检查并初始化设置（使用EXT_ID作为键名）
     if (!extension_settings[EXT_ID]) {
       // 如果是第一次运行，使用默认设置
-      logger.info('[Main] 首次运行，使用默认设置');
+      logger.info('main', '[Main] 首次运行，使用默认设置');
       extension_settings[EXT_ID] = defaultSettings;
       saveSettingsDebounced();
     } else {
-      logger.debug('[Main] 已加载现有设置');
+      logger.debug('main', '[Main] 已加载现有设置');
     }
 
     // 5.2 创建并初始化字体管理器
     try {
       fontManager = new FontManager();
       await fontManager.init();
-      logger.debug('[Main] 字体管理器初始化成功');
+      logger.debug('font', '[Main] 字体管理器初始化成功');
     } catch (error) {
-      logger.error('[Main] 字体管理器初始化失败:', error.message || error);
+      logger.error('font', '[Main] 字体管理器初始化失败:', error.message || error);
       // 不阻断，继续初始化其他模块
     }
 
@@ -167,9 +169,9 @@ async function initPawsPuffs() {
     try {
       presetManager = new PresetManagerModule();
       await presetManager.init();
-      logger.debug('[Main] 预设管理器初始化成功');
+      logger.debug('preset', '[Main] 预设管理器初始化成功');
     } catch (error) {
-      logger.error('[Main] 预设管理器初始化失败:', error.message || error);
+      logger.error('preset', '[Main] 预设管理器初始化失败:', error.message || error);
       // 不阻断，继续初始化其他模块
     }
 
@@ -177,27 +179,27 @@ async function initPawsPuffs() {
     try {
       simulatedLife = new SimulatedLifeModule();
       await simulatedLife.init();
-      logger.debug('[Main] 模拟人生模块初始化成功');
+      logger.debug('simlife', '[Main] 模拟人生模块初始化成功');
     } catch (error) {
-      logger.error('[Main] 模拟人生模块初始化失败:', error.message || error);
+      logger.error('simlife', '[Main] 模拟人生模块初始化失败:', error.message || error);
       // 不阻断，继续初始化其他模块
     }
 
     // 5.5 初始化日记系统
     try {
       diarySystem = await initDiarySystem();
-      logger.debug('[Main] 日记系统初始化成功');
+      logger.debug('diary', '[Main] 日记系统初始化成功');
     } catch (error) {
-      logger.error('[Main] 日记系统初始化失败:', error.message || error);
+      logger.error('diary', '[Main] 日记系统初始化失败:', error.message || error);
       // 不阻断，继续初始化其他模块
     }
 
     // 5.6 初始化手机系统
     try {
       phoneSystem = await initPhone();
-      logger.debug('[Main] 手机系统初始化成功');
+      logger.debug('phone', '[Main] 手机系统初始化成功');
     } catch (error) {
-      logger.error('[Main] 手机系统初始化失败:', error.message || error);
+      logger.error('phone', '[Main] 手机系统初始化失败:', error.message || error);
       // 不阻断，继续初始化其他模块
     }
 
@@ -205,13 +207,22 @@ async function initPawsPuffs() {
     try {
       await initBeautifySystem();
       beautifySystem = true;  // 标记已初始化
-      logger.debug('[Main] 美化系统初始化成功');
+      logger.debug('beautify', '[Main] 美化系统初始化成功');
     } catch (error) {
-      logger.error('[Main] 美化系统初始化失败:', error.message || error);
+      logger.error('beautify', '[Main] 美化系统初始化失败:', error.message || error);
       // 不阻断，继续初始化其他模块
     }
 
-    // 5.8 初始化聊天记录系统（暂时禁用，开发中）
+    // 5.8 初始化聊天工具系统（折叠、导航）
+    try {
+      initChatTools();
+      logger.debug('chatTools', '[Main] 聊天工具系统初始化成功');
+    } catch (error) {
+      logger.error('chatTools', '[Main] 聊天工具系统初始化失败:', error.message || error);
+      // 不阻断，继续初始化其他模块
+    }
+
+    // 5.9 初始化聊天记录系统（暂时禁用，开发中）
     // try {
     //   chatArchiveSystem = await initChatArchive();
     //   logger.debug('[Main] 聊天记录系统初始化成功');
@@ -225,21 +236,21 @@ async function initPawsPuffs() {
       const result = await initVariables();
       if (result.success) {
         variablesSystem = true;  // 标记已初始化
-        logger.debug('[Main] 动态变量系统初始化成功');
+        logger.debug('variable', '[Main] 动态变量系统初始化成功');
       } else {
-        logger.warn('[Main] 动态变量系统初始化返回失败:', result.error);
+        logger.warn('variable', '[Main] 动态变量系统初始化返回失败:', result.error);
       }
     } catch (error) {
-      logger.error('[Main] 动态变量系统初始化失败:', error.message || error);
+      logger.error('variable', '[Main] 动态变量系统初始化失败:', error.message || error);
       // 不阻断，继续初始化其他模块
     }
 
     // 5.10 初始化设置面板UI
     await initSettingsPanel();
 
-    logger.info('[Main] Acsus-Paws-Puffs 初始化完成！');
+    logger.info('main', '[Main] Acsus-Paws-Puffs 初始化完成！');
   } catch (error) {
-    logger.error('[Main] 初始化过程出现严重错误:', error.message || error);
+    logger.error('main', '[Main] 初始化过程出现严重错误:', error.message || error);
     throw error;
   }
 }
@@ -264,16 +275,16 @@ async function initPawsPuffs() {
  * @throws {Error} 加载 settings.html 失败或找不到设置容器时
  */
 async function initSettingsPanel() {
-  logger.debug('[Main.initSettingsPanel] 开始初始化设置面板');
+  logger.debug('main', '[Main.initSettingsPanel] 开始初始化设置面板');
 
   try {
     // 1. 等待扩展设置容器加载
     const settingsContainer = await waitForElement("#extensions_settings");
     if (!settingsContainer) {
-      logger.error('[Main.initSettingsPanel] 找不到扩展设置容器');
+      logger.error('main', '[Main.initSettingsPanel] 找不到扩展设置容器');
       return;
     }
-    logger.debug('[Main.initSettingsPanel] 找到设置容器');
+    logger.debug('main', '[Main.initSettingsPanel] 找到设置容器');
 
     // 2. 加载settings.html文件（使用动态路径）
     try {
@@ -285,22 +296,28 @@ async function initSettingsPanel() {
 
       // 3. 把HTML添加到设置容器中
       $(settingsContainer).append(settingsHtml);
-      logger.debug('[Main.initSettingsPanel] 设置面板HTML已加载');
+      logger.debug('main', '[Main.initSettingsPanel] 设置面板HTML已加载');
     } catch (error) {
-      logger.error('[Main.initSettingsPanel] 加载settings.html失败:', error.message);
+      logger.error('main', '[Main.initSettingsPanel] 加载settings.html失败:', error.message);
       throw error;
     }
 
     // 4. 绑定事件（用户勾选/取消勾选时的处理）
     bindSettingsEvents();
 
+    // 4.1 绑定聊天工具折叠设置（在 settings.html 加载后）
+    bindFoldSettings();
+
+    // 4.2 绑定聊天工具导航设置（在 settings.html 加载后）
+    bindNavSettings();
+
     // 5. 让字体管理器渲染自己的UI
     if (fontManager) {
       try {
         await fontManager.renderUI(document.getElementById('paws-puffs-font-panel'));
-        logger.debug('[Main.initSettingsPanel] 字体管理器UI渲染成功');
+        logger.debug('font', '[Main.initSettingsPanel] 字体管理器UI渲染成功');
       } catch (error) {
-        logger.error('[Main.initSettingsPanel] 字体管理器UI渲染失败:', error.message);
+        logger.error('font', '[Main.initSettingsPanel] 字体管理器UI渲染失败:', error.message);
       }
     }
 
@@ -308,9 +325,9 @@ async function initSettingsPanel() {
     if (presetManager) {
       try {
         await presetManager.renderUI(document.getElementById('paws-puffs-preset-panel'));
-        logger.debug('[Main.initSettingsPanel] 预设管理器UI渲染成功');
+        logger.debug('preset', '[Main.initSettingsPanel] 预设管理器UI渲染成功');
       } catch (error) {
-        logger.error('[Main.initSettingsPanel] 预设管理器UI渲染失败:', error.message);
+        logger.error('preset', '[Main.initSettingsPanel] 预设管理器UI渲染失败:', error.message);
       }
     }
 
@@ -318,9 +335,9 @@ async function initSettingsPanel() {
     if (simulatedLife) {
       try {
         await simulatedLife.renderUI(document.getElementById('paws-puffs-simulated-life-panel'));
-        logger.debug('[Main.initSettingsPanel] 模拟人生模块UI渲染成功');
+        logger.debug('simlife', '[Main.initSettingsPanel] 模拟人生模块UI渲染成功');
       } catch (error) {
-        logger.error('[Main.initSettingsPanel] 模拟人生模块UI渲染失败:', error.message);
+        logger.error('simlife', '[Main.initSettingsPanel] 模拟人生模块UI渲染失败:', error.message);
       }
     }
 
@@ -329,9 +346,9 @@ async function initSettingsPanel() {
       visualEditor = new VisualEditor();
       await visualEditor.init();
       await visualEditor.renderUI(document.getElementById('paws-puffs-visual-editor-panel'));
-      logger.debug('[Main.initSettingsPanel] 可视化编辑器UI渲染成功');
+      logger.debug('visual', '[Main.initSettingsPanel] 可视化编辑器UI渲染成功');
     } catch (error) {
-      logger.error('[Main.initSettingsPanel] 可视化编辑器UI渲染失败:', error.message);
+      logger.error('visual', '[Main.initSettingsPanel] 可视化编辑器UI渲染失败:', error.message);
     }
 
     // 8. 渲染动态变量系统UI
@@ -340,18 +357,18 @@ async function initSettingsPanel() {
         const variablesPanel = document.getElementById('paws-puffs-variables-panel');
         if (variablesPanel) {
           renderVariablesUI(variablesPanel);
-          logger.debug('[Main.initSettingsPanel] 动态变量系统UI渲染成功');
+          logger.debug('variable', '[Main.initSettingsPanel] 动态变量系统UI渲染成功');
         } else {
-          logger.warn('[Main.initSettingsPanel] 找不到变量面板容器 #paws-puffs-variables-panel');
+          logger.warn('variable', '[Main.initSettingsPanel] 找不到变量面板容器 #paws-puffs-variables-panel');
         }
       } catch (error) {
-        logger.error('[Main.initSettingsPanel] 动态变量系统UI渲染失败:', error.message);
+        logger.error('variable', '[Main.initSettingsPanel] 动态变量系统UI渲染失败:', error.message);
       }
     }
 
-    logger.info('[Main.initSettingsPanel] 设置面板初始化完成');
+    logger.info('main', '[Main.initSettingsPanel] 设置面板初始化完成');
   } catch (error) {
-    logger.error('[Main.initSettingsPanel] 初始化设置面板失败:', error.message || error);
+    logger.error('main', '[Main.initSettingsPanel] 初始化设置面板失败:', error.message || error);
     throw error;
   }
 }
@@ -377,24 +394,24 @@ function waitForElement(selector, timeout = 10000) {
     // 先检查元素是否已经存在
     const element = /** @type {HTMLElement} */ (document.querySelector(selector));
     if (element) {
-      logger.debug('[Main.waitForElement] 元素已存在:', selector);
+      logger.debug('main', '[Main.waitForElement] 元素已存在:', selector);
       resolve(element);
       return;
     }
 
     // 如果不存在，等待它出现
-    logger.debug('[Main.waitForElement] 等待元素出现:', selector);
+    logger.debug('main', '[Main.waitForElement] 等待元素出现:', selector);
     const startTime = Date.now();
     const checkInterval = setInterval(() => {
       const element = /** @type {HTMLElement} */ (document.querySelector(selector));
       if (element) {
         clearInterval(checkInterval);
         const elapsed = Date.now() - startTime;
-        logger.debug(`[Main.waitForElement] 元素已出现 (${elapsed}ms):`, selector);
+        logger.debug('main', `[Main.waitForElement] 元素已出现 (${elapsed}ms):`, selector);
         resolve(element);
       } else if (Date.now() - startTime > timeout) {
         clearInterval(checkInterval);
-        logger.warn('[Main.waitForElement] 等待元素超时:', selector);
+        logger.warn('main', '[Main.waitForElement] 等待元素超时:', selector);
         reject(new Error(`等待元素 ${selector} 超时`));
       }
     }, 100);
@@ -426,6 +443,9 @@ function bindSettingsEvents() {
 
   // 绑定美化页面手风琴
   bindBeautifyAccordion();
+
+  // 绑定聊天工具页面手风琴
+  bindChatToolsAccordion();
 
   // 绑定使用条款弹窗
   bindTermsPopup();
@@ -546,6 +566,32 @@ function bindBeautifyAccordion() {
 }
 
 /**
+ * 绑定聊天工具页面的手风琴切换逻辑
+ *
+ * @description
+ * 监听所有 .chat-tools-accordion-header 元素的点击事件，实现手风琴效果
+ */
+function bindChatToolsAccordion() {
+  const chatToolsHeaders = document.querySelectorAll('.chat-tools-accordion-header');
+
+  chatToolsHeaders.forEach(header => {
+    header.addEventListener('click', () => {
+      const clickedCard = /** @type {HTMLElement} */ (header).dataset.card;
+      const allCards = document.querySelectorAll('.chat-tools-accordion-card');
+
+      // 切换所有卡片的active状态
+      allCards.forEach(card => {
+        if (/** @type {HTMLElement} */ (card).dataset.card === clickedCard) {
+          card.classList.add('active');
+        } else {
+          card.classList.remove('active');
+        }
+      });
+    });
+  });
+}
+
+/**
  * 绑定悬浮按钮设置事件
  *
  * @description
@@ -603,7 +649,7 @@ function bindFloatingBtnSettings() {
       colorPicker.setAttribute('color', 'rgba(255, 255, 255, 1)');
       updateFloatingBtnColor('');
       saveFloatingBtnSettings({ color: '' });
-      logger.info('[FloatingBtn] 颜色已重置为主题色');
+      logger.info('beautify', '[FloatingBtn] 颜色已重置为主题色');
     });
   }
 
@@ -620,7 +666,7 @@ function bindFloatingBtnSettings() {
 
 
 
-  logger.debug('[FloatingBtn] 设置事件已绑定');
+  logger.debug('beautify', '[FloatingBtn] 设置事件已绑定');
 }
 
 /**
@@ -657,7 +703,7 @@ function bindBeautifyInfoPopup() {
 
   if (infoBtn) {
     infoBtn.addEventListener('click', async () => {
-      logger.debug('[bindBeautifyInfoPopup] 用户点击查看美化说明');
+      logger.debug('beautify', '[bindBeautifyInfoPopup] 用户点击查看美化说明');
 
       try {
         const infoContent = `
@@ -707,7 +753,7 @@ function bindBeautifyInfoPopup() {
           large: false
         });
       } catch (error) {
-        logger.error('[bindBeautifyInfoPopup] 弹窗显示失败:', error);
+        logger.error('beautify', '[bindBeautifyInfoPopup] 弹窗显示失败:', error);
       }
     });
   }
@@ -724,7 +770,7 @@ function bindBgTagInfoPopup() {
 
   if (infoBtn) {
     infoBtn.addEventListener('click', async () => {
-      logger.debug('[bindBgTagInfoPopup] 用户点击查看背景图标签管理说明');
+      logger.debug('beautify', '[bindBgTagInfoPopup] 用户点击查看背景图标签管理说明');
 
       try {
         const infoContent = `
@@ -763,7 +809,7 @@ function bindBgTagInfoPopup() {
           large: false
         });
       } catch (error) {
-        logger.error('[bindBgTagInfoPopup] 弹窗显示失败:', error);
+        logger.error('beautify', '[bindBgTagInfoPopup] 弹窗显示失败:', error);
       }
     });
   }
@@ -780,7 +826,7 @@ function bindTermsPopup() {
 
   if (termsBtn) {
     termsBtn.addEventListener('click', async () => {
-      logger.debug('[bindTermsPopup] 用户点击查看使用条款');
+      logger.debug('main', '[bindTermsPopup] 用户点击查看使用条款');
 
       try {
         // 条款内容
@@ -835,13 +881,13 @@ function bindTermsPopup() {
         });
 
       } catch (error) {
-        logger.error('[bindTermsPopup] 显示条款弹窗失败:', error);
+        logger.error('main', '[bindTermsPopup] 显示条款弹窗失败:', error);
         // 降级：使用 alert 作为备用方案
         alert('使用条款加载失败，请稍后重试。');
       }
     });
   } else {
-    logger.warn('[bindTermsPopup] 未找到条款按钮元素');
+    logger.warn('main', '[bindTermsPopup] 未找到条款按钮元素');
   }
 }
 
@@ -859,7 +905,7 @@ function bindToolboxCards() {
     card.addEventListener('click', async () => {
       const toolName = card.querySelector('.toolbox-card-title').textContent;
 
-      logger.debug(`[bindToolboxCards] 用户点击工具卡片: ${toolName}`);
+      logger.debug('main', `[bindToolboxCards] 用户点击工具卡片: ${toolName}`);
 
       try {
         // 弹窗内容
@@ -888,14 +934,14 @@ function bindToolboxCards() {
         });
 
       } catch (error) {
-        logger.error('[bindToolboxCards] 显示工具卡片弹窗失败:', error);
+        logger.error('main', '[bindToolboxCards] 显示工具卡片弹窗失败:', error);
         // 降级：使用 alert 作为备用方案
         alert(`${toolName}\n\n该模块正在开发中。`);
       }
     });
   });
 
-  logger.debug(`[bindToolboxCards] 已绑定 ${toolboxCards.length} 个工具卡片的点击事件`);
+  logger.debug('main', `[bindToolboxCards] 已绑定 ${toolboxCards.length} 个工具卡片的点击事件`);
 }
 
 /**
@@ -936,16 +982,16 @@ function bindTabVisibility() {
       if (isChecked) {
         showTab(tabId);
         removeFromHiddenTabs(tabId);
-        logger.debug(`[bindTabVisibility] 显示标签页: ${tabId}`);
+        logger.debug('main', `[bindTabVisibility] 显示标签页: ${tabId}`);
       } else {
         hideTab(tabId);
         addToHiddenTabs(tabId);
-        logger.debug(`[bindTabVisibility] 隐藏标签页: ${tabId}`);
+        logger.debug('main', `[bindTabVisibility] 隐藏标签页: ${tabId}`);
 
         // 如果隐藏的是当前激活的标签页，切换到下一个可见的标签页
         const activeTab = document.querySelector('.paws-tab.active');
         if (activeTab && activeTab.getAttribute('data-tab') === tabId) {
-          logger.debug(`[bindTabVisibility] 当前激活的标签页被隐藏，切换到下一个可见标签页`);
+          logger.debug('main', `[bindTabVisibility] 当前激活的标签页被隐藏，切换到下一个可见标签页`);
           switchToFirstVisibleTab();
         }
       }
@@ -957,12 +1003,12 @@ function bindTabVisibility() {
   if (activeTab) {
     const activeTabId = activeTab.getAttribute('data-tab');
     if (hiddenTabs.includes(activeTabId)) {
-      logger.debug(`[bindTabVisibility] 初始激活的标签页 "${activeTabId}" 已被隐藏，切换到第一个可见标签页`);
+      logger.debug('main', `[bindTabVisibility] 初始激活的标签页 "${activeTabId}" 已被隐藏，切换到第一个可见标签页`);
       switchToFirstVisibleTab();
     }
   }
 
-  logger.debug(`[bindTabVisibility] 已绑定 ${checkboxes.length} 个标签页可见性复选框`);
+  logger.debug('main', `[bindTabVisibility] 已绑定 ${checkboxes.length} 个标签页可见性复选框`);
 }
 
 /**
@@ -1033,12 +1079,12 @@ function switchToFirstVisibleTab() {
     if (tabElement.style.display !== 'none') {
       // 模拟点击该标签页
       tabElement.click();
-      logger.debug(`[switchToFirstVisibleTab] 已切换到标签页: ${tabElement.getAttribute('data-tab')}`);
+      logger.debug('main', `[switchToFirstVisibleTab] 已切换到标签页: ${tabElement.getAttribute('data-tab')}`);
       return;
     }
   }
 
-  logger.warn('[switchToFirstVisibleTab] 没有找到可见的标签页');
+  logger.warn('main', '[switchToFirstVisibleTab] 没有找到可见的标签页');
 }
 
 /**
@@ -1069,7 +1115,7 @@ function bindDiarySettings() {
     });
   }
 
-  logger.debug('[Settings] 日记卡片点击事件已绑定');
+  logger.debug('main', '[Settings] 日记卡片点击事件已绑定');
 }
 
 /**
@@ -1100,7 +1146,7 @@ function bindPhoneSettings() {
     });
   }
 
-  logger.debug('[Settings] 手机卡片点击事件已绑定');
+  logger.debug('main', '[Settings] 手机卡片点击事件已绑定');
 }
 
 /**
@@ -1213,11 +1259,11 @@ async function showDiarySettingsPopup(updateCardStatus) {
       if (newState) {
         await diarySystem.enable();
         toastr.success('日记功能已启用');
-        logger.info('[Settings] 日记功能已启用');
+        logger.info('diary', '[Settings] 日记功能已启用');
       } else {
         diarySystem.disable();
         toastr.info('日记功能已禁用');
-        logger.info('[Settings] 日记功能已禁用');
+        logger.info('diary', '[Settings] 日记功能已禁用');
       }
 
       // 更新卡片状态
@@ -1285,11 +1331,11 @@ async function showPhoneSettingsPopup(updateCardStatus) {
       if (newState) {
         await enablePhone();
         toastr.success('手机功能已启用');
-        logger.info('[Settings] 手机功能已启用');
+        logger.info('phone', '[Settings] 手机功能已启用');
       } else {
         disablePhone();
         toastr.info('手机功能已禁用');
-        logger.info('[Settings] 手机功能已禁用');
+        logger.info('phone', '[Settings] 手机功能已禁用');
       }
 
       // 更新卡片状态
@@ -1354,11 +1400,11 @@ function bindChatArchiveSettings() {
       if (newState) {
         await enableChatArchive();
         toastr.success('聊天记录管理已启用');
-        logger.info('[Settings] 聊天记录管理已启用（从标签页）');
+        logger.info('archive', '[Settings] 聊天记录管理已启用（从标签页）');
       } else {
         disableChatArchive();
         toastr.info('聊天记录管理已禁用');
-        logger.info('[Settings] 聊天记录管理已禁用（从标签页）');
+        logger.info('archive', '[Settings] 聊天记录管理已禁用（从标签页）');
       }
 
       updateCardStatus();
@@ -1377,7 +1423,7 @@ function bindChatArchiveSettings() {
     });
   }
 
-  logger.debug('[Settings] 聊天记录卡片点击事件已绑定');
+  logger.debug('archive', '[Settings] 聊天记录卡片点击事件已绑定');
 }
 
 /**
@@ -1448,11 +1494,11 @@ async function showChatArchiveSettingsPopup(updateCardStatus) {
       if (newState) {
         await enableChatArchive();
         toastr.success('聊天记录管理已启用');
-        logger.info('[Settings] 聊天记录管理已启用');
+        logger.info('archive', '[Settings] 聊天记录管理已启用');
       } else {
         disableChatArchive();
         toastr.info('聊天记录管理已禁用');
-        logger.info('[Settings] 聊天记录管理已禁用');
+        logger.info('archive', '[Settings] 聊天记录管理已禁用');
       }
 
       // 更新卡片状态
@@ -1469,13 +1515,13 @@ async function showChatArchiveSettingsPopup(updateCardStatus) {
 // jQuery的ready函数：当页面加载完成后执行
 jQuery(async () => {
   try {
-    logger.debug('[Main] 页面加载完成，准备初始化Acsus-Paws-Puffs');
+    logger.debug('main', '[Main] 页面加载完成，准备初始化Acsus-Paws-Puffs');
 
     // 可以等待一些必要的事件（比如ST完全启动）
     // 这里我们直接初始化
     await initPawsPuffs();
   } catch (error) {
-    logger.error('[Main] 扩展初始化失败，请检查控制台错误:', error.message || error);
+    logger.error('main', '[Main] 扩展初始化失败，请检查控制台错误:', error.message || error);
     // 显示错误提示给用户
     if (typeof toastr !== 'undefined') {
       toastr.error(`Acsus-Paws-Puffs 初始化失败: ${error.message}`);

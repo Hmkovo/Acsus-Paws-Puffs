@@ -35,7 +35,7 @@ const debugStates = new Map();
  */
 export function clearDebugState(contactId) {
   debugStates.delete(contactId);
-  logger.debug('[Debug] 清空调试状态:', contactId);
+  logger.debug('phone','[Debug] 清空调试状态:', contactId);
 }
 
 /**
@@ -70,7 +70,7 @@ export function saveSnapshot(contactId, snapshotData) {
     signatureActions: snapshotData.signatureActions || []
   };
 
-  logger.debug('[Debug] 保存快照:', contactId, '消息数量:', state.snapshot.messageCount, '待发送联系人数:',
+  logger.debug('phone','[Debug] 保存快照:', contactId, '消息数量:', state.snapshot.messageCount, '待发送联系人数:',
     state.snapshot.allPendingMessages ? Object.keys(state.snapshot.allPendingMessages).length : 0);
 }
 
@@ -96,7 +96,7 @@ export function saveDebugVersion(contactId, text) {
   });
   state.currentIndex = state.versions.length - 1;
 
-  logger.info('[Debug] 保存版本:', contactId, `长度=${text.length}字符`);
+  logger.info('phone','[Debug] 保存版本:', contactId, `长度=${text.length}字符`);
 }
 
 // ========================================
@@ -133,7 +133,7 @@ let isCompareMode = false;
  * @param {string} contactId - 联系人ID
  */
 export async function openDebugUI(contactId) {
-  logger.info('[Debug] 打开调试界面:', contactId);
+  logger.info('phone','[Debug] 打开调试界面:', contactId);
 
   const state = debugStates.get(contactId);
   if (!state || state.versions.length === 0) {
@@ -341,7 +341,7 @@ function bindDebugEvents(popup, contactId) {
     if (rerollBtn) {
       rerollBtn.disabled = false;
       rerollBtn.textContent = '重roll';
-      logger.debug('[Debug] 收到重roll结束事件，恢复按钮状态');
+      logger.debug('phone','[Debug] 收到重roll结束事件，恢复按钮状态');
     }
   };
 
@@ -352,7 +352,7 @@ function bindDebugEvents(popup, contactId) {
     if (rerollBtn) {
       rerollBtn.disabled = false;
       rerollBtn.textContent = '重roll';
-      logger.debug('[Debug] 收到AI生成完成事件，恢复按钮状态');
+      logger.debug('phone','[Debug] 收到AI生成完成事件，恢复按钮状态');
     }
   };
 
@@ -363,7 +363,7 @@ function bindDebugEvents(popup, contactId) {
     if (rerollBtn) {
       rerollBtn.disabled = false;
       rerollBtn.textContent = '重roll';
-      logger.debug('[Debug] 收到AI生成错误事件，恢复按钮状态');
+      logger.debug('phone','[Debug] 收到AI生成错误事件，恢复按钮状态');
     }
   };
 
@@ -583,7 +583,7 @@ function handleFontSize(popup, delta) {
  * @param {string} contactId - 联系人ID
  */
 async function handleReapply(popup, contactId) {
-  logger.info('[Debug] 开始重新应用');
+  logger.info('phone','[Debug] 开始重新应用');
 
   const textarea = popup.querySelector('.debug-textarea:not(.debug-textarea-readonly)');
   const newText = textarea.value;
@@ -597,7 +597,7 @@ async function handleReapply(popup, contactId) {
       toastr.success('已重新应用');
     }
   } catch (error) {
-    logger.error('[Debug] 重新应用失败:', error);
+    logger.error('phone','[Debug] 重新应用失败:', error);
     const toastr = window.toastr;
     if (toastr) {
       toastr.error(`重新应用失败: ${error.message}`);
@@ -613,8 +613,8 @@ async function handleReapply(popup, contactId) {
  * @param {string} contactId - 联系人ID
  */
 async function handleReroll(popup, contactId) {
-  logger.info('🎲 [重roll] ========== 开始重roll ==========');
-  logger.info('🎲 [重roll] 联系人:', contactId);
+  logger.info('phone','🎲 [重roll] ========== 开始重roll ==========');
+  logger.info('phone','🎲 [重roll] 联系人:', contactId);
 
   const rerollBtn = popup.querySelector('.debug-reroll-btn');
   const originalText = rerollBtn.textContent;
@@ -629,10 +629,10 @@ async function handleReroll(popup, contactId) {
       detail: { contactId }
     }));
 
-    logger.info('🎲 [重roll] 步骤1：回退到快照');
+    logger.info('phone','🎲 [重roll] 步骤1：回退到快照');
     // 先回退到快照
     await rollbackToSnapshot(contactId);
-    logger.info('🎲 [重roll] 步骤1完成：回退成功');
+    logger.info('phone','🎲 [重roll] 步骤1完成：回退成功');
 
     // ✅ 获取快照中的多联系人消息和个签操作（用于重新构建上下文）
     const state = debugStates.get(contactId);
@@ -642,19 +642,19 @@ async function handleReroll(popup, contactId) {
 
     if (allPendingMessages) {
       const contactCount = Object.keys(allPendingMessages).length;
-      logger.info('🎲 [重roll] 从快照恢复多联系人消息，共', contactCount, '个联系人');
+      logger.info('phone','🎲 [重roll] 从快照恢复多联系人消息，共', contactCount, '个联系人');
     } else {
-      logger.debug('🎲 [重roll] 快照中没有多联系人消息（可能是旧版本快照）');
+      logger.debug('phone','🎲 [重roll] 快照中没有多联系人消息（可能是旧版本快照）');
     }
 
     // ✅ 恢复个签操作到待处理队列（重roll时保留个签操作）
     if (signatureActions.length > 0) {
       const { restoreSignatureActions } = await import('../ai-integration/pending-operations.js');
       restoreSignatureActions(signatureActions);
-      logger.info('🎲 [重roll] 从快照恢复个签操作，共', signatureActions.length, '条');
+      logger.info('phone','🎲 [重roll] 从快照恢复个签操作，共', signatureActions.length, '条');
     }
 
-    logger.info('🎲 [重roll] 步骤2：重新调用API生成消息');
+    logger.info('phone','🎲 [重roll] 步骤2：重新调用API生成消息');
     // 重新调用API
     const { getPhoneSystem } = await import('../phone-system.js');
     const phoneSystem = getPhoneSystem();
@@ -668,7 +668,7 @@ async function handleReroll(popup, contactId) {
       contactId,
       async (message) => {
         // ✅ 渲染消息到聊天页面（重roll时也要显示气泡）
-        logger.debug('🎲 [重roll] 收到AI消息，开始渲染 类型:', message.type, 'ID:', message.id);
+        logger.debug('phone','🎲 [重roll] 收到AI消息，开始渲染 类型:', message.type, 'ID:', message.id);
         const page = findActiveChatPage(contactId);
         if (page) {
           const contacts = await loadContacts();
@@ -676,14 +676,14 @@ async function handleReroll(popup, contactId) {
           if (contact) {
             const { appendMessageToChat } = await import('./message-chat-ui.js');
             await appendMessageToChat(page, message, contact, contactId);
-            logger.debug('🎲 [重roll] 消息渲染完成 ID:', message.id);
+            logger.debug('phone','🎲 [重roll] 消息渲染完成 ID:', message.id);
           }
         }
       },
       async () => {
         // 完成
-        logger.info('🎲 [重roll] 步骤2完成：AI生成完成');
-        logger.info('🎲 [重roll] ========== 重roll成功 ==========');
+        logger.info('phone','🎲 [重roll] 步骤2完成：AI生成完成');
+        logger.info('phone','🎲 [重roll] ========== 重roll成功 ==========');
         rerollBtn.disabled = false;
         rerollBtn.textContent = originalText;
 
@@ -706,8 +706,8 @@ async function handleReroll(popup, contactId) {
       },
       (error) => {
         // 失败
-        logger.error('🎲 [重roll] ❌ AI生成失败:', error);
-        logger.info('🎲 [重roll] ========== 重roll失败（API错误）==========');
+        logger.error('phone','🎲 [重roll] ❌ AI生成失败:', error);
+        logger.info('phone','🎲 [重roll] ========== 重roll失败（API错误）==========');
         rerollBtn.disabled = false;
         rerollBtn.textContent = originalText;
 
@@ -725,8 +725,8 @@ async function handleReroll(popup, contactId) {
       allPendingMessages ? { allPendingMessages } : undefined
     );
   } catch (error) {
-    logger.error('🎲 [重roll] ❌ 重roll异常:', error);
-    logger.info('🎲 [重roll] ========== 重roll失败（系统异常）==========');
+    logger.error('phone','🎲 [重roll] ❌ 重roll异常:', error);
+    logger.info('phone','🎲 [重roll] ========== 重roll失败（系统异常）==========');
     rerollBtn.disabled = false;
     rerollBtn.textContent = originalText;
 
@@ -826,27 +826,27 @@ function updateDebugUI(popup, contactId) {
  * @param {string} newText - 新的文本
  */
 async function rollbackAndReparse(contactId, newText) {
-  logger.info('📝 [重新应用] ========== 开始重新应用 ==========');
-  logger.info('📝 [重新应用] 联系人:', contactId);
-  logger.debug('📝 [重新应用] 新文本长度:', newText.length);
+  logger.info('phone','📝 [重新应用] ========== 开始重新应用 ==========');
+  logger.info('phone','📝 [重新应用] 联系人:', contactId);
+  logger.debug('phone','📝 [重新应用] 新文本长度:', newText.length);
 
   // 步骤1：复用智能回退逻辑（删除AI消息，保留用户消息）
-  logger.info('📝 [重新应用] 步骤1：回退到快照');
+  logger.info('phone','📝 [重新应用] 步骤1：回退到快照');
   await rollbackToSnapshot(contactId);
-  logger.info('📝 [重新应用] 步骤1完成：回退成功');
+  logger.info('phone','📝 [重新应用] 步骤1完成：回退成功');
 
   // 步骤2：加载回退后的聊天历史（用于构建引用映射表）
   const chatHistory = await loadChatHistory(contactId);
-  logger.debug('📝 [重新应用] 回退后历史消息数:', chatHistory.length);
+  logger.debug('phone','📝 [重新应用] 回退后历史消息数:', chatHistory.length);
 
   // 步骤3：构建引用映射表（让引用消息能正确解析）
-  logger.info('📝 [重新应用] 步骤2：构建引用映射表并解析新文本');
+  logger.info('phone','📝 [重新应用] 步骤2：构建引用映射表并解析新文本');
   const messageNumberMap = buildMessageNumberMap(chatHistory);
-  logger.debug('📝 [重新应用] 映射表大小:', messageNumberMap.size);
+  logger.debug('phone','📝 [重新应用] 映射表大小:', messageNumberMap.size);
 
   // 步骤4：重新解析
   const parsed = await parseAIResponse(newText, contactId, messageNumberMap);
-  logger.debug('📝 [重新应用] 解析完成，共', parsed.length, '条消息');
+  logger.debug('phone','📝 [重新应用] 解析完成，共', parsed.length, '条消息');
 
   if (parsed.length === 0) {
     logger.warn('📝 [重新应用] 解析失败，没有找到有效消息');
@@ -854,29 +854,29 @@ async function rollbackAndReparse(contactId, newText) {
   }
 
   // 步骤5：重新保存和渲染
-  logger.info('📝 [重新应用] 步骤3：保存并渲染新消息');
+  logger.info('phone','📝 [重新应用] 步骤3：保存并渲染新消息');
   const contacts = await loadContacts();
   const contact = contacts.find(c => c.id === contactId);
 
   if (!contact) {
-    logger.error('📝 [重新应用] 联系人不存在:', contactId);
+    logger.error('phone','📝 [重新应用] 联系人不存在:', contactId);
     throw new Error('联系人不存在');
   }
 
   const page = findActiveChatPage(contactId);
   for (const msg of parsed) {
     await saveChatMessage(contactId, msg);
-    logger.debug('📝 [重新应用] 已保存消息:', msg.type, msg.id);
+    logger.debug('phone','📝 [重新应用] 已保存消息:', msg.type, msg.id);
 
     if (page) {
       const { appendMessageToChat } = await import('./message-chat-ui.js');
       await appendMessageToChat(page, msg, contact, contactId);
-      logger.debug('📝 [重新应用] 已渲染消息:', msg.id);
+      logger.debug('phone','📝 [重新应用] 已渲染消息:', msg.id);
     }
   }
 
-  logger.info('📝 [重新应用] 步骤3完成：已保存和渲染', parsed.length, '条消息');
-  logger.info('📝 [重新应用] ========== 重新应用成功 ==========');
+  logger.info('phone','📝 [重新应用] 步骤3完成：已保存和渲染', parsed.length, '条消息');
+  logger.info('phone','📝 [重新应用] ========== 重新应用成功 ==========');
 }
 
 /**
@@ -900,40 +900,40 @@ async function rollbackToSnapshot(contactId) {
 
   const { snapshot } = state;
 
-  logger.info('🔄 [重roll回退] ========== 开始回退 ==========');
-  logger.info('🔄 [重roll回退] 联系人:', contactId);
-  logger.info('🔄 [重roll回退] 快照点消息数:', snapshot.messageCount);
+  logger.info('phone','🔄 [重roll回退] ========== 开始回退 ==========');
+  logger.info('phone','🔄 [重roll回退] 联系人:', contactId);
+  logger.info('phone','🔄 [重roll回退] 快照点消息数:', snapshot.messageCount);
 
   // ========================================
   // 步骤1：回退数据层（只删除AI消息，保留用户消息）
   // ========================================
   const chatHistory = await loadChatHistory(contactId);
-  logger.debug('🔄 [回退前] 数据层消息总数:', chatHistory.length);
+  logger.debug('phone','🔄 [回退前] 数据层消息总数:', chatHistory.length);
 
   // 提取快照后的消息
   const beforeSnapshot = chatHistory.slice(0, snapshot.messageCount);
   const afterSnapshot = chatHistory.slice(snapshot.messageCount);
 
-  logger.debug('🔄 [回退前] 快照前消息:', beforeSnapshot.length, '快照后消息:', afterSnapshot.length);
+  logger.debug('phone','🔄 [回退前] 快照前消息:', beforeSnapshot.length, '快照后消息:', afterSnapshot.length);
 
   // 统计快照后的消息类型
   const afterAI = afterSnapshot.filter(msg => msg.sender === 'contact');
   const afterUser = afterSnapshot.filter(msg => msg.sender === 'user');
   const afterOther = afterSnapshot.filter(msg => msg.sender !== 'contact' && msg.sender !== 'user');
 
-  logger.info('🔄 [快照后消息] AI消息:', afterAI.length, '用户消息:', afterUser.length, '其他消息:', afterOther.length);
+  logger.info('phone','🔄 [快照后消息] AI消息:', afterAI.length, '用户消息:', afterUser.length, '其他消息:', afterOther.length);
 
   // 记录要删除的AI消息ID
   const deletedAIIds = afterAI.map(msg => msg.id || '(无ID)');
-  logger.info('🔄 [即将删除] AI消息ID:', deletedAIIds.join(', ') || '(无)');
+  logger.info('phone','🔄 [即将删除] AI消息ID:', deletedAIIds.join(', ') || '(无)');
 
   // 保留的用户消息ID
   const keepUserIds = afterUser.map(msg => msg.id || '(无ID)');
-  logger.info('🔄 [保留] 用户消息ID:', keepUserIds.join(', ') || '(无)');
+  logger.info('phone','🔄 [保留] 用户消息ID:', keepUserIds.join(', ') || '(无)');
 
   // 重新组装：快照前 + 快照后的用户消息
   const newHistory = [...beforeSnapshot, ...afterUser];
-  logger.debug('🔄 [回退后] 数据层消息总数:', newHistory.length, '(删除了', chatHistory.length - newHistory.length, '条AI消息)');
+  logger.debug('phone','🔄 [回退后] 数据层消息总数:', newHistory.length, '(删除了', chatHistory.length - newHistory.length, '条AI消息)');
 
   // 保存回退后的历史
   const { saveChatHistory } = await import('./message-chat-data.js');
@@ -947,7 +947,7 @@ async function rollbackToSnapshot(contactId) {
     const chatContent = page.querySelector('.chat-content');
     const allMessages = Array.from(chatContent.querySelectorAll('.chat-msg'));
 
-    logger.debug('🔄 [回退前] DOM消息总数:', allMessages.length);
+    logger.debug('phone','🔄 [回退前] DOM消息总数:', allMessages.length);
 
     let deletedDOMCount = 0;
     const deletedDOMIds = [];
@@ -958,15 +958,15 @@ async function rollbackToSnapshot(contactId) {
 
       // 如果消息ID在要删除的AI消息列表中，删除它
       if (msgId && deletedAIIds.includes(msgId)) {
-        logger.debug('🔄 [删除DOM] 消息ID:', msgId);
+        logger.debug('phone','🔄 [删除DOM] 消息ID:', msgId);
         msgElement.remove();
         deletedDOMCount++;
         deletedDOMIds.push(msgId);
       }
     });
 
-    logger.info('🔄 [回退后] DOM删除数量:', deletedDOMCount, '删除的ID:', deletedDOMIds.join(', ') || '(无)');
-    logger.debug('🔄 [回退后] DOM剩余消息:', chatContent.querySelectorAll('.chat-msg').length);
+    logger.info('phone','🔄 [回退后] DOM删除数量:', deletedDOMCount, '删除的ID:', deletedDOMIds.join(', ') || '(无)');
+    logger.debug('phone','🔄 [回退后] DOM剩余消息:', chatContent.querySelectorAll('.chat-msg').length);
   } else {
     logger.warn('🔄 [警告] 未找到聊天页面，跳过DOM回退');
   }
@@ -978,7 +978,7 @@ async function rollbackToSnapshot(contactId) {
   const phoneSystem = getPhoneSystem();
   if (phoneSystem && phoneSystem.api) {
     phoneSystem.api.resetRenderedState(contactId);
-    logger.info('🔄 [清除记录] PhoneAPI渲染记录已重置');
+    logger.info('phone','🔄 [清除记录] PhoneAPI渲染记录已重置');
   } else {
     logger.warn('🔄 [警告] PhoneAPI未初始化，跳过渲染记录清除');
   }
@@ -986,19 +986,19 @@ async function rollbackToSnapshot(contactId) {
   // ========================================
   // 步骤4：执行所有注册的回退处理器（约定计划、个签、空间消息等）
   // ========================================
-  logger.info('🔄 [统一回退] 开始执行所有回退处理器');
+  logger.info('phone','🔄 [统一回退] 开始执行所有回退处理器');
 
   try {
     const { executeRollbackHandlers } = await import('./message-rollback-manager.js');
     const result = await executeRollbackHandlers(contactId, afterAI);
 
-    logger.info('🔄 [统一回退] 回退处理器执行完成:', result.success, '成功', result.failed, '失败', '共', result.total, '个');
+    logger.info('phone','🔄 [统一回退] 回退处理器执行完成:', result.success, '成功', result.failed, '失败', '共', result.total, '个');
   } catch (error) {
-    logger.error('🔄 [统一回退] 执行回退处理器失败:', error);
+    logger.error('phone','🔄 [统一回退] 执行回退处理器失败:', error);
     // 不影响主流程，继续执行
   }
 
-  logger.info('🔄 [重roll回退] ========== 回退完成 ==========');
+  logger.info('phone','🔄 [重roll回退] ========== 回退完成 ==========');
 }
 
 /**
@@ -1040,7 +1040,7 @@ function buildMessageNumberMap(chatHistory) {
     }
   }
 
-  logger.debug('[Debug.buildMessageNumberMap] 构建映射表完成，共', messageNumberMap.size, '条消息');
+  logger.debug('phone','[Debug.buildMessageNumberMap] 构建映射表完成，共', messageNumberMap.size, '条消息');
   return messageNumberMap;
 }
 

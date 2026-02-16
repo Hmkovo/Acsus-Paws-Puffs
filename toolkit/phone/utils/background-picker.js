@@ -13,7 +13,7 @@ import { getRequestHeaders } from '../../../../../../../script.js';
  * @returns {Promise<Array<string>>} 背景图URL数组
  */
 export async function getSystemBackgrounds() {
-  logger.debug('[BackgroundPicker] 获取系统背景列表');
+  logger.debug('phone','[BackgroundPicker] 获取系统背景列表');
 
   try {
     const response = await fetch('/api/backgrounds/all', {
@@ -24,14 +24,14 @@ export async function getSystemBackgrounds() {
 
     if (response.ok) {
       const { images } = await response.json();
-      logger.info('[BackgroundPicker] 获取到系统背景:', images.length, '个');
+      logger.info('phone','[BackgroundPicker] 获取到系统背景:', images.length, '个');
       return images;
     } else {
-      logger.error('[BackgroundPicker] 获取背景失败:', response.status);
+      logger.error('phone','[BackgroundPicker] 获取背景失败:', response.status);
       return [];
     }
   } catch (error) {
-    logger.error('[BackgroundPicker] 获取背景异常:', error);
+    logger.error('phone','[BackgroundPicker] 获取背景异常:', error);
     return [];
   }
 }
@@ -48,7 +48,7 @@ export async function getSystemBackgrounds() {
  * @returns {Promise<string|null>} 用户选择的背景URL，或 null（取消）
  */
 export async function showBackgroundPicker(backgrounds) {
-  logger.debug('[BackgroundPicker] 显示背景选择器，共', backgrounds.length, '个背景');
+  logger.debug('phone','[BackgroundPicker] 显示背景选择器，共', backgrounds.length, '个背景');
 
   return new Promise((resolve) => {
     // 创建弹窗HTML
@@ -89,7 +89,7 @@ export async function showBackgroundPicker(backgrounds) {
     const resetBtn = overlay.querySelector('.contact-bg-picker-reset');
 
     const closePicker = () => {
-      logger.debug('[BackgroundPicker] 用户取消选择');
+      logger.debug('phone','[BackgroundPicker] 用户取消选择');
       overlay.remove();
       resolve(null);
     };
@@ -100,7 +100,7 @@ export async function showBackgroundPicker(backgrounds) {
 
     // 恢复默认（白色背景）
     resetBtn.addEventListener('click', () => {
-      logger.info('[BackgroundPicker] 用户选择恢复默认背景');
+      logger.info('phone','[BackgroundPicker] 用户选择恢复默认背景');
       overlay.remove();
       resolve(''); // 空字符串表示恢复默认
     });
@@ -112,7 +112,7 @@ export async function showBackgroundPicker(backgrounds) {
         const htmlItem = /** @type {HTMLElement} */ (item);
         const bgUrl = htmlItem.dataset.url;
         const bgName = htmlItem.dataset.bg;
-        logger.info('[BackgroundPicker] 用户选择背景:', bgName);
+        logger.info('phone','[BackgroundPicker] 用户选择背景:', bgName);
         overlay.remove();
         resolve(bgUrl);
       });

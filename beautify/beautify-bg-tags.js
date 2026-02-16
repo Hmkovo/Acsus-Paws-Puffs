@@ -46,12 +46,12 @@ let bgTabsList = null;
  * @export
  */
 export function initBgTagManager() {
-  logger.info('[BgTagManager] 开始初始化...');
+  logger.info('beautify', '[BgTagManager] 开始初始化...');
 
   // 检查是否已启用
   const enabled = extension_settings[EXT_ID]?.beautify?.bgTagManagerEnabled;
   if (!enabled) {
-    logger.info('[BgTagManager] 功能未启用，跳过初始化');
+    logger.info('beautify', '[BgTagManager] 功能未启用，跳过初始化');
     return;
   }
 
@@ -99,7 +99,7 @@ function enableBgTagManager() {
   // 监听抽屉打开事件
   document.body.addEventListener('click', handleBgDrawerToggle);
 
-  logger.info('[BgTagManager] 功能已启用');
+  logger.info('beautify', '[BgTagManager] 功能已启用');
 }
 
 /**
@@ -123,7 +123,7 @@ function disableBgTagManager() {
   // 清除筛选
   clearTagFilter();
 
-  logger.info('[BgTagManager] 功能已禁用');
+  logger.info('beautify', '[BgTagManager] 功能已禁用');
 }
 
 /**
@@ -134,7 +134,7 @@ function handleBgDrawerToggle(e) {
   // 检查是否点击了背景图按钮
   const bgButton = e.target.closest('#backgrounds-button, #backgrounds-drawer-toggle, #backgrounds, [data-drawer="Backgrounds"]');
   if (bgButton) {
-    logger.debug('[BgTagManager] 检测到背景图按钮点击');
+    logger.debug('beautify', '[BgTagManager] 检测到背景图按钮点击');
     // 延迟检查，因为抽屉打开有动画
     setTimeout(() => {
       attemptAddBgTagButton();
@@ -151,17 +151,17 @@ function attemptAddBgTagButton() {
   // 在搜索栏下方添加按钮和标签
   const bgHeaderRow2 = document.querySelector('#Backgrounds .bg-header-row-2');
   if (bgHeaderRow2) {
-    logger.info('[BgTagManager] 找到搜索栏区域，添加按钮和标签...');
+    logger.info('beautify', '[BgTagManager] 找到搜索栏区域，添加按钮和标签...');
 
     // 渲染标签到搜索栏下方（会自动创建新的一行）
     renderBgTagsToHeader(bgHeaderRow2);
 
     bgTagButtonAdded = true;
-    logger.info('[BgTagManager] 背景图标签按钮和标签已添加');
+    logger.info('beautify', '[BgTagManager] 背景图标签按钮和标签已添加');
     return;
   }
 
-  logger.debug('[BgTagManager] 未找到搜索栏区域');
+  logger.debug('beautify', '[BgTagManager] 未找到搜索栏区域');
 }
 
 /**
@@ -221,13 +221,13 @@ function renderBgTagsToHeader(headerRow2) {
     });
 
     tagRow.appendChild(tagElement);
-    logger.debug('[BgTagManager] 标签已渲染:', tag.name);
+    logger.debug('beautify', '[BgTagManager] 标签已渲染:', tag.name);
   });
 
   // 把创建按钮移到标签行
   addTempTestButtonToRow(tagRow);
 
-  logger.info('[BgTagManager] 标签渲染完成:', tags.length, '个标签');
+  logger.info('beautify', '[BgTagManager] 标签渲染完成:', tags.length, '个标签');
 }
 
 /**
@@ -273,7 +273,7 @@ function openTagManagerPopup() {
   import('./beautify-popup.js').then(({ openTagManagerPopup: openPopup }) => {
     openPopup();
   }).catch(error => {
-    logger.error('[BgTagManager] 打开弹窗失败:', error);
+    logger.error('beautify', '[BgTagManager] 打开弹窗失败:', error);
   });
 }
 
@@ -289,7 +289,7 @@ function clearTagFilter() {
   // 清除筛选状态
   window._bgTagFilterActive = false;
   window._bgTagFilterTagId = null;
-  logger.debug('[BgTagManager] 已清除筛选');
+  logger.debug('beautify', '[BgTagManager] 已清除筛选');
 }
 
 /**
@@ -320,7 +320,7 @@ function filterBgByTag(tag) {
   window._bgTagFilterActive = true;
   window._bgTagFilterTagId = tag.id;
 
-  logger.info('[BgTagManager] 已筛选标签:', tag.name, '共', tag.backgrounds.length, '张');
+  logger.info('beautify', '[BgTagManager] 已筛选标签:', tag.name, '共', tag.backgrounds.length, '张');
 }
 
 /**
@@ -399,7 +399,7 @@ export function createBgTag(tagData) {
     renderBgTagsToHeader(row2);
   }
   toastr.success(`标签 "${tagData.name}" 创建成功`);
-  logger.info('[BgTagManager] 新标签已创建:', newTag);
+  logger.info('beautify', '[BgTagManager] 新标签已创建:', newTag);
 }
 
 /**
@@ -428,7 +428,7 @@ export function updateBgTag(index, tagData) {
     renderBgTagsToHeader(row2);
   }
   toastr.success(`标签 "${tagData.name}" 已更新`);
-  logger.info('[BgTagManager] 标签已更新:', tags[index]);
+  logger.info('beautify', '[BgTagManager] 标签已更新:', tags[index]);
 }
 
 /**
@@ -462,7 +462,7 @@ export async function deleteBgTag(index) {
           renderBgTagsToHeader(row2);
         }
         toastr.success(`标签 "${tag.name}" 已删除`);
-        logger.info('[BgTagManager] 标签已删除:', tag);
+        logger.info('beautify', '[BgTagManager] 标签已删除:', tag);
       },
     }
   );

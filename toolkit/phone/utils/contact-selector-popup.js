@@ -41,7 +41,7 @@ export async function showContactSelectorPopup(options = {}) {
     title = '选择联系人'
   } = options;
 
-  logger.debug('[ContactSelector] 显示联系人选择器', { multiple, exclude });
+  logger.debug('phone','[ContactSelector] 显示联系人选择器', { multiple, exclude });
 
   // 加载联系人列表
   const allContacts = await loadContacts();
@@ -80,7 +80,7 @@ export async function showContactSelectorPopup(options = {}) {
             return 'prevent'; // 阻止关闭
           }
 
-          logger.info('[ContactSelector] 选中联系人:', selectedIds);
+          logger.info('phone','[ContactSelector] 选中联系人:', selectedIds);
           return selectedIds;
         }
 
@@ -231,7 +231,7 @@ function bindContactPickerEvents(overlay, multiple) {
  * @param {HTMLElement} listContainer - 列表容器
  */
 async function handleContactPickerSearch(searchKeyword, listContainer) {
-  logger.debug('[ContactSelector] 搜索:', searchKeyword || '(全部)');
+  logger.debug('phone','[ContactSelector] 搜索:', searchKeyword || '(全部)');
 
   // 重新加载联系人列表
   const allContacts = await loadContacts();

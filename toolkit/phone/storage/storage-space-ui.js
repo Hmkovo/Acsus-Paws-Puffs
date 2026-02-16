@@ -17,7 +17,7 @@ import { hidePage } from '../phone-main-ui.js';
  * @returns {Promise<DocumentFragment>} 页面内容片段
  */
 export async function renderStorageSpace() {
-    logger.info('[StorageSpace] 开始渲染存储空间页面');
+    logger.info('phone','[StorageSpace] 开始渲染存储空间页面');
 
     const fragment = document.createDocumentFragment();
 
@@ -72,7 +72,7 @@ export async function renderStorageSpace() {
 
     fragment.appendChild(container);
 
-    logger.info('[StorageSpace] 页面渲染完成');
+    logger.info('phone','[StorageSpace] 页面渲染完成');
     return fragment;
 }
 
@@ -86,7 +86,7 @@ function bindEvents(page) {
     const backBtn = page.querySelector('.storage-space-back-btn');
     if (backBtn) {
         backBtn.addEventListener('click', () => {
-            logger.info('[StorageSpace] 点击返回');
+            logger.info('phone','[StorageSpace] 点击返回');
             const overlayElement = document.querySelector('.phone-overlay');
             if (overlayElement) {
                 hidePage(overlayElement, 'storage-space');
@@ -98,7 +98,7 @@ function bindEvents(page) {
     const imageManageLink = page.querySelector('#storage-image-manage-link');
     if (imageManageLink) {
         imageManageLink.addEventListener('click', async () => {
-            logger.info('[StorageSpace] 打开图片管理');
+            logger.info('phone','[StorageSpace] 打开图片管理');
             const overlayElement = document.querySelector('.phone-overlay');
             if (overlayElement) {
                 const { showPage } = await import('../phone-main-ui.js');

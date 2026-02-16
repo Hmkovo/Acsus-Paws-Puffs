@@ -17,7 +17,7 @@ import { getPhoneSystem } from '../phone-system.js';
  * @returns {Promise<HTMLElement>} 页面元素
  */
 export async function renderAPISettings(params) {
-  logger.debug('[APISettingsUI] 渲染API设置页面');
+  logger.debug('phone','[APISettingsUI] 渲染API设置页面');
 
   // 创建页面容器（不要添加到DOM，由showPage统一管理）
   const page = document.createElement('div');
@@ -31,7 +31,7 @@ export async function renderAPISettings(params) {
   const backBtn = page.querySelector('.api-settings-back-btn');
   if (backBtn) {
     backBtn.addEventListener('click', async () => {
-      logger.debug('[APISettingsUI] 点击返回按钮');
+      logger.debug('phone','[APISettingsUI] 点击返回按钮');
       const { hidePage } = await import('../phone-main-ui.js');
       const overlay = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
       if (overlay) {
@@ -47,7 +47,7 @@ export async function renderAPISettings(params) {
   });
   apiConfig.bindApiSettingsEvents();
 
-  logger.info('[APISettingsUI] API设置页面渲染完成');
+  logger.info('phone','[APISettingsUI] API设置页面渲染完成');
 
   return page;  // ✅ 返回页面元素
 }

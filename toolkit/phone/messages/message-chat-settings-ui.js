@@ -23,7 +23,7 @@ import { getChatSendSettings } from './message-chat-data.js';
  */
 export async function renderChatSettings(params) {
   const { contactId } = params;
-  logger.debug('[ChatSettings] 渲染聊天设置页:', contactId);
+  logger.debug('phone','[ChatSettings] 渲染聊天设置页:', contactId);
 
   try {
     // 加载联系人数据
@@ -31,7 +31,7 @@ export async function renderChatSettings(params) {
     const contact = contacts.find(c => c.id === contactId);
 
     if (!contact) {
-      logger.warn('[ChatSettings] 未找到联系人:', contactId);
+      logger.warn('phone','[ChatSettings] 未找到联系人:', contactId);
       return createErrorView();
     }
 
@@ -58,10 +58,10 @@ export async function renderChatSettings(params) {
 
     fragment.appendChild(container);
 
-    logger.info('[ChatSettings] 聊天设置页渲染完成:', contact.name);
+    logger.info('phone','[ChatSettings] 聊天设置页渲染完成:', contact.name);
     return fragment;
   } catch (error) {
-    logger.error('[ChatSettings] 渲染聊天设置页失败:', error);
+    logger.error('phone','[ChatSettings] 渲染聊天设置页失败:', error);
     return createErrorView();
   }
 }
@@ -115,7 +115,7 @@ function createContactCard(contact) {
     // 防止重复触发
     e.stopPropagation();
 
-    logger.info('[ChatSettings] 点击联系人卡片，跳转到角色个人页:', contact.id);
+    logger.info('phone','[ChatSettings] 点击联系人卡片，跳转到角色个人页:', contact.id);
     const overlay = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
     const { showPage } = await import('../phone-main-ui.js');
     showPage(overlay, 'contact-profile', { contactId: contact.id });
@@ -359,7 +359,7 @@ function bindSettingsEvents(list, contact) {
  * 处理返回
  */
 function handleBack() {
-  logger.debug('[ChatSettings] 返回上一页');
+  logger.debug('phone','[ChatSettings] 返回上一页');
   const overlay = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
   const pageName = 'chat-settings';
   import('../phone-main-ui.js').then(({ hidePage }) => {
@@ -376,7 +376,7 @@ function handleBack() {
  * @param {Object} contact - 联系人对象
  */
 async function handleCharacterPromptSettings(contact) {
-  logger.info('[ChatSettings] 打开角色提示词设置:', contact.name);
+  logger.info('phone','[ChatSettings] 打开角色提示词设置:', contact.name);
 
   const { showPage } = await import('../phone-main-ui.js');
   const overlay = document.querySelector('.phone-overlay');
@@ -392,7 +392,7 @@ async function handleCharacterPromptSettings(contact) {
  * @param {Object} contact - 联系人对象
  */
 async function handleMessageSendCustom(contact) {
-  logger.info('[ChatSettings] 打开消息发送管理:', contact.name);
+  logger.info('phone','[ChatSettings] 打开消息发送管理:', contact.name);
 
   const { showPage } = await import('../phone-main-ui.js');
   const overlay = document.querySelector('.phone-overlay');
@@ -410,7 +410,7 @@ async function handleMessageSendCustom(contact) {
  * @param {number} value - 设置值
  */
 async function handleUpdateSendSettings(contact, key, value) {
-  logger.info('[ChatSettings] 更新发送设置:', contact.name, key, value);
+  logger.info('phone','[ChatSettings] 更新发送设置:', contact.name, key, value);
 
   const { updateChatSendSettings } = await import('./message-chat-data.js');
   await updateChatSendSettings(contact.id, { [key]: value });
@@ -429,7 +429,7 @@ async function handleUpdateSendSettings(contact, key, value) {
  * @param {Object} contact - 联系人对象
  */
 function handleSearchChat(contact) {
-  logger.info('[ChatSettings] 查找聊天记录（功能待实现）:', contact.name);
+  logger.info('phone','[ChatSettings] 查找聊天记录（功能待实现）:', contact.name);
   // TODO: 跳转到查找聊天记录页面
 }
 
@@ -444,7 +444,7 @@ function handleSearchChat(contact) {
  * 修改联系人的置顶状态，保存到数据库，并调用局部更新函数移动消息列表中的位置。
  */
 async function handleToggleTop(contact, checked) {
-  logger.info('[ChatSettings] 设为置顶:', contact.name, checked);
+  logger.info('phone','[ChatSettings] 设为置顶:', contact.name, checked);
 
   // 修改联系人数据
   contact.isPinned = checked;
@@ -457,7 +457,7 @@ async function handleToggleTop(contact, checked) {
   const { updateMessageItemPosition } = await import('./message-list-ui.js');
   await updateMessageItemPosition(contact.id);
 
-  logger.info('[ChatSettings] 置顶状态已更新');
+  logger.info('phone','[ChatSettings] 置顶状态已更新');
 }
 
 /**
@@ -466,7 +466,7 @@ async function handleToggleTop(contact, checked) {
  * @param {Object} contact - 联系人对象
  */
 async function handleTransactions(contact) {
-  logger.debug('[ChatSettings] 打开往来记录页面:', contact.name);
+  logger.debug('phone','[ChatSettings] 打开往来记录页面:', contact.name);
 
   const { showPage } = await import('../phone-main-ui.js');
   const overlayElement = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
@@ -474,7 +474,7 @@ async function handleTransactions(contact) {
     await showPage(overlayElement, 'contact-transactions', { contactId: contact.id });
   }
 
-  logger.info('[ChatSettings] 已打开往来记录页面');
+  logger.info('phone','[ChatSettings] 已打开往来记录页面');
 }
 
 /**
@@ -483,7 +483,7 @@ async function handleTransactions(contact) {
  * @param {boolean} checked - 是否隐藏
  */
 function handleHideChat(contact, checked) {
-  logger.info('[ChatSettings] 隐藏会话:', contact.name, checked);
+  logger.info('phone','[ChatSettings] 隐藏会话:', contact.name, checked);
   // TODO: 实现隐藏会话逻辑（存储状态、更新列表显示）
 }
 
@@ -493,7 +493,7 @@ function handleHideChat(contact, checked) {
  * @param {boolean} checked - 是否免打扰
  */
 function handleMute(contact, checked) {
-  logger.info('[ChatSettings] 消息免打扰:', contact.name, checked);
+  logger.info('phone','[ChatSettings] 消息免打扰:', contact.name, checked);
   // TODO: 实现免打扰逻辑（存储状态、控制通知）
 }
 
@@ -507,7 +507,7 @@ function handleMute(contact, checked) {
  * @param {Object} contact - 联系人对象
  */
 async function handleNotificationSettings(contact) {
-  logger.info('[ChatSettings] 打开消息通知设置:', contact.name);
+  logger.info('phone','[ChatSettings] 打开消息通知设置:', contact.name);
 
   const { showPage } = await import('../phone-main-ui.js');
   const overlay = document.querySelector('.phone-overlay');
@@ -528,7 +528,7 @@ async function handleNotificationSettings(contact) {
  * @param {Object} contact - 联系人对象
  */
 async function handleCharacterCustomization(contact) {
-  logger.info('[ChatSettings] 打开角色专属装扮:', contact.name);
+  logger.info('phone','[ChatSettings] 打开角色专属装扮:', contact.name);
 
   const { showPage } = await import('../phone-main-ui.js');
   const overlay = document.querySelector('.phone-overlay');
@@ -549,7 +549,7 @@ async function handleCharacterCustomization(contact) {
  * @param {Object} contact - 联系人对象
  */
 async function handleSetBackground(contact) {
-  logger.info('[ChatSettings] 打开聊天背景设置:', contact.name);
+  logger.info('phone','[ChatSettings] 打开聊天背景设置:', contact.name);
 
   const { showPage } = await import('../phone-main-ui.js');
   const overlay = document.querySelector('.phone-overlay');
@@ -571,7 +571,7 @@ async function handleSetBackground(contact) {
  * @param {Object} contact - 联系人对象
  */
 async function handleDeleteHistory(contact) {
-  logger.info('[ChatSettings] 删除聊天记录:', contact.name);
+  logger.info('phone','[ChatSettings] 删除聊天记录:', contact.name);
 
   const { showConfirmPopup } = await import('../utils/popup-helper.js');
   const { getContactDisplayName } = await import('../utils/contact-display-helper.js');
@@ -586,7 +586,7 @@ async function handleDeleteHistory(contact) {
   );
 
   if (!confirmed) {
-    logger.debug('[ChatSettings] 用户取消删除');
+    logger.debug('phone','[ChatSettings] 用户取消删除');
     return;
   }
 
@@ -607,7 +607,7 @@ async function handleDeleteHistory(contact) {
   const chatPage = overlay.querySelector(`#${chatPageId}`);
 
   if (chatPage) {
-    logger.debug('[ChatSettings] 销毁聊天页:', contact.id);
+    logger.debug('phone','[ChatSettings] 销毁聊天页:', contact.id);
 
     // 1. 如果聊天页正在显示，先关闭
     if (chatPage.classList.contains('active')) {
@@ -630,7 +630,7 @@ async function handleDeleteHistory(contact) {
   const { showSuccessToast } = await import('../ui-components/toast-notification.js');
   showSuccessToast('已删除聊天记录');
 
-  logger.info('[ChatSettings] 删除聊天记录完成:', contact.id);
+  logger.info('phone','[ChatSettings] 删除聊天记录完成:', contact.id);
 }
 
 /**

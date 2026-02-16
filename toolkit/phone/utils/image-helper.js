@@ -25,7 +25,7 @@ import { saveImage } from '../storage/image-data.js';
  * console.log('压缩后大小:', compressed.size);
  */
 export async function compressImage(file, maxSizeKB = 200) {
-    logger.debug('[ImageHelper] 开始压缩图片:', file.name, `原大小: ${(file.size / 1024).toFixed(2)}KB`);
+    logger.debug('phone','[ImageHelper] 开始压缩图片:', file.name, `原大小: ${(file.size / 1024).toFixed(2)}KB`);
 
     try {
         // 读取原始图片
@@ -34,7 +34,7 @@ export async function compressImage(file, maxSizeKB = 200) {
 
         // 如果原图已经够小，直接返回
         if (originalSize <= maxSizeKB * 1024) {
-            logger.debug('[ImageHelper] 图片无需压缩');
+            logger.debug('phone','[ImageHelper] 图片无需压缩');
             return {
                 base64: originalBase64,
                 size: originalSize
@@ -71,11 +71,11 @@ export async function compressImage(file, maxSizeKB = 200) {
             compressed = canvas.toDataURL('image/jpeg', quality);
             const compressedSize = Math.floor((compressed.length * 0.75));
 
-            logger.debug(`[ImageHelper] 压缩尝试 ${i + 1}: ${targetWidth}x${targetHeight}, 质量${quality}, 大小${(compressedSize / 1024).toFixed(2)}KB`);
+            logger.debug('phone',`[ImageHelper] 压缩尝试 ${i + 1}: ${targetWidth}x${targetHeight}, 质量${quality}, 大小${(compressedSize / 1024).toFixed(2)}KB`);
 
             // 检查大小
             if (compressedSize <= maxSizeKB * 1024) {
-                logger.info('[ImageHelper] 压缩成功:', `${(compressedSize / 1024).toFixed(2)}KB`);
+                logger.info('phone','[ImageHelper] 压缩成功:', `${(compressedSize / 1024).toFixed(2)}KB`);
                 return {
                     base64: compressed,
                     size: compressedSize
@@ -92,20 +92,20 @@ export async function compressImage(file, maxSizeKB = 200) {
 
             // 防止过度压缩
             if (scale < 0.3) {
-                logger.warn('[ImageHelper] 达到最小缩放比例，停止压缩');
+                logger.warn('phone','[ImageHelper] 达到最小缩放比例，停止压缩');
                 break;
             }
         }
 
         // 如果仍然过大，返回最后一次压缩结果
-        logger.warn('[ImageHelper] 压缩后仍超过限制，返回最后结果');
+        logger.warn('phone','[ImageHelper] 压缩后仍超过限制，返回最后结果');
         return {
             base64: compressed,
             size: Math.floor((compressed.length * 0.75))
         };
 
     } catch (error) {
-        logger.error('[ImageHelper] 压缩失败:', error);
+        logger.error('phone','[ImageHelper] 压缩失败:', error);
         throw error;
     }
 }
@@ -127,7 +127,7 @@ export async function compressImage(file, maxSizeKB = 200) {
  * const url = await uploadImage(base64DataUrl, 'photo.jpg');
  */
 export async function uploadImage(base64Data, filename) {
-    logger.debug('[ImageHelper] 上传图片:', filename);
+    logger.debug('phone','[ImageHelper] 上传图片:', filename);
 
     try {
         // 导入酒馆的认证头函数
@@ -161,7 +161,7 @@ export async function uploadImage(base64Data, filename) {
 
         const result = await response.json();
         const imageUrl = result.path || result.url;
-        logger.info('[ImageHelper] 上传成功:', imageUrl);
+        logger.info('phone','[ImageHelper] 上传成功:', imageUrl);
         
         // 记录到图片管理列表（使用数据管理系统）
         const fileSize = Math.floor((pureBase64.length * 3) / 4);
@@ -176,7 +176,7 @@ export async function uploadImage(base64Data, filename) {
         return imageUrl;
 
     } catch (error) {
-        logger.error('[ImageHelper] 上传失败:', error);
+        logger.error('phone','[ImageHelper] 上传失败:', error);
         throw error;
     }
 }
@@ -187,7 +187,7 @@ export async function uploadImage(base64Data, filename) {
  * @param {string} imageUrl - 图片URL
  */
 export function showImagePreview(imageUrl) {
-    logger.debug('[ImageHelper] 显示图片预览:', imageUrl);
+    logger.debug('phone','[ImageHelper] 显示图片预览:', imageUrl);
 
     // 创建遮罩层
     const overlay = document.createElement('div');

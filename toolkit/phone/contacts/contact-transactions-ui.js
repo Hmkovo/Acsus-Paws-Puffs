@@ -30,7 +30,7 @@ let currentFilter = 'all';  // 'all' | 'transfer' | 'gift' | 'redpacket'
 export async function renderContactTransactions(params) {
   const { contactId, container } = params;
 
-  logger.debug('[TransactionsUI] 开始渲染往来记录页面:', contactId);
+  logger.debug('phone','[TransactionsUI] 开始渲染往来记录页面:', contactId);
 
   // 创建页面HTML
   container.innerHTML = createTransactionsHTML();
@@ -132,7 +132,7 @@ function bindEvents(container, contactId) {
   // 返回按钮
   const backBtn = container.querySelector('.transactions-btn-back');
   backBtn?.addEventListener('click', async () => {
-    logger.debug('[TransactionsUI] 点击返回按钮');
+    logger.debug('phone','[TransactionsUI] 点击返回按钮');
     const { hidePage } = await import('../phone-main-ui.js');
     const overlayElement = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
     if (overlayElement) {
@@ -170,9 +170,9 @@ async function loadAndRenderTransactionsData(container, contactId) {
     // 渲染记录列表
     await renderRecordsList(container, contactId, currentFilter);
 
-    logger.info('[TransactionsUI] 往来记录已加载，收到:', income, '转出:', expense);
+    logger.info('phone','[TransactionsUI] 往来记录已加载，收到:', income, '转出:', expense);
   } catch (error) {
-    logger.error('[TransactionsUI] 加载往来记录失败:', error.message);
+    logger.error('phone','[TransactionsUI] 加载往来记录失败:', error.message);
   }
 }
 
@@ -230,7 +230,7 @@ async function renderRecordsList(container, contactId, filter) {
   const itemsHTML = filteredTransactions.map(t => createRecordItem(t));
   listElement.innerHTML = itemsHTML.join('');
 
-  logger.debug('[TransactionsUI] 已渲染', filteredTransactions.length, '条记录，筛选:', filter);
+  logger.debug('phone','[TransactionsUI] 已渲染', filteredTransactions.length, '条记录，筛选:', filter);
 }
 
 /**
@@ -321,7 +321,7 @@ async function handleFilterChange(container, contactId, filter) {
   // 重新渲染列表
   await renderRecordsList(container, contactId, filter);
 
-  logger.debug('[TransactionsUI] 筛选切换:', filter);
+  logger.debug('phone','[TransactionsUI] 筛选切换:', filter);
 }
 
 /**
@@ -343,11 +343,11 @@ function bindWalletChangeListener(container, contactId) {
       return;
     }
     
-    logger.debug('[TransactionsUI] 收到钱包数据变化通知', meta);
+    logger.debug('phone','[TransactionsUI] 收到钱包数据变化通知', meta);
     
     // 检查页面是否还存在
     if (!document.contains(container)) {
-      logger.debug('[TransactionsUI] 页面已关闭，跳过刷新');
+      logger.debug('phone','[TransactionsUI] 页面已关闭，跳过刷新');
       return;
     }
     
@@ -358,7 +358,7 @@ function bindWalletChangeListener(container, contactId) {
     // 重新渲染列表
     await renderRecordsList(container, contactId, currentFilter);
     
-    logger.debug('[TransactionsUI] 往来记录已自动更新');
+    logger.debug('phone','[TransactionsUI] 往来记录已自动更新');
   });
   
   // 监听页面移除，自动清理订阅
@@ -368,7 +368,7 @@ function bindWalletChangeListener(container, contactId) {
         if (node === container) {
           stateManager.unsubscribeAll(pageId);
           observer.disconnect();
-          logger.debug('[TransactionsUI] 页面已关闭，已清理订阅');
+          logger.debug('phone','[TransactionsUI] 页面已关闭，已清理订阅');
           return;
         }
       }
@@ -379,7 +379,7 @@ function bindWalletChangeListener(container, contactId) {
     observer.observe(container.parentNode, { childList: true });
   }
   
-  logger.debug('[TransactionsUI] 已订阅钱包数据变化');
+  logger.debug('phone','[TransactionsUI] 已订阅钱包数据变化');
 }
 
 /**
@@ -405,7 +405,7 @@ function bindDeleteActions(container, contactId) {
       const transactionId = /** @type {HTMLElement} */ (deleteBtn).dataset.transactionId;
       if (!transactionId) return;
 
-      logger.debug('[TransactionsUI] 点击删除按钮，转账ID:', transactionId);
+      logger.debug('phone','[TransactionsUI] 点击删除按钮，转账ID:', transactionId);
       await handleDeleteTransaction(container, contactId, transactionId);
       return;
     }
@@ -413,7 +413,7 @@ function bindDeleteActions(container, contactId) {
     // 点击记录项显示删除按钮（不包括按钮区域）
     if (recordItem && !target.closest('.transactions-record-actions') && !target.closest('button')) {
       const transactionId = /** @type {HTMLElement} */ (recordItem).dataset.transactionId;
-      logger.debug('[TransactionsUI] 点击记录项，显示删除按钮 ID:', transactionId);
+      logger.debug('phone','[TransactionsUI] 点击记录项，显示删除按钮 ID:', transactionId);
 
       // 阻止事件冒泡
       e.stopPropagation();
@@ -421,13 +421,13 @@ function bindDeleteActions(container, contactId) {
       // 隐藏之前的按钮
       if (activeItem && activeItem !== recordItem) {
         activeItem.classList.remove('show-actions');
-        logger.debug('[TransactionsUI] 隐藏之前的删除按钮');
+        logger.debug('phone','[TransactionsUI] 隐藏之前的删除按钮');
       }
 
       // 显示当前记录的按钮
       recordItem.classList.add('show-actions');
       activeItem = recordItem;
-      logger.debug('[TransactionsUI] 显示当前删除按钮 ID:', transactionId);
+      logger.debug('phone','[TransactionsUI] 显示当前删除按钮 ID:', transactionId);
 
       // 手机端3秒后自动隐藏
       if (window.innerWidth <= 768) {
@@ -437,7 +437,7 @@ function bindDeleteActions(container, contactId) {
           if (activeItem === recordItem) {
             activeItem = null;
           }
-          logger.debug('[TransactionsUI] 手机端自动隐藏删除按钮 ID:', transactionId);
+          logger.debug('phone','[TransactionsUI] 手机端自动隐藏删除按钮 ID:', transactionId);
         }, 3000);
       }
     }
@@ -451,7 +451,7 @@ function bindDeleteActions(container, contactId) {
         activeItem.classList.remove('show-actions');
         activeItem = null;
         clearTimeout(hideTimer);
-        logger.debug('[TransactionsUI] 点击外部区域，隐藏删除按钮');
+        logger.debug('phone','[TransactionsUI] 点击外部区域，隐藏删除按钮');
       }
     }
   });
@@ -474,7 +474,7 @@ async function handleDeleteTransaction(container, contactId, transactionId) {
     // 查找转账记录（获取关联的消息ID）
     const transaction = await findTransactionById(transactionId);
     if (!transaction) {
-      logger.warn('[TransactionsUI] 转账记录不存在:', transactionId);
+      logger.warn('phone','[TransactionsUI] 转账记录不存在:', transactionId);
       return;
     }
 
@@ -490,7 +490,7 @@ async function handleDeleteTransaction(container, contactId, transactionId) {
     );
 
     if (!confirmed) {
-      logger.debug('[TransactionsUI] 用户取消删除');
+      logger.debug('phone','[TransactionsUI] 用户取消删除');
       return;
     }
 
@@ -501,7 +501,7 @@ async function handleDeleteTransaction(container, contactId, transactionId) {
       const beforeCount = chatHistory.length;
       const newHistory = chatHistory.filter(msg => msg.id !== transaction.messageId);
       await saveChatHistory(transaction.contactId, newHistory);
-      logger.debug('[TransactionsUI] 持久化数据已更新:', beforeCount, '→', newHistory.length);
+      logger.debug('phone','[TransactionsUI] 持久化数据已更新:', beforeCount, '→', newHistory.length);
 
       // 1.2 从DOM中删除（如果聊天页面正在显示）
       const chatPage = document.querySelector(`#page-chat-${transaction.contactId.replace(/\s+/g, '_')}`);
@@ -509,21 +509,21 @@ async function handleDeleteTransaction(container, contactId, transactionId) {
         const messageElement = chatPage.querySelector(`[data-msg-id="${transaction.messageId}"]`);
         if (messageElement) {
           messageElement.remove();
-          logger.debug('[TransactionsUI] 已从DOM删除转账消息:', transaction.messageId);
+          logger.debug('phone','[TransactionsUI] 已从DOM删除转账消息:', transaction.messageId);
         } else {
-          logger.debug('[TransactionsUI] DOM中未找到该消息（可能已滚动出视野）:', transaction.messageId);
+          logger.debug('phone','[TransactionsUI] DOM中未找到该消息（可能已滚动出视野）:', transaction.messageId);
         }
       } else {
-        logger.debug('[TransactionsUI] 聊天页面未打开，无需更新DOM');
+        logger.debug('phone','[TransactionsUI] 聊天页面未打开，无需更新DOM');
       }
 
-      logger.info('[TransactionsUI] 已删除关联的聊天消息:', transaction.messageId);
+      logger.info('phone','[TransactionsUI] 已删除关联的聊天消息:', transaction.messageId);
     }
 
     // 2. 删除转账记录
     const success = await deleteTransaction(transactionId);
     if (success) {
-      logger.info('[TransactionsUI] 转账记录已删除:', transactionId);
+      logger.info('phone','[TransactionsUI] 转账记录已删除:', transactionId);
       const toastr = window.toastr;
       if (toastr) {
         toastr.success('转账记录已删除');
@@ -532,7 +532,7 @@ async function handleDeleteTransaction(container, contactId, transactionId) {
 
     // 3. 重新渲染列表（由事件监听器自动触发）
   } catch (error) {
-    logger.error('[TransactionsUI] 删除转账记录失败:', error.message);
+    logger.error('phone','[TransactionsUI] 删除转账记录失败:', error.message);
     const toastr = window.toastr;
     if (toastr) {
       toastr.error('删除失败: ' + error.message);

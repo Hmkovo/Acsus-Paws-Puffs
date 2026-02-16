@@ -33,7 +33,7 @@ import { showSuccessToast, showWarningToast } from '../ui-components/toast-notif
  * @returns {Promise<HTMLElement>} 分组管理页面元素（.phone-page）
  */
 export async function renderGroupManagePage() {
-  logger.debug('[GroupManage] 开始渲染分组管理页面');
+  logger.debug('phone','[GroupManage] 开始渲染分组管理页面');
 
   const page = document.createElement('div');
   page.id = 'page-group-manage';
@@ -69,7 +69,7 @@ export async function renderGroupManagePage() {
   // 绑定事件
   bindGroupManageEvents(page);
 
-  logger.info('[GroupManage] 分组管理页面渲染完成，共', groups.length, '个分组');
+  logger.info('phone','[GroupManage] 分组管理页面渲染完成，共', groups.length, '个分组');
 
   return page;
 }
@@ -81,7 +81,7 @@ export async function renderGroupManagePage() {
  * @returns {Promise<string>} 分组列表HTML
  */
 async function renderGroupList(groups) {
-  logger.debug('[GroupManage] 渲染分组列表，共', groups.length, '个分组');
+  logger.debug('phone','[GroupManage] 渲染分组列表，共', groups.length, '个分组');
 
   // 按 order 排序
   const sortedGroups = groups.sort((a, b) => a.order - b.order);
@@ -105,12 +105,12 @@ async function renderGroupList(groups) {
  * @param {HTMLElement} pageElement - 分组管理页面元素
  */
 function bindGroupManageEvents(pageElement) {
-  logger.debug('[GroupManage] 绑定分组管理事件');
+  logger.debug('phone','[GroupManage] 绑定分组管理事件');
 
   // 返回按钮：返回联系人页面
   const backBtn = pageElement.querySelector('#group-manage-back');
   backBtn.addEventListener('click', () => {
-    logger.info('[GroupManage] 点击返回按钮');
+    logger.info('phone','[GroupManage] 点击返回按钮');
     closeGroupManagePage();
   });
 
@@ -147,7 +147,7 @@ function bindGroupManageEvents(pageElement) {
   // 拖拽排序事件
   bindDragSortEvents(/** @type {HTMLElement} */(listContainer));
 
-  logger.info('[GroupManage] 分组管理事件绑定完成');
+  logger.info('phone','[GroupManage] 分组管理事件绑定完成');
 }
 
 /**
@@ -157,7 +157,7 @@ function bindGroupManageEvents(pageElement) {
  * 弹出输入框，让用户输入新分组名称
  */
 async function handleAddGroup() {
-  logger.debug('[GroupManage] 开始添加分组');
+  logger.debug('phone','[GroupManage] 开始添加分组');
 
   const groupName = await showInputPopup(
     '添加分组',
@@ -170,7 +170,7 @@ async function handleAddGroup() {
   );
 
   if (!groupName || groupName.trim() === '') {
-    logger.debug('[GroupManage] 用户取消添加或输入为空');
+    logger.debug('phone','[GroupManage] 用户取消添加或输入为空');
     return;
   }
 
@@ -180,7 +180,7 @@ async function handleAddGroup() {
   const groups = await loadContactGroups();
   if (groups.some(g => g.name === trimmedName)) {
     showWarningToast('分组名称已存在');
-    logger.warn('[GroupManage] 分组名称重复:', trimmedName);
+    logger.warn('phone','[GroupManage] 分组名称重复:', trimmedName);
     return;
   }
 
@@ -194,7 +194,7 @@ async function handleAddGroup() {
 
   await saveContactGroup(newGroup);
 
-  logger.info('[GroupManage] 已添加分组:', trimmedName);
+  logger.info('phone','[GroupManage] 已添加分组:', trimmedName);
   showSuccessToast(`已添加分组"${trimmedName}"`);
 
   // 刷新列表
@@ -211,7 +211,7 @@ async function handleAddGroup() {
  * @param {string} currentName - 当前分组名称
  */
 async function handleEditGroupNamePopup(groupId, currentName) {
-  logger.debug('[GroupManage] 编辑分组名称（弹窗）:', groupId, currentName);
+  logger.debug('phone','[GroupManage] 编辑分组名称（弹窗）:', groupId, currentName);
 
   const newName = await showInputPopup(
     '编辑分组',
@@ -225,7 +225,7 @@ async function handleEditGroupNamePopup(groupId, currentName) {
 
   // 用户点击取消
   if (newName === null) {
-    logger.debug('[GroupManage] 用户取消编辑');
+    logger.debug('phone','[GroupManage] 用户取消编辑');
     return;
   }
 
@@ -234,7 +234,7 @@ async function handleEditGroupNamePopup(groupId, currentName) {
 
   // 如果名称没变，跳过
   if (finalName === currentName) {
-    logger.debug('[GroupManage] 分组名称未变化');
+    logger.debug('phone','[GroupManage] 分组名称未变化');
     return;
   }
 
@@ -242,21 +242,21 @@ async function handleEditGroupNamePopup(groupId, currentName) {
   const groups = await loadContactGroups();
   if (finalName !== '' && groups.some(g => g.id !== groupId && g.name === finalName)) {
     showWarningToast('分组名称已存在');
-    logger.warn('[GroupManage] 分组名称重复:', finalName);
+    logger.warn('phone','[GroupManage] 分组名称重复:', finalName);
     return;
   }
 
   // 更新分组名称
   const currentGroup = groups.find(g => g.id === groupId);
   if (!currentGroup) {
-    logger.error('[GroupManage] 找不到分组:', groupId);
+    logger.error('phone','[GroupManage] 找不到分组:', groupId);
     return;
   }
 
   currentGroup.name = finalName;
   await saveContactGroup(currentGroup);
 
-  logger.info('[GroupManage] 已更新分组名称:', finalName || '(空名称)');
+  logger.info('phone','[GroupManage] 已更新分组名称:', finalName || '(空名称)');
   showSuccessToast(finalName ? `已更新分组名称为"${finalName}"` : '已更新分组名称为空');
 
   // 刷新列表
@@ -272,19 +272,19 @@ async function handleEditGroupNamePopup(groupId, currentName) {
  * @param {string} groupId - 分组ID
  */
 async function handleDeleteGroup(groupId) {
-  logger.debug('[GroupManage] 请求删除分组:', groupId);
+  logger.debug('phone','[GroupManage] 请求删除分组:', groupId);
 
   const groups = await loadContactGroups();
   const group = groups.find(g => g.id === groupId);
 
   if (!group) {
-    logger.error('[GroupManage] 找不到分组:', groupId);
+    logger.error('phone','[GroupManage] 找不到分组:', groupId);
     return;
   }
 
   if (group.isDefault) {
     showWarningToast('默认分组不能删除');
-    logger.warn('[GroupManage] 尝试删除默认分组:', group.name);
+    logger.warn('phone','[GroupManage] 尝试删除默认分组:', group.name);
     return;
   }
 
@@ -300,14 +300,14 @@ async function handleDeleteGroup(groupId) {
   );
 
   if (!confirmed) {
-    logger.debug('[GroupManage] 用户取消删除');
+    logger.debug('phone','[GroupManage] 用户取消删除');
     return;
   }
 
   // 删除分组
   await deleteContactGroup(groupId);
 
-  logger.info('[GroupManage] 已删除分组:', group.name);
+  logger.info('phone','[GroupManage] 已删除分组:', group.name);
   showSuccessToast(`已删除分组"${group.name}"`);
 
   // 刷新列表
@@ -320,7 +320,7 @@ async function handleDeleteGroup(groupId) {
  * @param {HTMLElement} listContainer - 分组列表容器
  */
 function bindDragSortEvents(listContainer) {
-  logger.debug('[GroupManage] 绑定拖拽排序事件');
+  logger.debug('phone','[GroupManage] 绑定拖拽排序事件');
 
   let draggedItem = null;
 
@@ -329,7 +329,7 @@ function bindDragSortEvents(listContainer) {
     if (target.classList.contains('group-manage-item')) {
       draggedItem = target;
       target.style.opacity = '0.5';
-      logger.debug('[GroupManage] 开始拖动分组');
+      logger.debug('phone','[GroupManage] 开始拖动分组');
     }
   });
 
@@ -338,7 +338,7 @@ function bindDragSortEvents(listContainer) {
     if (target.classList.contains('group-manage-item')) {
       target.style.opacity = '1';
       draggedItem = null;
-      logger.debug('[GroupManage] 拖动结束');
+      logger.debug('phone','[GroupManage] 拖动结束');
     }
   });
 
@@ -359,7 +359,7 @@ function bindDragSortEvents(listContainer) {
 
   listContainer.addEventListener('drop', async (e) => {
     e.preventDefault();
-    logger.debug('[GroupManage] 拖动完成，保存新顺序');
+    logger.debug('phone','[GroupManage] 拖动完成，保存新顺序');
     await saveNewOrder(listContainer);
   });
 }
@@ -381,7 +381,7 @@ async function saveNewOrder(listContainer) {
 
   await updateGroupsOrder(newOrder);
 
-  logger.info('[GroupManage] 已保存新的分组顺序');
+  logger.info('phone','[GroupManage] 已保存新的分组顺序');
   showSuccessToast('分组顺序已更新');
 }
 
@@ -392,19 +392,19 @@ async function saveNewOrder(listContainer) {
  * 重新加载数据并更新列表DOM
  */
 async function refreshGroupList() {
-  logger.debug('[GroupManage] 刷新分组列表');
+  logger.debug('phone','[GroupManage] 刷新分组列表');
 
   const groups = await loadContactGroups();
   const listContainer = document.querySelector('#group-manage-list');
 
   if (!listContainer) {
-    logger.warn('[GroupManage] 找不到分组列表容器');
+    logger.warn('phone','[GroupManage] 找不到分组列表容器');
     return;
   }
 
   listContainer.innerHTML = await renderGroupList(groups);
 
-  logger.info('[GroupManage] 分组列表已刷新');
+  logger.info('phone','[GroupManage] 分组列表已刷新');
 }
 
 /**
@@ -414,7 +414,7 @@ async function refreshGroupList() {
  * 返回到联系人页面（使用统一的页面栈系统）
  */
 async function closeGroupManagePage() {
-  logger.debug('[GroupManage] 关闭分组管理页面');
+  logger.debug('phone','[GroupManage] 关闭分组管理页面');
 
   // 获取手机遮罩层元素
   const overlayElement = /** @type {HTMLElement} */ (document.querySelector('.phone-overlay'));
@@ -428,7 +428,7 @@ async function closeGroupManagePage() {
     overlayElement.dispatchEvent(event);
   }
 
-  logger.info('[GroupManage] 分组管理页面已关闭');
+  logger.info('phone','[GroupManage] 分组管理页面已关闭');
 }
 
 /**

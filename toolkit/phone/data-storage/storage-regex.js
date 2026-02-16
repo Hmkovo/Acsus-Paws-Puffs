@@ -60,7 +60,7 @@ export function saveContactRegexConfig(contactId, config) {
   extension_settings.acsusPawsPuffs.phone.contactRegex[contactId] = config;
   saveSettingsDebounced();
   
-  logger.debug('[RegexStorage] 正则配置已保存:', contactId);
+  logger.debug('phone','[RegexStorage] 正则配置已保存:', contactId);
 }
 
 /**
@@ -76,7 +76,7 @@ export function deleteContactRegexConfig(contactId) {
   delete extension_settings.acsusPawsPuffs.phone.contactRegex[contactId];
   saveSettingsDebounced();
   
-  logger.debug('[RegexStorage] 正则配置已删除:', contactId);
+  logger.debug('phone','[RegexStorage] 正则配置已删除:', contactId);
 }
 
 /**
@@ -95,7 +95,7 @@ export function deleteContactRegexConfig(contactId) {
  * 3. 读取预设正则（通过 PresetManager）
  */
 export async function syncContactRegex(contactId, selectedApiId = null, selectedPresetName = null) {
-  logger.info('[RegexStorage] 开始同步正则配置:', contactId);
+  logger.info('phone','[RegexStorage] 开始同步正则配置:', contactId);
   
   try {
     // 动态导入酒馆正则引擎
@@ -104,11 +104,11 @@ export async function syncContactRegex(contactId, selectedApiId = null, selected
     
     // 1. 读取全局正则
     const globalScripts = getScriptsByType(SCRIPT_TYPES.GLOBAL);
-    logger.debug('[RegexStorage] 全局正则脚本数量:', globalScripts.length);
+    logger.debug('phone','[RegexStorage] 全局正则脚本数量:', globalScripts.length);
     
     // 2. 读取角色正则（不需要切换角色，直接从 characters 数组读取）
     const scopedScripts = await getCharacterScopedScripts(contactId);
-    logger.debug('[RegexStorage] 角色正则脚本数量:', scopedScripts.length);
+    logger.debug('phone','[RegexStorage] 角色正则脚本数量:', scopedScripts.length);
     
     // 3. 读取预设正则（如果用户指定了预设）
     let presetScripts = [];
@@ -122,9 +122,9 @@ export async function syncContactRegex(contactId, selectedApiId = null, selected
           apiId: selectedApiId,
           presetName: selectedPresetName
         };
-        logger.debug('[RegexStorage] 预设正则脚本数量:', presetScripts.length);
+        logger.debug('phone','[RegexStorage] 预设正则脚本数量:', presetScripts.length);
       } else {
-        logger.warn('[RegexStorage] 找不到预设管理器:', selectedApiId);
+        logger.warn('phone','[RegexStorage] 找不到预设管理器:', selectedApiId);
       }
     }
     
@@ -142,13 +142,13 @@ export async function syncContactRegex(contactId, selectedApiId = null, selected
     // 保存配置
     saveContactRegexConfig(contactId, config);
     
-    logger.info('[RegexStorage] 同步完成，共', 
+    logger.info('phone','[RegexStorage] 同步完成，共', 
       globalScripts.length + scopedScripts.length + presetScripts.length, '个脚本');
     
     return config;
     
   } catch (error) {
-    logger.error('[RegexStorage] 同步失败:', error);
+    logger.error('phone','[RegexStorage] 同步失败:', error);
     throw new Error('同步正则配置失败：' + error.message);
   }
 }
@@ -176,7 +176,7 @@ async function getCharacterScopedScripts(contactId) {
     });
     
     if (!character) {
-      logger.warn('[RegexStorage] 未找到对应的角色:', charName);
+      logger.warn('phone','[RegexStorage] 未找到对应的角色:', charName);
       return [];
     }
     
@@ -184,14 +184,14 @@ async function getCharacterScopedScripts(contactId) {
     const scopedScripts = character.data?.extensions?.regex_scripts;
     
     if (!Array.isArray(scopedScripts)) {
-      logger.debug('[RegexStorage] 角色没有局部正则');
+      logger.debug('phone','[RegexStorage] 角色没有局部正则');
       return [];
     }
     
     return scopedScripts;
     
   } catch (error) {
-    logger.error('[RegexStorage] 获取角色正则失败:', error);
+    logger.error('phone','[RegexStorage] 获取角色正则失败:', error);
     return [];
   }
 }
@@ -211,7 +211,7 @@ export function applyContactRegex(text, contactId) {
   const config = getContactRegexConfig(contactId);
   
   if (!config || !config.scripts) {
-    logger.debug('[RegexStorage] 该角色没有正则配置，跳过处理:', contactId);
+    logger.debug('phone','[RegexStorage] 该角色没有正则配置，跳过处理:', contactId);
     return text;
   }
   
@@ -232,19 +232,19 @@ export function applyContactRegex(text, contactId) {
   );
   
   if (promptScripts.length === 0) {
-    logger.debug('[RegexStorage] 没有需要应用的正则脚本');
+    logger.debug('phone','[RegexStorage] 没有需要应用的正则脚本');
     return result;
   }
   
-  logger.debug('[RegexStorage] 应用', promptScripts.length, '个正则脚本');
-  logger.debug('[RegexStorage] 待应用脚本:', promptScripts.map(s => s.scriptName).join(', '));
+  logger.debug('phone','[RegexStorage] 应用', promptScripts.length, '个正则脚本');
+  logger.debug('phone','[RegexStorage] 待应用脚本:', promptScripts.map(s => s.scriptName).join(', '));
   
   // 应用每个脚本
   for (const script of promptScripts) {
     try {
       result = runSingleRegexScript(script, result);
     } catch (error) {
-      logger.error('[RegexStorage] 正则脚本执行失败:', script.scriptName, error);
+      logger.error('phone','[RegexStorage] 正则脚本执行失败:', script.scriptName, error);
     }
   }
   
@@ -271,7 +271,7 @@ function runSingleRegexScript(script, text) {
     const regex = regexFromString(script.findRegex);
     
     if (!regex) {
-      logger.warn('[RegexStorage] 无效的正则表达式:', script.scriptName, script.findRegex);
+      logger.warn('phone','[RegexStorage] 无效的正则表达式:', script.scriptName, script.findRegex);
       return text;
     }
     
@@ -282,7 +282,7 @@ function runSingleRegexScript(script, text) {
     // 执行替换
     let result = text.replace(regex, script.replaceString || '');
     
-    logger.debug(`[RegexStorage] 应用正则: ${script.scriptName}, 模式: ${script.findRegex.substring(0, 50)}..., 匹配次数: ${matchCount}`);
+    logger.debug('phone',`[RegexStorage] 应用正则: ${script.scriptName}, 模式: ${script.findRegex.substring(0, 50)}..., 匹配次数: ${matchCount}`);
     
     // 处理 trimStrings（移除多余空行）
     if (script.trimStrings && Array.isArray(script.trimStrings)) {
@@ -294,7 +294,7 @@ function runSingleRegexScript(script, text) {
     return result;
     
   } catch (error) {
-    logger.error('[RegexStorage] 正则表达式无效:', script.findRegex, error);
+    logger.error('phone','[RegexStorage] 正则表达式无效:', script.findRegex, error);
     return text;
   }
 }
