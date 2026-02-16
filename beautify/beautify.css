@@ -2103,6 +2103,7 @@ body.beautify-hover-highlight #chat .mes_text p:hover {
   cursor: pointer;
   font-size: 12px;
   transition: opacity 0.2s;
+  white-space: nowrap;
 }
 
 .beautify-popup-btn-small:hover {

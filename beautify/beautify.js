@@ -2952,17 +2952,54 @@ async function showSnapshotMenu(x, y) {
   const quickToggles = quickToggleData.getQuickTogglesWithState();
   const toggleGroups = toggleGroupData.getFloatingMenuGroups();
 
-  // 如果三个区域都为空，显示空状态
+  // 如果三个区域都为空，显示空状态或防窥按钮
   if (snapshots.length === 0 && quickToggles.length === 0 && toggleGroups.length === 0) {
     snapshotMenu = document.createElement('div');
     snapshotMenu.className = 'snapshot-floating-menu';
-    snapshotMenu.innerHTML = `
-            <div class="snapshot-menu-empty">
-                <i class="fa-solid fa-inbox"></i>
-                <span>暂无内容</span>
-            </div>
-        `;
+
+    let menuHtml = '';
+
+    // 防窥模式按钮（优先级高于"暂无内容"）
+    if (privacyModeEnabled) {
+      menuHtml = `
+        <div class="snapshot-menu-toggle privacy-mode-btn" id="snapshot-menu-privacy-btn">
+          <i class="fa-solid fa-eye-slash"></i>
+          <span class="menu-toggle-name">防窥</span>
+        </div>
+      `;
+    } else {
+      // 没有防窥时才显示"暂无内容"
+      menuHtml = `
+        <div class="snapshot-menu-empty">
+          <i class="fa-solid fa-inbox"></i>
+          <span>暂无内容</span>
+        </div>
+      `;
+    }
+
+    snapshotMenu.innerHTML = menuHtml;
     positionAndShowMenu(x, y);
+
+    // 绑定防窥模式按钮事件（空状态时也需要）
+    if (privacyModeEnabled) {
+      const privacyBtn = document.getElementById('snapshot-menu-privacy-btn');
+      if (privacyBtn) {
+        privacyBtn.addEventListener('click', () => {
+          logger.info('beautify', '[Beautify] 用户点击防窥按钮');
+          hideSnapshotMenu();
+          setTimeout(() => {
+            showPrivacyOverlay();
+          }, 100);
+        });
+      }
+    }
+
+    // 点击外部关闭菜单
+    setTimeout(() => {
+      document.addEventListener('click', handleOutsideClick);
+      document.addEventListener('pointerdown', handleOutsideClick);
+    }, 100);
+
     return;
   }
 
