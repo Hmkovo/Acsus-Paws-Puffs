@@ -1639,6 +1639,7 @@ select.compact {
   animation: snapshotMenuFadeIn 0.15s ease-out;
   transform-origin: center bottom;
   transform: scale(var(--snapshot-menu-scale));
+  user-select: none;
 }
 
 @keyframes snapshotMenuFadeIn {
