@@ -68,8 +68,8 @@ function createPopupDOM() {
                         <div class="beautify-privacy-text-presets">
                             <div class="beautify-privacy-presets-header">
                                 <label class="beautify-popup-label">预设文字</label>
-                                <button class="beautify-popup-btn-small" id="beautify-privacy-add-preset">
-                                    <i class="fa-solid fa-plus"></i> 添加当前
+                                <button class="beautify-popup-btn-small" id="beautify-privacy-add-preset" title="添加当前">
+                                    <i class="fa-solid fa-plus"></i>
                                 </button>
                             </div>
                             <div class="beautify-privacy-presets-list" id="beautify-privacy-presets-list">

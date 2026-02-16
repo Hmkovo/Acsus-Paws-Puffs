@@ -688,7 +688,7 @@ function createLayoutTabContent() {
                         <div class="beautify-popup-label">文字颜色（空=跟随主题）</div>
                         <div class="beautify-popup-color-wrapper">
                             <toolcool-color-picker id="beautify-info-color" color="${layout.infoColor || 'rgba(255,255,255,1)'}"></toolcool-color-picker>
-                            <button class="beautify-popup-btn-small" id="beautify-info-color-reset" title="重置为跟随主题">
+                            <button class="beautify-popup-btn-icon" id="beautify-info-color-reset" title="重置为跟随主题">
                                 <i class="fa-solid fa-rotate-left"></i>
                             </button>
                         </div>

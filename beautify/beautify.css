@@ -2090,24 +2090,25 @@ body.beautify-hover-highlight #chat .mes_text p:hover {
 }
 
 .beautify-popup-btn.active {
-  background: var(--theme-primary-color, #6c5ce7);
-  border-color: var(--theme-primary-color, #6c5ce7);
+  background: var(--theme-primary-color);
+  border-color: var(--theme-primary-color);
 }
 
 .beautify-popup-btn-small {
-  padding: 6px 12px;
-  background: var(--theme-primary-color, #6c5ce7);
-  border: none;
-  border-radius: 4px;
-  color: #fff;
+  padding: 0.2em 1em;
+  background: transparent;
+  border: 1px solid var(--beautify-popup-border);
+  border-radius: 0.3em;
+  color: var(--beautify-popup-text-muted);
   cursor: pointer;
   font-size: 12px;
-  transition: opacity 0.2s;
+  transition: all 0.2s;
   white-space: nowrap;
 }
 
 .beautify-popup-btn-small:hover {
-  opacity: 0.9;
+  border-color: var(--beautify-popup-primary);
+  color: var(--beautify-popup-text);
 }
 
 /* 颜色选择器包装 */

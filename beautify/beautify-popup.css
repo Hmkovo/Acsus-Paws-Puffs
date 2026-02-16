@@ -801,8 +801,8 @@
   --tool-cool-color-picker-btn-bg: var(--beautify-popup-hover);
 }
 
-/* 小按钮（重置等） */
-.beautify-popup-btn-small {
+/* 小图标按钮（重置等） */
+.beautify-popup-btn-icon {
   width: 1.8em;
   height: 1.8em;
   border: none;
@@ -817,7 +817,7 @@
   transition: all 0.15s;
 }
 
-.beautify-popup-btn-small:hover {
+.beautify-popup-btn-icon:hover {
   background: var(--beautify-popup-primary);
   color: white;
 }
