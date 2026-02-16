@@ -833,7 +833,8 @@
 }
 
 .beautify-bg-panel.active {
-  display: block;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 背景/装饰条头部行（启用开关 + 预览同一行） */
@@ -940,11 +941,12 @@
 .beautify-bg-source-panel,
 .beautify-deco-source-panel {
   display: none;
+  flex-direction: column;
 }
 
 .beautify-bg-source-panel.active,
 .beautify-deco-source-panel.active {
-  display: block;
+  display: flex;
 }
 
 /* 存档面板提示文字 */
@@ -972,12 +974,11 @@
   align-content: start;
 }
 
-/* 单个背景项（使用 padding-bottom 保持 16:9 比例） */
+/* 单个背景项（使用 padding-bottom 保持 16:9 比例，兼容性更好） */
 .beautify-bg-item {
   position: relative;
   width: 100%;
   padding-bottom: 56.25%;
-  /* 16:9 = 9/16 = 56.25% */
   border-radius: 0.35em;
   overflow: hidden;
   cursor: pointer;

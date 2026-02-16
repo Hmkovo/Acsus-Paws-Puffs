@@ -2396,59 +2396,7 @@ body.beautify-hover-highlight #chat .mes_text p:hover {
   display: block;
 }
 
-/* 背景网格 */
-.beautify-privacy-bg-grid,
-.beautify-privacy-saved-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-  gap: 8px;
-  max-height: 250px;
-  overflow-y: auto;
-  padding: 4px;
-}
-
-.beautify-bg-item {
-  position: relative;
-  aspect-ratio: 1;
-  border-radius: 6px;
-  overflow: hidden;
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition: all 0.2s;
-}
-
-.beautify-bg-item:hover {
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.beautify-bg-item.active {
-  border-color: var(--theme-primary-color, #6c5ce7);
-}
-
-.beautify-bg-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.beautify-bg-item-delete {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  background: rgba(0, 0, 0, 0.7);
-  border: none;
-  border-radius: 50%;
-  color: #fff;
-  cursor: pointer;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
+/* 背景项使用通用定义（在 beautify-popup.css 中） */
 
 .beautify-bg-item:hover .beautify-bg-item-delete {
   opacity: 1;
