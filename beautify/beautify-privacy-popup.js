@@ -773,6 +773,28 @@ function showPrivacyCssHelpPopup() {
         <li>正确做法：使用 <code>box-shadow</code>（阴影）或 <code>background</code>（背景）来实现动画效果</li>
     </ul>
 </div>
+
+<h4 style="margin: 16px 0 8px; color: var(--SmartThemeQuoteColor);">✨ 动态类名（拖动/解锁时触发）</h4>
+<div style="font-size: 11px; padding: 8px; background: var(--SmartThemeBlurTintColor); border-radius: 4px; margin-bottom: 12px;">
+    <p style="margin: 0 0 8px;">JS 会自动给以下元素添加/移除类名，你可以在 CSS 中利用这些类实现交互效果：</p>
+    <table style="width: 100%; font-size: 11px; border-collapse: collapse; text-align: left; margin-top: 8px;">
+    <tr style="background: var(--SmartThemeHeaderColor);">
+        <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);"><strong>类名</strong></td>
+        <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);"><strong>添加时机</strong></td>
+        <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);"><strong>移除时机</strong></td>
+    </tr>
+    <tr>
+        <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);"><code>.dragging</code></td>
+        <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);">开始拖动滑块时</td>
+        <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);">松开滑块时</td>
+    </tr>
+    <tr style="background: var(--SmartThemeBlurTintColor);">
+        <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);"><code>.unlocked</code></td>
+        <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);">滑块滑动超过80%时</td>
+        <td style="padding: 4px 8px; border: 1px solid var(--SmartThemeBorderColor);">遮罩关闭时</td>
+    </tr>
+    </table>
+</div>
 </div>
     `;
 

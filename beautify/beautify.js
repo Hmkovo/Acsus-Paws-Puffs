@@ -3447,6 +3447,7 @@ function bindPrivacySliderEvents() {
     isDragging = true;
     startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
     knob.classList.add('dragging');
+    container.classList.add('dragging');
   };
 
   const doDrag = (e) => {
@@ -3464,6 +3465,7 @@ function bindPrivacySliderEvents() {
     if (!isDragging) return;
     isDragging = false;
     knob.classList.remove('dragging');
+    container.classList.remove('dragging');
 
     // 检查是否解锁（滑块移动超过 80%）
     if (currentX >= maxMove * 0.8) {
