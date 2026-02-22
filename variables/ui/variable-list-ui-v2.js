@@ -92,6 +92,18 @@ function buildSettingsHTML(enabled) {
                 <span class="preset-hint">V2 版本支持套装、条目列表、选择性引用等高级功能</span>
             </div>
 
+            <div style="margin: 12px 0; padding: 10px; background: #ff6b6b15; border-left: 3px solid #ff6b6b; border-radius: 4px;">
+                <h4 style="margin: 0 0 8px 0; color: #ff6b6b;">
+                    <i class="fa-solid fa-exclamation-triangle"></i> 重要：必须启用实验性宏引擎
+                </h4>
+                <p style="margin: 4px 0; font-size: 13px;">
+                    <strong>启用位置：</strong>用户设置 → 自定义CSS下方 → 勾选"<strong>实验性宏引擎</strong>"（Experimental Macro Engine）
+                </p>
+                <p style="margin: 4px 0; font-size: 13px; color: #999;">
+                    ⚠️ 如果不启用，变量（如 {{fufenxi}}）将不会被替换成实际内容，只会显示为 {{fufenxi}}
+                </p>
+            </div>
+
             <h4 style="margin-top: 12px; color: var(--SmartThemeQuoteColor);">V2 新功能</h4>
             <ul class="preset-feature-list">
                 <li><i class="fa-solid fa-layer-group"></i> <strong>提示词套装</strong>：多个提示词条目组合，支持不同触发方式</li>
@@ -396,6 +408,8 @@ function buildWindowHTML(suites, activeSuite, variables) {
             <span class="var-v2-trigger-badge">${buildTriggerBadge(activeSuite)}</span>
             <i class="fa-solid fa-gear var-v2-suite-icon" id="var-v2-edit-suite" title="编辑套装"></i>
             <i class="fa-solid fa-plus var-v2-suite-icon" id="var-v2-new-suite" title="新建套装"></i>
+            <i class="fa-solid fa-file-export var-v2-suite-icon" id="var-v2-export-suite" title="导出套装"></i>
+            <i class="fa-solid fa-file-import var-v2-suite-icon" id="var-v2-import-suite" title="导入套装"></i>
             <i class="fa-solid fa-trash var-v2-suite-icon var-v2-delete-suite-icon" id="var-v2-delete-suite" title="删除套装"></i>
         </div>
         <div class="var-v2-body">
@@ -804,6 +818,16 @@ function bindWindowEvents() {
   // 删除套装
   windowElement.querySelector('#var-v2-delete-suite')?.addEventListener('click', async () => {
     await handleDeleteSuite();
+  });
+
+  // 导出套装
+  windowElement.querySelector('#var-v2-export-suite')?.addEventListener('click', async () => {
+    await handleExportSuite();
+  });
+
+  // 导入套装
+  windowElement.querySelector('#var-v2-import-suite')?.addEventListener('click', async () => {
+    await handleImportSuite();
   });
 
   // 添加提示词
@@ -1804,6 +1828,147 @@ async function handleDeleteSuite() {
   }
 }
 
+/**
+ * 导出当前套装到 JSON 文件
+ * 
+ * @description
+ * 导出当前激活套装的所有设置，包括：
+ * - 套装基本信息（名称、触发配置等）
+ * - 所有条目（提示词、正文、变量引用）
+ * - 导出时会排除套装 ID，导入时自动生成新 ID
+ * 
+ * @async
+ * @returns {Promise<void>}
+ */
+async function handleExportSuite() {
+  const suiteManager = getSuiteManager();
+  const suite = suiteManager.getActiveSuite();
+
+  if (!suite) {
+    toastr.warning('没有选中的套装');
+    return;
+  }
+
+  try {
+    // 准备导出数据（移除 ID 和时间戳，导入时会重新生成）
+    const exportData = {
+      version: 1,
+      name: suite.name,
+      enabled: suite.enabled,
+      trigger: suite.trigger,
+      items: suite.items.map(item => {
+        const { id, ...itemData } = item;
+        return itemData;
+      }),
+      exportedAt: new Date().toISOString(),
+      exportedFrom: 'Acsus-Paws-Puffs 动态变量 V2'
+    };
+
+    // 转换为 JSON
+    const jsonStr = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+
+    // 生成文件名（套装名称 + 日期时间）
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    const filename = `suite_${suite.name}_${timestamp}.json`;
+
+    // 创建下载链接
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    toastr.success('套装已导出');
+    logger.info('variable', '[VariableListUIV2] 套装已导出:', filename);
+  } catch (error) {
+    toastr.error('导出失败: ' + error.message);
+    logger.error('variable', '[VariableListUIV2] 导出套装失败:', error);
+  }
+}
+
+/**
+ * 从 JSON 文件导入套装
+ * 
+ * @description
+ * 从用户选择的 JSON 文件导入套装配置。
+ * 导入时会验证数据格式，并自动生成新的套装 ID。
+ * 
+ * @async
+ * @returns {Promise<void>}
+ */
+async function handleImportSuite() {
+  const suiteManager = getSuiteManager();
+
+  try {
+    // 创建文件选择器
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+
+    input.onchange = async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      try {
+        // 读取文件内容
+        const text = await file.text();
+        const importData = JSON.parse(text);
+
+        // 验证数据格式
+        if (!importData.name || !Array.isArray(importData.items)) {
+          toastr.error('无效的套装文件格式');
+          return;
+        }
+
+        // 检查是否为 V1 版本
+        if (importData.version !== 1) {
+          toastr.warning('套装文件版本不匹配，可能导致导入失败');
+        }
+
+        // 询问是否导入
+        const confirmed = await showInternalConfirm(
+          '导入套装',
+          `确定要导入套装「${importData.name}」吗？\n\n包含 ${importData.items.length} 个条目`,
+          { okButton: '导入' }
+        );
+
+        if (!confirmed) return;
+
+        // 创建新套装
+        const newSuite = suiteManager.createSuite({
+          name: importData.name,
+          enabled: importData.enabled !== false,
+          trigger: importData.trigger || { type: 'manual' },
+          items: importData.items || []
+        });
+
+        // 刷新 UI
+        refreshSuiteSelect();
+        
+        // 切换到新导入的套装
+        suiteManager.setActiveSuite(newSuite.id);
+        refreshItemsList();
+        refreshSuiteBadge();
+        updatePreview();
+
+        toastr.success(`套装「${importData.name}」已导入`);
+        logger.info('variable', '[VariableListUIV2] 套装已导入:', importData.name);
+      } catch (error) {
+        toastr.error('导入失败: ' + error.message);
+        logger.error('variable', '[VariableListUIV2] 导入套装失败:', error);
+      }
+    };
+
+    // 触发文件选择
+    input.click();
+  } catch (error) {
+    toastr.error('导入失败: ' + error.message);
+    logger.error('variable', '[VariableListUIV2] 导入套装失败:', error);
+  }
+}
+
 
 // ============================================
 // 第九部分：变量详情页（页面切换模式）
@@ -1862,7 +2027,7 @@ async function showStackDetailPage(varId, variable) {
             <div class="var-v2-entry ${entry.hidden ? 'entry-hidden' : ''}" data-entry-id="${entry.id}" draggable="true">
                 <div class="var-v2-entry-header">
                     <span class="var-v2-entry-drag-handle"><i class="fa-solid fa-grip-vertical"></i></span>
-                    <span class="var-v2-entry-toggle"><i class="fa-solid fa-chevron-down"></i></span>
+                    <span class="var-v2-entry-toggle"><i class="fa-solid fa-chevron-right"></i></span>
                     <span class="var-v2-entry-title">#${index + 1} - 第${entry.floorRange || '?'}楼</span>
                     <span class="var-v2-entry-time">${formatTime(entry.timestamp)}</span>
                     <span class="var-v2-entry-actions">
@@ -1871,7 +2036,7 @@ async function showStackDetailPage(varId, variable) {
                         <i class="fa-solid fa-trash var-v2-entry-delete" data-entry-id="${entry.id}"></i>
                     </span>
                 </div>
-                <div class="var-v2-entry-content">${escapeHtml(entry.content)}</div>
+                <div class="var-v2-entry-content collapsed">${escapeHtml(entry.content)}</div>
             </div>
         `).join('');
 
