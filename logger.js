@@ -31,6 +31,7 @@ const MODULE_CONFIG = {
   'visual': false,    // 可视化
   'archive': false,    // 聊天记录管理
   'chatTools': false,  // 聊天工具
+  'program': false,    // 节目单
 };
 
 /**

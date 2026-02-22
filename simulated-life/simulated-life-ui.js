@@ -62,54 +62,57 @@ export class SimulatedLifeUI {
    */
   _renderMainContent() {
     return `
-            <!-- 全局世界书开关 + 使用说明按钮 -->
-            <div class="visual-editor-enable-section-compact" style="display: flex; align-items: center; justify-content: space-between;">
-              <label class="checkbox_label">
-                <input type="checkbox" id="simulated-life-global-enable" ${this.module.isInGlobalList() ? 'checked' : ''}>
-                <span>启用全局世界书</span>
-                <span class="hint-inline">开启后在所有对话中生效</span>
-              </label>
-              <button id="simulated-life-help-btn" class="menu_button compact icon-only interactable" title="查看使用说明" tabindex="0" role="button">
-                <i class="fa fa-question-circle"></i>
-              </button>
-            </div>
-
-            <!-- 手风琴（介绍和查看提示词） -->
+            <!-- 手风琴（功能介绍+启用与操作、查看提示词） -->
             <div class="paws-puffs-settings-accordion-container">
-              <!-- 卡片1：功能介绍 -->
+              <!-- 卡片1：功能介绍 + 启用与操作 -->
               <div class="paws-puffs-settings-accordion-card active" data-card="intro">
                 <div class="paws-puffs-settings-accordion-header" data-card="intro">
                   <div class="paws-puffs-settings-accordion-tab">
                     <i class="fa-solid fa-circle-info"></i>
-                    <strong>功能介绍</strong>
+                    <strong>模拟人生 - 溯的提示词</strong>
                   </div>
                 </div>
                 <div class="paws-puffs-settings-accordion-body">
-                  <h4 style="margin-top: 0; color: var(--SmartThemeQuoteColor);">模拟人生 - 溯的提示词</h4>
-                  <p style="font-size: 0.9em; opacity: 0.8; margin-bottom: 12px;">
-                    原作者：溯（Sus）<br>
-                    最早发布时间：2025-5-13
-                  </p>
-                  
-                  <p style="margin-bottom: 12px;">
-                    让AI在对话中生成内联HTML效果，模拟各种物品（便签、票据、手机界面等），增强阅读体验。
-                  </p>
+                  <!-- 使用说明入口 -->
+                  <div class="simulated-life-info-link" id="simulated-life-info-link" style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px; cursor: pointer; color: var(--SmartThemeQuoteColor); font-size: 0.9em;">
+                    <i class="fa-solid fa-circle-question"></i>
+                    <span>点击查看功能介绍与使用说明</span>
+                  </div>
 
-                  <h4 style="color: var(--SmartThemeQuoteColor);">特点</h4>
-                  <ul style="margin: 8px 0; padding-left: 20px; line-height: 1.6;">
-                    <li>沉浸式阅读：可视化物品让对话更生动有趣</li>
-                    <li>轻量高效：提示词简洁，不过度占用token</li>
-                    <li>生成克制：内联片段精简，不需要刻意删除</li>
-                    <li>完全自包含：不依赖外部资源，兼容性好</li>
-                    <li>移动端友好：手机端版本针对小屏幕优化</li>
-                    <li>自然融入：不强制角色产生物品，顺应剧情</li>
-                  </ul>
+                  <!-- 功能开关 -->
+                  <div class="simulated-life-setting-item" style="margin-bottom: 12px;">
+                    <label class="checkbox_label" style="display: flex; align-items: center; gap: 8px;">
+                      <input type="checkbox" id="simulated-life-global-enable" ${this.module.isInGlobalList() ? 'checked' : ''}>
+                      <span>启用全局世界书</span>
+                    </label>
+                    <span class="hint-inline" style="font-size: 0.85em; opacity: 0.7;">开启后在所有对话中生效</span>
+                  </div>
 
-                  <h4 style="color: var(--SmartThemeQuoteColor);">版本说明</h4>
-                  <ul style="margin: 8px 0; padding-left: 20px; line-height: 1.6;">
-                    <li>通用版（溯 Sus）：桌面端和移动端通用，经过版本迭代优化</li>
-                    <li>手机端优化版（白沉）：基于溯的二改，针对手机屏幕调整</li>
-                  </ul>
+                  <!-- 操作按钮区域（两列） -->
+                  <div class="simulated-life-actions" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px;">
+                      <button id="simulated-life-create-btn" class="menu_button interactable" style="white-space: nowrap; font-size: 0.85em;" tabindex="0" role="button">
+                          <i class="fa-solid fa-plus"></i>
+                          懒人一键试吃
+                      </button>
+                      
+                      <button id="simulated-life-refresh-btn" class="menu_button compact interactable" style="white-space: nowrap; font-size: 0.85em;" tabindex="0" role="button">
+                          <i class="fa-solid fa-rotate"></i>
+                          刷新条目状态
+                      </button>
+                  </div>
+
+                  <!-- 条目状态显示区域 -->
+                  <div id="simulated-life-entries-container" style="margin-bottom: 12px;">
+                      <!-- 条目列表会动态渲染到这里 -->
+                  </div>
+
+                  <!-- 世界书状态 -->
+                  <div class="simulated-life-status" style="padding: 10px; background: color-mix(in srgb, var(--SmartThemeBodyColor) 3%, var(--SmartThemeBlurTintColor) 97%); border-radius: 6px; font-size: 0.85em;">
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                          <i class="fa-solid fa-circle-info" style="color: var(--SmartThemeQuoteColor);"></i>
+                          <span id="simulated-life-status-text">正在检测...</span>
+                      </div>
+                  </div>
                 </div>
               </div>
 
@@ -118,50 +121,33 @@ export class SimulatedLifeUI {
                 <div class="paws-puffs-settings-accordion-header" data-card="view-prompts">
                   <div class="paws-puffs-settings-accordion-tab">
                     <i class="fa-solid fa-eye"></i>
-                    <strong>查看提示词</strong>
+                    <strong>留空，有用</strong>
                   </div>
                 </div>
                 <div class="paws-puffs-settings-accordion-body">
-                  <p style="margin-top: 0;">点击按钮查看完整提示词内容：</p>
-                  
-                  <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button id="view-sus-prompt-btn" class="menu_button compact" style="flex: 1; white-space: nowrap;">
-                      <i class="fa-solid fa-code"></i>
-                      查看溯 Sus 版本
-                    </button>
-                    <button id="view-mobile-prompt-btn" class="menu_button compact" style="flex: 1; white-space: nowrap;">
-                      <i class="fa-solid fa-mobile-screen"></i>
-                      查看白沉优化版
-                    </button>
+                  <!-- 此卡片内容待开发 -->
+                </div>
+              </div>
+
+              <!-- 卡片3：节目单 -->
+              <div class="paws-puffs-settings-accordion-card" data-card="program-list">
+                <div class="paws-puffs-settings-accordion-header" data-card="program-list">
+                  <div class="paws-puffs-settings-accordion-tab">
+                    <i class="fa-solid fa-masks-theater"></i>
+                    <strong>节目单</strong>
+                  </div>
+                </div>
+                <div class="paws-puffs-settings-accordion-body">
+                  <!-- 节目单设置 -->
+                  <div class="beautify-setting-item">
+                    <label class="checkbox_label">
+                      <input type="checkbox" id="program-enabled">
+                      <span>启用节目单</span>
+                    </label>
+                    <span class="beautify-hint">⚠ 功能尚未完成，请勿勾选。开启后显示悬浮按钮并开始监听消息；关闭后销毁按钮并停止后台运行</span>
                   </div>
                 </div>
               </div>
-            </div>
-
-            <!-- 操作按钮区域（两列） -->
-            <div class="simulated-life-actions" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px;">
-                <button id="simulated-life-create-btn" class="menu_button interactable" style="white-space: nowrap; font-size: 0.85em;" tabindex="0" role="button">
-                    <i class="fa-solid fa-plus"></i>
-                    懒人一键试吃
-                </button>
-                
-                <button id="simulated-life-refresh-btn" class="menu_button compact interactable" style="white-space: nowrap; font-size: 0.85em;" tabindex="0" role="button">
-                    <i class="fa-solid fa-rotate"></i>
-                    刷新条目状态
-                </button>
-            </div>
-
-            <!-- 条目状态显示区域 -->
-            <div id="simulated-life-entries-container" style="margin-bottom: 12px;">
-                <!-- 条目列表会动态渲染到这里 -->
-            </div>
-
-            <!-- 世界书状态 -->
-            <div class="simulated-life-status" style="padding: 10px; background: color-mix(in srgb, var(--SmartThemeBodyColor) 3%, var(--SmartThemeBlurTintColor) 97%); border-radius: 6px; font-size: 0.85em;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-circle-info" style="color: var(--SmartThemeQuoteColor);"></i>
-                    <span id="simulated-life-status-text">正在检测...</span>
-                </div>
             </div>
         `;
   }
@@ -347,13 +333,41 @@ export class SimulatedLifeUI {
       await callGenericPopup(htmlContent, POPUP_TYPE.TEXT, '', { wide: true, large: true });
     });
 
-    // 使用说明按钮
-    $(document).off('click', '#simulated-life-help-btn');
-    $(document).on('click', '#simulated-life-help-btn', async () => {
-      logger.debug('simlife', '点击查看使用说明');
+    // 功能介绍入口点击事件
+    $(document).off('click', '#simulated-life-info-link');
+    $(document).on('click', '#simulated-life-info-link', async () => {
+      logger.debug('simlife', '点击查看功能介绍');
       const htmlContent = `
-        <div style="text-align: left; line-height: 1.6;">
-          <h3 style="color: var(--SmartThemeQuoteColor); margin-top: 0;">使用说明</h3>
+        <div style="text-align: left; line-height: 1.6; max-height: 70vh; overflow-y: auto;">
+          <h3 style="color: var(--SmartThemeQuoteColor); margin-top: 0;">模拟人生 - 溯的提示词</h3>
+          <p style="font-size: 0.9em; opacity: 0.8; margin-bottom: 12px;">
+            <strong>原作者：</strong>溯（Sus）<br>
+            <strong>最早发布时间：</strong>2025-5-13
+          </p>
+          
+          <p style="margin-bottom: 12px;">
+            让AI在对话中生成内联HTML效果，模拟各种物品（便签、票据、手机界面等），增强阅读体验。
+          </p>
+
+          <h4 style="color: var(--SmartThemeQuoteColor);">特点</h4>
+          <ul style="margin: 8px 0; padding-left: 20px; line-height: 1.6;">
+            <li>沉浸式阅读：可视化物品让对话更生动有趣</li>
+            <li>轻量高效：提示词简洁，不过度占用token</li>
+            <li>生成克制：内联片段精简，不需要刻意删除</li>
+            <li>完全自包含：不依赖外部资源，兼容性好</li>
+            <li>移动端友好：手机端版本针对小屏幕优化</li>
+            <li>自然融入：不强制角色产生物品，顺应剧情</li>
+          </ul>
+
+          <h4 style="color: var(--SmartThemeQuoteColor);">版本说明</h4>
+          <ul style="margin: 8px 0; padding-left: 20px; line-height: 1.6;">
+            <li>通用版（溯 Sus）：桌面端和移动端通用，经过版本迭代优化</li>
+            <li>手机端优化版（白沉）：基于溯的二改，针对手机屏幕调整</li>
+          </ul>
+
+          <hr style="margin: 16px 0; border: none; border-top: 1px solid var(--SmartThemeBordersColor);">
+
+          <h4 style="color: var(--SmartThemeQuoteColor);">使用说明</h4>
           <ol style="margin: 8px 0; padding-left: 20px;">
             <li>点击"懒人一键"按钮，自动创建并添加两个版本的提示词</li>
             <li>创建后会显示条目列表，可以直接在这里切换开关</li>
@@ -363,7 +377,7 @@ export class SimulatedLifeUI {
           </ol>
         </div>
       `;
-      await callGenericPopup(htmlContent, POPUP_TYPE.TEXT, '使用说明');
+      await callGenericPopup(htmlContent, POPUP_TYPE.TEXT, '功能介绍与使用说明', { wide: true });
     });
   }
 

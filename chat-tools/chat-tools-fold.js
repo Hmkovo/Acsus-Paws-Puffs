@@ -15,6 +15,7 @@
 
 import { extension_settings, getContext } from '../../../../extensions.js';
 import { eventSource, event_types, saveSettingsDebounced } from '../../../../../script.js';
+import { callGenericPopup } from '../../../../popup.js';
 import logger from '../logger.js';
 
 // ========================================
@@ -97,18 +98,38 @@ function saveSetting(key, value) {
 }
 
 /**
- * 获取折叠消息的存储
- * @returns {Object<string, {title: string, isCollapsed: boolean}>}
+ * 获取完整折叠存储（两层结构：avatar → chatId → mesId）
+ * @returns {Object<string, Object<string, Object<string, {title: string, isCollapsed: boolean}>>>}
  */
-function getFoldedMessages() {
+function getAllFoldsStorage() {
   return getSetting(STORAGE_KEYS.foldedMessages, {});
 }
 
 /**
- * 保存折叠消息的存储
+ * 获取当前聊天的折叠数据
+ * @returns {Object<string, {title: string, isCollapsed: boolean}>}
  */
-function saveFoldedMessages() {
-  saveSetting(STORAGE_KEYS.foldedMessages, foldedMessages);
+function getCurrentChatFolds() {
+  const context = getContext();
+  const avatar = context.characters?.[context.characterId]?.avatar;
+  const chatId = context.chatId;
+  if (!avatar || !chatId) return {};
+  const all = getAllFoldsStorage();
+  return all?.[avatar]?.[chatId] ?? {};
+}
+
+/**
+ * 保存当前聊天的折叠数据到两层结构
+ */
+function saveCurrentChatFolds() {
+  const context = getContext();
+  const avatar = context.characters?.[context.characterId]?.avatar;
+  const chatId = context.chatId;
+  if (!avatar || !chatId) return;
+  const all = getAllFoldsStorage();
+  if (!all[avatar]) all[avatar] = {};
+  all[avatar][chatId] = foldedMessages;
+  saveSetting(STORAGE_KEYS.foldedMessages, all);
 }
 
 // ========================================
@@ -240,7 +261,7 @@ function foldMessage(mesId, mesElement) {
     title: '',
     isCollapsed: true
   };
-  saveFoldedMessages();
+  saveCurrentChatFolds();
 
   // 绑定折叠栏事件
   bindFoldBarEvents(foldBarElement);
@@ -272,7 +293,7 @@ function toggleFold(mesId) {
     foldedMessages[mesId].isCollapsed = true;
   }
 
-  saveFoldedMessages();
+  saveCurrentChatFolds();
   logger.debug('chatTools', '[Fold] 切换折叠状态:', mesId, isCollapsed ? '收起' : '展开');
 }
 
@@ -314,7 +335,7 @@ function deleteFold(mesId) {
   logger.info('chatTools', '[Fold] 删除前 foldedMessages 状态:', Object.keys(foldedMessages));
   delete foldedMessages[mesId];
   logger.info('chatTools', '[Fold] 删除后 foldedMessages 状态:', Object.keys(foldedMessages));
-  saveFoldedMessages();
+  saveCurrentChatFolds();
   logger.info('chatTools', '[Fold] ========== 删除折叠栏完成 ==========');
 }
 
@@ -326,7 +347,7 @@ function deleteFold(mesId) {
 function updateFoldTitle(mesId, title) {
   if (foldedMessages[mesId]) {
     foldedMessages[mesId].title = title;
-    saveFoldedMessages();
+    saveCurrentChatFolds();
   }
 }
 
@@ -367,7 +388,7 @@ function togglePreview(mesId) {
     }
   }
 
-  saveFoldedMessages();
+  saveCurrentChatFolds();
   logger.debug('chatTools', '[Fold] 切换预览状态:', mesId, isPreviewShown ? '收起' : '展开');
 }
 
@@ -613,7 +634,8 @@ function scanAllMessages(caller = 'unknown') {
  * 恢复折叠状态
  */
 function restoreFoldedMessages() {
-  const stored = getFoldedMessages();
+  foldedMessages = {};
+  const stored = getCurrentChatFolds();
   if (!stored || Object.keys(stored).length === 0) return;
 
   logger.info('chatTools', '[Fold] 恢复折叠消息:', Object.keys(stored).length);
@@ -645,7 +667,179 @@ function restoreFoldedMessages() {
   }
 
   // 同步内存中的状态
-  foldedMessages = stored;
+  foldedMessages = { ...stored };
+}
+
+// ========================================
+// 折叠管理功能
+// ========================================
+
+/**
+ * 获取折叠统计数据（三个层级：全局、角色、聊天）
+ * 同时检测旧格式残留数据（顶层值直接含 isCollapsed 的条目）
+ * @returns {{ globalCount: number, byCharacter: Object, currentAvatar: string, currentChatId: string, currentChar: number, currentChat: number, legacyCount: number }}
+ */
+function getFoldStats() {
+  const all = getAllFoldsStorage();
+  const context = getContext();
+  const currentAvatar = context.characters?.[context.characterId]?.avatar ?? null;
+  const currentChatId = context.chatId ?? null;
+
+  let globalCount = 0;
+  let legacyCount = 0;
+  const byCharacter = {};
+
+  for (const [avatar, chats] of Object.entries(all)) {
+    // 旧格式检测：值直接是折叠记录（含 isCollapsed），而不是 chatId 容器
+    if (chats && typeof chats === 'object' && 'isCollapsed' in chats) {
+      legacyCount++;
+      continue;
+    }
+    byCharacter[avatar] = {};
+    for (const [chatId, folds] of Object.entries(chats)) {
+      const count = Object.keys(folds).length;
+      byCharacter[avatar][chatId] = count;
+      globalCount += count;
+    }
+  }
+
+  const currentChar = currentAvatar
+    ? Object.values(byCharacter[currentAvatar] ?? {}).reduce((a, b) => a + b, 0)
+    : 0;
+  const currentChat = currentAvatar && currentChatId
+    ? (byCharacter[currentAvatar]?.[currentChatId] ?? 0)
+    : 0;
+
+  return { globalCount, byCharacter, currentAvatar, currentChatId, currentChar, currentChat, legacyCount };
+}
+
+/**
+ * 清除 DOM 中当前所有折叠栏，还原消息显示
+ */
+function clearFoldBarDom() {
+  document.querySelectorAll('.chat-tools-fold-bar').forEach(bar => bar.remove());
+  document.querySelectorAll('.chat-tools-folded').forEach(mes => {
+    /** @type {HTMLElement} */(mes).style.display = '';
+    mes.classList.remove('chat-tools-folded', 'chat-tools-processed');
+  });
+}
+
+/**
+ * 清除旧格式残留数据（顶层值直接含 isCollapsed 的条目）
+ */
+function clearLegacyFoldsData() {
+  const all = getAllFoldsStorage();
+  let removed = 0;
+  for (const key of Object.keys(all)) {
+    if (all[key] && typeof all[key] === 'object' && 'isCollapsed' in all[key]) {
+      delete all[key];
+      removed++;
+    }
+  }
+  saveSetting(STORAGE_KEYS.foldedMessages, all);
+  logger.info('chatTools', '[Fold] 已清除旧格式数据，共', removed, '条');
+}
+
+/**
+ * 清除所有角色所有聊天的折叠数据
+ */
+function clearAllFoldsData() {
+  foldedMessages = {};
+  saveSetting(STORAGE_KEYS.foldedMessages, {});
+  clearFoldBarDom();
+  logger.info('chatTools', '[Fold] 已清除所有折叠数据');
+}
+
+/**
+ * 清除某角色的所有折叠数据
+ * @param {string} avatar - 角色文件名（如 Seraphina.png）
+ */
+function clearCharacterFoldsData(avatar) {
+  const all = getAllFoldsStorage();
+  delete all[avatar];
+  saveSetting(STORAGE_KEYS.foldedMessages, all);
+
+  // 如果清的是当前角色，同步内存和 DOM
+  const context = getContext();
+  if (context.characters?.[context.characterId]?.avatar === avatar) {
+    foldedMessages = {};
+    clearFoldBarDom();
+  }
+  logger.info('chatTools', '[Fold] 已清除角色折叠数据:', avatar);
+}
+
+/**
+ * 清除某聊天记录的折叠数据
+ * @param {string} avatar - 角色文件名
+ * @param {string} chatId - 聊天记录ID
+ */
+function clearChatFoldsData(avatar, chatId) {
+  const all = getAllFoldsStorage();
+  if (all[avatar]) {
+    delete all[avatar][chatId];
+    if (Object.keys(all[avatar]).length === 0) delete all[avatar];
+  }
+  saveSetting(STORAGE_KEYS.foldedMessages, all);
+
+  // 如果清的是当前聊天，同步内存和 DOM
+  const context = getContext();
+  if (context.characters?.[context.characterId]?.avatar === avatar && context.chatId === chatId) {
+    foldedMessages = {};
+    clearFoldBarDom();
+  }
+  logger.info('chatTools', '[Fold] 已清除聊天折叠数据:', avatar, chatId);
+}
+
+/**
+ * 刷新折叠管理面板的统计显示
+ * 在设置面板不可见时也可安全调用（会自动跳过）
+ */
+export function refreshFoldManager() {
+  const panel = document.getElementById('chat-tools-fold-manager');
+  if (!panel) return;
+
+  const stats = getFoldStats();
+
+  // 旧格式残留行
+  const legacyRow = document.getElementById('fold-manager-legacy-row');
+  const legacyCountEl = document.getElementById('fold-manager-legacy-count');
+  if (legacyRow) legacyRow.style.display = stats.legacyCount > 0 ? '' : 'none';
+  if (legacyCountEl) legacyCountEl.textContent = `旧格式残留：${stats.legacyCount} 个`;
+
+  // 全局计数
+  const globalEl = document.getElementById('fold-manager-global-count');
+  if (globalEl) globalEl.textContent = `共 ${stats.globalCount} 个`;
+
+  // 当前角色计数
+  const charEl = document.getElementById('fold-manager-char-count');
+  if (charEl) charEl.textContent = `当前角色：${stats.currentChar} 个`;
+
+  // 当前角色的聊天记录列表（只显示有折叠的）
+  const chatListEl = document.getElementById('fold-manager-chat-list');
+  if (chatListEl) {
+    chatListEl.innerHTML = '';
+    const charFolds = stats.byCharacter[stats.currentAvatar] ?? {};
+    const entries = Object.entries(charFolds).filter(([, count]) => count > 0);
+
+    if (entries.length === 0) {
+      chatListEl.innerHTML = '<div class="fold-manager-empty">当前角色无折叠记录</div>';
+    } else {
+      entries.forEach(([chatId, count]) => {
+        const displayName = chatId.replace('.jsonl', '');
+        const row = document.createElement('div');
+        row.className = 'fold-manager-chat-row';
+        row.innerHTML = `
+          <span class="fold-manager-chat-name" title="${chatId}">${displayName}：${count} 个</span>
+          <button class="menu_button fold-manager-clear-chat" data-avatar="${stats.currentAvatar}" data-chatid="${chatId}">清除</button>
+        `;
+        chatListEl.appendChild(row);
+      });
+    }
+  }
+
+  // 当前聊天计数
+  const currentChatEl = document.getElementById('fold-manager-current-chat-count');
+  if (currentChatEl) currentChatEl.textContent = `当前聊天：${stats.currentChat} 个`;
 }
 
 // ========================================
@@ -754,6 +948,124 @@ export function bindFoldSettings() {
     quickPresets = getSetting(STORAGE_KEYS.presets, []);
     renderPresetsList();
   }
+
+  // ---- 折叠管理面板 ----
+  const foldManagerRefresh = document.getElementById('fold-manager-refresh');
+  foldManagerRefresh?.addEventListener('click', refreshFoldManager);
+
+  const clearLegacyBtn = document.getElementById('fold-manager-clear-legacy');
+  clearLegacyBtn?.addEventListener('click', () => {
+    clearLegacyFoldsData();
+    refreshFoldManager();
+  });
+
+  const clearAllBtn = document.getElementById('fold-manager-clear-all');
+  clearAllBtn?.addEventListener('click', () => {
+    clearAllFoldsData();
+    refreshFoldManager();
+  });
+
+  const clearCharBtn = document.getElementById('fold-manager-clear-char');
+  clearCharBtn?.addEventListener('click', () => {
+    const ctx = getContext();
+    const avatar = ctx.characters?.[ctx.characterId]?.avatar;
+    if (avatar) {
+      clearCharacterFoldsData(avatar);
+      refreshFoldManager();
+    }
+  });
+
+  const clearCurrentBtn = document.getElementById('fold-manager-clear-current');
+  clearCurrentBtn?.addEventListener('click', () => {
+    const ctx = getContext();
+    const avatar = ctx.characters?.[ctx.characterId]?.avatar;
+    const chatId = ctx.chatId;
+    if (avatar && chatId) {
+      clearChatFoldsData(avatar, chatId);
+      refreshFoldManager();
+    }
+  });
+
+  // 聊天记录行的清除按钮（事件委托）
+  const chatListEl = document.getElementById('fold-manager-chat-list');
+  chatListEl?.addEventListener('click', (e) => {
+    const btn = /** @type {HTMLElement} */(e.target).closest('.fold-manager-clear-chat');
+    if (btn) {
+      const avatar = /** @type {HTMLElement} */(btn).dataset.avatar;
+      const chatId = /** @type {HTMLElement} */(btn).dataset.chatid;
+      if (avatar && chatId) {
+        clearChatFoldsData(avatar, chatId);
+        refreshFoldManager();
+      }
+    }
+  });
+
+  // 初始化时刷新管理面板
+  refreshFoldManager();
+
+  // 绑定使用说明链接
+  bindInfoLink();
+}
+
+/**
+ * 绑定使用说明链接的点击事件
+ */
+function bindInfoLink() {
+  const link = document.getElementById('chat-tools-fold-info-link');
+  if (!link) return;
+
+  link.addEventListener('click', () => {
+    showInfoPopup();
+  });
+}
+
+/**
+ * 显示使用说明弹窗
+ */
+function showInfoPopup() {
+  const content = `
+    <div style="max-width: 500px; max-height: 70vh; overflow-y: auto; text-align: left;">
+      <p style="margin-top: 0; opacity: 0.8;">聊天记录折叠功能可以帮你整理聊天内容，让对话更清晰。</p>
+
+      <h4 style="margin-top: 12px; color: var(--SmartThemeQuoteColor);"><i class="fa-solid fa-ellipsis"></i> 在哪里找到折叠按钮？</h4>
+      <p>在任意聊天消息的右侧，点击 <strong>消息操作按钮</strong>（<i class="fa-solid fa-ellipsis"></i> 三个点的图标），会弹出消息操作菜单。</p>
+      <div style="background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent 90%); padding: 10px; border-radius: 5px; margin-bottom: 12px;">
+        <strong>提示：</strong>在消息操作菜单中，找到 <i class="fa-solid fa-folder-open"></i> <strong>文件夹图标</strong>，点击后即可折叠该消息。
+      </div>
+
+      <h4 style="margin-top: 16px; color: var(--SmartThemeQuoteColor);"><i class="fa-solid fa-folder"></i> 折叠后可以做什么？</h4>
+      <p>消息折叠后会显示一个<strong>折叠栏</strong>，你可以：</p>
+      <ul style="margin: 8px 0; padding-left: 20px; opacity: 0.9;">
+        <li><strong>编辑标题</strong>：点击折叠栏右侧的 <i class="fa-solid fa-pencil"></i> 铅笔图标，输入自定义标题（如"重要对话"）</li>
+        <li><strong>展开/收起内容</strong>：点击折叠栏左侧的 <i class="fa-solid fa-chevron-down"></i> 箭头，可以预览或隐藏原始消息</li>
+        <li><strong>删除折叠栏</strong>：点击 <i class="fa-solid fa-trash"></i> 垃圾桶图标，还原为普通消息</li>
+      </ul>
+
+      <h4 style="margin-top: 16px; color: var(--SmartThemeQuoteColor);"><i class="fa-solid fa-list-ul"></i> 快速标题预设怎么用？</h4>
+      <p>如果你经常使用相同的标题（比如"剧情推进"、"角色设定"），可以提前在设置中添加预设：</p>
+      <ol style="margin: 8px 0; padding-left: 20px; opacity: 0.9;">
+        <li>在下方<strong>"快速标题预设"</strong>区域输入标题名称</li>
+        <li>点击 <i class="fa-solid fa-plus"></i> 添加</li>
+        <li>编辑折叠栏标题时，点击 <i class="fa-solid fa-list-ul"></i> 图标，从预设列表中快速选择</li>
+      </ol>
+      <div style="background: color-mix(in srgb, var(--SmartThemeUnderlineColor) 10%, transparent 90%); padding: 10px; border-radius: 5px;">
+        <strong>小技巧：</strong>预设可以随时删除，点击预设标签右侧的 <i class="fa-solid fa-xmark"></i> 即可。
+      </div>
+
+      <h4 style="margin-top: 16px; color: var(--SmartThemeUnderlineColor);"><i class="fa-solid fa-lightbulb"></i> 使用场景推荐</h4>
+      <ul style="margin: 0; padding-left: 20px; opacity: 0.9;">
+        <li><strong>整理长对话</strong>：把无关紧要的消息折叠起来，只保留关键内容</li>
+        <li><strong>标记重要信息</strong>：给重要消息添加"⭐重要"标题，方便回顾</li>
+        <li><strong>分段整理</strong>：按话题给消息分段（如"第一章"、"第二章"）</li>
+      </ul>
+    </div>
+  `;
+
+  if (typeof callGenericPopup === 'function') {
+    callGenericPopup(content, 1, '聊天记录折叠 - 使用说明');
+  } else {
+    alert('聊天记录折叠：点击消息操作菜单（三个点）中的文件夹图标即可折叠消息');
+  }
 }
 
 /**
@@ -796,6 +1108,19 @@ function setupEventListeners() {
     }
   });
 
+  // 监听批量加载历史消息（点击 "Show more messages" 按钮）
+  eventSource.on(event_types.MORE_MESSAGES_LOADED, () => {
+    if (!isEnabled) return;
+
+    logger.info('chatTools', '[Fold] 收到 MORE_MESSAGES_LOADED 事件');
+
+    // 恢复折叠状态（批量加载的消息可能包含之前折叠的）
+    restoreFoldedMessages();
+
+    // 扫描新加载的消息，添加折叠按钮
+    scanAllMessages('more-messages-loaded');
+  });
+
   // 监听聊天切换（切换角色、切换聊天等）
   eventSource.on(event_types.CHAT_CHANGED, () => {
     // 每次都从存储中读取最新的启用状态，而不是依赖内存变量
@@ -813,6 +1138,9 @@ function setupEventListeners() {
 
     // 扫描所有消息
     scanAllMessages('chat-loaded');
+
+    // 顺带刷新管理面板（如果设置面板已打开）
+    refreshFoldManager();
   });
 
   // 绑定全局点击事件（使用事件委托）

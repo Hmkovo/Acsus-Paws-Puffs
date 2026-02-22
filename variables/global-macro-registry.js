@@ -268,15 +268,15 @@ export async function refreshVariableMacros() {
 
 /**
  * 设置宏预处理器
- * 监听 TEXT_COMPLETION_SETTINGS_READY 事件，在发送请求前处理宏
+ * 监听 TEXT_COMPLETION_SETTINGS_READY 和 CHAT_COMPLETION_SETTINGS_READY 两个事件
+ * 覆盖所有API后端（Text Generation 和 Chat Completion）
  */
 function setupMacroPreprocessor() {
   if (preprocessorSetup) return;
 
-  // TEXT_COMPLETION_SETTINGS_READY 在准备生成参数时触发
-  // params 对象包含 chat_completion_message_chunks 和 extension_prompts
-  eventSource.on(event_types.TEXT_COMPLETION_SETTINGS_READY, (params) => {
-    logger.debug('variable', '[GlobalMacroRegistry] TEXT_COMPLETION_SETTINGS_READY 事件触发');
+  // 宏预处理核心逻辑（复用于两个事件）
+  const processMacros = (params, eventName) => {
+    logger.debug('variable', `[GlobalMacroRegistry] ${eventName} 事件触发`);
 
     if (!params) {
       logger.debug('variable', '[GlobalMacroRegistry] params 为空，跳过预处理');
@@ -300,10 +300,20 @@ function setupMacroPreprocessor() {
     } catch (error) {
       logger.error('variable', '[GlobalMacroRegistry] 预处理宏失败:', error.message);
     }
+  };
+
+  // 监听 TEXT_COMPLETION_SETTINGS_READY（Text Generation 后端：Ooba/KoboldAI）
+  eventSource.on(event_types.TEXT_COMPLETION_SETTINGS_READY, (params) => {
+    processMacros(params, 'TEXT_COMPLETION_SETTINGS_READY');
+  });
+
+  // 监听 CHAT_COMPLETION_SETTINGS_READY（Chat Completion 后端：OpenAI/Claude/手机端）
+  eventSource.on(event_types.CHAT_COMPLETION_SETTINGS_READY, (params) => {
+    processMacros(params, 'CHAT_COMPLETION_SETTINGS_READY');
   });
 
   preprocessorSetup = true;
-  logger.debug('variable', '[GlobalMacroRegistry] 宏预处理器已设置（使用 TEXT_COMPLETION_SETTINGS_READY）');
+  logger.info('variable', '[GlobalMacroRegistry] 宏预处理器已设置（双事件监听：TEXT + CHAT）');
 }
 
 /**

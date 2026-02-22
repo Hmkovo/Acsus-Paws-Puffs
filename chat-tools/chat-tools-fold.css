@@ -4,14 +4,40 @@
  */
 
 /* ============================================
+   使用说明入口链接
+   ============================================ */
+
+.chat-tools-fold-info-link {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.6em 0.8em;
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 8%, transparent 92%);
+  border-radius: 0.4em;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 0.8em;
+  font-size: 0.9em;
+  color: var(--SmartThemeQuoteColor);
+}
+
+.chat-tools-fold-info-link:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 20%, transparent 80%);
+}
+
+.chat-tools-fold-info-link i {
+  font-size: 1em;
+}
+
+/* ============================================
    折叠栏容器
    ============================================ */
 
 .chat-tools-fold-bar {
-  margin: 4px 0;
-  padding: 6px 12px;
+  margin: 0.25em 0;
+  padding: 0.4em 0.75em;
   background: var(--SmartThemeBlurTintColor);
-  border-left: 3px solid var(--SmartThemeQuoteColor);
+  border-left: 0.2em solid var(--SmartThemeQuoteColor);
   cursor: pointer;
   transition: background 0.2s;
 }
@@ -27,7 +53,7 @@
 .chat-tools-fold-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5em;
 }
 
 /* 展开/收起箭头按钮 */
@@ -37,7 +63,7 @@
   color: var(--SmartThemeMutedTextColor);
   cursor: pointer;
   font-size: 0.75em;
-  padding: 2px 4px;
+  padding: 0.15em 0.25em;
   transition: color 0.2s;
   flex-shrink: 0;
   display: flex;
@@ -64,12 +90,12 @@
   flex: 1;
   background: transparent;
   border: none;
-  border-bottom: 1px solid transparent;
+  border-bottom: 0.06em solid transparent;
   color: var(--SmartThemeBodyColor);
   font-size: 0.85em;
-  padding: 2px 4px;
+  padding: 0.15em 0.25em;
   outline: none;
-  min-width: 80px;
+  min-width: 5em;
 }
 
 .chat-tools-fold-title-input:focus {
@@ -85,14 +111,14 @@
 .chat-tools-fold-edit-area {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5em;
   flex: 1;
 }
 
 /* 操作按钮容器 */
 .chat-tools-fold-actions {
   display: flex;
-  gap: 8px;
+  gap: 0.5em;
   flex-shrink: 0;
 }
 
@@ -103,7 +129,7 @@
   color: var(--SmartThemeMutedTextColor);
   cursor: pointer;
   font-size: 0.8em;
-  padding: 2px 4px;
+  padding: 0.15em 0.25em;
   transition: color 0.2s;
 }
 
@@ -117,45 +143,57 @@
 
 /* 删除按钮 hover 警告色 */
 .chat-tools-fold-delete:hover {
-  color: #e74c3c;
+  color: var(--SmartThemeEmColor);
 }
 
 /* ============================================
    设置界面 - 预设管理
    ============================================ */
 
+/* 预设管理和折叠管理中的按钮统一样式 */
+#chat-tools-fold-presets-add,
+#fold-manager-refresh,
+#fold-manager-clear-current,
+#fold-manager-clear-all,
+#fold-manager-clear-char,
+#fold-manager-clear-legacy,
+.fold-manager-clear-chat {
+  white-space: nowrap;
+  font-size: 1em;
+}
+
 .chat-tools-presets-container {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 6px;
+  gap: 0.5em;
+  margin-top: 0.4em;
 }
 
 .chat-tools-presets-input-row {
   display: flex;
-  gap: 6px;
+  gap: 0.4em;
 }
 
 .chat-tools-presets-input-row input {
   flex: 1;
-  padding: 6px 10px;
+  padding: 0.4em 0.6em;
   font-size: 0.9em;
 }
 
 .chat-tools-presets-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 0.4em;
 }
 
 .chat-tools-preset-tag {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
+  gap: 0.25em;
+  padding: 0.25em 0.5em;
   background: var(--SmartThemeQuoteColor);
   color: var(--SmartThemeBlurColor);
-  border-radius: 12px;
+  border-radius: 0.75em;
   font-size: 0.85em;
 }
 
@@ -183,20 +221,20 @@
   position: absolute;
   z-index: 1000;
   background: var(--SmartThemeBlurTintColor);
-  border: 1px solid var(--SmartThemeBorderColor);
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  max-height: 150px;
+  border: 0.06em solid var(--SmartThemeBorderColor);
+  border-radius: 0.25em;
+  box-shadow: 0 0.25em 0.75em rgba(0, 0, 0, 0.15);
+  max-height: 9.5em;
   overflow-y: auto;
-  margin-top: 4px;
+  margin-top: 0.25em;
 }
 
 .chat-tools-fold-preset-list {
-  padding: 4px 0;
+  padding: 0.25em 0;
 }
 
 .chat-tools-fold-preset-item {
-  padding: 6px 12px;
+  padding: 0.4em 0.75em;
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -207,8 +245,104 @@
 }
 
 .chat-tools-fold-preset-empty {
-  padding: 8px 12px;
+  padding: 0.5em 0.75em;
   color: var(--SmartThemeMutedTextColor);
   font-size: 0.85em;
   text-align: center;
+}
+
+/* ========================================
+   折叠管理面板
+   ======================================== */
+
+.fold-manager-block {
+  flex-direction: column !important;
+  gap: 0.4em;
+  border-top: 0.06em solid var(--SmartThemeBorderColor);
+  padding-top: 0.6em;
+  margin-top: 0.25em;
+}
+
+.fold-manager-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.fold-manager-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 0.5em;
+}
+
+.fold-manager-stat {
+  flex: 1;
+  font-size: 0.9em;
+  color: var(--SmartThemeBodyColor);
+}
+
+.fold-manager-danger-btn {
+  color: var(--SmartThemeEmColor) !important;
+  border-color: var(--SmartThemeEmColor) !important;
+  opacity: 0.85;
+  white-space: nowrap;
+  font-size: 1em;
+}
+
+.fold-manager-danger-btn:hover {
+  opacity: 1;
+  background: var(--SmartThemeEmColor) !important;
+  color: var(--SmartThemeBlurColor) !important;
+}
+
+.fold-manager-chat-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+  padding-left: 0.5em;
+  border-left: 0.12em solid var(--SmartThemeBorderColor);
+  max-height: 11.25em;
+  overflow-y: auto;
+}
+
+.fold-manager-chat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4em;
+  font-size: 0.85em;
+}
+
+.fold-manager-chat-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--SmartThemeBodyColor);
+}
+
+.fold-manager-empty {
+  font-size: 0.85em;
+  color: var(--SmartThemeMutedTextColor);
+  padding: 0.25em 0;
+}
+
+.fold-manager-current-row {
+  border-top: 0.06em solid var(--SmartThemeBorderColor);
+  padding-top: 0.4em;
+}
+
+.fold-manager-legacy-row {
+  background: color-mix(in srgb, var(--SmartThemeEmColor) 8%, transparent);
+  border-radius: 0.25em;
+  padding: 0.25em 0.4em;
+}
+
+.fold-manager-legacy-text {
+  color: var(--SmartThemeEmColor) !important;
+  font-weight: bold;
 }

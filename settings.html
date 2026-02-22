@@ -115,6 +115,12 @@
               </div>
             </div>
             <div class="chat-tools-accordion-body">
+              <!-- 使用说明入口 -->
+              <div class="chat-tools-fold-info-link" id="chat-tools-fold-info-link">
+                <i class="fa-solid fa-circle-question"></i>
+                <span>点击查看使用说明</span>
+              </div>
+
               <!-- 功能开关 -->
               <div class="chat-tools-setting-item">
                 <label class="checkbox_label">
@@ -153,6 +159,44 @@
                 </div>
               </div>
 
+              <!-- 折叠管理 -->
+              <div class="chat-tools-setting-item fold-manager-block" id="chat-tools-fold-manager">
+                <div class="fold-manager-header">
+                  <span class="chat-tools-label">折叠管理</span>
+                  <button class="menu_button interactable" id="fold-manager-refresh" title="刷新统计" tabindex="0" role="button">
+                    <i class="fa-solid fa-rotate-right"></i>
+                  </button>
+                </div>
+
+                <!-- 旧格式残留警告行（有残留时显示） -->
+                <div class="fold-manager-row fold-manager-legacy-row" id="fold-manager-legacy-row" style="display: none;">
+                  <span id="fold-manager-legacy-count" class="fold-manager-stat fold-manager-legacy-text">旧格式残留：0 个</span>
+                  <button class="menu_button interactable fold-manager-danger-btn" id="fold-manager-clear-legacy" tabindex="0" role="button">清除旧数据</button>
+                </div>
+
+                <!-- 全局行 -->
+                <div class="fold-manager-row">
+                  <span id="fold-manager-global-count" class="fold-manager-stat">共 0 个</span>
+                  <button class="menu_button interactable fold-manager-danger-btn" id="fold-manager-clear-all" tabindex="0" role="button">全部清除</button>
+                </div>
+
+                <!-- 当前角色行 -->
+                <div class="fold-manager-row">
+                  <span id="fold-manager-char-count" class="fold-manager-stat">当前角色：0 个</span>
+                  <button class="menu_button interactable fold-manager-danger-btn" id="fold-manager-clear-char" tabindex="0" role="button">清除角色</button>
+                </div>
+
+                <!-- 当前角色的聊天记录列表 -->
+                <div id="fold-manager-chat-list" class="fold-manager-chat-list">
+                  <div class="fold-manager-empty">当前角色无折叠记录</div>
+                </div>
+
+                <!-- 当前聊天行 -->
+                <div class="fold-manager-row fold-manager-current-row">
+                  <span id="fold-manager-current-chat-count" class="fold-manager-stat">当前聊天：0 个</span>
+                  <button class="menu_button interactable" id="fold-manager-clear-current" tabindex="0" role="button">清除当前</button>
+                </div>
+              </div>
 
             </div>
           </div>

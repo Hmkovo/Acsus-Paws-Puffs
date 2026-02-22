@@ -49,6 +49,11 @@
 @import url('chat-archive/chat-archive.css');
 
 /* ========================================
+   导入节目单样式CSS
+   ======================================== */
+@import url('./program/program.css');
+
+/* ========================================
    预设管理器优化（全局）
    ======================================== */
 
@@ -7686,3 +7691,4 @@ body.beautify-hide-qr.beautify-qr-height-auto #send_form:hover #qr--bar:not(:emp
   margin: 0;
   font-size: 0.9em;
 }
+

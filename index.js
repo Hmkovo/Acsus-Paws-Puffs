@@ -62,6 +62,17 @@ import { openFloatingBtnImagePopup } from "./beautify/beautify-popup.js";
 // 动态变量模块
 import { initVariables, renderVariablesUI } from "./variables/index.js";
 
+// 节目单模块
+import {
+  initProgramManager,
+  bindProgramToggle,
+  destroyProgramManager
+} from "./program/program-manager.js";
+import {
+  createProgramPanel,
+  refreshProgramPanelUI
+} from "./program/program-manager-ui.js";
+
 
 // ========================================
 // 第三步：定义扩展常量和路径
@@ -104,6 +115,12 @@ const defaultSettings = {
   },
   presetManager: {
     enabled: false
+  },
+  // 节目单设置
+  program: {
+    enabled: false,
+    floatingBtnEnabled: false,
+    floatingBtnPosition: { x: 100, y: 200 }
   }
 };
 
@@ -231,7 +248,17 @@ async function initPawsPuffs() {
     //   // 不阻断，继续初始化其他模块
     // }
 
-    // 5.9 初始化动态变量系统
+    // 5.9 初始化节目单系统
+    try {
+      initProgramManager();
+      createProgramPanel();
+      logger.debug('program', '[Main] 节目单系统初始化成功');
+    } catch (error) {
+      logger.error('program', '[Main] 节目单系统初始化失败:', error.message || error);
+      // 不阻断，继续初始化其他模块
+    }
+
+    // 5.10 初始化动态变量系统
     try {
       const result = await initVariables();
       if (result.success) {
@@ -336,6 +363,14 @@ async function initSettingsPanel() {
       try {
         await simulatedLife.renderUI(document.getElementById('paws-puffs-simulated-life-panel'));
         logger.debug('simlife', '[Main.initSettingsPanel] 模拟人生模块UI渲染成功');
+
+        // 模拟人生 UI 渲染完成后，绑定节目单开关（因为节目单卡片在模拟人生手风琴中）
+        try {
+          bindProgramToggle();
+          logger.debug('program', '[Main.initSettingsPanel] 节目单开关绑定成功');
+        } catch (error) {
+          logger.error('program', '[Main.initSettingsPanel] 节目单开关绑定失败:', error.message);
+        }
       } catch (error) {
         logger.error('simlife', '[Main.initSettingsPanel] 模拟人生模块UI渲染失败:', error.message);
       }
@@ -468,6 +503,7 @@ function bindSettingsEvents() {
   // 绑定美化功能开关
   bindBeautifyToggle();
 
+  // 注意：节目单功能开关在模拟人生模块渲染完成后绑定
   // 绑定悬浮按钮设置
   bindFloatingBtnSettings();
 
