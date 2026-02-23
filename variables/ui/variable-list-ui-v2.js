@@ -2315,7 +2315,14 @@ async function handleImportSuite() {
             } else {
               warnings.push(`变量条目「${variableName}」未能导入（变量不存在）`);
             }
+          } else if (item.type === 'char-prompt') {
+            // 角色条目：生成新的唯一 ID
+            rebuiltItems.push({
+              ...item,
+              id: 'item_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5)
+            });
           } else {
+            // 其他未知类型：原样推入（向后兼容）
             rebuiltItems.push(item);
           }
         }
