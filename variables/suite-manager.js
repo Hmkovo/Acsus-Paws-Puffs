@@ -20,6 +20,7 @@ import logger from '../logger.js';
  * @typedef {import('./variable-types.js').PromptItem} PromptItem
  * @typedef {import('./variable-types.js').VariableItem} VariableItem
  * @typedef {import('./variable-types.js').ChatContentItem} ChatContentItem
+ * @typedef {import('./variable-types.js').CharPromptItem} CharPromptItem
  * @typedef {import('./variable-types.js').TriggerConfig} TriggerConfig
  * @typedef {import('./variable-types.js').RangeConfig} RangeConfig
  * @typedef {import('./variable-types.js').RegexConfig} RegexConfig
@@ -259,7 +260,7 @@ export class SuiteManager {
     /**
      * 移除条目
      * @param {string} suiteId - 套装 ID
-     * @param {string} itemId - 条目 ID（提示词条目的 id、变量条目的 variableId 或正文条目的 id）
+     * @param {string} itemId - 条目 ID（提示词条目的 id、变量条目的 variableId、正文条目的 id 或角色条目的 id）
      * @returns {boolean}
      */
     removeItem(suiteId, itemId) {
@@ -270,6 +271,7 @@ export class SuiteManager {
             if (item.type === 'prompt') return item.id === itemId;
             if (item.type === 'variable') return item.id === itemId;
             if (item.type === 'chat-content') return item.id === itemId;
+            if (item.type === 'char-prompt') return item.id === itemId;
             return false;
         });
 
@@ -381,6 +383,83 @@ export class SuiteManager {
     }
 
     /**
+     * 添加角色条目到套装
+     * 每个角色每种固定类型（char-desc/personality/scenario）只允许一个，worldbook 允许多个
+     * @param {string} suiteId - 套装 ID
+     * @param {string} charId - 角色标识符（avatar 文件名）
+     * @param {'char-desc'|'char-personality'|'char-scenario'|'worldbook'} subType - 子类型
+     * @param {string} label - 显示标签
+     * @param {number} [entryUid] - 世界书条目 UID（subType='worldbook' 时使用）
+     * @returns {CharPromptItem|null}
+     */
+    addCharPromptItem(suiteId, charId, subType, label, entryUid) {
+        const suite = this.suites[suiteId];
+        if (!suite) return null;
+
+        // 固定类型（非 worldbook）：每个角色只允许一个
+        if (subType !== 'worldbook') {
+            const exists = suite.items.some(
+                item => item.type === 'char-prompt' && item.charId === charId && item.subType === subType
+            );
+            if (exists) {
+                logger.warn('variable', '[SuiteManager] 角色条目已存在:', charId, subType);
+                return null;
+            }
+        } else {
+            // worldbook：同一条目 UID 只允许一个
+            const exists = suite.items.some(
+                item => item.type === 'char-prompt' && item.charId === charId
+                    && item.subType === 'worldbook' && item.entryUid === entryUid
+            );
+            if (exists) {
+                logger.warn('variable', '[SuiteManager] 世界书条目已存在:', charId, entryUid);
+                return null;
+            }
+        }
+
+        /** @type {CharPromptItem} */
+        const item = {
+            type: 'char-prompt',
+            id: this._generateItemId(),
+            charId,
+            subType,
+            label: label || `[${subType}]`,
+            enabled: true,
+            ...(entryUid !== undefined && { entryUid })
+        };
+
+        suite.items.push(item);
+        suite.updatedAt = Date.now();
+        this._save();
+        logger.debug('variable', '[SuiteManager] 添加角色条目:', charId, subType);
+        return item;
+    }
+
+    /**
+     * 更新角色条目
+     * @param {string} suiteId - 套装 ID
+     * @param {string} itemId - 条目 ID
+     * @param {Partial<CharPromptItem>} updates - 更新内容
+     * @returns {boolean}
+     */
+    updateCharPromptItem(suiteId, itemId, updates) {
+        const suite = this.suites[suiteId];
+        if (!suite) return false;
+
+        const item = suite.items.find(
+            i => i.type === 'char-prompt' && i.id === itemId
+        );
+        if (!item) return false;
+
+        if (updates.enabled !== undefined) item.enabled = updates.enabled;
+
+        suite.updatedAt = Date.now();
+        this._save();
+        logger.debug('variable', '[SuiteManager] 更新角色条目:', itemId);
+        return true;
+    }
+
+    /**
      * 更新正文条目
      * @param {string} suiteId - 套装 ID
      * @param {string} itemId - 条目 ID
@@ -426,6 +505,7 @@ export class SuiteManager {
                 if (i.type === 'prompt') return i.id === id;
                 if (i.type === 'variable') return i.id === id;
                 if (i.type === 'chat-content') return i.id === id;
+                if (i.type === 'char-prompt') return i.id === id;
                 return false;
             });
             if (item) newItems.push(item);

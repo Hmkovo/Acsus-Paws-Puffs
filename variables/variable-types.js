@@ -86,8 +86,20 @@
  */
 
 /**
- * 套装条目（提示词、变量或正文）
- * @typedef {PromptItem | VariableItem | ChatContentItem} SuiteItem
+ * 角色条目（绑定到特定角色，随角色切换显示/隐藏）
+ * @typedef {Object} CharPromptItem
+ * @property {'char-prompt'} type - 条目类型标识
+ * @property {string} id - 唯一标识
+ * @property {string} charId - 角色标识符（角色 avatar 文件名，如 "Seraphina.png"）
+ * @property {'char-desc' | 'char-personality' | 'char-scenario' | 'worldbook'} subType - 子类型
+ * @property {string} label - 显示标签（如 "[角色设定]"）
+ * @property {number} [entryUid] - 世界书条目 UID（subType='worldbook' 时使用）
+ * @property {boolean} enabled - 是否启用
+ */
+
+/**
+ * 套装条目（提示词、变量、正文或角色条目）
+ * @typedef {PromptItem | VariableItem | ChatContentItem | CharPromptItem} SuiteItem
  */
 
 /**

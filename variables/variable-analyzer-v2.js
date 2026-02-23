@@ -215,11 +215,20 @@ export class VariableAnalyzerV2 {
      * @returns {Promise<{prompt: string, floorRange: string}>}
      */
     async _buildPromptWithFloorRange(suite, context) {
-        const suiteManager = getSuiteManager();
         const chatContentProcessor = getChatContentProcessor();
 
-        // 获取所有可见的内容条目（提示词 + 正文），按顺序
-        const visibleItems = suiteManager.getVisibleContentItems(suite.id);
+        // 获取当前角色（用于过滤 char-prompt 条目）
+        const ctx = getContext();
+        const currentChar = ctx.characters?.[ctx.characterId];
+        const currentCharId = currentChar?.avatar || null;
+
+        // 过滤出所有可见的内容条目（提示词 + 正文 + 当前角色的角色条目），跳过变量条目
+        const visibleItems = suite.items.filter(item => {
+            if (item.type === 'variable') return false;
+            if (item.enabled === false) return false;
+            if (item.type === 'char-prompt') return item.charId === currentCharId;
+            return true;
+        });
 
         if (visibleItems.length === 0) {
             return { prompt: '', floorRange: '' };
@@ -250,6 +259,25 @@ export class VariableAnalyzerV2 {
                         chat
                     );
                     allFloors.push(...floors);
+                }
+            } else if (item.type === 'char-prompt') {
+                // 角色条目：动态读取当前角色数据
+                let charContent = '';
+                if (currentChar) {
+                    if (item.subType === 'char-desc') {
+                        charContent = currentChar.description || '';
+                    } else if (item.subType === 'char-personality') {
+                        charContent = currentChar.personality || '';
+                    } else if (item.subType === 'char-scenario') {
+                        charContent = currentChar.scenario || '';
+                    } else if (item.subType === 'worldbook') {
+                        const entries = currentChar.data?.character_book?.entries || [];
+                        const entry = entries.find(e => (e.uid ?? e.id) === item.entryUid);
+                        charContent = entry?.content || '';
+                    }
+                }
+                if (charContent && charContent.trim()) {
+                    parts.push(charContent);
                 }
             }
         }

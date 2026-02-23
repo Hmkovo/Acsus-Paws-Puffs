@@ -51,6 +51,23 @@ let draggedItem = null;
 /** @type {string|null} */
 let draggedItemId = null;
 
+/** @type {boolean} CHAT_CHANGED 监听器是否已绑定，防止重复绑定 */
+let chatChangedListenerBound = false;
+
+// ============================================
+// 辅助函数
+// ============================================
+
+/**
+ * 获取当前角色的 charId（avatar 文件名，如 "Seraphina.png"）
+ * charId 是角色条目与角色绑定的稳定标识符
+ * @returns {string|null}
+ */
+function getCurrentCharId() {
+  const ctx = getContext();
+  return ctx.characters?.[ctx.characterId]?.avatar || null;
+}
+
 // ============================================
 // 第一部分：扩展栏设置页
 // ============================================
@@ -71,6 +88,16 @@ export async function renderVariableListPageV2(container) {
 
   if (settings.enabled) {
     addExtensionsMenuButton();
+  }
+
+  // 监听角色切换事件，刷新条目列表（char-prompt 条目随角色变化）
+  if (!chatChangedListenerBound) {
+    eventSource.on(event_types.CHAT_CHANGED, () => {
+      if (!windowElement) return;
+      refreshItemsList();
+      updatePreview();
+    });
+    chatChangedListenerBound = true;
   }
 
   logger.info('variable', '[VariableListUIV2] 设置页渲染完成');
@@ -380,7 +407,14 @@ function closeWindow() {
 /**
  * 构建窗口 HTML
  */
+/**
+ * @param {Array} suites
+ * @param {Object|null} activeSuite
+ * @param {Array} variables
+ * @returns {string}
+ */
 function buildWindowHTML(suites, activeSuite, variables) {
+  const currentCharId = getCurrentCharId();
   return `
         <div class="var-v2-header">
             <span class="var-v2-header-title">动态变量</span>
@@ -438,10 +472,13 @@ function buildWindowHTML(suites, activeSuite, variables) {
                                     <button class="var-v2-btn small" id="var-v2-add-variable" title="添加变量">
                                         <i class="fa-solid fa-code"></i> 变量
                                     </button>
+                                    <button class="var-v2-btn small" id="var-v2-add-char-prompt" title="添加角色条目">
+                                        <i class="fa-solid fa-user"></i> 角色
+                                    </button>
                                 </span>
                             </div>
                             <div class="var-v2-items-list" id="var-v2-items-list">
-                                ${buildItemsList(activeSuite, variables)}
+                                ${buildItemsList(activeSuite, variables, currentCharId)}
                             </div>
                         </div>
                     </div>
@@ -550,15 +587,28 @@ function buildTriggerInfo(suite) {
 
 /**
  * 构建条目列表
+ * @param {Object|null} suite - 当前套装
+ * @param {Array} variables - 变量定义列表
+ * @param {string|null} currentCharId - 当前角色 charId，用于过滤 char-prompt 条目
+ * @returns {string} HTML 字符串
  */
-function buildItemsList(suite, variables) {
+function buildItemsList(suite, variables, currentCharId) {
   if (!suite || !suite.items || suite.items.length === 0) {
     return '<div class="var-v2-empty">暂无条目，点击上方按钮添加</div>';
   }
 
   const processor = getChatContentProcessor();
 
-  return suite.items.map((item, index) => {
+  // 过滤：只显示全局条目 + 当前角色的 char-prompt 条目
+  const visibleItems = suite.items.filter(item =>
+    item.type !== 'char-prompt' || item.charId === currentCharId
+  );
+
+  if (visibleItems.length === 0) {
+    return '<div class="var-v2-empty">暂无条目，点击上方按钮添加</div>';
+  }
+
+  return visibleItems.map((item, index) => {
     if (item.type === 'prompt') {
       // 优先显示名称，没有名称则显示内容预览
       const displayText = item.name
@@ -596,6 +646,21 @@ function buildItemsList(suite, variables) {
                     <span class="var-v2-item-actions">
                         <i class="fa-solid fa-pencil var-v2-edit-chat-content" data-id="${item.id}" title="编辑"></i>
                         <i class="fa-solid fa-gear var-v2-regex-settings" data-id="${item.id}" title="正则设置"></i>
+                        <i class="fa-solid fa-trash var-v2-delete-item" data-id="${item.id}" title="删除"></i>
+                    </span>
+                </div>
+            `;
+    } else if (item.type === 'char-prompt') {
+      // 角色条目
+      return `
+                <div class="var-v2-item char-prompt" data-id="${item.id}" data-index="${index}" draggable="true">
+                    <span class="var-v2-drag-handle"><i class="fa-solid fa-grip-vertical"></i></span>
+                    <span class="var-v2-item-toggle">
+                        <i class="fa-solid ${item.enabled !== false ? 'fa-toggle-on' : 'fa-toggle-off'} var-v2-toggle-enabled" data-id="${item.id}" title="${item.enabled !== false ? '关闭' : '开启'}"></i>
+                    </span>
+                    <span class="var-v2-item-icon"><i class="fa-solid fa-user"></i></span>
+                    <span class="var-v2-item-content">${escapeHtml(item.label || item.subType)}</span>
+                    <span class="var-v2-item-actions">
                         <i class="fa-solid fa-trash var-v2-delete-item" data-id="${item.id}" title="删除"></i>
                     </span>
                 </div>
@@ -854,6 +919,11 @@ function bindWindowEvents() {
     openVariableSelectPopup();
   });
 
+  // 添加角色条目
+  windowElement.querySelector('#var-v2-add-char-prompt')?.addEventListener('click', () => {
+    openCharPromptPopup();
+  });
+
   // 发送按钮
   windowElement.querySelector('#var-v2-send-btn')?.addEventListener('click', () => {
     handleSendAnalysis();
@@ -991,6 +1061,10 @@ function bindItemsListEvents() {
         } else if (item.type === 'variable') {
           suiteManager.updateVariableItem(suite.id, itemId, { enabled: newEnabled });
           refreshItemsList();
+        } else if (item.type === 'char-prompt') {
+          suiteManager.updateCharPromptItem(suite.id, itemId, { enabled: newEnabled });
+          refreshItemsList();
+          updatePreview();
         }
       }
     }
@@ -1122,28 +1196,42 @@ function bindDragEvents() {
     const suiteManager = getSuiteManager();
     const suite = suiteManager.getActiveSuite();
     if (suite) {
+      const currentCharId = getCurrentCharId();
       const items = [...suite.items];
-      const draggedIndex = items.findIndex(i => i.id === draggedItemId);
-      const targetIndex = items.findIndex(i => i.id === targetId);
 
-      if (draggedIndex !== -1 && targetIndex !== -1) {
-        const [draggedElement] = items.splice(draggedIndex, 1);
-
-        let newIndex = targetIndex;
-        if (draggedIndex < targetIndex) {
-          newIndex = insertBefore ? targetIndex - 1 : targetIndex;
-        } else {
-          newIndex = insertBefore ? targetIndex : targetIndex + 1;
+      // 构建可见条目到原数组的索引映射
+      const visibleIndices = [];
+      items.forEach((item, idx) => {
+        if (item.type !== 'char-prompt' || item.charId === currentCharId) {
+          visibleIndices.push(idx);
         }
+      });
 
-        items.splice(newIndex, 0, draggedElement);
+      // 在映射中找拖拽源和目标的原数组索引
+      const draggedRealIndex = items.findIndex(i => i.id === draggedItemId);
+      const targetRealIndex = items.findIndex(i => i.id === targetId);
 
-        const newOrder = items.map(i => i.id);
-        suiteManager.reorderItems(suite.id, newOrder);
+      if (draggedRealIndex === -1 || targetRealIndex === -1) return;
 
-        refreshItemsList();
-        updatePreview();
-      }
+      // 移除拖拽项
+      const [draggedElement] = items.splice(draggedRealIndex, 1);
+
+      // 重新计算目标索引（因为移除了一项）
+      let adjustedTargetIndex = items.findIndex(i => i.id === targetId);
+      if (adjustedTargetIndex === -1) return;
+
+      // 根据鼠标位置决定插入位置
+      let newIndex = insertBefore ? adjustedTargetIndex : adjustedTargetIndex + 1;
+
+      // 插入
+      items.splice(newIndex, 0, draggedElement);
+
+      // 保存新顺序
+      const newOrder = items.map(i => i.id);
+      suiteManager.reorderItems(suite.id, newOrder);
+
+      refreshItemsList();
+      updatePreview();
     }
 
     target.classList.remove('drag-over-top', 'drag-over-bottom');
@@ -1174,9 +1262,11 @@ function refreshItemsList() {
     logger.debug('variable', '[VariableListUIV2] 第一个条目:', firstItem.id, 'enabled:', firstItem.enabled, 'type:', firstItem.type);
   }
 
+  const currentCharId = getCurrentCharId();
+
   const list = windowElement.querySelector('#var-v2-items-list');
   if (list) {
-    list.innerHTML = buildItemsList(suite, variables);
+    list.innerHTML = buildItemsList(suite, variables, currentCharId);
   }
 }
 
@@ -1622,6 +1712,181 @@ async function openVariableSelectPopup() {
     suiteManager.addVariableItem(suite.id, result.varId);
     refreshItemsList();
     toastr.success('变量已添加到套装');
+  }
+}
+
+/**
+ * 打开角色条目选择器弹窗
+ * 显示当前角色的固定条目（设定/性格/场景）和世界书条目供选择添加
+ */
+async function openCharPromptPopup() {
+  const suiteManager = getSuiteManager();
+  const suite = suiteManager.getActiveSuite();
+  if (!suite) {
+    toastr.warning('请先选择套装');
+    return;
+  }
+
+  const ctx = getContext();
+  const char = ctx.characters?.[ctx.characterId];
+  if (!char) {
+    toastr.warning('请先打开一个角色对话');
+    return;
+  }
+
+  const charId = char.avatar;
+  const charName = char.name || '未知角色';
+
+  // 检查固定条目是否已添加
+  const hasDesc = suite.items.some(i => i.type === 'char-prompt' && i.charId === charId && i.subType === 'char-desc');
+  const hasPers = suite.items.some(i => i.type === 'char-prompt' && i.charId === charId && i.subType === 'char-personality');
+  const hasScen = suite.items.some(i => i.type === 'char-prompt' && i.charId === charId && i.subType === 'char-scenario');
+
+  const html = `
+        <div class="var-v2-char-picker">
+            <div class="var-v2-char-picker-name">
+                <i class="fa-solid fa-user"></i> ${escapeHtml(charName)}
+            </div>
+            <div class="var-v2-char-picker-section">
+                <div class="var-v2-char-picker-title">固定条目</div>
+                <div class="var-v2-char-picker-row">
+                    <span class="var-v2-char-picker-label">[角色设定]</span>
+                    <button class="var-v2-btn small var-v2-char-add-btn" id="add-char-desc" ${hasDesc ? 'disabled' : ''}>
+                        ${hasDesc ? '<i class="fa-solid fa-check"></i> 已添加' : '+ 添加'}
+                    </button>
+                </div>
+                <div class="var-v2-char-picker-row">
+                    <span class="var-v2-char-picker-label">[角色性格]</span>
+                    <button class="var-v2-btn small var-v2-char-add-btn" id="add-char-personality" ${hasPers ? 'disabled' : ''}>
+                        ${hasPers ? '<i class="fa-solid fa-check"></i> 已添加' : '+ 添加'}
+                    </button>
+                </div>
+                <div class="var-v2-char-picker-row">
+                    <span class="var-v2-char-picker-label">[角色场景]</span>
+                    <button class="var-v2-btn small var-v2-char-add-btn" id="add-char-scenario" ${hasScen ? 'disabled' : ''}>
+                        ${hasScen ? '<i class="fa-solid fa-check"></i> 已添加' : '+ 添加'}
+                    </button>
+                </div>
+            </div>
+            <div class="var-v2-char-picker-section">
+                <div class="var-v2-char-picker-title">世界书条目</div>
+                <button class="var-v2-btn small" id="add-char-worldbook" style="width:100%">
+                    <i class="fa-solid fa-book"></i> 从世界书选择条目
+                </button>
+            </div>
+        </div>
+    `;
+
+  await showInternalPopup(`角色条目`, html, {
+    buttons: [{ text: '关闭', value: 'close' }],
+    onShow: (overlay) => {
+      overlay.querySelector('#add-char-desc')?.addEventListener('click', (e) => {
+        const btn = /** @type {HTMLButtonElement} */ (e.currentTarget);
+        if (suiteManager.addCharPromptItem(suite.id, charId, 'char-desc', '[角色设定]')) {
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fa-solid fa-check"></i> 已添加';
+          refreshItemsList();
+          updatePreview();
+        }
+      });
+
+      overlay.querySelector('#add-char-personality')?.addEventListener('click', (e) => {
+        const btn = /** @type {HTMLButtonElement} */ (e.currentTarget);
+        if (suiteManager.addCharPromptItem(suite.id, charId, 'char-personality', '[角色性格]')) {
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fa-solid fa-check"></i> 已添加';
+          refreshItemsList();
+          updatePreview();
+        }
+      });
+
+      overlay.querySelector('#add-char-scenario')?.addEventListener('click', (e) => {
+        const btn = /** @type {HTMLButtonElement} */ (e.currentTarget);
+        if (suiteManager.addCharPromptItem(suite.id, charId, 'char-scenario', '[角色场景]')) {
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fa-solid fa-check"></i> 已添加';
+          refreshItemsList();
+          updatePreview();
+        }
+      });
+
+      overlay.querySelector('#add-char-worldbook')?.addEventListener('click', async () => {
+        await handleAddCharWorldbook(char, suite.id);
+        refreshItemsList();
+        updatePreview();
+      });
+    }
+  });
+}
+
+/**
+ * 处理从世界书添加角色条目
+ * @param {Object} char - SillyTavern 角色对象
+ * @param {string} suiteId - 套装 ID
+ */
+async function handleAddCharWorldbook(char, suiteId) {
+  const suiteManager = getSuiteManager();
+  const suite = suiteManager.getSuite(suiteId);
+  if (!suite) return;
+
+  const charId = char.avatar;
+  const characterBook = char.data?.character_book;
+
+  if (!characterBook || !characterBook.entries || characterBook.entries.length === 0) {
+    toastr.warning('该角色没有关联的世界书条目');
+    return;
+  }
+
+  const entries = characterBook.entries;
+
+  const selectorHtml = `
+        <div class="var-v2-worldbook-selector">
+            ${entries.map((entry, i) => {
+    const entryUid = entry.uid ?? entry.id;
+    const alreadyAdded = suite.items.some(
+      item => item.type === 'char-prompt' && item.subType === 'worldbook' && item.entryUid === entryUid
+    );
+    return `<label class="var-v2-worldbook-item ${alreadyAdded ? 'var-v2-worldbook-item--added' : ''}">
+                    <input type="checkbox" value="${i}" ${alreadyAdded ? 'disabled checked' : ''} />
+                    <span>${escapeHtml(entry.comment || '未命名条目')}</span>
+                    ${alreadyAdded ? '<span class="var-v2-worldbook-added-tag">已添加</span>' : ''}
+                </label>`;
+  }).join('')}
+        </div>
+    `;
+
+  const result = await showInternalPopup('选择世界书条目', selectorHtml, {
+    buttons: [
+      { text: '取消', value: null },
+      { text: '添加', value: 'add', class: 'primary' }
+    ],
+    beforeClose: (buttonValue, overlay) => {
+      if (buttonValue === 'add') {
+        const checked = /** @type {NodeListOf<HTMLInputElement>} */ (
+          overlay.querySelectorAll('.var-v2-worldbook-selector input[type="checkbox"]:checked:not(:disabled)')
+        );
+        return {
+          action: 'add',
+          indices: Array.from(checked).map(cb => parseInt(cb.value))
+        };
+      }
+      return null;
+    }
+  });
+
+  if (result?.action === 'add' && result.indices.length > 0) {
+    let added = 0;
+    result.indices.forEach(i => {
+      const entry = entries[i];
+      const entryUid = entry.uid ?? entry.id;
+      if (suiteManager.addCharPromptItem(suiteId, charId, 'worldbook', `[世界书-${entry.comment || '未命名'}]`, entryUid)) {
+        added++;
+      }
+    });
+    if (added > 0) {
+      toastr.success(`已添加 ${added} 个世界书条目`);
+      logger.debug('variable', '[VariableListUIV2] 添加世界书条目:', added, '个');
+    }
   }
 }
 

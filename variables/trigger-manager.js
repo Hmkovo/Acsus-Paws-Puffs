@@ -33,14 +33,13 @@ import { refreshVariableMacros, preloadAllVariableValues } from './global-macro-
  */
 export class TriggerManager {
     constructor() {
-        /** @type {Object<string, Object<string, number>>} 消息计数 {suiteId: {chatId: count}} */
+        /** @type {Object<string, Object<string, number>>} AI回复计数 {suiteId: {chatId: count}} */
         this.messageCounts = {};
         /** @type {boolean} */
         this.initialized = false;
 
         // 绑定事件处理器
         this._onMessageReceived = this._onMessageReceived.bind(this);
-        this._onMessageSent = this._onMessageSent.bind(this);
         this._onChatChanged = this._onChatChanged.bind(this);
     }
 
@@ -58,9 +57,8 @@ export class TriggerManager {
         const settings = await storage.getSettingsV2();
         this.messageCounts = settings.messageCounts || {};
 
-        // 注册事件监听
+        // 注册事件监听（只监听AI回复）
         eventSource.on(event_types.MESSAGE_RECEIVED, this._onMessageReceived);
-        eventSource.on(event_types.MESSAGE_SENT, this._onMessageSent);
         eventSource.on(event_types.CHAT_CHANGED, this._onChatChanged);
 
         this.initialized = true;
@@ -72,7 +70,6 @@ export class TriggerManager {
      */
     destroy() {
         eventSource.off(event_types.MESSAGE_RECEIVED, this._onMessageReceived);
-        eventSource.off(event_types.MESSAGE_SENT, this._onMessageSent);
         eventSource.off(event_types.CHAT_CHANGED, this._onChatChanged);
 
         this.abortAnalysis();
@@ -85,7 +82,7 @@ export class TriggerManager {
     // ========================================
 
     /**
-     * 处理收到消息
+     * 处理收到AI回复
      * @private
      */
     async _onMessageReceived(messageIndex) {
@@ -93,18 +90,10 @@ export class TriggerManager {
     }
 
     /**
-     * 处理发送消息
-     * @private
-     */
-    async _onMessageSent(messageIndex) {
-        await this._handleNewMessage(messageIndex, 'sent');
-    }
-
-    /**
-     * 处理新消息
+     * 处理新的AI回复消息
      * @private
      * @param {number} messageIndex
-     * @param {'received' | 'sent'} type
+     * @param {'received'} type
      */
     async _handleNewMessage(messageIndex, type) {
         const ctx = getContext();
@@ -125,13 +114,13 @@ export class TriggerManager {
             const trigger = suite.trigger;
 
             if (trigger.type === 'interval') {
-                // 间隔触发：计数
+                // 间隔触发：仅计数AI回复
                 await this._incrementCount(suite.id, chatId);
                 const count = this.getCount(suite.id, chatId);
                 const interval = trigger.interval || 5;
 
                 if (count >= interval) {
-                    logger.info('variable', '[TriggerManager] 间隔触发:', suite.name, '计数:', count);
+                    logger.info('variable', '[TriggerManager] 间隔触发:', suite.name, 'AI回复计数:', count);
                     await this.triggerAnalysis(suite.id, 'interval');
                     this.resetCount(suite.id, chatId);
                 }
@@ -164,11 +153,11 @@ export class TriggerManager {
     }
 
     // ========================================
-    // 消息计数
+    // AI回复计数
     // ========================================
 
     /**
-     * 增加计数
+     * 增加AI回复计数
      * @private
      * @param {string} suiteId
      * @param {string} chatId
@@ -187,7 +176,7 @@ export class TriggerManager {
     }
 
     /**
-     * 获取计数
+     * 获取AI回复计数
      * @param {string} suiteId
      * @param {string} chatId
      * @returns {number}
@@ -197,7 +186,7 @@ export class TriggerManager {
     }
 
     /**
-     * 重置计数
+     * 重置AI回复计数
      * @param {string} suiteId
      * @param {string} chatId
      */
@@ -209,7 +198,7 @@ export class TriggerManager {
     }
 
     /**
-     * 保存消息计数
+     * 保存AI回复计数
      * @private
      */
     async _saveMessageCounts() {
