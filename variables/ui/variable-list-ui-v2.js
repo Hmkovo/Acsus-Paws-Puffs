@@ -1635,8 +1635,8 @@ async function openNewVariablePopup() {
         <div class="var-v2-form">
             <div class="var-v2-form-row">
                 <label>变量名</label>
-                <input type="text" id="var-v2-new-name" placeholder="如：摘要、心理状态">
-                <span class="var-v2-hint">只能包含字母、数字、中文</span>
+                <input type="text" id="var-v2-new-name" placeholder="如：summary、psy">
+                <span class="var-v2-hint">只能包含字母</span>
             </div>
             <div class="var-v2-form-row">
                 <label>标签格式</label>
@@ -1842,6 +1842,7 @@ async function handleDeleteSuite() {
  */
 async function handleExportSuite() {
   const suiteManager = getSuiteManager();
+  const variableManager = getVariableManagerV2();
   const suite = suiteManager.getActiveSuite();
 
   if (!suite) {
@@ -1850,15 +1851,41 @@ async function handleExportSuite() {
   }
 
   try {
-    // 准备导出数据（移除 ID 和时间戳，导入时会重新生成）
+    // 收集套装中引用的所有变量定义
+    const variableIds = suite.items
+      .filter(item => item.type === 'variable')
+      .map(item => item.id);
+    
+    const variableDefinitions = variableIds
+      .map(id => variableManager.getDefinition(id))
+      .filter(v => v !== null)  // 过滤掉不存在的变量
+      .map(v => ({
+        name: v.name,
+        tag: v.tag,
+        mode: v.mode
+      }));
+
+    // 准备导出数据
     const exportData = {
-      version: 1,
+      version: 2,  // 版本升级到 2（包含变量定义）
       name: suite.name,
       enabled: suite.enabled,
       trigger: suite.trigger,
+      variables: variableDefinitions,  // 导出变量定义
       items: suite.items.map(item => {
-        const { id, ...itemData } = item;
-        return itemData;
+        if (item.type === 'variable') {
+          // 变量条目：只保留变量名（导入时会通过名称查找新的ID）
+          const variable = variableManager.getDefinition(item.id);
+          return {
+            type: 'variable',
+            variableName: variable ? variable.name : '',  // 保存变量名而不是ID
+            enabled: item.enabled
+          };
+        } else {
+          // 提示词和正文条目：移除条目ID（导入时会重新生成），保留其他所有字段
+          const { id, ...itemData } = item;
+          return itemData;
+        }
       }),
       exportedAt: new Date().toISOString(),
       exportedFrom: 'Acsus-Paws-Puffs 动态变量 V2'
@@ -1900,6 +1927,7 @@ async function handleExportSuite() {
  */
 async function handleImportSuite() {
   const suiteManager = getSuiteManager();
+  const variableManager = getVariableManagerV2();
 
   try {
     // 创建文件选择器
@@ -1922,38 +1950,138 @@ async function handleImportSuite() {
           return;
         }
 
-        // 检查是否为 V1 版本
-        if (importData.version !== 1) {
-          toastr.warning('套装文件版本不匹配，可能导致导入失败');
+        // 构建导入信息
+        const variablesInfo = importData.variables || [];
+        const itemsCount = importData.items.length;
+        const variablesCount = variablesInfo.length;
+        
+        let infoText = `确定要导入套装「${importData.name}」吗？\n\n`;
+        infoText += `- 包含 ${itemsCount} 个条目\n`;
+        if (variablesCount > 0) {
+          infoText += `- 包含 ${variablesCount} 个变量定义`;
         }
 
         // 询问是否导入
-        const confirmed = await showInternalConfirm(
-          '导入套装',
-          `确定要导入套装「${importData.name}」吗？\n\n包含 ${importData.items.length} 个条目`,
-          { okButton: '导入' }
-        );
-
+        const confirmed = await showInternalConfirm('导入套装', infoText, { okButton: '导入' });
         if (!confirmed) return;
 
-        // 创建新套装
+        // ========== 第一步：处理变量定义 ==========
+        const variableNameMap = new Map();  // 旧变量名 -> 新变量ID
+        const warnings = [];
+
+        if (importData.version >= 2 && variablesInfo.length > 0) {
+          for (const varDef of variablesInfo) {
+            const { name, tag, mode } = varDef;
+            
+            // 检查是否已存在同名变量
+            const existingByName = variableManager.getDefinitionByName(name);
+            if (existingByName) {
+              // 已存在同名变量，检查标签和模式是否一致
+              if (existingByName.tag === tag && existingByName.mode === mode) {
+                // 完全一致，复用
+                variableNameMap.set(name, existingByName.id);
+                logger.info('variable', `[导入] 复用已有变量: ${name}`);
+                continue;
+              } else {
+                // 名称相同但配置不同，需要重命名导入
+                warnings.push(`变量「${name}」已存在但配置不同，将重命名导入`);
+                
+                // 生成新名称
+                let newName = name;
+                let counter = 2;
+                while (variableManager.getDefinitionByName(newName)) {
+                  newName = `${name}${counter}`;
+                  counter++;
+                }
+                
+                // 创建新变量
+                const createResult = await variableManager.createVariable({
+                  name: newName,
+                  tag: tag,
+                  mode: mode
+                });
+                
+                if (createResult.success) {
+                  variableNameMap.set(name, createResult.variable.id);  // 映射旧名称到新ID
+                  logger.info('variable', `[导入] 重命名创建变量: ${name} -> ${newName}`);
+                } else {
+                  warnings.push(`变量「${name}」创建失败: ${createResult.error}`);
+                }
+              }
+            } else {
+              // 不存在，直接创建
+              const createResult = await variableManager.createVariable({
+                name: name,
+                tag: tag,
+                mode: mode
+              });
+              
+              if (createResult.success) {
+                variableNameMap.set(name, createResult.variable.id);
+                logger.info('variable', `[导入] 创建新变量: ${name}`);
+              } else {
+                warnings.push(`变量「${name}」创建失败: ${createResult.error}`);
+              }
+            }
+          }
+        }
+
+        // ========== 第二步：重建条目列表 ==========
+        const rebuiltItems = [];
+        
+        for (const item of importData.items) {
+          if (item.type === 'prompt' || item.type === 'chat-content') {
+            // 提示词和正文条目：生成新的唯一 ID
+            rebuiltItems.push({
+              ...item,
+              id: 'item_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5)
+            });
+          } else if (item.type === 'variable') {
+            // 变量条目：通过变量名查找新的变量ID
+            const variableName = item.variableName || '';
+            const newVariableId = variableNameMap.get(variableName);
+            
+            if (newVariableId) {
+              rebuiltItems.push({
+                type: 'variable',
+                id: newVariableId,  // 使用新的变量ID
+                enabled: item.enabled !== false
+              });
+            } else {
+              warnings.push(`变量条目「${variableName}」未能导入（变量不存在）`);
+            }
+          } else {
+            rebuiltItems.push(item);
+          }
+        }
+
+        // ========== 第三步：创建套装 ==========
         const newSuite = suiteManager.createSuite({
           name: importData.name,
           enabled: importData.enabled !== false,
           trigger: importData.trigger || { type: 'manual' },
-          items: importData.items || []
+          items: rebuiltItems
         });
 
-        // 刷新 UI
+        // ========== 第四步：刷新 UI ==========
         refreshSuiteSelect();
-        
-        // 切换到新导入的套装
         suiteManager.setActiveSuite(newSuite.id);
         refreshItemsList();
         refreshSuiteBadge();
         updatePreview();
 
-        toastr.success(`套装「${importData.name}」已导入`);
+        // ========== 第五步：显示结果 ==========
+        if (warnings.length > 0) {
+          const warningText = warnings.join('\n- ');
+          await showInternalConfirm(
+            '导入完成（有警告）',
+            `套装「${importData.name}」已导入，但有以下警告：\n\n- ${warningText}`,
+            { okButton: '知道了', showCancelButton: false }
+          );
+        } else {
+          toastr.success(`套装「${importData.name}」已导入`);
+        }
+        
         logger.info('variable', '[VariableListUIV2] 套装已导入:', importData.name);
       } catch (error) {
         toastr.error('导入失败: ' + error.message);
