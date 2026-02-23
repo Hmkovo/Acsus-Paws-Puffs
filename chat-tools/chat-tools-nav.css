@@ -139,19 +139,64 @@
 .chat-tools-nav-results {
   position: fixed;
   z-index: 9999;
-  min-width: 300px;
-  max-width: 400px;
-  max-height: 350px;
-  overflow-y: auto;
+  width: 450px;
+  max-height: 60vh;
   background: var(--SmartThemeBlurTintColor);
   border: 1px solid var(--SmartThemeBorderColor);
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 小屏幕自适应 */
+@media (max-width: 768px) {
+  .chat-tools-nav-results {
+    width: 90vw;
+  }
+}
+
+/* 结果容器 - 可滚动 */
+.chat-tools-nav-results-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(60vh - 40px);
+  min-height: 100px;
+}
+
+/* 关闭按钮 */
+.chat-tools-nav-close-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--SmartThemeButtonBackground);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  color: var(--SmartThemeBodyColor);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  z-index: 10;
+}
+
+.chat-tools-nav-close-btn:hover {
+  background: var(--SmartThemeQuoteColor);
+  color: var(--SmartThemeBlurColor);
+}
+
+.chat-tools-nav-close-btn i {
+  pointer-events: none;
+  font-size: 14px;
 }
 
 .chat-tools-nav-result-empty {
-  padding: 12px 16px;
+  padding: 40px 16px 12px 16px;
   color: var(--SmartThemeMutedTextColor);
   font-size: 0.85em;
   text-align: center;
@@ -165,6 +210,11 @@
   cursor: pointer;
   transition: background 0.15s;
   border-bottom: 1px solid var(--SmartThemeBorderColor);
+}
+
+/* 第一个结果项增加顶部边距，避免被关闭按钮遮挡 */
+.chat-tools-nav-result-item:first-child {
+  margin-top: 36px;
 }
 
 .chat-tools-nav-result-item:last-child {
@@ -212,7 +262,10 @@
   flex: 1;
   font-size: 0.85em;
   line-height: 1.4;
-  word-break: break-all;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
 }
 
 .chat-tools-nav-result-content mark {

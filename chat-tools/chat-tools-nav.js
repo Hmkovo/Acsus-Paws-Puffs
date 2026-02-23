@@ -47,6 +47,9 @@ let jumpInput = null;
 /** 搜索结果下拉框 */
 let searchResultsDropdown = null;
 
+/** 搜索结果关闭按钮 */
+let searchCloseButton = null;
+
 /** 是否已注册切换聊天事件监听器 */
 let chatChangedListenerRegistered = false;
 
@@ -121,6 +124,7 @@ function removeNavControls() {
   searchInput = null;
   jumpInput = null;
   searchResultsDropdown = null;
+  searchCloseButton = null;
 }
 
 /**
@@ -174,12 +178,20 @@ function injectSearchControls(qrBar) {
   searchResultsDropdown = document.createElement('div');
   searchResultsDropdown.className = 'chat-tools-nav-results';
   searchResultsDropdown.style.display = 'none';
+  
+  // 创建关闭按钮
+  searchCloseButton = document.createElement('div');
+  searchCloseButton.className = 'chat-tools-nav-close-btn';
+  searchCloseButton.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+  searchCloseButton.title = '关闭';
+  searchCloseButton.addEventListener('click', hideSearchResults);
+  
+  searchResultsDropdown.appendChild(searchCloseButton);
   document.body.appendChild(searchResultsDropdown);
 
   // 绑定搜索事件
   searchInput.addEventListener('input', debounce(handleSearch, 300));
   searchInput.addEventListener('focus', handleSearchFocus);
-  searchInput.addEventListener('blur', handleSearchBlur);
 
   searchWrapper.appendChild(searchInput);
 
@@ -274,46 +286,49 @@ function handleSearch() {
   // ========== 排查日志结束 ==========
 
   // 过滤消息 - 统一使用模糊匹配
-  const results = messages.filter((msg, index) => {
-    // 过滤消息类型
-    const isUser = msg.is_user;
-    if (isUser && !searchUser) {
-      // ========== 排查日志开始 ==========
-      logger.debug(MODULE_NAME, `${LOG_PREFIX} [搜索排查] 消息${index} 被过滤: isUser=${isUser}, searchUser=${searchUser}`);
-      // ========== 排查日志结束 ==========
-      return false;
-    }
-    if (!isUser && !searchAI) {
-      // ========== 排查日志开始 ==========
-      logger.debug(MODULE_NAME, `${LOG_PREFIX} [搜索排查] 消息${index} 被过滤: isUser=${isUser}, searchAI=${searchAI}`);
-      // ========== 排查日志结束 ==========
-      return false;
-    }
+  // ✅ 使用 map 先添加原始索引，再 filter
+  const results = messages
+    .map((msg, originalIndex) => {
+      // 先保存原始索引作为 mesId
+      return { ...msg, mesId: originalIndex };
+    })
+    .filter((msg) => {
+      // 过滤消息类型
+      const isUser = msg.is_user;
+      if (isUser && !searchUser) {
+        // ========== 排查日志开始 ==========
+        logger.debug(MODULE_NAME, `${LOG_PREFIX} [搜索排查] 消息${msg.mesId} 被过滤: isUser=${isUser}, searchUser=${searchUser}`);
+        // ========== 排查日志结束 ==========
+        return false;
+      }
+      if (!isUser && !searchAI) {
+        // ========== 排查日志开始 ==========
+        logger.debug(MODULE_NAME, `${LOG_PREFIX} [搜索排查] 消息${msg.mesId} 被过滤: isUser=${isUser}, searchAI=${searchAI}`);
+        // ========== 排查日志结束 ==========
+        return false;
+      }
 
-    // 获取消息内容
-    const content = getMessageContent(msg);
-    if (!content) {
-      // ========== 排查日志开始 ==========
-      logger.debug(MODULE_NAME, `${LOG_PREFIX} [搜索排查] 消息${index} 内容为空，跳过`);
-      // ========== 排查日志结束 ==========
+      // 获取消息内容
+      const content = getMessageContent(msg);
+      if (!content) {
+        // ========== 排查日志开始 ==========
+        logger.debug(MODULE_NAME, `${LOG_PREFIX} [搜索排查] 消息${msg.mesId} 内容为空，跳过`);
+        // ========== 排查日志结束 ==========
+        return false;
+      }
+
+      // 精确匹配（不区分大小写）
+      const lowerContent = content.toLowerCase();
+      const lowerQuery = query.toLowerCase();
+      if (lowerContent.includes(lowerQuery)) {
+        // ========== 排查日志开始 ==========
+        logger.info(MODULE_NAME, `${LOG_PREFIX} [搜索排查] 消息${msg.mesId} 精确匹配成功，内容: "${content.substring(0, 50)}..."`);
+        // ========== 排查日志结束 ==========
+        return true;
+      }
+
       return false;
-    }
-
-    // 精确匹配（不区分大小写）
-    const lowerContent = content.toLowerCase();
-    const lowerQuery = query.toLowerCase();
-    if (lowerContent.includes(lowerQuery)) {
-      // ========== 排查日志开始 ==========
-      logger.info(MODULE_NAME, `${LOG_PREFIX} [搜索排查] 消息${index} 精确匹配成功，内容: "${content.substring(0, 50)}..."`);
-      // ========== 排查日志结束 ==========
-      return true;
-    }
-
-    return false;
-  }).map((msg, index) => {
-    // 添加 mesId 属性（使用数组索引）
-    return { ...msg, mesId: index };
-  });
+    });
 
   // ========== 排查日志开始 ==========
   logger.info(MODULE_NAME, `${LOG_PREFIX} [搜索排查] 搜索完成，总消息: ${messages.length}, 匹配结果: ${results.length}`);
@@ -383,15 +398,17 @@ function showSearchResults(results, query) {
     return;
   }
 
-  // 限制显示数量 - 改为50条，确保包含所有匹配结果
-  const MAX_DISPLAY = 50;
-  const displayResults = results.slice(0, MAX_DISPLAY);
+  // 显示全部结果（不限制数量）
+  const displayResults = results;
 
   // ========== 排查日志开始 ==========
   logger.info(MODULE_NAME, `${LOG_PREFIX} [高亮排查] 显示结果数量: ${displayResults.length}, 关键词: "${query}"`);
   // ========== 排查日志结束 ==========
 
-  searchResultsDropdown.innerHTML = displayResults.map((msg, idx) => {
+  // 创建结果容器
+  const resultsContainer = document.createElement('div');
+  resultsContainer.className = 'chat-tools-nav-results-container';
+  resultsContainer.innerHTML = displayResults.map((msg, idx) => {
     const content = getMessageContent(msg);
     // ========== 排查日志开始 ==========
     logger.debug(MODULE_NAME, `${LOG_PREFIX} [高亮排查] 消息${idx} 原始内容前50字: "${content.substring(0, 50)}..."`);
@@ -441,8 +458,13 @@ function showSearchResults(results, query) {
         `;
   }).join('');
 
+  // 清空下拉框（保留关闭按钮）
+  searchResultsDropdown.innerHTML = '';
+  searchResultsDropdown.appendChild(searchCloseButton);
+  searchResultsDropdown.appendChild(resultsContainer);
+
   // 绑定点击事件 - 使用 jumpToMessageNumber 处理虚拟滚动
-  searchResultsDropdown.querySelectorAll('.chat-tools-nav-result-item').forEach(item => {
+  resultsContainer.querySelectorAll('.chat-tools-nav-result-item').forEach(item => {
     item.addEventListener('click', () => {
       const mesId = parseInt(item.dataset.mesid);
       // 注意：SillyTavern的mesId从0开始，0也是一条消息，禁止+1
@@ -459,23 +481,30 @@ function showSearchResults(results, query) {
 
 /**
  * 定位搜索结果下拉框到搜索框上方
+ * 自动防止弹窗超出屏幕左右边缘
  */
 function positionSearchResultsDropdown() {
   if (!searchInput || !searchResultsDropdown) return;
 
   const inputRect = searchInput.getBoundingClientRect();
   const dropdownHeight = searchResultsDropdown.offsetHeight || 300;
+  const dropdownWidth = searchResultsDropdown.offsetWidth || 450;
+  const viewportWidth = window.innerWidth;
 
-  // 定位到搜索框上方 8px 处
+  // 垂直：优先在搜索框上方 8px 处，空间不够则放到下方
   let top = inputRect.top - dropdownHeight - 8;
-
-  // 如果上方空间不够，放到下方
   if (top < 10) {
     top = inputRect.bottom + 8;
   }
 
-  // 水平居中或左对齐
+  // 水平：从搜索框左边对齐，但防止超出屏幕右边和左边
   let left = inputRect.left;
+  if (left + dropdownWidth > viewportWidth - 8) {
+    left = viewportWidth - dropdownWidth - 8;
+  }
+  if (left < 8) {
+    left = 8;
+  }
 
   searchResultsDropdown.style.top = top + 'px';
   searchResultsDropdown.style.left = left + 'px';
@@ -518,16 +547,6 @@ function handleSearchFocus() {
   if (searchInput.value.trim()) {
     handleSearch();
   }
-}
-
-/**
- * 处理搜索框失焦
- */
-function handleSearchBlur() {
-  // 延迟隐藏，延迟时间给点击事件
-  setTimeout(() => {
-    hideSearchResults();
-  }, 200);
 }
 
 // ========================================
