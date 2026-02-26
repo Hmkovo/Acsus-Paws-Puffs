@@ -8,6 +8,7 @@
  */
 
 import logger from '../logger.js';
+import { eventSource, event_types, getRequestHeaders } from '../../../../../script.js';
 
 // 核心模块
 import { getSuiteManager, resetSuiteManager } from './suite-manager.js';
@@ -19,6 +20,7 @@ import { getVariableAnalyzerV2, resetVariableAnalyzerV2 } from './variable-analy
 import { getChatContentProcessor, resetChatContentProcessor } from './chat-content-processor.js';
 import { getSendQueueManager } from './send-queue-manager.js';
 import { registerAllGlobalMacros } from './global-macro-registry.js';
+import { initBranchInherit, destroyBranchInherit } from './branch-inherit-manager.js';
 
 // 存储模块
 import * as variableStorage from './variable-storage.js';
@@ -40,6 +42,141 @@ import { openChatContentEditPopup, openRegexSettingsPopup } from './ui/chat-cont
 
 /** @type {boolean} */
 let initialized = false;
+
+// 聊天列表变量标识的 MutationObserver
+let chatListObserver = null;
+
+/**
+ * 检查单个聊天是否有变量文件
+ * @param {string} chatId - 聊天ID
+ * @returns {Promise<boolean>} 是否存在变量文件
+ */
+async function checkChatHasVariables(chatId) {
+    try {
+        const filename = variableStorage.getValuesFilename(chatId);
+        const response = await fetch(`/user/files/${filename}`, {
+            method: 'HEAD',  // 只获取响应头，不下载内容
+            headers: getRequestHeaders()
+        });
+        return response.ok;
+    } catch (error) {
+        return false;
+    }
+}
+
+/**
+ * 为聊天列表项添加变量标识图标
+ * @param {JQuery} chatBlock - 聊天列表项的 jQuery 对象
+ * @param {string} chatId - 聊天ID
+ */
+async function addVariableIndicator(chatBlock, chatId) {
+    const hasVariables = await checkChatHasVariables(chatId);
+    if (hasVariables) {
+        chatBlock.find('.chat_variables_indicator').css('display', 'inline');
+    }
+}
+
+/**
+ * 批量检查聊天列表中的变量标识
+ */
+async function updateChatListIndicators() {
+    const chatBlocks = $('#select_chat_div .select_chat_block_wrapper');
+    if (chatBlocks.length === 0) return;
+
+    logger.debug('variable', `[Variables] 开始检查 ${chatBlocks.length} 个聊天的变量标识`);
+
+    // 批量异步检查，但渐进式显示（不阻塞UI）
+    const promises = [];
+    chatBlocks.each((index, element) => {
+        const $wrapper = $(element);
+        const chatId = $wrapper.find('.select_chat_block').attr('file_name');
+        if (chatId) {
+            promises.push(addVariableIndicator($wrapper, chatId));
+        }
+    });
+
+    await Promise.all(promises);
+    logger.debug('variable', '[Variables] 变量标识检查完成');
+}
+
+/**
+ * 初始化聊天列表变量标识监听
+ */
+function initChatListIndicators() {
+    // 监听聊天列表容器的子元素变化
+    const targetNode = document.getElementById('select_chat_div');
+    if (!targetNode) {
+        logger.warn('variable', '[Variables] 未找到聊天列表容器 #select_chat_div');
+        return;
+    }
+
+    chatListObserver = new MutationObserver((mutations) => {
+        // 检查是否有子元素添加
+        const hasAddedNodes = mutations.some(mutation => mutation.addedNodes.length > 0);
+        if (hasAddedNodes) {
+            // 使用防抖延迟检查（等待列表渲染完成）
+            setTimeout(() => updateChatListIndicators(), 100);
+        }
+    });
+
+    chatListObserver.observe(targetNode, {
+        childList: true,  // 监听子元素变化
+        subtree: false    // 不监听更深层级
+    });
+
+    logger.debug('variable', '[Variables] 聊天列表变量标识监听已启动');
+}
+
+/**
+ * 销毁聊天列表变量标识监听
+ */
+function destroyChatListIndicators() {
+    if (chatListObserver) {
+        chatListObserver.disconnect();
+        chatListObserver = null;
+        logger.debug('variable', '[Variables] 聊天列表变量标识监听已停止');
+    }
+}
+
+/**
+ * 聊天删除事件处理（自动清理对应的变量文件）
+ * 
+ * @async
+ * @param {string} chatId - 被删除的聊天ID
+ */
+async function onChatDeleted(chatId) {
+    if (!chatId) {
+        logger.warn('variable', '[Variables] 聊天删除事件缺少chatId，跳过清理');
+        return;
+    }
+
+    logger.info('variable', '[Variables] 检测到聊天删除，开始清理变量文件:', chatId);
+
+    try {
+        // 构造变量文件名（使用与保存时相同的清理规则）
+        const filename = variableStorage.getValuesFilename(chatId);
+
+        // 调用 SillyTavern 文件删除 API（POST /api/files/delete）
+        const response = await fetch('/api/files/delete', {
+            method: 'POST',
+            headers: getRequestHeaders(),
+            body: JSON.stringify({ path: `user/files/${filename}` })
+        });
+
+        if (response.ok) {
+            logger.info('variable', '[Variables] 变量文件已删除:', filename);
+            // 清理该聊天的缓存（直接删除缓存中的条目）
+            variableStorage.clearChatCache(chatId);
+        } else if (response.status === 404) {
+            logger.debug('variable', '[Variables] 变量文件不存在（该聊天可能没有变量数据）:', filename);
+        } else {
+            logger.warn('variable', '[Variables] 删除变量文件失败:', response.status, filename);
+        }
+    } catch (error) {
+        // 静默处理错误，不影响聊天删除流程
+        logger.error('variable', '[Variables] 清理变量文件时发生错误:', error.message);
+    }
+}
 
 /**
  * 初始化动态变量系统
@@ -92,6 +229,16 @@ export async function initVariables() {
         // 6. 注册全局宏（让变量在酒馆任何地方可用）
         await registerAllGlobalMacros();
 
+        // 7. 初始化分支继承监听
+        initBranchInherit();
+
+        // 8. 监听聊天删除事件，自动清理对应的变量文件
+        eventSource.on(event_types.CHAT_DELETED, onChatDeleted);
+        eventSource.on(event_types.GROUP_CHAT_DELETED, onChatDeleted);
+
+        // 9. 初始化聊天列表变量标识
+        initChatListIndicators();
+
         initialized = true;
         logger.info('variable', '[Variables] 初始化完成');
         return { success: true };
@@ -125,6 +272,16 @@ export function destroyVariables() {
     if (!initialized) return;
 
     logger.info('variable', '[Variables] 开始销毁...');
+
+    // 移除聊天删除事件监听
+    eventSource.removeListener(event_types.CHAT_DELETED, onChatDeleted);
+    eventSource.removeListener(event_types.GROUP_CHAT_DELETED, onChatDeleted);
+
+    // 销毁聊天列表变量标识监听
+    destroyChatListIndicators();
+
+    // 销毁分支继承监听
+    destroyBranchInherit();
 
     // 销毁触发管理器
     resetTriggerManager();

@@ -318,7 +318,7 @@ export async function saveSettingsV2(settings) {
  * @param {string} chatId
  * @returns {string}
  */
-function getValuesFilename(chatId) {
+export function getValuesFilename(chatId) {
     // 清理 chatId 中的特殊字符
     const safeChatId = chatId.replace(/[^a-zA-Z0-9_-]/g, '_');
     return `${VALUES_FILENAME_PREFIX}${safeChatId}.json`;
@@ -517,6 +517,17 @@ export function invalidateCacheV2() {
     if (saveTimeoutValues) {
         clearTimeout(saveTimeoutValues);
         saveTimeoutValues = null;
+    }
+}
+
+/**
+ * 清理特定聊天的缓存
+ * @param {string} chatId - 聊天ID
+ */
+export function clearChatCache(chatId) {
+    if (cachedValues[chatId]) {
+        delete cachedValues[chatId];
+        logger.debug('variable', '[VariableStorage] 已清理聊天缓存:', chatId);
     }
 }
 
@@ -776,6 +787,8 @@ export default {
     setValueV2,
     deleteVariableValuesV2,
     invalidateCacheV2,
+    getValuesFilename,
+    clearChatCache,
     // V1 兼容函数
     loadStorage,
     saveStorage,

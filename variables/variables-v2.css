@@ -1091,12 +1091,44 @@
   border-radius: 6px;
 }
 
+/* 覆盖模式可编辑 textarea */
+.var-v2-current-textarea {
+  width: 100%;
+  min-height: 400px;
+  padding: 10px;
+  font-size: 0.8125em;
+  font-family: monospace;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--var-v2-bg-main);
+  border: 1px solid var(--var-v2-border);
+  border-radius: 8px;
+  resize: vertical;
+  color: var(--var-v2-text-primary);
+  box-sizing: border-box;
+}
+
+.var-v2-current-textarea:focus {
+  outline: none;
+  border-color: var(--var-v2-primary);
+}
+
+/* 当前值操作按钮 */
+.var-v2-current-actions {
+  display: flex;
+  gap: 8px;
+  padding: 8px 0;
+  justify-content: flex-start;
+}
+
 /* 历史导航 */
 .var-v2-history-nav {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 12px;
+  margin-top: 8px;
   padding: 8px 12px;
   background: var(--var-v2-bg-white);
   border-radius: 8px;

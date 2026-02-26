@@ -8,36 +8,27 @@
  * - 智能提示帮助新手（提示显示在控件旁边）
  * - 通过回调与主控通信（不直接访问extension_settings）
  * 
- * 工作流程：
- * 1. 用户点击元素"气泡外框"
- * 2. 查询推荐场景（getRecommendedScene）→ "消息气泡"
- * 3. 加载场景配置（getSceneConfig）
- * 4. 遍历属性分组，创建小控件
- * 5. 显示智能提示
- * 6. 用户修改控件 → 生成中文CSS → 调用编译回调
+ * 架构（2026-02-24 重构后）：
+ * - 控件路线：控件 onChange → updateControlsCSS() → buildControlsCSS() → 注入DOM
+ * - 插件输入框路线：由 visual-editor.js 独立管理，与控件完全无关
+ * - 两条路互不干扰，各自注入独立的 <style> 标签
  * 
- * 参考：
- * - 【文件结构方案】第1136-1345行：beginner-mode.js详细说明
- * - 【文件结构方案】第1682-1731行：场景模式工作流程
+ * 工作流程：
+ * 1. 用户点击元素 → 查询推荐场景
+ * 2. 加载场景配置 → 渲染控件
+ * 3. 用户修改控件 → onChange → updateControlsCSS()
+ * 4. updateControlsCSS() 更新内存数据 → buildControlsCSS() 生成英文CSS
+ * 5. 调用 injectCSSCallback 注入 <style id="paws-puffs-controls-style">
  */
-
-// [IMPORT] 导入编译器（生成中文CSS）
-import {
-  parseChineseCSS,
-  generateChineseCSS,
-  extractChineseCSS,
-  mergeChineseCSS
-} from '../../compiler.js';
-
-// [IMPORT] 导入官方API（保存设置）
-import { saveSettingsDebounced } from "../../../../../../../script.js";
-import { power_user } from "../../../../../../power-user.js";
+// [REFACTOR] 2026-02-24: 控件与输入框分离架构
+// - 旧架构：控件 → 中文CSS → #customCSS → 编译 → 注入
+// - 新架构：控件 → 英文CSS → 直接注入 <style id="paws-puffs-controls-style">
 
 // [IMPORT] 导入元素和场景
 import { getAllElements, getSelector } from '../../st-element-map.js';
 import { getRecommendedScene, getOptionalScenes } from '../../scenes/scene-element-mapping.js';
 import { getSceneConfig } from '../../scenes/scene-presets.js';
-import { getPropertyInfo, translatePropertyToChinese, getPropertyInfoByChinese } from '../../css-property-dict.js';
+import { getPropertyInfo } from '../../css-property-dict.js';
 
 // [IMPORT] 导入小控件
 import {
@@ -136,6 +127,11 @@ export class BeginnerMode {
     // 筛选状态
     this.currentCategory = null;    // 当前选中的一级分类（9大分类）
     this.currentSubCategory = null; // 当前选中的二级分类（如"上方导航栏"）
+
+    // 控件数据内存缓存（新架构）
+    // 结构：{ 元素名: { css属性: 控件返回值 } }
+    // 控件返回值可以是字符串（如 '0 4px 8px rgba(0,0,0,0.5)'）或对象（如 { position: 'absolute', top: '10px' }）
+    this.controlsData = {};
   }
 
   /**
@@ -179,43 +175,36 @@ export class BeginnerMode {
 
     logger.debug('[BeginnerMode.render] 渲染新手模式UI');
 
-    // 渲染内容区域（从 embedded-panel-ui.js 第530-584行提取）
+    // 渲染内容区域 - 三级下拉框模式
     this.container.innerHTML = `
       <div class="paws-puffs-ve-elements-layout">
-        <!-- 左侧：元素列表 -->
-        <div class="paws-puffs-ve-elements-sidebar">
-          <div class="paws-puffs-ve-search-bar">
-            <input type="text" 
-                   class="paws-puffs-ve-search-input" 
-                   placeholder="搜索元素..." 
-                   disabled>
-            <small class="hint" style="display: block; margin-top: 5px; opacity: 0.7;">
-              搜索功能待实现
-            </small>
-          </div>
-          <div class="paws-puffs-ve-filter-bar">
-            <!-- 一级分类下拉框（9大分类） -->
-            <select class="paws-puffs-ve-select paws-puffs-ve-category-select" id="paws-puffs-ve-category-select">
-              <!-- 默认选中"功能开关"，由 initFilterSelects 填充选项 -->
-            </select>
-            
-            <!-- 二级分类下拉框（如果有的话） -->
-            <select class="paws-puffs-ve-select paws-puffs-ve-subcategory-select" 
-                    id="paws-puffs-ve-subcategory-select"
-                    style="display: none; margin-top: 8px;">
-              <option value="">全部子分类</option>
-            </select>
-          </div>
-          <div class="paws-puffs-ve-element-list">
-            ${this.renderElementList()}
-          </div>
+        <!-- 顶部：三级下拉框横向排列 -->
+        <div class="paws-puffs-ve-select-bar">
+          <!-- 一级分类下拉框（9大分类） -->
+          <select class="paws-puffs-ve-select paws-puffs-ve-category-select" id="paws-puffs-ve-category-select">
+            <option value="">请选择分类</option>
+          </select>
+          
+          <!-- 二级分类下拉框 -->
+          <select class="paws-puffs-ve-select paws-puffs-ve-subcategory-select" 
+                  id="paws-puffs-ve-subcategory-select"
+                  disabled>
+            <option value="">请先选择分类</option>
+          </select>
+          
+          <!-- 三级元素下拉框 -->
+          <select class="paws-puffs-ve-select paws-puffs-ve-element-select" 
+                  id="paws-puffs-ve-element-select"
+                  disabled>
+            <option value="">请先选择子分类</option>
+          </select>
         </div>
         
-        <!-- 右侧：属性面板 -->
+        <!-- 属性面板（全宽） -->
         <div class="paws-puffs-ve-properties-panel">
           <div class="paws-puffs-ve-properties-empty" style="padding: 20px; text-align: center; opacity: 0.7;">
-            <i class="fa fa-hand-point-left" style="font-size: 2em; margin-bottom: 10px;"></i>
-            <p>请从左侧选择元素</p>
+            <i class="fa fa-hand-point-up" style="font-size: 2em; margin-bottom: 10px;"></i>
+            <p>请从上方下拉框选择元素</p>
             <small class="hint">选择元素后在此编辑属性</small>
           </div>
           <div class="paws-puffs-ve-properties-content" style="display: none;">
@@ -230,10 +219,10 @@ export class BeginnerMode {
 
 
   /**
-   * 初始化筛选下拉框
+   * 初始化三级下拉框
    * 
    * @description
-   * 填充9大分类到一级下拉框，默认选中"功能开关"
+   * 填充一级分类到第一个下拉框
    */
   initFilterSelects() {
     const categorySelect = /** @type {HTMLSelectElement} */ (this.container.querySelector('#paws-puffs-ve-category-select'));
@@ -242,7 +231,7 @@ export class BeginnerMode {
     const elementMap = getAllElements();
     const categoryNames = Object.keys(elementMap);
 
-    // 填充9大分类选项（不包括"全部分类"）
+    // 填充9大分类选项
     categoryNames.forEach(categoryName => {
       const option = document.createElement('option');
       option.value = categoryName;
@@ -250,35 +239,19 @@ export class BeginnerMode {
       categorySelect.appendChild(option);
     });
 
-    // 默认选中"功能开关"（如果存在）
-    const defaultCategory = '功能开关';
-    if (categoryNames.includes(defaultCategory)) {
-      categorySelect.value = defaultCategory;
-      this.currentCategory = defaultCategory;
-      logger.debug('[BeginnerMode.initFilterSelects] 默认选中"功能开关"');
-    } else {
-      // 如果"功能开关"不存在，选择第一个分类
-      categorySelect.value = categoryNames[0] || '';
-      this.currentCategory = categoryNames[0] || null;
-      logger.debug('[BeginnerMode.initFilterSelects] 默认选中第一个分类:', categoryNames[0]);
-    }
-
-    // 触发一次筛选（检查是否有二级分类）
-    this.handleCategoryChange();
-
-    logger.debug('[BeginnerMode.initFilterSelects] 筛选下拉框已初始化');
+    logger.debug('[BeginnerMode.initFilterSelects] 三级下拉框已初始化');
   }
 
   /**
    * 绑定事件
    * 
    * @description
-   * 绑定元素列表的点击事件和筛选下拉框事件
+   * 绑定三个下拉框的联动事件
    */
   bindEvents() {
     if (!this.container) return;
 
-    logger.debug('[BeginnerMode.bindEvents] 绑定元素选择事件');
+    logger.debug('[BeginnerMode.bindEvents] 绑定三级下拉框事件');
 
     // 绑定一级分类下拉框
     this.bindCategorySelect();
@@ -286,8 +259,8 @@ export class BeginnerMode {
     // 绑定二级分类下拉框
     this.bindSubCategorySelect();
 
-    // 绑定元素点击事件
-    this.bindElementItemEvents();
+    // 绑定三级元素下拉框
+    this.bindElementSelect();
 
     logger.debug('[BeginnerMode.bindEvents] 事件绑定完成');
   }
@@ -297,68 +270,199 @@ export class BeginnerMode {
    */
   bindCategorySelect() {
     const categorySelect = /** @type {HTMLSelectElement} */ (this.container.querySelector('#paws-puffs-ve-category-select'));
-    if (!categorySelect) return;
+    const subCategorySelect = /** @type {HTMLSelectElement} */ (this.container.querySelector('#paws-puffs-ve-subcategory-select'));
+    const elementSelect = /** @type {HTMLSelectElement} */ (this.container.querySelector('#paws-puffs-ve-element-select'));
+    
+    if (!categorySelect || !subCategorySelect || !elementSelect) return;
 
     categorySelect.addEventListener('change', () => {
       const selectedCategory = categorySelect.value;
-      logger.debug('[BeginnerMode] 选中分类:', selectedCategory);
+      logger.debug('[BeginnerMode] 选中一级分类:', selectedCategory);
 
       // 更新当前分类
       this.currentCategory = selectedCategory || null;
       this.currentSubCategory = null;
+      this.currentElement = null;
 
-      // 处理分类切换
-      this.handleCategoryChange();
-    });
-  }
+      // 重置后续下拉框
+      if (!selectedCategory) {
+        subCategorySelect.disabled = true;
+        subCategorySelect.innerHTML = '<option value="">请先选择分类</option>';
+        elementSelect.disabled = true;
+        elementSelect.innerHTML = '<option value="">请先选择子分类</option>';
+        return;
+      }
 
-  /**
-   * 处理分类切换（提取共用逻辑）
-   */
-  handleCategoryChange() {
-    const subCategorySelect = /** @type {HTMLSelectElement} */ (this.container.querySelector('#paws-puffs-ve-subcategory-select'));
-    if (!subCategorySelect) return;
-
-    // 检查是否有二级分类
-    if (this.currentCategory) {
+      // 填充二级分类
       const elementMap = getAllElements();
-      const categoryContent = elementMap[this.currentCategory];
+      const categoryContent = elementMap[selectedCategory];
       const subCategories = this.getSubCategories(categoryContent);
 
       if (subCategories.length > 0) {
-        // 有二级分类，显示第二个下拉框
-        this.updateSubCategorySelect(subCategories);
-        subCategorySelect.style.display = 'block';
-        // 不刷新列表，等用户选择二级分类
+        // 有二级分类
+        subCategorySelect.disabled = false;
+        subCategorySelect.innerHTML = '<option value="">请选择子分类</option>';
+        subCategories.forEach(subCat => {
+          const option = document.createElement('option');
+          option.value = subCat;
+          option.textContent = subCat;
+          subCategorySelect.appendChild(option);
+        });
+        // 禁用三级下拉框，等待用户选择二级分类
+        elementSelect.disabled = true;
+        elementSelect.innerHTML = '<option value="">请先选择子分类</option>';
       } else {
-        // 没有二级分类，隐藏第二个下拉框
-        subCategorySelect.style.display = 'none';
-        // 直接刷新元素列表
-        this.refreshElementList();
+        // 没有二级分类，直接填充元素到三级下拉框
+        subCategorySelect.disabled = true;
+        subCategorySelect.innerHTML = '<option value="">无子分类</option>';
+        this.fillElementSelect(categoryContent);
       }
-    } else {
-      // 没有选中分类，隐藏第二个下拉框
-      subCategorySelect.style.display = 'none';
-      this.refreshElementList();
-    }
+    });
   }
+
 
   /**
    * 绑定二级分类下拉框事件
    */
   bindSubCategorySelect() {
     const subCategorySelect = /** @type {HTMLSelectElement} */ (this.container.querySelector('#paws-puffs-ve-subcategory-select'));
-    if (!subCategorySelect) return;
+    const elementSelect = /** @type {HTMLSelectElement} */ (this.container.querySelector('#paws-puffs-ve-element-select'));
+    
+    if (!subCategorySelect || !elementSelect) return;
 
     subCategorySelect.addEventListener('change', () => {
       const selectedSubCategory = subCategorySelect.value;
-      logger.debug('[BeginnerMode] 选中子分类:', selectedSubCategory);
+      logger.debug('[BeginnerMode] 选中二级分类:', selectedSubCategory);
 
       // 更新当前子分类
       this.currentSubCategory = selectedSubCategory || null;
+      this.currentElement = null;
 
-      // 刷新元素列表
-      this.refreshElementList();
+      if (!selectedSubCategory) {
+        elementSelect.disabled = true;
+        elementSelect.innerHTML = '<option value="">请先选择子分类</option>';
+        return;
+      }
+
+      // 填充三级元素
+      const elementMap = getAllElements();
+      const categoryContent = elementMap[this.currentCategory];
+      const subCategoryContent = categoryContent[selectedSubCategory];
+      this.fillElementSelect(subCategoryContent);
+    });
+  }
+
+  /**
+   * 绑定三级元素下拉框事件
+   */
+  bindElementSelect() {
+    const elementSelect = /** @type {HTMLSelectElement} */ (this.container.querySelector('#paws-puffs-ve-element-select'));
+    if (!elementSelect) return;
+
+    elementSelect.addEventListener('change', () => {
+      const selectedElement = elementSelect.value;
+      logger.debug('[BeginnerMode] 选中元素:', selectedElement);
+
+      if (!selectedElement) {
+        this.hidePropertiesPanel();
+        return;
+      }
+
+      // 选中元素，加载属性面板
+      this.loadElementScene(selectedElement);
+    });
+  }
+
+  /**
+   * 隐藏属性面板，显示空状态
+   */
+  hidePropertiesPanel() {
+    const emptyState = /** @type {HTMLElement} */ (this.container.querySelector('.paws-puffs-ve-properties-empty'));
+    const contentArea = /** @type {HTMLElement} */ (this.container.querySelector('.paws-puffs-ve-properties-content'));
+
+    if (emptyState) emptyState.style.display = 'block';
+    if (contentArea) contentArea.style.display = 'none';
+  }
+
+  /**
+   * 加载元素场景并渲染属性面板
+   * 
+   * @param {string} elementName - 元素名称
+   */
+  loadElementScene(elementName) {
+    // 保存当前选中的元素
+    this.selectedElement = elementName;
+    this.currentElement = elementName;
+
+    // 1. 查询推荐场景
+    const sceneName = getRecommendedScene(elementName);
+    if (!sceneName) {
+      logger.warn('[BeginnerMode.loadElementScene] 未找到推荐场景，元素:', elementName);
+      toastr.warning(`元素"${elementName}"暂无可用场景`);
+      this.showEmptyState('该元素暂无可用场景');
+      return;
+    }
+    logger.debug('[BeginnerMode.loadElementScene] 推荐场景:', sceneName);
+
+    // 2. 加载场景配置
+    const sceneConfig = getSceneConfig(sceneName);
+    if (!sceneConfig) {
+      logger.error('[BeginnerMode.loadElementScene] 场景配置不存在:', sceneName);
+      toastr.error('场景配置加载失败');
+      this.showEmptyState('场景配置加载失败');
+      return;
+    }
+    logger.debug('[BeginnerMode.loadElementScene] 场景配置加载成功:', sceneConfig.名称);
+
+    // 3. 提取当前样式
+    const currentValues = this.getCurrentStyles(elementName);
+    logger.debug('[BeginnerMode.loadElementScene] 当前样式:', currentValues);
+
+    // 4. 显示属性面板容器
+    const emptyState = /** @type {HTMLElement} */ (this.container.querySelector('.paws-puffs-ve-properties-empty'));
+    const contentArea = /** @type {HTMLElement} */ (this.container.querySelector('.paws-puffs-ve-properties-content'));
+    if (emptyState) emptyState.style.display = 'none';
+    if (contentArea) contentArea.style.display = 'block';
+
+    // 5. 渲染场景编辑器
+    this.renderSceneEditor(elementName, sceneConfig, currentValues);
+  }
+
+  /**
+   * 填充三级元素下拉框
+   * 
+   * @param {Object} content - 分类或子分类的内容对象
+   */
+  fillElementSelect(content) {
+    const elementSelect = /** @type {HTMLSelectElement} */ (this.container.querySelector('#paws-puffs-ve-element-select'));
+    if (!elementSelect) return;
+
+    const elementNames = [];
+
+    // 提取所有元素名（跳过对象类型的子分类）
+    for (const [key, value] of Object.entries(content)) {
+      if (typeof value === 'string') {
+        // 直接是CSS选择器
+        elementNames.push(key);
+      } else if (typeof value === 'object' && !Array.isArray(value)) {
+        // 跳过子分类，不添加到元素列表
+      }
+    }
+
+    if (elementNames.length === 0) {
+      elementSelect.disabled = true;
+      elementSelect.innerHTML = '<option value="">此分类无可编辑元素</option>';
+      return;
+    }
+
+    // 填充元素选项
+    elementSelect.disabled = false;
+    elementSelect.innerHTML = '<option value="">请选择元素</option>';
+    elementNames.forEach(elementName => {
+      const option = document.createElement('option');
+      option.value = elementName;
+      option.textContent = elementName;
+      elementSelect.appendChild(option);
     });
   }
 
@@ -624,303 +728,140 @@ export class BeginnerMode {
 
 
 
-  /**
-   * 渲染属性编辑面板
-   * 
-   * @param {HTMLElement} container - 属性面板容器
-   * @param {string} elementName - 元素名称
-   */
-  renderPropertiesPanel(container, elementName) {
-    if (!container) return;
-
-    logger.debug('[BeginnerMode.renderPropertiesPanel] 渲染属性面板:', elementName);
-
-    // 从输入框提取中文CSS
-    const customCSSInput = /** @type {HTMLTextAreaElement} */ (document.querySelector('#customCSS'));
-    const inputContent = customCSSInput ? customCSSInput.value : '';
-    const chineseCSS = extractChineseCSS(inputContent);
-
-    // 解析获取当前元素的样式
-    const stylesMap = parseChineseCSS(chineseCSS);
-    const currentStyles = stylesMap.get(elementName) || {};
-    logger.debug('[BeginnerMode.renderPropertiesPanel] 当前样式:', currentStyles);
-
-    // 渲染控件
-    container.innerHTML = `
-      <div style="padding: 0px;">
-        <h4 style="margin: 0 0 15px 0; display: flex; align-items: center; gap: 8px;">
-          <i class="fa fa-palette"></i>
-          <span>${elementName}</span>
-        </h4>
-        
-        <!-- 属性控件列表 -->
-        <div class="paws-puffs-ve-property-group">
-          <!-- 背景颜色 -->
-          <div class="paws-puffs-ve-property-item">
-            <label>
-              <span class="paws-puffs-ve-property-label">背景颜色</span>
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <input type="color" 
-                       class="paws-puffs-ve-control-color" 
-                       data-property="背景颜色"
-                       value="${currentStyles['背景颜色'] || '#ffffff'}">
-                <input type="text" 
-                       class="text_pole paws-puffs-ve-text-input" 
-                       data-property="背景颜色"
-                       value="${currentStyles['背景颜色'] || '#ffffff'}"
-                       placeholder="#ffffff"
-                       style="flex: 1;">
-              </div>
-            </label>
-          </div>
-          
-          <!-- 圆角 -->
-          <div class="paws-puffs-ve-property-item">
-            <label>
-              <span class="paws-puffs-ve-property-label">圆角</span>
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <input type="number" 
-                       class="text_pole paws-puffs-ve-number-input" 
-                       data-property="圆角"
-                       value="${parseFloat(currentStyles['圆角']) || 10}"
-                       min="0"
-                       step="1"
-                       style="width: 80px;">
-                <span style="opacity: 0.7;">px</span>
-              </div>
-            </label>
-          </div>
-        </div>
-        
-        <small class="hint" style="display: block; margin-top: 15px; opacity: 0.7;">
-          <i class="fa fa-info-circle"></i> 修改后会自动保存到中文CSS
-        </small>
-      </div>
-    `;
-
-    // ⚠️ 控件事件由 bindControlEvents() 统一绑定（在 renderSceneEditor() 中调用）
-    // 不再需要在这里单独绑定
-
-    logger.debug('[BeginnerMode.renderPropertiesPanel] 属性面板渲染完成');
-  }
-
-  // ❌ 旧版 bindPropertyControls() 已删除（2025-10-11）
-  // 原因：硬编码的控件事件绑定，只支持颜色和数字输入框
-  // 已被 bindControlEvents() 取代（支持场景系统的动态控件）
+  // ❌ renderPropertiesPanel() 已删除（2026-02-24）
+  // 原因：硬编码了中文CSS，是旧架构残留代码，已被 renderSceneEditor() + 新架构完全取代
+  // ❌ bindPropertyControls() 已删除（2025-10-11）
+  // 原因：硬编码的控件事件绑定，已被 bindControlEvents() 取代
 
   /**
-   * 更新中文CSS
+   * 更新控件CSS（新架构）
    * 
    * @description
-   * 处理控件返回值（支持字符串和对象），更新中文CSS并触发编译
+   * 控件改变时的处理入口：
+   * 1. 更新内存缓存 controlsData
+   * 2. 调用 buildControlsCSS() 生成英文CSS字符串
+   * 3. 通过 compileCallback 把 CSS字符串交给 visual-editor.js 注入DOM
    * 
-   * @param {string} elementName - 元素名称
-   * @param {string} cssProperty - CSS属性名（主属性，如'position'）
-   * @param {string|Object} controlValue - 控件返回值（字符串或对象）
+   * @param {string} elementName - 元素名称（如"用户消息气泡"）
+   * @param {string} cssProperty - 主属性名（如'box-shadow'）
+   * @param {string|Object|null} controlValue - 控件返回值：
+   *   - 字符串：'0 4px 8px rgba(0,0,0,0.5)'
+   *   - 对象：{ position: 'absolute', top: '10px' }
+   *   - null/空字符串：表示删除该属性
    */
-  updateChineseCSS(elementName, cssProperty, controlValue) {
-    logger.debug('[BeginnerMode.updateChineseCSS] 开始更新:', { elementName, cssProperty, controlValue });
+  updateControlsCSS(elementName, cssProperty, controlValue) {
+    logger.debug('[BeginnerMode.updateControlsCSS] 开始更新:', { elementName, cssProperty, controlValue });
 
-    // 1. 读取输入框
-    const customCSSInput = /** @type {HTMLTextAreaElement} */ (document.querySelector('#customCSS'));
-    if (!customCSSInput) {
-      logger.error('[BeginnerMode.updateChineseCSS] 输入框未找到');
-      return;
+    // 1. 确保元素的属性对象存在
+    if (!this.controlsData[elementName]) {
+      this.controlsData[elementName] = {};
     }
 
-    const inputContent = customCSSInput.value;
-    const chineseCSS = extractChineseCSS(inputContent) || '';
-    logger.debug('[BeginnerMode.updateChineseCSS] 提取到的中文CSS长度:', chineseCSS.length);
-
-    // 2. 解析中文CSS
-    const stylesMap = parseChineseCSS(chineseCSS);
-    logger.debug('[BeginnerMode.updateChineseCSS] 解析到的元素数量:', stylesMap.size);
-
-    // 3. 确保当前元素存在
-    if (!stylesMap.has(elementName)) {
-      stylesMap.set(elementName, {});
-      logger.debug('[BeginnerMode.updateChineseCSS] 创建新元素:', elementName);
-    }
-    const elementStyles = stylesMap.get(elementName);
-
-    // 4. 处理控件返回值（⚠️ 难点1：3种格式）
-    if (typeof controlValue === 'object' && controlValue !== null && !Array.isArray(controlValue)) {
-      // 格式2和3：对象返回值（单属性或多属性）
-      logger.debug('[BeginnerMode.updateChineseCSS] 处理对象返回值，属性数量:', Object.keys(controlValue).length);
-
-      let processedCount = 0;
-      for (const [cssProp, cssVal] of Object.entries(controlValue)) {
-        const 中文属性 = translatePropertyToChinese(cssProp);
-
-        if (!中文属性) {
-          logger.warn('[BeginnerMode.updateChineseCSS] 无法翻译属性:', cssProp);
-          continue;
-        }
-
-        // ⚠️ 难点2：检测transform冲突
-        if (cssProp === 'transform') {
-          const existingTransform = elementStyles['变换'] || '';
-          const mergedTransform = this.mergeTransforms(existingTransform, cssVal);
-          elementStyles['变换'] = mergedTransform;
-          logger.debug('[BeginnerMode.updateChineseCSS] 合并transform:', {
-            existing: existingTransform,
-            new: cssVal,
-            merged: mergedTransform
-          });
-        } else {
-          // 空值处理：删除属性
-          if (cssVal === '' || cssVal === null || cssVal === undefined) {
-            delete elementStyles[中文属性];
-            logger.debug('[BeginnerMode.updateChineseCSS] 删除空属性:', 中文属性);
-          } else {
-            elementStyles[中文属性] = cssVal;
-            logger.debug('[BeginnerMode.updateChineseCSS] 设置属性:', 中文属性, '=', cssVal);
-          }
-        }
-        processedCount++;
-      }
-
-      logger.info('[BeginnerMode.updateChineseCSS] 对象处理完成，成功处理:', processedCount, '个属性');
-
+    // 2. 存入内存（空值则删除）
+    if (controlValue === null || controlValue === '' || controlValue === undefined) {
+      delete this.controlsData[elementName][cssProperty];
+      logger.debug('[BeginnerMode.updateControlsCSS] 删除属性:', cssProperty);
     } else {
-      // 格式1：字符串返回值
-      logger.debug('[BeginnerMode.updateChineseCSS] 处理字符串返回值');
-
-      const 中文属性 = translatePropertyToChinese(cssProperty);
-
-      if (!中文属性) {
-        logger.warn('[BeginnerMode.updateChineseCSS] 无法翻译属性:', cssProperty);
-        return;
-      }
-
-      // 空值处理：删除属性
-      if (controlValue === '' || controlValue === null || controlValue === undefined) {
-        delete elementStyles[中文属性];
-        logger.debug('[BeginnerMode.updateChineseCSS] 删除空属性:', 中文属性);
-      } else {
-        elementStyles[中文属性] = String(controlValue);
-        logger.debug('[BeginnerMode.updateChineseCSS] 设置属性:', 中文属性, '=', controlValue);
-      }
+      this.controlsData[elementName][cssProperty] = controlValue;
+      logger.debug('[BeginnerMode.updateControlsCSS] 存入属性:', cssProperty, '=', controlValue);
     }
 
-    // 5. 生成新的中文CSS
-    const updatedChineseCSS = generateChineseCSS(stylesMap);
-    logger.debug('[BeginnerMode.updateChineseCSS] 生成的中文CSS长度:', updatedChineseCSS.length);
+    // 3. 生成完整的英文CSS字符串
+    const cssString = this.buildControlsCSS();
+    logger.debug('[BeginnerMode.updateControlsCSS] 生成CSS长度:', cssString.length);
 
-    // 6. 写回输入框（⚠️ 防循环关键）
-    if (this.syncState) {
-      this.syncState.isUpdating = true;
-      logger.debug('[BeginnerMode.updateChineseCSS] 设置同步标记 isUpdating=true');
-    }
-
-    const newContent = mergeChineseCSS(inputContent, updatedChineseCSS);
-    customCSSInput.value = newContent;
-
-    // 同步到power_user（保存设置）
-    power_user.custom_css = String(newContent);
-    saveSettingsDebounced();
-    logger.debug('[BeginnerMode.updateChineseCSS] 已同步到 power_user.custom_css 并保存');
-
-    // 延迟50ms解除标记
-    setTimeout(() => {
-      if (this.syncState) {
-        this.syncState.isUpdating = false;
-        logger.debug('[BeginnerMode.updateChineseCSS] 已解除同步标记 isUpdating=false');
-      }
-    }, 50);
-
-    logger.info('[BeginnerMode.updateChineseCSS] ✅ 中文CSS更新完成');
-
-    // 7. 触发编译
+    // 4. 通过回调注入DOM
     if (this.compileCallback) {
-      logger.debug('[BeginnerMode.updateChineseCSS] 触发编译回调');
-      this.compileCallback();
+      this.compileCallback(cssString);
+      logger.info('[BeginnerMode.updateControlsCSS] ✅ CSS已通过回调注入');
     } else {
-      logger.warn('[BeginnerMode.updateChineseCSS] 编译回调未设置');
+      logger.warn('[BeginnerMode.updateControlsCSS] 回调未设置，无法注入CSS');
     }
   }
 
   /**
-   * 合并transform值
+   * 从 controlsData 生成完整英文CSS字符串
    * 
    * @description
-   * 当多个控件操作transform属性时，智能合并而不是覆盖
+   * 遍历所有元素的控件数据，生成标准的CSS规则字符串。
+   * 应对两种控件返回格式：
+   * - 字符串：{ 'box-shadow': '0 4px 8px ...' } → box-shadow: 0 4px 8px ...;
+   * - 对象：{ 'position': { position: 'absolute', top: '10px' } } → position: absolute; top: 10px;
    * 
-   * @param {string} existing - 已存在的transform值
-   * @param {string} newValue - 新的transform值
-   * @returns {string} 合并后的transform值
+   * @returns {string} 加容全元素的英文CSS字符串
    * 
    * @example
-   * mergeTransforms('translate(-50%, -50%)', 'rotate(-8deg)')
-   * // 返回：'translate(-50%, -50%) rotate(-8deg)'
+   * // 返回示例：
+   * // #chat .mes[is_user="true"] {
+   * //   box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+   * //   border-radius: 20px;
+   * // }
    */
-  mergeTransforms(existing, newValue) {
-    logger.debug('[BeginnerMode.mergeTransforms] 开始合并:', { existing, newValue });
+  buildControlsCSS() {
+    let css = '';
 
-    // 空值处理
-    if (!existing || existing.trim() === '') {
-      logger.debug('[BeginnerMode.mergeTransforms] existing为空，直接返回newValue');
-      return newValue;
-    }
-    if (!newValue || newValue.trim() === '') {
-      logger.debug('[BeginnerMode.mergeTransforms] newValue为空，直接返回existing');
-      return existing;
+    for (const [elementName, properties] of Object.entries(this.controlsData)) {
+      // 获取元素对应的CSS选择器
+      const selector = getSelector(elementName);
+      if (!selector) {
+        logger.warn('[BeginnerMode.buildControlsCSS] 元素无对应选择器:', elementName);
+        continue;
+      }
+
+      // 收集这个元素的所有CSS声明
+      let declarations = '';
+
+      for (const [cssProperty, value] of Object.entries(properties)) {
+        if (typeof value === 'string' && value) {
+          // 字符串值：直接输出
+          declarations += `  ${cssProperty}: ${value};
+`;
+        } else if (typeof value === 'object' && value !== null) {
+          // 对象值：展开每个键值对
+          for (const [prop, val] of Object.entries(value)) {
+            if (val !== null && val !== undefined && val !== '') {
+              declarations += `  ${prop}: ${val};
+`;
+            }
+          }
+        }
+      }
+
+      // 只有有声明才输出该选择器
+      if (declarations) {
+        css += `${selector} {
+${declarations}}
+
+`;
+      }
     }
 
-    // 提取变换类型（translate、rotate、scale等）
-    const getTransformType = (transformStr) => {
-      const match = transformStr.match(/^(\w+)\(/);
-      return match ? match[1] : null;
-    };
-
-    const newType = getTransformType(newValue);
-    if (!newType) {
-      logger.warn('[BeginnerMode.mergeTransforms] 无法解析变换类型:', newValue);
-      return existing;
-    }
-    logger.debug('[BeginnerMode.mergeTransforms] 检测到变换类型:', newType);
-
-    // 检查是否已包含该类型的变换
-    const regex = new RegExp(`${newType}\\([^)]+\\)`, 'g');
-    if (existing.includes(newType + '(')) {
-      // 替换已有的同类变换
-      const merged = existing.replace(regex, newValue);
-      logger.info('[BeginnerMode.mergeTransforms] ✅ 替换已有变换:', merged);
-      return merged;
-    } else {
-      // 追加新变换
-      const merged = `${existing} ${newValue}`.trim();
-      logger.info('[BeginnerMode.mergeTransforms] ✅ 追加新变换:', merged);
-      return merged;
-    }
+    logger.debug('[BeginnerMode.buildControlsCSS] 生成完成，共', Object.keys(this.controlsData).length, '个元素');
+    return css;
   }
 
   /**
-   * 从输入框同步到控件（同步按钮功能）
+   * 重新应用当前控件数据（同步按钮功能）
+   *
+   * @description
+   * 新架构下的同步按钮：将内存 controlsData 重新注入到DOM。
+   * 常用于状态丢失后的恢复注入。
    */
   syncFromInput() {
-    logger.debug('[BeginnerMode.syncFromInput] 从输入框同步');
+    logger.debug('[BeginnerMode.syncFromInput] 重新应用控件数据');
 
-    const customCSSInput = /** @type {HTMLTextAreaElement} */ (document.querySelector('#customCSS'));
-    if (!customCSSInput) {
-      toastr.error('错误：未找到CSS输入框');
+    if (Object.keys(this.controlsData).length === 0) {
+      toastr.info('当前还没有任何控件调整数据');
       return;
     }
 
-    const inputContent = customCSSInput.value;
-    const chineseCSS = extractChineseCSS(inputContent);
-
-    if (chineseCSS && chineseCSS.trim()) {
-      // 有分隔符：自动选中第一个元素
-      const firstElement = this.container.querySelector('.paws-puffs-ve-element-item[data-element]');
-      if (firstElement) {
-        /** @type {HTMLElement} */ (firstElement).click();
-        toastr.success('已从输入框加载设计');
-      } else {
-        toastr.warning('未找到可编辑的元素');
-      }
+    const cssString = this.buildControlsCSS();
+    if (this.compileCallback) {
+      this.compileCallback(cssString);
+      toastr.success('已重新应用控件设计');
+      logger.info('[BeginnerMode.syncFromInput] ✅ 重新应用完成');
     } else {
-      toastr.info('当前主题未使用可视化编辑器');
+      toastr.warning('回调未设置，无法应用');
     }
   }
 
@@ -960,83 +901,45 @@ export class BeginnerMode {
   // ========================================
 
   /**
-   * 从输入框提取当前元素的样式
+   * 获取当前元素的样式（新架构）
    * 
    * @description
-   * 读取#customCSS输入框，解析中文CSS，提取当前元素的所有样式
+   * 直接从内存缓存 controlsData 读取，并展开对象格式的控件值。
+   * 新手模式初始化一个元素时，用返回值为控件设置初始值。
    * 
    * @param {string} elementName - 元素名称
-   * @returns {Object} 样式对象（CSS属性名→值）
+   * @returns {Object} 样式对象（平展的 CSS属性名 → CSS值）
    * 
    * @example
-   * // 输入框内容：
-   * // 角色头像容器 { 定位: 脱离文档流; 上偏移: -15像素 }
-   * getCurrentStyles('角色头像容器')
-   * // 返回：{ position: 'absolute', top: '-15px' }
+   * // controlsData = { '用户消息气泡': { 'box-shadow': '0 4px 8px rgba(0,0,0,0.5)', 'position': { position: 'absolute', top: '10px' } } }
+   * getCurrentStyles('用户消息气泡')
+   * // 返回：{ 'box-shadow': '0 4px 8px rgba(0,0,0,0.5)', position: 'absolute', top: '10px' }
    */
   getCurrentStyles(elementName) {
-    logger.debug('[BeginnerMode.getCurrentStyles] 提取样式，元素:', elementName);
+    logger.debug('[BeginnerMode.getCurrentStyles] 从内存读取样式，元素:', elementName);
 
-    // 1. 读取输入框
-    const input = /** @type {HTMLTextAreaElement} */ (document.querySelector('#customCSS'));
-    if (!input) {
-      logger.error('[BeginnerMode.getCurrentStyles] 输入框未找到');
+    const elementData = this.controlsData[elementName];
+    if (!elementData || Object.keys(elementData).length === 0) {
+      logger.debug('[BeginnerMode.getCurrentStyles] 元素无内存数据');
       return {};
     }
 
-    const inputContent = input.value;
-
-    // 2. 提取中文CSS（使用compiler.js的工具函数）
-    const chineseCSS = extractChineseCSS(inputContent);
-    if (!chineseCSS || chineseCSS.trim() === '') {
-      logger.debug('[BeginnerMode.getCurrentStyles] 输入框无中文CSS');
-      return {};
-    }
-
-    // 3. 解析中文CSS为Map
-    const stylesMap = parseChineseCSS(chineseCSS);
-    if (!stylesMap.has(elementName)) {
-      logger.debug('[BeginnerMode.getCurrentStyles] 元素无样式');
-      return {};
-    }
-
-    const 中文样式 = stylesMap.get(elementName);
-
-    // 4. 翻译中文属性名为英文
-    const englishStyles = {};
-    for (const [中文属性, 值] of Object.entries(中文样式)) {
-      // 反向查询css-property-dict.js
-      const englishProperty = this.translateChineseToProperty(中文属性);
-      if (englishProperty) {
-        englishStyles[englishProperty] = 值;
+    // 展开对象格式的控件值（如 PositionControl 返回的 { position, top, left... }）
+    const styles = {};
+    for (const [cssProperty, value] of Object.entries(elementData)) {
+      if (typeof value === 'string') {
+        styles[cssProperty] = value;
+      } else if (typeof value === 'object' && value !== null) {
+        Object.assign(styles, value);
       }
     }
 
-    logger.debug('[BeginnerMode.getCurrentStyles] 提取的样式:', englishStyles);
-    return englishStyles;
+    logger.debug('[BeginnerMode.getCurrentStyles] 返回样式:', styles);
+    return styles;
   }
 
-  /**
-   * 翻译中文属性名为英文CSS属性
-   * 
-   * @description
-   * 查询css-property-dict.js，将中文属性名转换为CSS属性名
-   * 
-   * @param {string} 中文属性 - 中文属性名（如"背景颜色"）
-   * @returns {string|null} 英文CSS属性名（如"background-color"），未找到返回null
-   * 
-   * @example
-   * translateChineseToProperty('背景颜色') // → 'background-color'
-   * translateChineseToProperty('上偏移') // → 'top'
-   */
-  translateChineseToProperty(中文属性) {
-    const propInfo = getPropertyInfoByChinese(中文属性);
-    if (!propInfo) {
-      logger.warn('[BeginnerMode.translateChineseToProperty] 未知中文属性:', 中文属性);
-      return null;
-    }
-    return propInfo.CSS属性;
-  }
+  // ❌ translateChineseToProperty() 已删除（2026-02-24）
+  // 原因：新架构下控件直接输出英文CSS，不需要中英文翻译
 
   /**
    * 渲染场景编辑器
@@ -1053,7 +956,7 @@ export class BeginnerMode {
    * 2. 清空控件缓存
    * 3. 渲染HTML（场景标题 + 属性分组）
    * 4. 绑定控件DOM事件（拉条交互）
-   * 5. 绑定控件onChange回调（生成中文CSS）
+   * 5. 绑定控件onChange回调（直接输出英文CSS→注入DOM）
    * 6. 绑定分组折叠事件（展开/收起分组）
    */
   renderSceneEditor(elementName, sceneConfig, currentValues) {
@@ -1384,9 +1287,9 @@ export class BeginnerMode {
 
   /**
    * 绑定所有控件的onChange回调
-   * 
+   *
    * @description
-   * 遍历控件实例，绑定onChange回调，实现控件变化→生成中文CSS的流程
+   * 遍历控件实例，绑定onChange回调，实现控件变化→直接输出英文CSS→注入DOM的流程
    */
   bindControlEvents() {
     logger.debug('[BeginnerMode.bindControlEvents] 开始绑定onChange回调');
@@ -1397,7 +1300,7 @@ export class BeginnerMode {
       // 绑定onChange回调
       controlInstance.onChange = (value) => {
         logger.debug('[BeginnerMode.bindControlEvents] 控件触发onChange:', { cssProperty, value });
-        this.updateChineseCSS(this.selectedElement, cssProperty, value);
+        this.updateControlsCSS(this.selectedElement, cssProperty, value);
       };
 
       boundCount++;

@@ -1,0 +1,275 @@
+/**
+ * 可视化编辑器 - 独立弹窗样式
+ * 
+ * 设计原则：
+ * - 独立CSS，不复用美化模块代码
+ * - 视觉设计可参考美化模块，但不直接使用其类名
+ * - 类名统一用 paws-puffs-ve-dialog- 前缀
+ * - 遮罩不可点击关闭
+ */
+
+/* 遮罩层 */
+.paws-puffs-ve-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  /* 动态视口高度，移动端关键 */
+  background-color: transparent;
+  /* 完全透明，不遮挡视觉 */
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3125em;
+  pointer-events: none;
+  /* 禁用遮罩层的鼠标事件，允许点击穿透到背后的界面 */
+}
+
+/* 弹窗主体 */
+.paws-puffs-ve-dialog-container {
+  background-color: var(--SmartThemeBlurTintColor, #1a1a1a);
+  border: 1px solid var(--SmartThemeBorderColor, #444);
+  border-radius: 0.75em;
+  width: 90%;
+  max-width: 1200px;
+  max-height: 80dvh;
+  /* 降低到80dvh，确保小屏幕下有足够的上下边距 */
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0.625em 2.5em rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  pointer-events: auto;
+  /* 恢复弹窗的鼠标事件，确保弹窗本身可以正常点击 */
+}
+
+/* 顶部标题栏 */
+.paws-puffs-ve-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.3125em;
+  background-color: var(--SmartThemeQuoteColor, #2a2a2a);
+  border-bottom: 1px solid var(--SmartThemeBorderColor, #444);
+  cursor: move;
+  user-select: none;
+}
+
+.paws-puffs-ve-dialog-title {
+  margin: 0;
+  font-size: 1.2em;
+  color: var(--SmartThemeBodyColor, #e0e0e0);
+  display: flex;
+  align-items: center;
+  gap: 0.625em;
+}
+
+.paws-puffs-ve-dialog-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--SmartThemeBodyColor, #e0e0e0);
+  font-size: 1.5em;
+  cursor: pointer;
+  padding: 0.3125em;
+  line-height: 1;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.paws-puffs-ve-dialog-close-btn:hover {
+  color: #ff6b6b;
+  transform: scale(1.1);
+}
+
+/* 工具栏 */
+.paws-puffs-ve-dialog-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.3125em;
+  background-color: var(--SmartThemeBlurTintColor, #1a1a1a);
+  border-bottom: 1px solid var(--SmartThemeBorderColor, #444);
+  gap: 0.625em;
+}
+
+.paws-puffs-ve-dialog-toolbar-left {
+  display: flex;
+  gap: 0.3125em;
+}
+
+.paws-puffs-ve-dialog-toolbar-right {
+  display: flex;
+  gap: 0.3125em;
+}
+
+.paws-puffs-ve-dialog-tab-btn {
+  background-color: transparent;
+  border: 1px solid var(--SmartThemeBorderColor, #444);
+  color: var(--SmartThemeBodyColor, #e0e0e0);
+  padding: 0.3125em;
+  border-radius: 0.375em;
+  cursor: pointer;
+  font-size: 0.95em;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.375em;
+}
+
+.paws-puffs-ve-dialog-tab-btn:hover {
+  background-color: var(--SmartThemeQuoteColor, #2a2a2a);
+  border-color: var(--SmartThemeQuoteColor, #2a2a2a);
+}
+
+.paws-puffs-ve-dialog-tab-btn.active {
+  background-color: var(--SmartThemeQuoteColor, #2a2a2a);
+  border-color: var(--SmartThemeQuoteColor, #2a2a2a);
+  font-weight: bold;
+}
+
+.paws-puffs-ve-dialog-action-btn {
+  background-color: var(--SmartThemeQuoteColor, #2a2a2a);
+  border: 1px solid var(--SmartThemeBorderColor, #444);
+  color: white;
+  padding: 0.3125em;
+  border-radius: 0.375em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.paws-puffs-ve-dialog-action-btn:hover {
+  opacity: 0.8;
+  transform: scale(1.05);
+}
+
+/* 内容区域 */
+.paws-puffs-ve-dialog-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.3125em;
+}
+
+.paws-puffs-ve-dialog-tab-panel {
+  display: none;
+}
+
+.paws-puffs-ve-dialog-tab-panel.active {
+  display: block;
+}
+
+/* 模式切换开关 */
+.paws-puffs-ve-dialog-mode-toggle-container {
+  padding: 0.3125em;
+  border-bottom: 1px solid var(--SmartThemeBorderColor, #444);
+  display: flex;
+  align-items: center;
+  gap: 0.625em;
+  background-color: var(--SmartThemeBlurTintColor, #1a1a1a);
+}
+
+.paws-puffs-ve-dialog-mode-switch {
+  position: relative;
+  display: inline-block;
+  width: 3.125em;
+  height: 1.5em;
+}
+
+.paws-puffs-ve-dialog-mode-input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.paws-puffs-ve-dialog-mode-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--SmartThemeBorderColor, #444);
+  transition: 0.3s;
+  border-radius: 1.5em;
+}
+
+.paws-puffs-ve-dialog-mode-handle {
+  position: absolute;
+  content: "";
+  height: 1.125em;
+  width: 1.125em;
+  left: 0.1875em;
+  bottom: 0.1875em;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.paws-puffs-ve-dialog-mode-input:checked + .paws-puffs-ve-dialog-mode-slider {
+  background-color: var(--SmartThemeQuoteColor, #2a2a2a);
+}
+
+.paws-puffs-ve-dialog-mode-input:checked + .paws-puffs-ve-dialog-mode-slider .paws-puffs-ve-dialog-mode-handle {
+  transform: translateX(1.625em);
+}
+
+/* CSS输入框容器（在标签页内） */
+.paws-puffs-ve-dialog-css-input-container {
+  padding: 0.625em;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.paws-puffs-ve-dialog-css-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin-bottom: 0.5em;
+  color: var(--SmartThemeBodyColor, #e0e0e0);
+  font-weight: bold;
+  font-size: 0.95em;
+}
+
+.paws-puffs-ve-dialog-css-textarea {
+  width: 100%;
+  min-height: 18.75em;
+  max-height: 37.5em;
+  background-color: var(--black70a, rgba(0, 0, 0, 0.7));
+  border: 1px solid var(--SmartThemeBorderColor, #444);
+  border-radius: 0.375em;
+  padding: 0.625em;
+  color: var(--SmartThemeBodyColor, #e0e0e0);
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.9em;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.paws-puffs-ve-dialog-css-textarea:focus {
+  outline: none;
+  border-color: var(--SmartThemeQuoteColor, #2a2a2a);
+}
+
+.paws-puffs-ve-dialog-css-textarea::placeholder {
+  color: var(--grey70, #999);
+  opacity: 0.7;
+}
+
+/* 滚动条样式 */
+.paws-puffs-ve-dialog-content::-webkit-scrollbar {
+  width: 0.5em;
+}
+
+.paws-puffs-ve-dialog-content::-webkit-scrollbar-track {
+  background: var(--black30a, rgba(0, 0, 0, 0.3));
+}
+
+.paws-puffs-ve-dialog-content::-webkit-scrollbar-thumb {
+  background: var(--SmartThemeBorderColor, #444);
+  border-radius: 0.25em;
+}
+
+.paws-puffs-ve-dialog-content::-webkit-scrollbar-thumb:hover {
+  background: var(--SmartThemeQuoteColor, #2a2a2a);
+}

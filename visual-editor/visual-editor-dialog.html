@@ -1,0 +1,125 @@
+<!-- 
+  可视化编辑器 - 独立弹窗
+  
+  设计特性：
+  - 独立弹窗形式，不内嵌在设置页面
+  - 不点遮罩关闭（只能点X关闭），方便用户边调整边看效果
+  - 独立CSS，不复用美化模块代码
+  - 内部结构参考 embedded-panel.html
+  - 类名统一用 paws-puffs-ve-dialog- 前缀
+  
+  结构：
+  - 遮罩层（不可点击关闭）
+  - 弹窗主体
+    - 顶部标题栏（含关闭按钮）
+    - 工具栏（3个标签页）
+    - 内容区（3个标签页面板）
+    - 底部插件CSS输入框
+-->
+
+<!-- 遮罩层 -->
+<div id="paws-puffs-ve-dialog-overlay" class="paws-puffs-ve-dialog-overlay" style="display: none;">
+  <!-- 弹窗主体 -->
+  <div class="paws-puffs-ve-dialog-container">
+    <!-- 顶部标题栏 -->
+    <div class="paws-puffs-ve-dialog-header">
+      <h3 class="paws-puffs-ve-dialog-title">
+        <i class="fa fa-paint-brush"></i>
+        可视化编辑器
+      </h3>
+      <button class="paws-puffs-ve-dialog-close-btn" id="paws-puffs-ve-dialog-close" title="关闭">
+        <i class="fa fa-times"></i>
+      </button>
+    </div>
+
+    <!-- 工具栏：3个标签页 + 功能按钮 -->
+    <div class="paws-puffs-ve-dialog-toolbar">
+      <div class="paws-puffs-ve-dialog-toolbar-left">
+        <button class="paws-puffs-ve-dialog-tab-btn active" data-tab="elements">
+          <i class="fa fa-mouse-pointer"></i> 元素编辑
+        </button>
+        <button class="paws-puffs-ve-dialog-tab-btn" data-tab="templates">
+          <i class="fa fa-magic"></i> 快速模板
+        </button>
+        <button class="paws-puffs-ve-dialog-tab-btn" data-tab="icons">
+          <i class="fa fa-icons"></i> 图标组
+        </button>
+        <button class="paws-puffs-ve-dialog-tab-btn" data-tab="css-code">
+          <i class="fa fa-code"></i> 中文CSS
+        </button>
+      </div>
+
+      <div class="paws-puffs-ve-dialog-toolbar-right">
+        <button class="paws-puffs-ve-dialog-action-btn" id="paws-puffs-ve-dialog-sync-btn" title="从当前方案同步">
+          <i class="fa fa-sync"></i>
+        </button>
+        <button class="paws-puffs-ve-dialog-action-btn" id="paws-puffs-ve-dialog-reset-btn" title="重置操作面板">
+          <i class="fa fa-rotate-left"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- 内容区域：3个标签页面板 -->
+    <div class="paws-puffs-ve-dialog-content">
+      <!-- 标签页1：元素编辑 -->
+      <div class="paws-puffs-ve-dialog-tab-panel active" data-panel="elements">
+        <!-- 模式切换开关（新手/专家） -->
+        <div class="paws-puffs-ve-dialog-mode-toggle-container">
+          <span style="opacity: 0.8;">当前模式：</span>
+          <label class="paws-puffs-ve-dialog-mode-switch">
+            <input type="checkbox" id="paws-puffs-ve-dialog-mode-toggle" class="paws-puffs-ve-dialog-mode-input">
+            <span class="paws-puffs-ve-dialog-mode-slider">
+              <span class="paws-puffs-ve-dialog-mode-handle"></span>
+            </span>
+          </label>
+          <span id="paws-puffs-ve-dialog-mode-label" style="font-weight: bold;">新手模式</span>
+          <small class="hint" style="margin-left: auto;">切换到专家模式可查看所有CSS属性</small>
+        </div>
+
+        <!-- 新手模式容器（默认显示） -->
+        <div class="beginner-mode-container">
+          <!-- 由 beginner-mode.js 动态渲染 -->
+        </div>
+
+        <!-- 专家模式容器（默认隐藏） -->
+        <div class="expert-mode-container" style="display: none;">
+          <!-- 由 expert-mode.js 动态渲染 -->
+        </div>
+      </div>
+
+      <!-- 标签页2：快速模板（预留） -->
+      <div class="paws-puffs-ve-dialog-tab-panel" data-panel="templates">
+        <div style="padding: 20px; text-align: center; opacity: 0.7;">
+          <i class="fa fa-magic" style="font-size: 2em; margin-bottom: 10px;"></i>
+          <p>快速模板功能待开发</p>
+          <small class="hint">敬请期待</small>
+        </div>
+      </div>
+
+      <!-- 标签页3：图标组（预留） -->
+      <div class="paws-puffs-ve-dialog-tab-panel" data-panel="icons">
+        <div style="padding: 20px; text-align: center; opacity: 0.7;">
+          <i class="fa fa-icons" style="font-size: 2em; margin-bottom: 10px;"></i>
+          <p>图标组功能待开发</p>
+          <small class="hint">敬请期待</small>
+        </div>
+      </div>
+
+      <!-- 标签页4：中文CSS -->
+      <div class="paws-puffs-ve-dialog-tab-panel" data-panel="css-code">
+        <div class="paws-puffs-ve-dialog-css-input-container">
+          <label for="paws-puffs-ve-dialog-css-input" class="paws-puffs-ve-dialog-css-label">
+            <i class="fa fa-code"></i>
+            中文CSS（可手动编辑）
+          </label>
+          <textarea 
+            id="paws-puffs-ve-dialog-css-input" 
+            class="paws-puffs-ve-dialog-css-textarea"
+            placeholder="补充CSS（中文/英文均可，优先级最高，覆盖控件设置）"
+            spellcheck="false"
+          ></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

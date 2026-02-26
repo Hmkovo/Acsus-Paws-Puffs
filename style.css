@@ -3395,61 +3395,79 @@ select.compact {
   display: block;
 }
 
-/* 元素编辑布局 */
+/* 元素编辑布局 - 三级下拉框模式 */
 .paws-puffs-ve-elements-layout {
   display: flex;
+  flex-direction: column;
   gap: 10px;
   height: 100%;
   padding: 10px;
 }
 
-.paws-puffs-ve-elements-sidebar {
-  width: 200px;
+/* 三级下拉框横向排列容器 */
+.paws-puffs-ve-select-bar {
   display: flex;
-  flex-direction: column;
-  background: var(--SmartThemeBlurTintColor);
-  border-radius: 4px;
-  padding: 8px;
+  gap: 8px;
+  flex-shrink: 0;
+  /* 固定高度，不被压缩 */
 }
 
-/* 搜索栏样式 */
+/* 保留旧的侧边栏类名兼容性（已废弃） */
+.paws-puffs-ve-elements-sidebar {
+  display: none;
+}
+
+/* 保留旧的搜索栏类名兼容性（已废弃） */
 .paws-puffs-ve-search-bar {
-  padding: 10px;
-  border-bottom: 1px solid var(--SmartThemeBorderColor);
+  display: none;
 }
 
 .paws-puffs-ve-search-input {
-  width: 100%;
-  padding: 6px 10px;
-  border: 1px solid var(--SmartThemeBorderColor);
-  border-radius: 4px;
-  font-size: 0.85em;
-  background: var(--SmartThemeBlurTintColor);
-  color: var(--SmartThemeBodyColor);
+  display: none;
 }
 
 .paws-puffs-ve-filter-bar {
-  margin-bottom: 8px;
+  display: none;
 }
 
 /* 下拉选择框 - 使用主题样式 */
 .paws-puffs-ve-select {
-  width: 100%;
-  padding: 4px 6px;
+  flex: 1;
+  /* 三个下拉框平分空间 */
+  min-width: 0;
+  /* 允许缩小到最小宽度 */
+  padding: 6px 8px;
   font-size: 0.85em;
   border-radius: 3px;
   border: 1px solid var(--SmartThemeBorderColor);
   background: var(--SmartThemeBlurTintColor);
   color: var(--SmartThemeBodyColor);
+  cursor: pointer;
+  transition: border-color 0.2s;
 }
 
+.paws-puffs-ve-select:hover:not(:disabled) {
+  border-color: var(--SmartThemeQuoteColor);
+}
+
+.paws-puffs-ve-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 保留旧的元素列表类名兼容性（已废弃） */
 .paws-puffs-ve-element-list {
+  display: none;
+}
+
+/* 属性面板全宽样式（三级下拉框模式） */
+.paws-puffs-ve-properties-panel {
   flex: 1;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
   min-height: 0;
+  background: var(--SmartThemeBlurTintColor);
+  border-radius: 4px;
+  padding: 8px;
 }
 
 /* 快速模板布局容器 - 完全复刻ve-elements-layout */
@@ -3864,12 +3882,20 @@ select.compact {
     padding: 0px 3px;
   }
 
-  /* 元素编辑布局改为垂直排列 */
+  /* 元素编辑布局（已经是垂直排列） */
   .paws-puffs-ve-elements-layout {
-    flex-direction: column;
     padding: 8px;
     gap: 8px;
-    /* 删除 height: calc(100% - 80px); 这行 */
+  }
+
+  /* 三级下拉框移动端优化 */
+  .paws-puffs-ve-select-bar {
+    gap: 6px;
+  }
+
+  .paws-puffs-ve-select {
+    padding: 5px 6px;
+    font-size: 0.8em;
   }
 
   /* 快速模板和图标组移动端布局 */
@@ -3880,17 +3906,7 @@ select.compact {
     gap: 8px;
   }
 
-  /* 移动端元素侧边栏调整 */
-  .paws-puffs-ve-elements-sidebar {
-    width: 100%;
-    min-height: 150px;
-    /* 从180px减少到150px，给属性面板更多空间 */
-    max-height: 180px;
-    /* 从200px减少到180px */
-    padding: 6px;
-  }
-
-  /* 属性面板移动端优化 - 简化版 */
+  /* 属性面板移动端优化 - 占满剩余空间 */
   .paws-puffs-ve-properties-panel {
     flex: 1;
     min-height: 0;
@@ -3949,10 +3965,10 @@ select.compact {
     display: none;
   }
 
-  /* 元素侧边栏在超小屏幕更高 */
-  .paws-puffs-ve-elements-sidebar {
-    min-height: 200px;
-    max-height: 220px;
+  /* 三级下拉框超小屏幕进一步优化 */
+  .paws-puffs-ve-select {
+    padding: 4px 5px;
+    font-size: 0.75em;
   }
 }
 

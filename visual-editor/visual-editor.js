@@ -4,18 +4,16 @@
  * 总指挥，协调所有可视化编辑器模块。
  * 
  * 核心职责：
- * - 监听主题切换事件
- * - 检测输入框中的分隔符
- * - 提取中文CSS并编译
- * - 应用编译结果到DOM
- * - 管理UI面板状态
+ * - 管理独立弹窗（打开/关闭/拖动）
+ * - 控件路线：接收 BeginnerMode 的CSS字符串 → 注入 paws-puffs-controls-style
+ * - 输入框路线：监听插件CSS输入框 → 编译 → 注入 paws-puffs-input-style
+ * - 中文CSS编译器功能（#customCSS分隔符，可选功能）
  * 
- * 核心架构（主题独立存储）：
- * - ❌ 不在 extension_settings 存储中文CSS
- * - ✅ 中文CSS存在输入框（power_user.custom_css）
- * - ✅ 使用分隔符标记可视化编辑区域
- * - ✅ 编译结果直接应用到DOM（不写回输入框）
- * - ✅ 每个主题独立存储（官方机制自动切换）
+ * 架构（2026-02-24 重构后）：
+ * - 控件 CSS → <style id="paws-puffs-controls-style">（中优先级）
+ * - 插件输入框 CSS → <style id="paws-puffs-input-style">（高优先级）
+ * - 两条路线完全独立，互不干扰
+ * - 旧的 #customCSS 分隔符编译器作为独立功能继续保留
  * 
  * @module visual-editor
  * @requires visual-editor-ui - UI渲染
@@ -62,7 +60,7 @@ export class VisualEditor {
    */
   constructor() {
     // 编辑器功能开关（从 extension_settings 读取）
-    this.compilerEnabled = true;
+    this.compilerEnabled = false;
     this.panelEnabled = false;
 
     // 当前模式
@@ -71,6 +69,9 @@ export class VisualEditor {
     // 模式实例
     this.beginnerMode = null;
     this.expertMode = null;
+
+    // 弹窗状态
+    this.dialogOpen = false;
 
     // ✅ 共享公告板：所有员工（UI、装饰、图标）共用这个对象防止循环
     // isUpdating=true 表示"扩展正在修改输入框，跳过input事件"
@@ -103,7 +104,7 @@ export class VisualEditor {
 
     // 加载功能开关状态
     const settings = extension_settings['Acsus-Paws-Puffs'].visualEditor;
-    this.compilerEnabled = settings.compilerEnabled !== false; // 默认开启
+    this.compilerEnabled = settings.compilerEnabled === true; // 默认关闭
     this.panelEnabled = settings.panelEnabled === true; // 默认关闭
 
     logger.debug('[VisualEditor.init] 中文CSS编译:', this.compilerEnabled ? '启用' : '禁用');
@@ -134,7 +135,7 @@ export class VisualEditor {
    * 1. 绑定设置页面事件（HTML在settings.html）
    * 2. 设置输入框监听
    * 3. 监听主题切换
-   * 4. 如果面板开启，加载内嵌面板并初始化模式
+   * 4. 初始化独立弹窗DOM（不显示）
    * 
    * @async
    * @param {HTMLElement} container - UI 容器元素
@@ -156,10 +157,8 @@ export class VisualEditor {
     // 3. 监听主题切换事件（主题切换后检测分隔符并编译）
     this.setupThemeChangeSync();
 
-    // 4. 如果面板开启，加载内嵌面板并初始化模式
-    if (this.panelEnabled) {
-      await this.loadEmbeddedPanel();
-    }
+    // 4. 初始化独立弹窗DOM（不显示，只加载到页面）
+    await this.initDialog();
 
     logger.debug('[VisualEditor.renderUI] UI渲染完成');
   }
@@ -485,21 +484,18 @@ export class VisualEditor {
         saveSettingsDebounced();
         logger.info('[VisualEditor.bindSwitches] 可视化编辑面板:', panelCheckbox.checked ? '启用' : '禁用');
 
-        // 显示/隐藏内嵌面板
-        if (panelCheckbox.checked) {
-          await this.loadEmbeddedPanel();
-        } else {
-          const panelContainer = document.querySelector('#paws-puffs-ve-embedded-panel');
-          if (panelContainer) {
-            panelContainer.innerHTML = '';
-            logger.debug('[VisualEditor.bindSwitches] 已清空内嵌面板');
-          }
+        // 开关控制导航栏按钮的显示/隐藏
+        // 实际的弹窗打开由导航栏按钮触发
+        logger.debug('[VisualEditor.bindSwitches] 面板开关已切换，导航栏按钮会相应显示/隐藏');
+      });
+    }
 
-          // ✅ 修复Bug：重置模式实例（关键！）
-          this.beginnerMode = null;
-          this.expertMode = null;
-          logger.debug('[VisualEditor.bindSwitches] 已重置模式实例');
-        }
+    // 打开可视化编辑器弹窗按钮
+    const openDialogBtn = container.querySelector('#paws-puffs-ve-open-dialog');
+    if (openDialogBtn) {
+      openDialogBtn.addEventListener('click', async () => {
+        logger.debug('[VisualEditor.bindSwitches] 用户点击打开可视化编辑器');
+        await this.openDialog();
       });
     }
   }
@@ -623,85 +619,270 @@ export class VisualEditor {
     if (panelCheckbox) {
       panelCheckbox.checked = settings.panelEnabled === true;
     }
-
-    logger.debug('[VisualEditor.loadSettings] 编译器:', settings.compilerEnabled !== false, '面板:', settings.panelEnabled === true);
   }
 
   /**
-   * 加载内嵌编辑面板
+   * 初始化独立弹窗DOM
    * 
    * @description
-   * 在官方自定义CSS输入框下方动态插入内嵌面板
-   * 
-   * 位置：#CustomCSS-block 下方（官方用户设置页面）
+   * 将弹窗HTML加载到页面并绑定CSS，但不显示
+   * 1. 加载弹窗HTML到 body
+   * 2. 加载弹窗CSS
+   * 3. 绑定关闭按钮事件
    * 
    * @async
    */
-  async loadEmbeddedPanel() {
-    logger.debug('[VisualEditor.loadEmbeddedPanel] 开始加载内嵌面板');
+  async initDialog() {
+    logger.debug('[VisualEditor.initDialog] 开始初始化弹窗DOM');
 
-    // 1. 查找官方自定义CSS输入框
-    const customCssInput = document.querySelector('#customCSS');
-    const customCssContainer = customCssInput?.parentElement;  // CustomCSS-textAreaBlock
-    if (!customCssContainer) {
-      logger.warn('[VisualEditor.loadEmbeddedPanel] 未找到自定义CSS输入框容器');
+    // 检查是否已经加载
+    if (document.querySelector('#paws-puffs-ve-dialog-overlay')) {
+      logger.debug('[VisualEditor.initDialog] 弹窗DOM已存在');
       return;
     }
 
-    // 2. 查找或创建内嵌面板容器
-    let panelContainer = /** @type {HTMLElement} */ (document.querySelector('#paws-puffs-ve-embedded-panel'));
-
-    if (!panelContainer) {
-      // 创建容器
-      panelContainer = document.createElement('div');
-      panelContainer.id = 'paws-puffs-ve-embedded-panel';
-      panelContainer.style.marginTop = '10px';
-
-      // 插入到自定义CSS输入框的父容器后面
-      customCssContainer.parentNode.insertBefore(
-        panelContainer,
-        customCssContainer.nextSibling
-      );
-
-      logger.debug('[VisualEditor.loadEmbeddedPanel] 已创建内嵌面板容器');
-    }
-
-    // 3. 加载 embedded-panel.html
+    // 1. 加载弹窗HTML
     try {
-      const response = await fetch('scripts/extensions/third-party/Acsus-Paws-Puffs/visual-editor/embedded-panel.html');
+      const response = await fetch('scripts/extensions/third-party/Acsus-Paws-Puffs/visual-editor/visual-editor-dialog.html');
       const html = await response.text();
-      panelContainer.innerHTML = html;
-      logger.debug('[VisualEditor.loadEmbeddedPanel] 已加载HTML模板');
-
-      // ✅ 修复Bug：重置模式实例（因为容器已重新创建）
-      this.beginnerMode = null;
-      this.expertMode = null;
-      logger.debug('[VisualEditor.loadEmbeddedPanel] 已重置模式实例');
+      
+      // 插入到 body 末尾
+      const container = document.createElement('div');
+      container.innerHTML = html;
+      document.body.appendChild(container.firstElementChild);
+      
+      logger.debug('[VisualEditor.initDialog] 弹窗HTML已加载');
     } catch (error) {
-      logger.error('[VisualEditor.loadEmbeddedPanel] 加载HTML失败:', error);
+      logger.error('[VisualEditor.initDialog] 加载弹窗HTML失败:', error);
       return;
     }
 
-    // 4. 绑定标签页切换（元素编辑、快速模板、图标组）
-    this.bindTabSwitching(panelContainer);
+    // 2. 加载弹窗CSS
+    const cssLink = document.createElement('link');
+    cssLink.rel = 'stylesheet';
+    cssLink.href = 'scripts/extensions/third-party/Acsus-Paws-Puffs/visual-editor/visual-editor-dialog.css';
+    document.head.appendChild(cssLink);
+    logger.debug('[VisualEditor.initDialog] 弹窗CSS已加载');
 
-    // 5. 绑定功能按钮（同步、重置）
-    this.bindActionButtons(panelContainer);
+    // 3. 绑定关闭按钮
+    const closeBtn = document.querySelector('#paws-puffs-ve-dialog-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => this.closeDialog());
+    }
 
-    // 6. 初始化元素编辑标签页（包含模式切换）
-    await this.initElementsTab(panelContainer);
+    // 4. 绑定标题栏拖动功能
+    this.initDialogDrag();
 
-    logger.debug('[VisualEditor.loadEmbeddedPanel] 内嵌面板加载完成');
+    logger.debug('[VisualEditor.initDialog] 弹窗DOM初始化完成');
+  }
+
+  /**
+   * 初始化弹窗拖动功能
+   * 
+   * @description
+   * 绑定标题栏拖动事件，支持拖动弹窗并限制在屏幕边界内
+   * 1. 标题栏 mousedown - 记录初始位置
+   * 2. document mousemove - 移动弹窗
+   * 3. document mouseup - 结束拖动
+   * 4. 边界检测 - 防止超出屏幕（考虑dvh单位）
+   */
+  initDialogDrag() {
+    const header = document.querySelector('.paws-puffs-ve-dialog-header');
+    const dialogContainer = /** @type {HTMLElement} */ (document.querySelector('.paws-puffs-ve-dialog-container'));
+    
+    if (!header || !dialogContainer) {
+      logger.warn('[VisualEditor.initDialogDrag] 未找到标题栏或弹窗容器');
+      return;
+    }
+
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let initialLeft = 0;
+    let initialTop = 0;
+
+    // 鼠标按下 - 开始拖动
+    header.addEventListener('mousedown', (/** @type {MouseEvent} */ e) => {
+      // 点击关闭按钮不触发拖动
+      const target = /** @type {HTMLElement} */ (e.target);
+      if (target.closest('.paws-puffs-ve-dialog-close-btn')) {
+        return;
+      }
+
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+
+      // 获取当前位置（拖动前的实际位置）
+      const rect = dialogContainer.getBoundingClientRect();
+      initialLeft = rect.left;
+      initialTop = rect.top;
+
+      // 第一次拖动时，切换为absolute定位并保持当前位置
+      if (!dialogContainer.style.position || dialogContainer.style.position !== 'absolute') {
+        dialogContainer.style.position = 'absolute';
+        dialogContainer.style.left = `${initialLeft}px`;
+        dialogContainer.style.top = `${initialTop}px`;
+        logger.debug('[VisualEditor.initDialogDrag] 切换为absolute定位');
+      } else {
+        // 如果已经是absolute，直接读取当前位置
+        initialLeft = parseFloat(dialogContainer.style.left);
+        initialTop = parseFloat(dialogContainer.style.top);
+      }
+
+      logger.debug('[VisualEditor.initDialogDrag] 开始拖动');
+    });
+
+    // 鼠标移动 - 移动弹窗
+    document.addEventListener('mousemove', (/** @type {MouseEvent} */ e) => {
+      if (!isDragging) return;
+
+      const deltaX = e.clientX - startX;
+      const deltaY = e.clientY - startY;
+
+      let newLeft = initialLeft + deltaX;
+      let newTop = initialTop + deltaY;
+
+      // 边界检测
+      const rect = dialogContainer.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      // 左边界
+      if (newLeft < 0) {
+        newLeft = 0;
+      }
+      // 右边界（确保弹窗右边缘不超出屏幕）
+      if (newLeft + rect.width > viewportWidth) {
+        newLeft = viewportWidth - rect.width;
+      }
+      // 上边界
+      if (newTop < 0) {
+        newTop = 0;
+      }
+      // 下边界（确保弹窗下边缘不超出屏幕）
+      if (newTop + rect.height > viewportHeight) {
+        newTop = viewportHeight - rect.height;
+      }
+
+      // 应用新位置
+      dialogContainer.style.left = `${newLeft}px`;
+      dialogContainer.style.top = `${newTop}px`;
+    });
+
+    // 鼠标释放 - 结束拖动
+    document.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        logger.debug('[VisualEditor.initDialogDrag] 结束拖动');
+      }
+    });
+  }
+
+  /**
+   * 打开独立弹窗
+   * 
+   * @description
+   * 显示弹窗并初始化内部UI：
+   * 1. 显示弹窗
+   * 2. 绑定标签页切换
+   * 3. 绑定功能按钮
+   * 4. 初始化元素编辑标签页
+   * 5. 同步插件CSS输入框
+   * 
+   * @async
+   */
+  async openDialog() {
+    if (this.dialogOpen) {
+      logger.debug('[VisualEditor.openDialog] 弹窗已打开');
+      return;
+    }
+
+    logger.debug('[VisualEditor.openDialog] 打开弹窗');
+
+    const overlay = document.querySelector('#paws-puffs-ve-dialog-overlay');
+    if (!overlay) {
+      logger.error('[VisualEditor.openDialog] 未找到弹窗DOM');
+      return;
+    }
+
+    // 显示弹窗
+    /** @type {HTMLElement} */ (overlay).style.display = 'flex';
+    this.dialogOpen = true;
+
+    // 重置模式实例（每次打开弹窗都重新初始化）
+    this.beginnerMode = null;
+    this.expertMode = null;
+
+    // 绑定标签页切换
+    this.bindTabSwitching(overlay);
+
+    // 绑定功能按钮
+    this.bindActionButtons(overlay);
+
+    // 初始化元素编辑标签页
+    await this.initElementsTab(overlay);
+
+    // 同步插件CSS输入框（从当前方案加载）
+    this.syncPluginCSSInput();
+
+    // 设置插件CSS输入框的实时监听（新架构）
+    this.setupPluginInputSync();
+
+    logger.info('[VisualEditor.openDialog] 弹窗已打开');
+  }
+
+  /**
+   * 关闭独立弹窗
+   * 
+   * @description
+   * 隐藏弹窗
+   */
+  closeDialog() {
+    logger.debug('[VisualEditor.closeDialog] 关闭弹窗');
+
+    const overlay = document.querySelector('#paws-puffs-ve-dialog-overlay');
+    if (overlay) {
+      /** @type {HTMLElement} */ (overlay).style.display = 'none';
+    }
+
+    this.dialogOpen = false;
+    logger.info('[VisualEditor.closeDialog] 弹窗已关闭');
+  }
+
+  /**
+   * 同步插件CSS输入框（新架构）
+   *
+   * @description
+   * 新架构下，插件输入框与 #customCSS 完全分离。
+   * 当前阶段：打开弹窗时输入框保持现有内容（不清空）。
+   * 未来：改为从文件存储读取当前方案的 pluginInputCSS 字段。
+   */
+  syncPluginCSSInput() {
+    const pluginInput = /** @type {HTMLTextAreaElement} */ (document.querySelector('#paws-puffs-ve-dialog-css-input'));
+    if (!pluginInput) {
+      logger.warn('[VisualEditor.syncPluginCSSInput] 未找到插件CSS输入框');
+      return;
+    }
+
+    // TODO: 未来从文件存储读取当前方案的 pluginInputCSS 字段
+    // 当前阶段：如果输入框有内容，触发一次应用（保证注入状态一致）
+    if (pluginInput.value.trim()) {
+      this.applyInputCSS(pluginInput.value);
+      logger.debug('[VisualEditor.syncPluginCSSInput] 已应用现有输入框内容');
+    } else {
+      logger.debug('[VisualEditor.syncPluginCSSInput] 输入框为空，跳过应用');
+    }
   }
 
   /**
    * 绑定标签页切换（元素编辑、快速模板、图标组）
    * 
-   * @param {HTMLElement} panelContainer - 内嵌面板容器
+   * @param {HTMLElement} container - 弹窗容器
    */
-  bindTabSwitching(panelContainer) {
-    const tabButtons = panelContainer.querySelectorAll('.paws-puffs-ve-tab-btn');
-    const tabPanels = panelContainer.querySelectorAll('.paws-puffs-ve-tab-panel');
+  bindTabSwitching(container) {
+    const tabButtons = container.querySelectorAll('.paws-puffs-ve-dialog-tab-btn');
+    const tabPanels = container.querySelectorAll('.paws-puffs-ve-dialog-tab-panel');
 
     tabButtons.forEach(button => {
       button.addEventListener('click', () => {
@@ -729,20 +910,20 @@ export class VisualEditor {
   /**
    * 初始化元素编辑标签页（包含模式切换）
    * 
-   * @param {HTMLElement} panelContainer - 内嵌面板容器
+   * @param {HTMLElement} container - 弹窗容器
    * @async
    */
-  async initElementsTab(panelContainer) {
+  async initElementsTab(container) {
     // 查找元素编辑标签页
-    const elementsPanel = panelContainer.querySelector('[data-panel="elements"]');
+    const elementsPanel = container.querySelector('[data-panel="elements"]');
     if (!elementsPanel) {
       logger.warn('[VisualEditor.initElementsTab] 未找到元素编辑标签页');
       return;
     }
 
     // 绑定模式切换开关
-    const modeToggle = /** @type {HTMLInputElement} */ (elementsPanel.querySelector('#paws-puffs-ve-mode-toggle'));
-    const modeLabel = elementsPanel.querySelector('#paws-puffs-ve-mode-label');
+    const modeToggle = /** @type {HTMLInputElement} */ (elementsPanel.querySelector('#paws-puffs-ve-dialog-mode-toggle'));
+    const modeLabel = elementsPanel.querySelector('#paws-puffs-ve-dialog-mode-label');
 
     if (modeToggle) {
       modeToggle.addEventListener('change', async () => {
@@ -788,7 +969,8 @@ export class VisualEditor {
         this.beginnerMode = new BeginnerMode();
         await this.beginnerMode.init(
           container,
-          () => this.compileAndApply(),
+          // 新架构：回调接收英文CSS字符串，直接注入独立style标签
+          (cssString) => this.applyControlsCSS(cssString),
           this.syncState
         );
         logger.info('[VisualEditor.switchMode] 新手模式已初始化');
@@ -816,11 +998,11 @@ export class VisualEditor {
   /**
    * 绑定功能按钮（同步、重置）
    * 
-   * @param {HTMLElement} panelContainer - 内嵌面板容器
+   * @param {HTMLElement} container - 弹窗容器
    */
-  bindActionButtons(panelContainer) {
-    const syncBtn = panelContainer.querySelector('#paws-puffs-ve-sync-btn');
-    const resetBtn = panelContainer.querySelector('#paws-puffs-ve-reset-btn');
+  bindActionButtons(container) {
+    const syncBtn = container.querySelector('#paws-puffs-ve-dialog-sync-btn');
+    const resetBtn = container.querySelector('#paws-puffs-ve-dialog-reset-btn');
 
     if (syncBtn) {
       syncBtn.addEventListener('click', () => {
@@ -847,5 +1029,103 @@ export class VisualEditor {
     }
 
     logger.debug('[VisualEditor.bindActionButtons] 功能按钮事件已绑定');
+  }
+
+  // =========================================================
+  // [NEW] 2026-02-24 新架构：两条独立的CSS注入管道
+  // =========================================================
+
+  /**
+   * 注入控件生成的CSS（控件路线）
+   *
+   * @description
+   * 接收 BeginnerMode.buildControlsCSS() 生成的英文CSS字符串，
+   * 注入到独立的 <style id="paws-puffs-controls-style"> 标签。
+   * 优先级：低于插件输入框CSS，高于ST官方CSS。
+   *
+   * @param {string} cssString - 完整的英文CSS字符串
+   */
+  applyControlsCSS(cssString) {
+    logger.debug('[VisualEditor.applyControlsCSS] 注入控件CSS，长度:', cssString?.length ?? 0);
+
+    let style = document.getElementById('paws-puffs-controls-style');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'paws-puffs-controls-style';
+      document.head.appendChild(style);
+      logger.debug('[VisualEditor.applyControlsCSS] 创建新style标签');
+    }
+
+    style.textContent = cssString || '';
+    logger.info('[VisualEditor.applyControlsCSS] ✅ 控件CSS已注入');
+  }
+
+  /**
+   * 编译并注入插件输入框的CSS（输入框路线）
+   *
+   * @description
+   * 接收用户在弹窗输入框中写的CSS（中文或英文均可）：
+   * 1. 调用编译器将中文CSS翻译为英文CSS
+   * 2. 注入到独立的 <style id="paws-puffs-input-style"> 标签
+   * 优先级：最高（覆盖控件CSS和ST官方CSS）。
+   *
+   * @param {string} content - 用户输入的CSS内容（可含中文CSS）
+   */
+  applyInputCSS(content) {
+    logger.debug('[VisualEditor.applyInputCSS] 处理输入框CSS，长度:', content?.length ?? 0);
+
+    let style = document.getElementById('paws-puffs-input-style');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'paws-puffs-input-style';
+      document.head.appendChild(style);
+      logger.debug('[VisualEditor.applyInputCSS] 创建新style标签');
+    }
+
+    if (!content || !content.trim()) {
+      style.textContent = '';
+      logger.debug('[VisualEditor.applyInputCSS] 内容为空，已清空style标签');
+      return;
+    }
+
+    // 编译器负责处理中英文混写（纯英文CSS也能通过）
+    const englishCSS = compileToEnglishCSS(content);
+    style.textContent = englishCSS || '';
+    logger.info('[VisualEditor.applyInputCSS] ✅ 输入框CSS已编译注入');
+  }
+
+  /**
+   * 设置插件CSS输入框的实时监听（输入框路线）
+   *
+   * @description
+   * 监听弹窗内 #paws-puffs-ve-dialog-css-input 的输入事件。
+   * 防抖300ms后调用 applyInputCSS() 编译注入。
+   * 每次打开弹窗时调用，重复调用安全（检查已绑定标记）。
+   */
+  setupPluginInputSync() {
+    const pluginInput = /** @type {HTMLTextAreaElement} */ (document.querySelector('#paws-puffs-ve-dialog-css-input'));
+    if (!pluginInput) {
+      logger.warn('[VisualEditor.setupPluginInputSync] 未找到插件CSS输入框');
+      return;
+    }
+
+    // 防止重复绑定（每次打开弹窗都会调用此方法）
+    if (pluginInput.dataset.syncBound === 'true') {
+      logger.debug('[VisualEditor.setupPluginInputSync] 监听已存在，跳过重复绑定');
+      return;
+    }
+
+    let debounceTimer = null;
+
+    pluginInput.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        logger.debug('[VisualEditor.setupPluginInputSync] 输入框内容变化，触发编译');
+        this.applyInputCSS(pluginInput.value);
+      }, 300);
+    });
+
+    pluginInput.dataset.syncBound = 'true';
+    logger.debug('[VisualEditor.setupPluginInputSync] ✅ 插件CSS输入框监听已设置');
   }
 }

@@ -268,14 +268,125 @@
       </div>
 
       <div class="paws-tab-content" id="tab-visual-editor">
-        <!-- 设置页面（静态HTML，不需要JS渲染） -->
-        <div id="paws-puffs-visual-editor-panel">
-          <div class="enhanced-section visual-editor-section" style="text-align: center; padding: 40px 20px;">
-            <i class="fa-solid fa-wrench"
-              style="font-size: 48px; color: var(--SmartThemeQuoteColor); opacity: 0.6; margin-bottom: 20px;"></i>
-            <h3 style="color: var(--SmartThemeQuoteColor); margin-bottom: 10px;">正在制作中....</h3>
-            <p style="opacity: 0.7;">可视化编辑器功能正在开发中，敬请期待。</p>
+        <!-- 可视化编辑器设置面板 -->
+        <div id="paws-puffs-visual-editor-panel" style="display: none;">
+          
+          <!-- 功能开关区域 -->
+          <div class="enhanced-section" style="margin-bottom: 15px;">
+            <!-- 开关1：启用中文CSS编译 -->
+            <div class="beautify-setting-item">
+              <label class="checkbox_label">
+                <input type="checkbox" id="paws-puffs-ve-enable-compiler">
+                <span>启用中文CSS编译</span>
+              </label>
+              <span class="beautify-hint">关闭后不会编译中文CSS</span>
+            </div>
+
+            <!-- 开关2：启用可视化编辑面板 -->
+            <div class="beautify-setting-item">
+              <label class="checkbox_label">
+                <input type="checkbox" id="paws-puffs-ve-enable-panel">
+                <span>启用可视化编辑面板</span>
+              </label>
+              <span class="beautify-hint">开启后在自定义CSS输入框下方显示可视化编辑器</span>
+            </div>
+
+            <!-- 打开可视化编辑器按钮 -->
+            <div class="beautify-setting-item">
+              <button class="menu_button" id="paws-puffs-ve-open-dialog" style="background-color: var(--SmartThemeQuoteColor); color: white;">
+                <i class="fa fa-paint-brush"></i>
+                <span>打开可视化编辑器</span>
+              </button>
+              <span class="beautify-hint">点击打开独立弹窗编辑界面（测试功能）</span>
+            </div>
           </div>
+
+          <!-- 手风琴容器 -->
+          <div class="paws-puffs-settings-accordion-container">
+            <!-- 卡片1：功能介绍 -->
+            <div class="paws-puffs-settings-accordion-card active" data-card="intro">
+              <div class="paws-puffs-settings-accordion-header" data-card="intro">
+                <div class="paws-puffs-settings-accordion-tab">
+                  <i class="fa-solid fa-circle-info"></i>
+                  <strong>功能介绍</strong>
+                </div>
+              </div>
+              <div class="paws-puffs-settings-accordion-body">
+                <h4>什么是可视化编辑器？</h4>
+                <p>可视化编辑器让你可以用中文描述的方式编辑CSS样式，无需记忆复杂的CSS属性名。</p>
+                
+                <h4>如何使用？</h4>
+                <p>1. 勾选上方"启用可视化编辑面板"</p>
+                <p>2. 前往 用户设置 → UI自定义 → 自定义CSS</p>
+                <p>3. 在输入框下方会出现可视化编辑器界面</p>
+                <p>4. 选择元素，调整样式，编辑器会自动生成中文CSS代码</p>
+                
+                <h4>数据说明</h4>
+                <p>中文CSS代码存储在自定义CSS输入框中（使用分隔符标记），会随主题自动切换。</p>
+              </div>
+            </div>
+
+            <!-- 卡片2：预留 -->
+            <div class="paws-puffs-settings-accordion-card" data-card="reserved-1">
+              <div class="paws-puffs-settings-accordion-header" data-card="reserved-1">
+                <div class="paws-puffs-settings-accordion-tab">
+                  <i class="fa-solid fa-wrench"></i>
+                  <strong>预留功能1</strong>
+                </div>
+              </div>
+              <div class="paws-puffs-settings-accordion-body">
+                <!-- 预留区域 -->
+              </div>
+            </div>
+
+            <!-- 卡片3：预留 -->
+            <div class="paws-puffs-settings-accordion-card" data-card="reserved-2">
+              <div class="paws-puffs-settings-accordion-header" data-card="reserved-2">
+                <div class="paws-puffs-settings-accordion-tab">
+                  <i class="fa-solid fa-wrench"></i>
+                  <strong>预留功能2</strong>
+                </div>
+              </div>
+              <div class="paws-puffs-settings-accordion-body">
+                <!-- 预留区域 -->
+              </div>
+            </div>
+          </div>
+
+          <!-- 数据清理区域 -->
+          <div class="enhanced-section" style="margin-top: 15px;">
+            <h4 style="margin-top: 0; margin-bottom: 10px; color: var(--SmartThemeQuoteColor);">
+              <i class="fa-solid fa-broom"></i> 数据清理
+            </h4>
+            
+            <!-- 按钮1：清理中文CSS -->
+            <div class="beautify-setting-item">
+              <button class="menu_button" id="paws-puffs-ve-clear-chinese-css">
+                <i class="fa-solid fa-file-code"></i>
+                <span>清理中文CSS</span>
+              </button>
+              <span class="beautify-hint">清除自定义CSS输入框中的中文CSS（分隔符内的内容）</span>
+            </div>
+
+            <!-- 按钮2：清理图标设置 -->
+            <div class="beautify-setting-item">
+              <button class="menu_button" id="paws-puffs-ve-clear-icons">
+                <i class="fa-solid fa-icons"></i>
+                <span>清理图标设置</span>
+              </button>
+              <span class="beautify-hint">清除扩展存储中的图标配置数据</span>
+            </div>
+
+            <!-- 按钮3：清理所有扩展数据 -->
+            <div class="beautify-setting-item">
+              <button class="menu_button" id="paws-puffs-ve-clear-all" style="background-color: rgba(255, 68, 68, 0.1); border-color: #ff4444;">
+                <i class="fa-solid fa-trash"></i>
+                <span style="color: #ff4444;">清理所有扩展数据</span>
+              </button>
+              <span class="beautify-hint" style="color: #ff4444;">⚠️ 危险操作：清除所有可视化编辑器相关数据（包括开关状态）</span>
+            </div>
+          </div>
+
         </div>
       </div>
 

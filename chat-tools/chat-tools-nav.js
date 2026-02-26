@@ -491,11 +491,8 @@ function positionSearchResultsDropdown() {
   const dropdownWidth = searchResultsDropdown.offsetWidth || 450;
   const viewportWidth = window.innerWidth;
 
-  // 垂直：优先在搜索框上方 8px 处，空间不够则放到下方
-  let top = inputRect.top - dropdownHeight - 8;
-  if (top < 10) {
-    top = inputRect.bottom + 8;
-  }
+  // 垂直：固定在搜索框上方 8px 处
+  const top = inputRect.top - dropdownHeight - 8;
 
   // 水平：从搜索框左边对齐，但防止超出屏幕右边和左边
   let left = inputRect.left;

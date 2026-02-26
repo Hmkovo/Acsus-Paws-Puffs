@@ -270,6 +270,15 @@ async function openWindow() {
 
   document.body.appendChild(windowElement);
 
+  // 异步渲染条目列表（因为需要获取楼层信息）
+  const currentCharId = getCurrentCharId();
+  const itemsListEl = windowElement.querySelector('#var-v2-items-list');
+  if (itemsListEl) {
+    buildItemsList(activeSuite, variables, currentCharId).then(html => {
+      itemsListEl.innerHTML = html;
+    });
+  }
+
   // 恢复位置
   loadPosition();
   applyPosition();
@@ -442,8 +451,8 @@ function buildWindowHTML(suites, activeSuite, variables) {
             <span class="var-v2-trigger-badge">${buildTriggerBadge(activeSuite)}</span>
             <i class="fa-solid fa-gear var-v2-suite-icon" id="var-v2-edit-suite" title="编辑套装"></i>
             <i class="fa-solid fa-plus var-v2-suite-icon" id="var-v2-new-suite" title="新建套装"></i>
-            <i class="fa-solid fa-file-export var-v2-suite-icon" id="var-v2-export-suite" title="导出套装"></i>
             <i class="fa-solid fa-file-import var-v2-suite-icon" id="var-v2-import-suite" title="导入套装"></i>
+            <i class="fa-solid fa-file-export var-v2-suite-icon" id="var-v2-export-suite" title="导出套装"></i>
             <i class="fa-solid fa-trash var-v2-suite-icon var-v2-delete-suite-icon" id="var-v2-delete-suite" title="删除套装"></i>
         </div>
         <div class="var-v2-body">
@@ -592,7 +601,7 @@ function buildTriggerInfo(suite) {
  * @param {string|null} currentCharId - 当前角色 charId，用于过滤 char-prompt 条目
  * @returns {string} HTML 字符串
  */
-function buildItemsList(suite, variables, currentCharId) {
+async function buildItemsList(suite, variables, currentCharId) {
   if (!suite || !suite.items || suite.items.length === 0) {
     return '<div class="var-v2-empty">暂无条目，点击上方按钮添加</div>';
   }
@@ -606,6 +615,32 @@ function buildItemsList(suite, variables, currentCharId) {
 
   if (visibleItems.length === 0) {
     return '<div class="var-v2-empty">暂无条目，点击上方按钮添加</div>';
+  }
+
+  // 批量获取叠加变量的楼层信息
+  const ctx = getContext();
+  const chatId = ctx?.chatId;
+  const floorInfoMap = {};
+  
+  if (chatId) {
+    const variableManager = getVariableManagerV2();
+    const stackVariables = visibleItems.filter(item => {
+      const varDef = variables.find(v => v.id === item.id);
+      return varDef && varDef.mode === 'stack';
+    });
+    
+    for (const item of stackVariables) {
+      try {
+        const value = await variableManager.getStackValue(item.id, chatId);
+        const entries = value.entries || [];
+        const lastEntry = entries[entries.length - 1];
+        if (lastEntry && lastEntry.floorRange) {
+          floorInfoMap[item.id] = ` (${lastEntry.floorRange}楼)`;
+        }
+      } catch (e) {
+        // 忽略获取失败的情况
+      }
+    }
   }
 
   return visibleItems.map((item, index) => {
@@ -670,6 +705,10 @@ function buildItemsList(suite, variables, currentCharId) {
       const varDef = variables.find(v => v.id === item.id);
       const varName = varDef?.name || '未知变量';
       const varMode = varDef?.mode === 'stack' ? '叠加' : '覆盖';
+      
+      // 从预先获取的 map 中读取楼层信息
+      const floorInfo = floorInfoMap[item.id] || '';
+      
       return `
                 <div class="var-v2-item variable" data-id="${item.id}" data-index="${index}" draggable="true">
                     <span class="var-v2-drag-handle"><i class="fa-solid fa-grip-vertical"></i></span>
@@ -677,7 +716,7 @@ function buildItemsList(suite, variables, currentCharId) {
                         <i class="fa-solid ${item.enabled !== false ? 'fa-toggle-on' : 'fa-toggle-off'} var-v2-toggle-enabled" data-id="${item.id}"></i>
                     </span>
                     <span class="var-v2-item-name">{{${varName}}}</span>
-                    <span class="var-v2-item-mode">${varMode}</span>
+                    <span class="var-v2-item-mode">${varMode}${floorInfo}</span>
                     <span class="var-v2-item-actions">
                         <i class="fa-solid fa-circle-info var-v2-view-detail" data-id="${item.id}" title="详情"></i>
                         <i class="fa-solid fa-trash var-v2-delete-variable" data-id="${item.id}" title="删除"></i>
@@ -1245,28 +1284,18 @@ function bindDragEvents() {
 /**
  * 刷新条目列表
  */
-function refreshItemsList() {
+async function refreshItemsList() {
   if (!windowElement) return;
 
   const suiteManager = getSuiteManager();
   const variableManager = getVariableManagerV2();
   const suite = suiteManager.getActiveSuite();
   const variables = variableManager.getDefinitions();
-
-  logger.debug('variable', '[VariableListUIV2] refreshItemsList 被调用');
-  logger.debug('variable', '[VariableListUIV2] 当前套装:', suite?.id, '条目数:', suite?.items?.length);
-
-  // 检查第一个条目的 enabled 状态
-  if (suite?.items?.length > 0) {
-    const firstItem = suite.items[0];
-    logger.debug('variable', '[VariableListUIV2] 第一个条目:', firstItem.id, 'enabled:', firstItem.enabled, 'type:', firstItem.type);
-  }
-
   const currentCharId = getCurrentCharId();
 
   const list = windowElement.querySelector('#var-v2-items-list');
   if (list) {
-    list.innerHTML = buildItemsList(suite, variables, currentCharId);
+    list.innerHTML = await buildItemsList(suite, variables, currentCharId);
   }
 }
 
@@ -2447,6 +2476,12 @@ async function showStackDetailPage(varId, variable) {
             </button>
             <span class="var-v2-detail-title">{{${variable.name}}}</span>
             <span class="var-v2-detail-mode">叠加</span>
+            <button class="var-v2-header-btn" id="var-v2-import-value" title="导入变量值">
+                <i class="fa-solid fa-file-import"></i>
+            </button>
+            <button class="var-v2-header-btn" id="var-v2-export-value" title="导出变量值">
+                <i class="fa-solid fa-file-export"></i>
+            </button>
         </div>
         <div class="var-v2-detail-body">
             <div class="var-v2-detail-info-compact">
@@ -2528,6 +2563,12 @@ async function showReplaceDetailPage(varId, variable) {
             </button>
             <span class="var-v2-detail-title">{{${variable.name}}}</span>
             <span class="var-v2-detail-mode">覆盖</span>
+            <button class="var-v2-header-btn" id="var-v2-import-value" title="导入变量值">
+                <i class="fa-solid fa-file-import"></i>
+            </button>
+            <button class="var-v2-header-btn" id="var-v2-export-value" title="导出变量值">
+                <i class="fa-solid fa-file-export"></i>
+            </button>
         </div>
         <div class="var-v2-detail-body">
             <div class="var-v2-detail-info-compact">
@@ -2538,9 +2579,11 @@ async function showReplaceDetailPage(varId, variable) {
                 <div class="var-v2-current-label" id="var-v2-value-label">
                     ${displayValue.isHistory ? '历史版本' : '当前值'}
                 </div>
-                <div class="var-v2-current-content" id="var-v2-current-content">
-                    ${hasValue ? escapeHtml(displayValue.content) : '<span class="var-v2-empty">暂无值</span>'}
-                </div>
+                <textarea class="var-v2-current-textarea" id="var-v2-current-content" placeholder="暂无值">${hasValue ? escapeHtml(displayValue.content) : ''}</textarea>
+            </div>
+            <div class="var-v2-current-actions">
+                <button class="var-v2-btn primary small" id="var-v2-apply-current" ${!hasValue ? 'disabled' : ''}>应用修改</button>
+                <button class="var-v2-btn small" id="var-v2-delete-current" ${!hasValue ? 'disabled' : ''}>删除当前值</button>
             </div>
             <div class="var-v2-history-nav" ${total <= 1 ? 'style="display:none"' : ''}>
                 <button class="var-v2-btn small" id="var-v2-prev" ${currentIndex <= 1 ? 'disabled' : ''}>
@@ -2552,7 +2595,7 @@ async function showReplaceDetailPage(varId, variable) {
                 </button>
             </div>
             <div class="var-v2-history-actions" id="var-v2-apply-section" ${!displayValue.isHistory ? 'style="display:none"' : ''}>
-                <button class="var-v2-btn primary small" id="var-v2-apply">应用此历史版本</button>
+                <button class="var-v2-btn primary small" id="var-v2-apply-history">应用此历史版本</button>
             </div>
         </div>
     `;
@@ -2660,6 +2703,74 @@ function bindStackDetailPageEvents(container, varId, chatId, variable, signal) {
       countEl.textContent = `条目: ${entries.length}`;
     }
   };
+
+  // 导出变量值
+  container.querySelector('#var-v2-export-value')?.addEventListener('click', async () => {
+    const value = await variableManager.getStackValue(varId, chatId);
+    const exportData = {
+      variableId: varId,
+      variableName: variable.name,
+      mode: 'stack',
+      chatId: chatId,
+      exportTime: Date.now(),
+      value: value
+    };
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `variable-${variable.name}-${chatId.substring(0, 20)}-${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toastr.success('变量值已导出');
+  }, { signal });
+
+  // 导入变量值
+  container.querySelector('#var-v2-import-value')?.addEventListener('click', async () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      try {
+        const text = await file.text();
+        const importData = JSON.parse(text);
+        
+        // 验证数据格式
+        if (!importData.value || importData.mode !== 'stack') {
+          toastr.error('文件格式错误或模式不匹配');
+          return;
+        }
+        
+        // 确认导入
+        const confirmed = await showInternalConfirm(
+          '导入变量值',
+          `确定要导入变量 "${importData.variableName}" 的数据吗？\n当前聊天的变量值将被覆盖。`,
+          { okButton: '导入' }
+        );
+        
+        if (!confirmed) return;
+        
+        // 导入数据（直接设置值）
+        await storage.setValueV2(varId, chatId, importData.value);
+        await refreshEntriesList();
+        toastr.success('变量值已导入');
+      } catch (err) {
+        logger.error('variable', '[VariableListUIV2] 导入失败:', err);
+        toastr.error('导入失败: ' + err.message);
+      }
+    };
+    
+    input.click();
+  }, { signal });
 
   container.addEventListener('click', async (e) => {
     const target = /** @type {HTMLElement} */ (e.target);
@@ -2855,22 +2966,131 @@ function bindReplaceDetailPageEvents(container, varId, chatId, variable, signal)
     const currentIndex = value.historyIndex === -1 ? total : value.historyIndex + 1;
     const hasValue = displayValue.content && displayValue.content.trim() !== '';
 
-    const contentEl = container.querySelector('#var-v2-current-content');
+    const contentEl = /** @type {HTMLTextAreaElement} */ (container.querySelector('#var-v2-current-content'));
     const labelEl = container.querySelector('#var-v2-value-label');
     const floorEl = container.querySelector('#var-v2-floor-info');
     const posEl = container.querySelector('#var-v2-pos');
     const prevBtn = /** @type {HTMLButtonElement} */ (container.querySelector('#var-v2-prev'));
     const nextBtn = /** @type {HTMLButtonElement} */ (container.querySelector('#var-v2-next'));
     const applySection = container.querySelector('#var-v2-apply-section');
+    const applyCurrentBtn = /** @type {HTMLButtonElement} */ (container.querySelector('#var-v2-apply-current'));
+    const deleteCurrentBtn = /** @type {HTMLButtonElement} */ (container.querySelector('#var-v2-delete-current'));
 
-    if (contentEl) contentEl.innerHTML = hasValue ? escapeHtml(displayValue.content) : '<span class="var-v2-empty">暂无值</span>';
+    if (contentEl) contentEl.value = hasValue ? displayValue.content : '';
     if (labelEl) labelEl.textContent = displayValue.isHistory ? '历史版本' : '当前值';
     if (floorEl) floorEl.textContent = `第 ${displayValue.floorRange || '?'} 楼`;
     if (posEl) posEl.textContent = `${currentIndex} / ${total}`;
     if (prevBtn) prevBtn.disabled = currentIndex <= 1;
     if (nextBtn) nextBtn.disabled = currentIndex >= total;
     if (applySection) applySection.style.display = displayValue.isHistory ? '' : 'none';
+    if (applyCurrentBtn) applyCurrentBtn.disabled = !hasValue;
+    if (deleteCurrentBtn) deleteCurrentBtn.disabled = !hasValue;
   };
+
+  // 导出变量值
+  container.querySelector('#var-v2-export-value')?.addEventListener('click', async () => {
+    const value = await variableManager.getReplaceValue(varId, chatId);
+    const exportData = {
+      variableId: varId,
+      variableName: variable.name,
+      mode: 'replace',
+      chatId: chatId,
+      exportTime: Date.now(),
+      value: value
+    };
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `variable-${variable.name}-${chatId.substring(0, 20)}-${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toastr.success('变量值已导出');
+  }, { signal });
+
+  // 导入变量值
+  container.querySelector('#var-v2-import-value')?.addEventListener('click', async () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      try {
+        const text = await file.text();
+        const importData = JSON.parse(text);
+        
+        // 验证数据格式
+        if (!importData.value || importData.mode !== 'replace') {
+          toastr.error('文件格式错误或模式不匹配');
+          return;
+        }
+        
+        // 确认导入
+        const confirmed = await showInternalConfirm(
+          '导入变量值',
+          `确定要导入变量 "${importData.variableName}" 的数据吗？\n当前聊天的变量值将被覆盖。`,
+          { okButton: '导入' }
+        );
+        
+        if (!confirmed) return;
+        
+        // 导入数据（直接设置值）
+        await storage.setValueV2(varId, chatId, importData.value);
+        await refresh();
+        toastr.success('变量值已导入');
+      } catch (err) {
+        logger.error('variable', '[VariableListUIV2] 导入失败:', err);
+        toastr.error('导入失败: ' + err.message);
+      }
+    };
+    
+    input.click();
+  }, { signal });
+
+  // 应用修改按钮
+  container.querySelector('#var-v2-apply-current')?.addEventListener('click', async () => {
+    const contentEl = /** @type {HTMLTextAreaElement} */ (container.querySelector('#var-v2-current-content'));
+    if (!contentEl) return;
+    
+    const newContent = contentEl.value.trim();
+    if (!newContent) {
+      toastr.warning('内容不能为空');
+      return;
+    }
+    
+    const ctx = getContext();
+    const chatLength = ctx?.chat?.length || 0;
+    const floorRange = `${chatLength}`;
+    
+    await variableManager.setValue(varId, chatId, newContent, floorRange);
+    await refresh();
+    toastr.success('已应用修改');
+  }, { signal });
+
+  // 删除当前值按钮
+  container.querySelector('#var-v2-delete-current')?.addEventListener('click', async () => {
+    const confirmed = await showInternalConfirm('删除当前值', '确定删除当前值吗？删除后将恢复到上一个历史版本。', { danger: true, okButton: '删除' });
+    if (confirmed) {
+      const value = await variableManager.getReplaceValue(varId, chatId);
+      if (value.history.length > 0) {
+        // 如果有历史，恢复到最新历史
+        await variableManager.applyHistoryVersion(varId, chatId, value.history.length - 1);
+      } else {
+        // 如果没有历史，清空当前值
+        await variableManager.setValue(varId, chatId, '', '');
+      }
+      await refresh();
+      toastr.success('已删除当前值');
+    }
+  }, { signal });
 
   container.querySelector('#var-v2-prev')?.addEventListener('click', async () => {
     await variableManager.navigateHistory(varId, chatId, 'prev');
@@ -2882,7 +3102,8 @@ function bindReplaceDetailPageEvents(container, varId, chatId, variable, signal)
     await refresh();
   }, { signal });
 
-  container.querySelector('#var-v2-apply')?.addEventListener('click', async () => {
+  // 应用历史版本按钮（重命名为 apply-history）
+  container.querySelector('#var-v2-apply-history')?.addEventListener('click', async () => {
     const value = await variableManager.getReplaceValue(varId, chatId);
     if (value.historyIndex >= 0) {
       const confirmed = await showInternalConfirm('应用历史版本', '确定要将此历史版本设为当前值吗？', { okButton: '应用' });
@@ -3066,6 +3287,7 @@ function openHelpPopup() {
             <div class="var-v2-help-tab" data-tab="syntax">变量语法</div>
             <div class="var-v2-help-tab" data-tab="trigger">触发方式</div>
             <div class="var-v2-help-tab" data-tab="stack-replace">叠加/覆盖</div>
+            <div class="var-v2-help-tab" data-tab="features">实用功能</div>
             <div class="var-v2-help-tab" data-tab="queue">队列说明</div>
         </div>
 
@@ -3094,7 +3316,7 @@ function openHelpPopup() {
                         <span class="step-num">2</span>
                         <div class="step-content">
                             <strong>点击「提示词」按钮</strong>
-                            <p>添加分析指令，比如："请分析聊天内容，提取摘要"</p>
+                            <p>添加分析指令，比如："请分析聊天内容，用3-5句话总结剧情"</p>
                         </div>
                     </div>
                     <div class="step">
@@ -3137,7 +3359,7 @@ function openHelpPopup() {
                             <tr><th>🔘 开启</th><td>这条提示词会发送给 AI，参与分析</td></tr>
                             <tr><th>⚪ 关闭</th><td>这条提示词不发送给 AI，AI 看不到</td></tr>
                         </table>
-                        <p><strong>示例：</strong>「请分析最近聊天，提取角色状态变化」</p>
+                        <p><strong>示例：</strong>「请分析最近聊天，提取角色ABC的状态变化」</p>
                     </div>
                 </div>
 
@@ -3169,7 +3391,7 @@ function openHelpPopup() {
                             <tr><th>🔘 开启</th><td>AI 会被要求用这个变量的标签返回（比如 [摘要]...[/摘要]）</td></tr>
                             <tr><th>⚪ 关闭</th><td>AI 不知道要返回什么格式，分析结果不会被保存</td></tr>
                         </table>
-                        <p><strong>示例：</strong>变量标签设为 [摘要]，AI 返回必须是：<br><code>[摘要]这是摘要内容[/摘要]</code></p>
+                        <p><strong>示例：</strong>变量标签设为 [摘要]，AI 返回必须是：<br><code>[摘要]角色ABC和角色DEF在森林相遇...[/摘要]</code></p>
                     </div>
                 </div>
 
@@ -3303,7 +3525,7 @@ function openHelpPopup() {
                         <p><strong>使用场景：</strong>需要追踪历史变化的变量，比如：</p>
                         <ul>
                             <li>剧情摘要（每次总结都保存）</li>
-                            <li>角色状态变化（每次状态更新都保存）</li>
+                            <li>角色ABC的状态变化（每次状态更新都保存）</li>
                         </ul>
                         <p><strong>引用示例：</strong></p>
                         <table class="var-v2-help-table">
@@ -3324,8 +3546,8 @@ function openHelpPopup() {
                         <p><strong>数据结构：</strong>只保留最新值，有历史记录可以回溯</p>
                         <p><strong>使用场景：</strong>只需要最新值的变量，比如：</p>
                         <ul>
-                            <li>当前时间（每次更新都替换）</li>
-                            <li>角色位置（位置变了就覆盖）</li>
+                            <li>当前场景（场景切换就替换）</li>
+                            <li>角色ABC的位置（位置变了就覆盖）</li>
                         </ul>
                         <p><strong>引用示例：</strong></p>
                         <table class="var-v2-help-table">
@@ -3343,6 +3565,75 @@ function openHelpPopup() {
                             <li>需要历史记录 → 选 <strong>叠加</strong></li>
                             <li>只需要最新值 → 选 <strong>覆盖</strong></li>
                         </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 实用功能 -->
+            <div class="var-v2-help-page" id="var-v2-help-page-features">
+                <h3><i class="fa-solid fa-sparkles"></i> 实用功能</h3>
+
+                <div class="help-card">
+                    <div class="help-card-header">
+                        <i class="fa-solid fa-database"></i>
+                        <strong>聊天列表变量标识</strong>
+                    </div>
+                    <div class="help-card-body">
+                        <p><strong>在哪里看：</strong>打开聊天管理界面（删除聊天或管理聊天记录）</p>
+                        <p><strong>效果：</strong>包含变量数据的聊天会在消息数后显示 <i class="fa-solid fa-database"></i> 图标</p>
+                        <p><strong>作用：</strong>快速识别哪些聊天有变量数据，方便管理</p>
+                    </div>
+                </div>
+
+                <div class="help-card">
+                    <div class="help-card-header">
+                        <i class="fa-solid fa-file-export"></i>
+                        <strong>导入/导出变量值</strong>
+                    </div>
+                    <div class="help-card-body">
+                        <p><strong>在哪里：</strong>套装行右侧按钮 或 变量详情页顶部按钮</p>
+                        <p><strong>导出：</strong>把当前聊天的所有变量值保存为 JSON 文件</p>
+                        <p><strong>导入：</strong>从 JSON 文件恢复变量值到当前聊天</p>
+                        <p><strong>使用场景：</strong>备份重要剧情数据、在不同聊天间迁移变量</p>
+                        <p><strong>注意：</strong>左边导入，右边导出</p>
+                    </div>
+                </div>
+
+                <div class="help-card">
+                    <div class="help-card-header">
+                        <i class="fa-solid fa-code-branch"></i>
+                        <strong>分支继承</strong>
+                    </div>
+                    <div class="help-card-body">
+                        <p><strong>触发时机：</strong>点击消息的分支按钮创建新分支时</p>
+                        <p><strong>效果：</strong>弹窗询问是否继承原聊天的变量数据</p>
+                        <p><strong>继承选项：</strong></p>
+                        <ul>
+                            <li>完整继承 - 复制所有变量的所有数据</li>
+                            <li>仅继承最新值 - 只复制每个变量的最新一条</li>
+                            <li>不继承 - 新分支从零开始</li>
+                        </ul>
+                        <p><strong>作用：</strong>探索不同剧情走向时保留已有的变量数据</p>
+                    </div>
+                </div>
+
+                <div class="help-card">
+                    <div class="help-card-header">
+                        <i class="fa-solid fa-trash"></i>
+                        <strong>自动清理变量文件</strong>
+                    </div>
+                    <div class="help-card-body">
+                        <p><strong>触发时机：</strong>删除聊天记录时</p>
+                        <p><strong>效果：</strong>对应的变量文件会自动删除</p>
+                        <p><strong>作用：</strong>防止变量文件堆积，保持数据整洁</p>
+                        <p><strong>无需操作：</strong>完全自动，无感知</p>
+                    </div>
+                </div>
+
+                <div class="var-v2-help-tip">
+                    <i class="fa-solid fa-lightbulb"></i>
+                    <div>
+                        <p><strong>提示：</strong>这些功能都是自动生效的，无需额外配置</p>
                     </div>
                 </div>
             </div>
