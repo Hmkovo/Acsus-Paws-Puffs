@@ -2,7 +2,7 @@
  * 聊天工具模块 - 入口文件
  *
  * @description
- * 聊天工具模块的入口，整合折叠和导航功能
+ * 聊天工具模块的入口，整合折叠、导航和隐藏楼层管理功能
  */
 
 // ========================================
@@ -11,6 +11,7 @@
 
 import { initChatToolsFold, bindFoldSettings } from './chat-tools-fold.js';
 import { initChatToolsNav, bindNavSettings } from './chat-tools-nav.js';
+import { initChatToolsHide } from './chat-tools-hide.js';
 import logger from '../logger.js';
 
 // ========================================
@@ -36,6 +37,9 @@ export function initChatTools() {
   // 初始化导航功能
   initChatToolsNav();
 
+  // 初始化隐藏楼层管理
+  initChatToolsHide();
+
   logger.info('chatTools', '聊天工具模块初始化完成');
 }
 
@@ -48,3 +52,8 @@ export { bindFoldSettings } from './chat-tools-fold.js';
  * 绑定聊天工具导航设置（在 settings.html 加载后调用）
  */
 export { bindNavSettings } from './chat-tools-nav.js';
+
+/**
+ * 绑定聊天工具隐藏楼层管理设置（在 settings.html 加载后调用）
+ */
+export { bindHideSettings } from './chat-tools-hide.js';

@@ -1,4 +1,7 @@
 【*.md
+【*.txt
+【*.html
+
 *DEMO*.md
 CLASSNAME-MAP.md
 【代码修改记录】.md
@@ -6,6 +9,7 @@ CHANGELOG.md
 【发布前检查清单】RELEASE-CHECKLIST.md
 RELEASE-CHECKLIST.md
 【节目单】v2_需求文档  0223.html
+
 
 *-demo.html
 

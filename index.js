@@ -43,7 +43,7 @@ import { SimulatedLifeModule } from "./simulated-life/simulated-life.js";
 import { initDiarySystem } from "./toolkit/diary/diary.js";
 import { initPhone, openPhoneUI, closePhoneUI, enablePhone, disablePhone } from "./toolkit/phone/index.js";
 // 聊天工具模块
-import { initChatTools, bindFoldSettings, bindNavSettings } from "./chat-tools/index.js";
+import { initChatTools, bindFoldSettings, bindNavSettings, bindHideSettings } from "./chat-tools/index.js";
 // 聊天记录模块暂时禁用，开发中
 // import {
 //   initChatArchive,
@@ -337,6 +337,9 @@ async function initSettingsPanel() {
 
     // 4.2 绑定聊天工具导航设置（在 settings.html 加载后）
     bindNavSettings();
+
+    // 4.3 绑定聊天工具隐藏楼层管理设置（在 settings.html 加载后）
+    bindHideSettings();
 
     // 5. 让字体管理器渲染自己的UI
     if (fontManager) {

@@ -42,6 +42,7 @@
    ============================================ */
 @import url('chat-tools/chat-tools-fold.css');
 @import url('chat-tools/chat-tools-nav.css');
+@import url('chat-tools/chat-tools-hide.css');
 
 /* ========================================
    导入聊天记录管理CSS

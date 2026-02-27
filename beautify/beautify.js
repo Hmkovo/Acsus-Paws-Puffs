@@ -17,6 +17,7 @@ import { openBeautifyPopup, initBeautifyPopup, applyDisplaySettings } from './be
 import { openPrivacyEditPopup, initPrivacyPopup } from './beautify-privacy-popup.js';
 import { timestampToMoment } from '../../../../utils.js';
 import { getTokenCountAsync } from '../../../../tokenizers.js';
+import { toggleHidePanel } from '../chat-tools/chat-tools-hide.js';
 
 
 // ==========================================
@@ -85,6 +86,9 @@ let bgTagManagerEnabled = false;
 
 /** @type {boolean} 防窥模式是否启用 */
 let privacyModeEnabled = false;
+
+/** @type {boolean} 隐藏楼层管理功能是否启用 */
+let hideFloorEnabled = false;
 
 /** @type {boolean} 滑块变亮是否启用 */
 let sliderBrightEnabled = false;
@@ -368,7 +372,7 @@ function loadSettings() {
   hideScrollbarEnabled = extension_settings[EXT_ID].beautify.hideScrollbarEnabled;
   bgTagManagerEnabled = extension_settings[EXT_ID].beautify.bgTagManagerEnabled;
   privacyModeEnabled = extension_settings[EXT_ID].beautify.privacyModeEnabled;
-  // 便捷小功能
+  hideFloorEnabled = extension_settings['Acsus-Paws-Puffs']?.chatTools?.hideEnabled ?? false;
   sliderBrightEnabled = extension_settings[EXT_ID].beautify.sliderBrightEnabled;
   hideCopyBtnEnabled = extension_settings[EXT_ID].beautify.hideCopyBtnEnabled;
   hideNameEnabled = extension_settings[EXT_ID].beautify.hideNameEnabled;
@@ -2959,16 +2963,31 @@ async function showSnapshotMenu(x, y) {
 
     let menuHtml = '';
 
-    // 防窥模式按钮（优先级高于"暂无内容"）
-    if (privacyModeEnabled) {
-      menuHtml = `
+    // 每次打开菜单时动态读取最新状态（避免缓存变量过期问题）
+    const currentPrivacyEnabled = extension_settings[EXT_ID].beautify.privacyModeEnabled ?? false;
+    const currentHideFloorEnabled = extension_settings['Acsus-Paws-Puffs']?.chatTools?.hideEnabled ?? false;
+    const hasSpecialBtns = currentPrivacyEnabled || currentHideFloorEnabled;
+
+    if (currentPrivacyEnabled) {
+      menuHtml += `
         <div class="snapshot-menu-toggle privacy-mode-btn" id="snapshot-menu-privacy-btn">
           <i class="fa-solid fa-eye-slash"></i>
           <span class="menu-toggle-name">防窥</span>
         </div>
       `;
-    } else {
-      // 没有防窥时才显示"暂无内容"
+    }
+
+    if (currentHideFloorEnabled) {
+      menuHtml += `
+        <div class="snapshot-menu-toggle hide-floor-btn" id="snapshot-menu-hide-floor-btn">
+          <i class="fa-solid fa-ghost"></i>
+          <span class="menu-toggle-name">楼层隐藏状态</span>
+        </div>
+      `;
+    }
+
+    // 没有任何特殊按钮时才显示"暂无内容"
+    if (!hasSpecialBtns) {
       menuHtml = `
         <div class="snapshot-menu-empty">
           <i class="fa-solid fa-inbox"></i>
@@ -2980,8 +2999,8 @@ async function showSnapshotMenu(x, y) {
     snapshotMenu.innerHTML = menuHtml;
     positionAndShowMenu(x, y);
 
-    // 绑定防窥模式按钮事件（空状态时也需要）
-    if (privacyModeEnabled) {
+    // 绑定防窥按钮事件
+    if (currentPrivacyEnabled) {
       const privacyBtn = document.getElementById('snapshot-menu-privacy-btn');
       if (privacyBtn) {
         privacyBtn.addEventListener('click', () => {
@@ -2989,6 +3008,20 @@ async function showSnapshotMenu(x, y) {
           hideSnapshotMenu();
           setTimeout(() => {
             showPrivacyOverlay();
+          }, 100);
+        });
+      }
+    }
+
+    // 绑定楼层隐藏状态按钮事件
+    if (currentHideFloorEnabled) {
+      const hideFloorBtn = document.getElementById('snapshot-menu-hide-floor-btn');
+      if (hideFloorBtn) {
+        hideFloorBtn.addEventListener('click', () => {
+          logger.info('beautify', '[Beautify] 用户点击楼层隐藏状态按钮');
+          hideSnapshotMenu();
+          setTimeout(() => {
+            toggleHidePanel();
           }, 100);
         });
       }
@@ -3123,13 +3156,28 @@ async function showSnapshotMenu(x, y) {
     menuHtml += snapshotsHtml;
   }
 
+  // 每次打开菜单时动态读取最新状态（避免缓存变量过期问题）
+  const currentPrivacyEnabled = extension_settings[EXT_ID].beautify.privacyModeEnabled ?? false;
+  const currentHideFloorEnabled = extension_settings['Acsus-Paws-Puffs']?.chatTools?.hideEnabled ?? false;
+
   // 防窥模式按钮（如果启用）
-  if (privacyModeEnabled) {
+  if (currentPrivacyEnabled) {
     menuHtml += `
       <div class="snapshot-menu-divider"></div>
       <div class="snapshot-menu-toggle privacy-mode-btn" id="snapshot-menu-privacy-btn">
         <i class="fa-solid fa-eye-slash"></i>
         <span class="menu-toggle-name">防窥</span>
+      </div>
+    `;
+  }
+
+  // 隐藏楼层管理按钮（如果启用）
+  if (currentHideFloorEnabled) {
+    menuHtml += `
+      <div class="snapshot-menu-divider"></div>
+      <div class="snapshot-menu-toggle hide-floor-btn" id="snapshot-menu-hide-floor-btn">
+        <i class="fa-solid fa-ghost"></i>
+        <span class="menu-toggle-name">楼层隐藏状态</span>
       </div>
     `;
   }
@@ -3266,15 +3314,28 @@ async function showSnapshotMenu(x, y) {
   });
 
   // 绑定防窥模式按钮事件
-  if (privacyModeEnabled) {
+  if (currentPrivacyEnabled) {
     const privacyBtn = document.getElementById('snapshot-menu-privacy-btn');
     if (privacyBtn) {
       privacyBtn.addEventListener('click', () => {
         logger.info('beautify', '[Beautify] 用户点击防窥按钮');
         hideSnapshotMenu();
-        // 延迟一点执行，让菜单关闭后再显示遮罩
         setTimeout(() => {
           showPrivacyOverlay();
+        }, 100);
+      });
+    }
+  }
+
+  // 绑定隐藏楼层管理按钮事件
+  if (currentHideFloorEnabled) {
+    const hideFloorBtn = document.getElementById('snapshot-menu-hide-floor-btn');
+    if (hideFloorBtn) {
+      hideFloorBtn.addEventListener('click', () => {
+        logger.info('beautify', '[Beautify] 用户点击楼层隐藏状态按钮');
+        hideSnapshotMenu();
+        setTimeout(() => {
+          toggleHidePanel();
         }, 100);
       });
     }

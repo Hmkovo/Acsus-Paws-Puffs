@@ -1,0 +1,175 @@
+/**
+ * 聊天工具 - 隐藏楼层管理样式
+ */
+
+/* ============================================
+   面板容器
+   ============================================ */
+
+.chat-tools-hide-panel {
+  position: fixed;
+  z-index: 9999;
+  width: 260px;
+  max-height: 380px;
+  background-color: var(--SmartThemeChatTintColor);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 0.5em;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ============================================
+   面板头部
+   ============================================ */
+
+.chat-tools-hide-header {
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+  padding: 0.45em 0.7em;
+  background-color: var(--SmartThemeBlurTintColor);
+  border-bottom: 1px solid var(--SmartThemeBorderColor);
+  flex-shrink: 0;
+}
+
+.chat-tools-hide-title {
+  flex: 1;
+  font-size: 0.82em;
+  font-weight: bold;
+  color: var(--SmartThemeBodyColor);
+  white-space: nowrap;
+}
+
+.chat-tools-hide-refresh-btn,
+.chat-tools-hide-quick-btn,
+.chat-tools-hide-close-btn {
+  cursor: pointer;
+  color: var(--SmartThemeMutedTextColor);
+  font-size: 0.82em;
+  padding: 0.2em 0.3em;
+  border-radius: 0.3em;
+  transition: color 0.2s, background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.chat-tools-hide-refresh-btn:hover,
+.chat-tools-hide-quick-btn:hover,
+.chat-tools-hide-close-btn:hover {
+  color: var(--SmartThemeBodyColor);
+  background-color: color-mix(in srgb, var(--SmartThemeBorderColor) 40%, transparent 60%);
+}
+
+/* ============================================
+   面板内容区（楼层段列表）
+   ============================================ */
+
+.chat-tools-hide-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.3em 0;
+  background-color: color-mix(in srgb, var(--SmartThemeChatTintColor) 95%, var(--black) 5%);
+  backdrop-filter: blur(8px);
+}
+
+.chat-tools-hide-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.chat-tools-hide-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-tools-hide-content::-webkit-scrollbar-thumb {
+  background: var(--SmartThemeBorderColor);
+  border-radius: 2px;
+}
+
+/* 楼层段行 */
+.chat-tools-hide-segment {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  padding: 0.38em 0.8em;
+  cursor: pointer;
+  font-size: 0.85em;
+  transition: background-color 0.15s;
+  user-select: none;
+}
+
+.chat-tools-hide-segment:hover {
+  background-color: var(--SmartThemeBlurTintColor);
+}
+
+/* 睁眼段：图标高亮 */
+.chat-tools-hide-segment.is-visible .chat-tools-hide-icon {
+  color: var(--SmartThemeQuoteColor);
+}
+
+/* 闭眼段：图标和文字都暗淡 */
+.chat-tools-hide-segment.is-hidden .chat-tools-hide-icon {
+  color: var(--SmartThemeMutedTextColor);
+  opacity: 0.5;
+}
+
+.chat-tools-hide-segment.is-visible .chat-tools-hide-range {
+  color: var(--SmartThemeBodyColor);
+}
+
+.chat-tools-hide-segment.is-hidden .chat-tools-hide-range {
+  color: var(--SmartThemeMutedTextColor);
+}
+
+/* 空状态 */
+.chat-tools-hide-empty {
+  padding: 1.2em;
+  text-align: center;
+  color: var(--SmartThemeMutedTextColor);
+  font-size: 0.85em;
+}
+
+/* ============================================
+   快捷指令菜单
+   ============================================ */
+
+.chat-tools-hide-quick-menu {
+  position: fixed;
+  z-index: 10000;
+  width: 260px;
+  background-color: color-mix(in srgb, var(--SmartThemeChatTintColor) 95%, var(--black) 5%);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 0.4em;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+}
+
+.chat-tools-hide-quick-item {
+  padding: 0.5em 0.75em;
+  cursor: pointer;
+  border-bottom: 1px solid color-mix(in srgb, var(--SmartThemeBorderColor) 50%, transparent 50%);
+  transition: background-color 0.15s;
+}
+
+.chat-tools-hide-quick-item:last-child {
+  border-bottom: none;
+}
+
+.chat-tools-hide-quick-item:hover {
+  background-color: var(--SmartThemeBlurTintColor);
+}
+
+.chat-tools-hide-quick-label {
+  font-size: 0.83em;
+  font-weight: bold;
+  color: var(--SmartThemeBodyColor);
+  font-family: monospace;
+  margin-bottom: 0.1em;
+}
+
+.chat-tools-hide-quick-desc {
+  font-size: 0.77em;
+  color: var(--SmartThemeMutedTextColor);
+  line-height: 1.3;
+}
