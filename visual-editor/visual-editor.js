@@ -30,6 +30,7 @@ import { saveSettingsDebounced } from "../../../../../script.js";
 
 // [IMPORT] 导入UI模块
 import { BeginnerMode } from './modes/beginner/beginner-mode.js';
+import { buildCSSFromControlsData } from './modes/beginner/beginner-mode.js';
 // import { ExpertMode } from './modes/expert/expert-mode.js';  // P1阶段
 
 // [IMPORT] 导入编译器
@@ -41,6 +42,18 @@ import {
   VISUAL_MARKER_START,
   VISUAL_MARKER_END
 } from './compiler.js';
+
+// [IMPORT] 导入可视化编辑器存储模块
+import {
+  getActiveScheme,
+  saveControlsData,
+  savePluginCSS,
+  createScheme,
+  deleteScheme,
+  renameScheme,
+  switchScheme,
+  getSchemeList
+} from './visual-editor-storage.js';
 
 // [IMPORT] 导入日志模块
 import logger from '../logger.js';
@@ -122,6 +135,24 @@ export class VisualEditor {
       // DOM已经加载好了，立即执行
       logger.debug('[VisualEditor.init] DOM已就绪，立即执行初始编译');
       this.compileAndApply();
+    }
+
+    // 从存储恢复CSS效果（页面加载时立即注入，不等用户打开弹窗）
+    try {
+      const scheme = await getActiveScheme();
+
+      if (Object.keys(scheme.controlsData || {}).length > 0) {
+        const css = buildCSSFromControlsData(scheme.controlsData);
+        this.applyControlsCSS(css);
+        logger.info('[VisualEditor.init] 已从存储恢复控件CSS');
+      }
+
+      if (scheme.pluginInputCSS?.trim()) {
+        this.applyInputCSS(scheme.pluginInputCSS);
+        logger.info('[VisualEditor.init] 已从存储恢复输入框CSS');
+      }
+    } catch (err) {
+      logger.warn('[VisualEditor.init] 恢复存储CSS失败:', err.message);
     }
 
     logger.info('[VisualEditor.init] 可视化编辑器初始化完成');
@@ -820,16 +851,178 @@ export class VisualEditor {
     // 绑定功能按钮
     this.bindActionButtons(overlay);
 
+    // 初始化方案管理栏
+    await this.initSchemeBar(overlay);
+
     // 初始化元素编辑标签页
     await this.initElementsTab(overlay);
 
     // 同步插件CSS输入框（从当前方案加载）
-    this.syncPluginCSSInput();
+    await this.syncPluginCSSInput();
 
     // 设置插件CSS输入框的实时监听（新架构）
     this.setupPluginInputSync();
 
     logger.info('[VisualEditor.openDialog] 弹窗已打开');
+  }
+
+  /**
+   * 初始化方案管理栏
+   *
+   * @description
+   * 填充方案下拉列表，并绑定新建/重命名/删除/切换事件。
+   * 每次打开弹窗时调用（openDialog内调用，重复调用安全）。
+   *
+   * @async
+   * @param {HTMLElement} overlay - 弹窗遮罩层元素
+   */
+  async initSchemeBar(overlay) {
+    const selectEl = overlay.querySelector('#paws-puffs-ve-scheme-select');
+    const newBtn = overlay.querySelector('#paws-puffs-ve-scheme-new-btn');
+    const renameBtn = overlay.querySelector('#paws-puffs-ve-scheme-rename-btn');
+    const deleteBtn = overlay.querySelector('#paws-puffs-ve-scheme-delete-btn');
+
+    if (!selectEl || !newBtn || !renameBtn || !deleteBtn) {
+      logger.warn('[VisualEditor.initSchemeBar] 方案管理栏元素未找到');
+      return;
+    }
+
+    if (overlay.dataset.schemeBarBound === 'true') {
+      this._renderSchemeOptions(/** @type {HTMLSelectElement} */ (selectEl));
+      return;
+    }
+    overlay.dataset.schemeBarBound = 'true';
+
+    await getActiveScheme();
+    this._renderSchemeOptions(/** @type {HTMLSelectElement} */ (selectEl));
+
+    selectEl.addEventListener('change', async () => {
+      await this._applyScheme(/** @type {HTMLSelectElement} */ (selectEl).value);
+      logger.info('[VisualEditor.initSchemeBar] 切换方案:', /** @type {HTMLSelectElement} */ (selectEl).value);
+    });
+
+    newBtn.addEventListener('click', async () => {
+      const { callGenericPopup, POPUP_TYPE } = await import('../../../../popup.js');
+      const name = await callGenericPopup('请输入新方案名称：', POPUP_TYPE.INPUT, '新方案');
+      if (!name) return;
+      await createScheme(name);
+      this._renderSchemeOptions(/** @type {HTMLSelectElement} */ (selectEl));
+      await this._applyScheme(getSchemeList().find(s => s.isActive)?.id);
+      logger.info('[VisualEditor.initSchemeBar] 新建方案完成:', name);
+    });
+
+    renameBtn.addEventListener('click', async () => {
+      const activeScheme = await getActiveScheme();
+      const { callGenericPopup, POPUP_TYPE } = await import('../../../../popup.js');
+      const name = await callGenericPopup('请输入新名称：', POPUP_TYPE.INPUT, activeScheme.name);
+      if (!name) return;
+      await renameScheme(activeScheme.id, name);
+      this._renderSchemeOptions(/** @type {HTMLSelectElement} */ (selectEl));
+      logger.info('[VisualEditor.initSchemeBar] 重命名完成:', name);
+    });
+
+    deleteBtn.addEventListener('click', async () => {
+      const activeScheme = await getActiveScheme();
+      if (activeScheme.id === 'default') {
+        toastr.warning('默认方案不可删除');
+        return;
+      }
+      if (getSchemeList().length <= 1) {
+        toastr.warning('至少保留一个方案');
+        return;
+      }
+      const { callGenericPopup, POPUP_TYPE } = await import('../../../../popup.js');
+      const confirmed = await callGenericPopup(
+        `确定删除方案「${activeScheme.name}」吗？此操作不可恢复。`,
+        POPUP_TYPE.CONFIRM
+      );
+      if (!confirmed) return;
+      await deleteScheme(activeScheme.id);
+      this._renderSchemeOptions(/** @type {HTMLSelectElement} */ (selectEl));
+      const newActive = getSchemeList().find(s => s.isActive);
+      if (newActive) await this._applyScheme(newActive.id);
+      logger.info('[VisualEditor.initSchemeBar] 删除方案完成');
+    });
+
+    logger.info('[VisualEditor.initSchemeBar] 方案管理栏初始化完成');
+  }
+
+  /**
+   * 渲染方案下拉列表
+   *
+   * @description
+   * 清空并重新填充 <select> 的 <option>，同步高亮当前激活方案。
+   * 下划线前缀表示供内部调用的辅助方法。
+   *
+   * @param {HTMLSelectElement} selectEl - 方案选择下拉框元素
+   */
+  _renderSchemeOptions(selectEl) {
+    const schemes = getSchemeList();
+    selectEl.innerHTML = '';
+    for (const scheme of schemes) {
+      const option = document.createElement('option');
+      option.value = scheme.id;
+      option.textContent = scheme.name;
+      option.selected = scheme.isActive;
+      selectEl.appendChild(option);
+    }
+    logger.debug('[VisualEditor._renderSchemeOptions] 渲染方案列表，共', schemes.length, '个');
+  }
+
+  /**
+   * 切换到指定方案并重新注入CSS
+   *
+   * @description
+   * 完整的方案切换流程：
+   * 1. 调用 switchScheme 更新存储，获取目标方案的快照
+   * 2. 重新注入控件CSS和输入框CSS
+   * 3. 更新输入框的文字内容
+   * 4. 直接用已获取的 scheme 数据重新初始化 BeginnerMode，
+   *    不再通过 switchMode → getActiveScheme() 二次读缓存，
+   *    避免快速连续切换时读到错误方案导致数据跨方案污染
+   *
+   * @async
+   * @param {string} id - 目标方案ID
+   */
+  async _applyScheme(id) {
+    if (!id) return;
+
+    // switchScheme 返回的 scheme 是此次切换目标的数据快照，直接使用而非再读缓存
+    const scheme = await switchScheme(id);
+    if (!scheme) return;
+
+    // 重新注入控件CSS（新方案可能为空，空字符串会清空 style 标签）
+    const css = buildCSSFromControlsData(scheme.controlsData || {});
+    this.applyControlsCSS(css);
+
+    // 更新插件输入框
+    const pluginInput = document.querySelector('#paws-puffs-ve-dialog-css-input');
+    if (pluginInput) {
+      /** @type {HTMLTextAreaElement} */ (pluginInput).value = scheme.pluginInputCSS || '';
+    }
+    this.applyInputCSS(scheme.pluginInputCSS || '');
+
+    // 重置模式实例，直接用已获取的 scheme 数据初始化
+    // 深拷贝：断开 BeginnerMode.controlsData 与存储对象的共享引用，防止跨方案污染
+    this.beginnerMode = null;
+    this.expertMode = null;
+
+    if (this.currentMode === 'beginner') {
+      const container = /** @type {HTMLElement} */ (document.querySelector('.beginner-mode-container'));
+      if (container) {
+        this.beginnerMode = new BeginnerMode();
+        await this.beginnerMode.init(
+          container,
+          (cssString) => this.applyControlsCSS(cssString),
+          (data) => saveControlsData(data),
+          this.syncState,
+          JSON.parse(JSON.stringify(scheme.controlsData || {}))
+        );
+        logger.info('[VisualEditor._applyScheme] 新手模式已用新方案数据重新初始化');
+      }
+    }
+
+    logger.info('[VisualEditor._applyScheme] 方案切换完成:', id);
   }
 
   /**
@@ -857,21 +1050,26 @@ export class VisualEditor {
    * 新架构下，插件输入框与 #customCSS 完全分离。
    * 当前阶段：打开弹窗时输入框保持现有内容（不清空）。
    * 未来：改为从文件存储读取当前方案的 pluginInputCSS 字段。
+   *
+   * @async
    */
-  syncPluginCSSInput() {
+  async syncPluginCSSInput() {
     const pluginInput = /** @type {HTMLTextAreaElement} */ (document.querySelector('#paws-puffs-ve-dialog-css-input'));
     if (!pluginInput) {
       logger.warn('[VisualEditor.syncPluginCSSInput] 未找到插件CSS输入框');
       return;
     }
 
-    // TODO: 未来从文件存储读取当前方案的 pluginInputCSS 字段
-    // 当前阶段：如果输入框有内容，触发一次应用（保证注入状态一致）
-    if (pluginInput.value.trim()) {
-      this.applyInputCSS(pluginInput.value);
-      logger.debug('[VisualEditor.syncPluginCSSInput] 已应用现有输入框内容');
+    // 从文件存储读取当前方案的 pluginInputCSS
+    const scheme = await getActiveScheme();
+    const savedCSS = scheme.pluginInputCSS || '';
+
+    if (savedCSS.trim()) {
+      pluginInput.value = savedCSS;
+      this.applyInputCSS(savedCSS);
+      logger.debug('[VisualEditor.syncPluginCSSInput] 已从存储恢复输入框内容');
     } else {
-      logger.debug('[VisualEditor.syncPluginCSSInput] 输入框为空，跳过应用');
+      logger.debug('[VisualEditor.syncPluginCSSInput] 存储中无输入框内容，保持空白');
     }
   }
 
@@ -967,13 +1165,17 @@ export class VisualEditor {
       // 初始化新手模式
       if (!this.beginnerMode) {
         this.beginnerMode = new BeginnerMode();
+        // 从存储加载初始数据
+        const scheme = await getActiveScheme();
         await this.beginnerMode.init(
           container,
           // 新架构：回调接收英文CSS字符串，直接注入独立style标签
           (cssString) => this.applyControlsCSS(cssString),
-          this.syncState
+          (data) => saveControlsData(data),
+          this.syncState,
+          scheme.controlsData || {}
         );
-        logger.info('[VisualEditor.switchMode] 新手模式已初始化');
+        logger.info('[VisualEditor.switchMode] 新手模式已初始化（含存储数据）');
       }
     } else {
       // 显示专家模式容器
@@ -1120,8 +1322,9 @@ export class VisualEditor {
     pluginInput.addEventListener('input', () => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
-        logger.debug('[VisualEditor.setupPluginInputSync] 输入框内容变化，触发编译');
+        logger.debug('[VisualEditor.setupPluginInputSync] 输入框内容变化，触发编译并保存');
         this.applyInputCSS(pluginInput.value);
+        savePluginCSS(pluginInput.value);
       }, 300);
     });
 

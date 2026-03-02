@@ -107,6 +107,68 @@ const PROPERTY_TO_CONTROL_MAP = {
   'border-radius': { controlType: 'BorderRadiusControl', managedProperties: ['border-radius'] }
 };
 
+/**
+ * 从控件数据构建完整CSS字符串（独立函数，供外部调用）
+ *
+ * @description
+ * 遍历所有元素的控件数据，生成标准的CSS规则字符串。
+ * 应对两种控件返回格式：
+ * - 字符串：{ 'box-shadow': '0 4px 8px ...' } → box-shadow: 0 4px 8px ...;
+ * - 对象：{ 'position': { position: 'absolute', top: '10px' } } → position: absolute; top: 10px;
+ *
+ * @param {Object} controlsData - 控件数据 { 元素名: { css属性: 控件值 } }
+ * @returns {string} 完整CSS字符串
+ *
+ * @example
+ * // 返回示例：
+ * // #chat .mes[is_user="true"] {
+ * //   box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+ * //   border-radius: 20px;
+ * // }
+ */
+export function buildCSSFromControlsData(controlsData) {
+  let css = '';
+
+  for (const [elementName, properties] of Object.entries(controlsData)) {
+    // 获取元素对应的CSS选择器
+    const selector = getSelector(elementName);
+    if (!selector) {
+      logger.warn('[BeginnerMode.buildControlsCSS] 元素无对应选择器:', elementName);
+      continue;
+    }
+
+    // 收集这个元素的所有CSS声明
+    let declarations = '';
+
+    for (const [cssProperty, value] of Object.entries(properties)) {
+      if (typeof value === 'string' && value) {
+        // 字符串值：直接输出
+        declarations += `  ${cssProperty}: ${value};
+`;
+      } else if (typeof value === 'object' && value !== null) {
+        // 对象值：展开每个键值对
+        for (const [prop, val] of Object.entries(value)) {
+          if (val !== null && val !== undefined && val !== '') {
+            declarations += `  ${prop}: ${val};
+`;
+          }
+        }
+      }
+    }
+
+    // 只有有声明才输出该选择器
+    if (declarations) {
+      css += `${selector} {
+${declarations}}
+
+`;
+    }
+  }
+
+  logger.debug('[BeginnerMode.buildControlsCSS] 生成完成，共', Object.keys(controlsData).length, '个元素');
+  return css;
+}
+
 export class BeginnerMode {
   /**
    * 构造函数
@@ -132,6 +194,9 @@ export class BeginnerMode {
     // 结构：{ 元素名: { css属性: 控件返回值 } }
     // 控件返回值可以是字符串（如 '0 4px 8px rgba(0,0,0,0.5)'）或对象（如 { position: 'absolute', top: '10px' }）
     this.controlsData = {};
+
+    // 存储回调：控件数据改变时，通知 visual-editor.js 保存到文件
+    this.saveCallback = null;
   }
 
   /**
@@ -142,10 +207,12 @@ export class BeginnerMode {
    * 
    * @param {HTMLElement} container - DOM容器元素（.beginner-mode-container）
    * @param {Function} compileCallback - 编译回调函数
+   * @param {Function} saveCallback - 控件数据变化时的保存回调，接收完整 controlsData
    * @param {Object} syncState - 共享公告板
+   * @param {Object} [initialData={}] - 从存储加载的初始控件数据
    * @async
    */
-  async init(container, compileCallback, syncState) {
+  async init(container, compileCallback, saveCallback, syncState, initialData = {}) {
     if (!container) {
       logger.warn('[BeginnerMode.init] 容器不存在');
       return;
@@ -154,7 +221,18 @@ export class BeginnerMode {
     logger.debug('[BeginnerMode.init] 初始化新手模式');
     this.container = container;
     this.compileCallback = compileCallback;
+    this.saveCallback = saveCallback;
     this.syncState = syncState;
+    this.controlsData = initialData;
+
+    // 如果有初始数据，立即重建CSS并注入（恢复上次的效果）
+    if (Object.keys(this.controlsData).length > 0) {
+      const cssString = this.buildControlsCSS();
+      if (this.compileCallback) {
+        this.compileCallback(cssString);
+        logger.info('[BeginnerMode.init] 已从存储恢复控件CSS');
+      }
+    }
 
     this.render();
     this.initFilterSelects();  // 初始化筛选下拉框
@@ -773,6 +851,12 @@ export class BeginnerMode {
     // 4. 通过回调注入DOM
     if (this.compileCallback) {
       this.compileCallback(cssString);
+
+      // 通知 visual-editor.js 保存到文件
+      if (this.saveCallback) {
+        this.saveCallback(this.controlsData);
+      }
+
       logger.info('[BeginnerMode.updateControlsCSS] ✅ CSS已通过回调注入');
     } else {
       logger.warn('[BeginnerMode.updateControlsCSS] 回调未设置，无法注入CSS');
@@ -780,64 +864,12 @@ export class BeginnerMode {
   }
 
   /**
-   * 从 controlsData 生成完整英文CSS字符串
-   * 
-   * @description
-   * 遍历所有元素的控件数据，生成标准的CSS规则字符串。
-   * 应对两种控件返回格式：
-   * - 字符串：{ 'box-shadow': '0 4px 8px ...' } → box-shadow: 0 4px 8px ...;
-   * - 对象：{ 'position': { position: 'absolute', top: '10px' } } → position: absolute; top: 10px;
-   * 
-   * @returns {string} 加容全元素的英文CSS字符串
-   * 
-   * @example
-   * // 返回示例：
-   * // #chat .mes[is_user="true"] {
-   * //   box-shadow: 0 4px 8px rgba(0,0,0,0.5);
-   * //   border-radius: 20px;
-   * // }
+   * 从 controlsData 生成完整英文CSS字符串（封装独立构建函数）
+   *
+   * @returns {string} 完整CSS字符串
    */
   buildControlsCSS() {
-    let css = '';
-
-    for (const [elementName, properties] of Object.entries(this.controlsData)) {
-      // 获取元素对应的CSS选择器
-      const selector = getSelector(elementName);
-      if (!selector) {
-        logger.warn('[BeginnerMode.buildControlsCSS] 元素无对应选择器:', elementName);
-        continue;
-      }
-
-      // 收集这个元素的所有CSS声明
-      let declarations = '';
-
-      for (const [cssProperty, value] of Object.entries(properties)) {
-        if (typeof value === 'string' && value) {
-          // 字符串值：直接输出
-          declarations += `  ${cssProperty}: ${value};
-`;
-        } else if (typeof value === 'object' && value !== null) {
-          // 对象值：展开每个键值对
-          for (const [prop, val] of Object.entries(value)) {
-            if (val !== null && val !== undefined && val !== '') {
-              declarations += `  ${prop}: ${val};
-`;
-            }
-          }
-        }
-      }
-
-      // 只有有声明才输出该选择器
-      if (declarations) {
-        css += `${selector} {
-${declarations}}
-
-`;
-      }
-    }
-
-    logger.debug('[BeginnerMode.buildControlsCSS] 生成完成，共', Object.keys(this.controlsData).length, '个元素');
-    return css;
+    return buildCSSFromControlsData(this.controlsData);
   }
 
   /**

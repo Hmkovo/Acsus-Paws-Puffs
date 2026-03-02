@@ -1871,7 +1871,7 @@ async function handleAddCharWorldbook(char, suiteId) {
   const selectorHtml = `
         <div class="var-v2-worldbook-selector">
             ${entries.map((entry, i) => {
-    const entryUid = entry.uid ?? entry.id;
+    const entryUid = entry.uid ?? entry.id ?? i;
     const alreadyAdded = suite.items.some(
       item => item.type === 'char-prompt' && item.subType === 'worldbook' && item.entryUid === entryUid
     );
@@ -1907,7 +1907,7 @@ async function handleAddCharWorldbook(char, suiteId) {
     let added = 0;
     result.indices.forEach(i => {
       const entry = entries[i];
-      const entryUid = entry.uid ?? entry.id;
+      const entryUid = entry.uid ?? entry.id ?? i;
       if (suiteManager.addCharPromptItem(suiteId, charId, 'worldbook', `[世界书-${entry.comment || '未命名'}]`, entryUid)) {
         added++;
       }
@@ -3079,14 +3079,7 @@ function bindReplaceDetailPageEvents(container, varId, chatId, variable, signal)
   container.querySelector('#var-v2-delete-current')?.addEventListener('click', async () => {
     const confirmed = await showInternalConfirm('删除当前值', '确定删除当前值吗？删除后将恢复到上一个历史版本。', { danger: true, okButton: '删除' });
     if (confirmed) {
-      const value = await variableManager.getReplaceValue(varId, chatId);
-      if (value.history.length > 0) {
-        // 如果有历史，恢复到最新历史
-        await variableManager.applyHistoryVersion(varId, chatId, value.history.length - 1);
-      } else {
-        // 如果没有历史，清空当前值
-        await variableManager.setValue(varId, chatId, '', '');
-      }
+      await variableManager.deleteCurrentValue(varId, chatId);
       await refresh();
       toastr.success('已删除当前值');
     }

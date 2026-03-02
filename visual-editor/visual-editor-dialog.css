@@ -273,3 +273,56 @@
 .paws-puffs-ve-dialog-content::-webkit-scrollbar-thumb:hover {
   background: var(--SmartThemeQuoteColor, #2a2a2a);
 }
+
+/* ========== 方案管理栏 ========== */
+.paws-puffs-ve-scheme-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.paws-puffs-ve-scheme-label {
+  font-size: 12px;
+  opacity: 0.6;
+  white-space: nowrap;
+}
+
+.paws-puffs-ve-scheme-select {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.paws-puffs-ve-scheme-select:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.paws-puffs-ve-scheme-btn {
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  color: inherit;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.paws-puffs-ve-scheme-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.paws-puffs-ve-scheme-btn.danger:hover {
+  background: rgba(220, 53, 69, 0.4);
+  border-color: rgba(220, 53, 69, 0.6);
+}

@@ -588,6 +588,43 @@ export class VariableManagerV2 {
     }
 
     /**
+     * 删除当前值（覆盖模式）
+     *
+     * @description
+     * 直接丢弃当前值，**不**将其保存到历史记录。
+     * - 如果有历史：弹出最新历史项作为新的当前值（同时从历史中移除该条目）
+     * - 如果没有历史：清空当前值
+     *
+     * @async
+     * @param {string} variableId
+     * @param {string} chatId
+     * @returns {Promise<{success: boolean}>}
+     */
+    async deleteCurrentValue(variableId, chatId) {
+        const value = await this.getReplaceValue(variableId, chatId);
+
+        if (value.history.length > 0) {
+            // 弹出最新历史项（不保存当前值，直接丢弃）
+            const lastHistory = value.history[value.history.length - 1];
+            // @ts-ignore 运行时字段与类型定义不同步，对齐 applyHistoryVersion 模式
+            value.currentValue = lastHistory.content;
+            // @ts-ignore
+            value.currentFloor = lastHistory.floor;
+            value.history.pop();
+        } else {
+            // 没有历史，直接清空
+            value.currentValue = '';
+            value.currentFloor = 0;
+        }
+
+        value.historyIndex = -1;
+        await storage.setValueV2(variableId, chatId, value);
+        logger.info('variable', '[VariableManagerV2] 删除当前值:', variableId);
+
+        return { success: true };
+    }
+
+    /**
      * 获取当前显示的值（覆盖模式）
      * @async
      * @param {string} variableId
