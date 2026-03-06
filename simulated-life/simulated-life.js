@@ -23,17 +23,8 @@ import {
 } from '../../../../world-info.js';
 
 import {
-  extension_settings,
-  getContext
-} from '../../../../extensions.js';
-
-import {
-  saveSettingsDebounced,
-  eventSource,
-  event_types
+  saveSettingsDebounced
 } from '../../../../../script.js';
-
-import { callGenericPopup, POPUP_TYPE } from '../../../../popup.js';
 
 import logger from '../logger.js';
 
@@ -508,4 +499,3 @@ Every response must contain at least one HTML visualization. Use \`<!-- consider
 </Narrative Enhancement via Inline HTML>`;
   }
 }
-

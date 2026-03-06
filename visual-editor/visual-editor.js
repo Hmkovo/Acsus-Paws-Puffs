@@ -64,14 +64,20 @@ export class VisualEditor {
    * 
    * @description
    * 初始化可视化编辑器的状态
+   * - enabled: 可视化编辑器总开关
    * - compilerEnabled: 中文CSS编译功能开关
    * - panelEnabled: 可视化编辑面板显示开关
    * - currentMode: 当前模式（'beginner' | 'expert'）
    * - beginnerMode: BeginnerMode 实例（新手模式 UI 管理者）
    * - expertMode: ExpertMode 实例（专家模式 UI 管理者）
    * - syncState: 共享公告板对象，所有模块共用防循环标记
+   * - _handlers: 事件监听器引用（用于 destroy 时解除绑定）
+   * - _dragState: 拖拽状态快照（避免全局监听器闭包残留）
    */
   constructor() {
+    // 总开关（visualEditor.enabled）
+    this.enabled = false;
+
     // 编辑器功能开关（从 extension_settings 读取）
     this.compilerEnabled = false;
     this.panelEnabled = false;
@@ -89,14 +95,32 @@ export class VisualEditor {
     // ✅ 共享公告板：所有员工（UI、装饰、图标）共用这个对象防止循环
     // isUpdating=true 表示"扩展正在修改输入框，跳过input事件"
     this.syncState = { isUpdating: false };
+
+    // 监听器引用（用于 destroy/disable 清理）
+    this._handlers = {
+      dialogHeaderMouseDown: null,
+      documentMouseMove: null,
+      documentMouseUp: null,
+    };
+
+    // 拖拽状态（避免 document 级监听器闭包丢引用）
+    this._dragState = {
+      isDragging: false,
+      startX: 0,
+      startY: 0,
+      initialLeft: 0,
+      initialTop: 0,
+      dialogContainer: null,
+    };
   }
 
   /**
    * 初始化可视化编辑器
    * 
    * @description
-   * 从 extension_settings 加载功能开关状态：
-   * - compilerEnabled: 默认开启（将中文CSS编译为英文CSS）
+   * 从 extension_settings 加载总开关与子功能开关状态：
+   * - enabled: 总开关，关闭时跳过所有副作用初始化（不注入CSS/不注册监听器）
+   * - compilerEnabled: 默认关闭（保守策略，仅在用户明确开启后执行中文CSS编译）
    * - panelEnabled: 默认关闭（在导航栏显示可视化面板按钮）
    * 
    * 关键变化：不再从 extension_settings 读取中文CSS
@@ -106,7 +130,14 @@ export class VisualEditor {
    * - 如果 DOM 还在加载：等待 DOMContentLoaded 事件
    * - 如果 DOM 已加载：立即执行初始编译
    * 
+   * Why：总开关是可视化编辑器的硬门闸。关闭态必须保证“零副作用”，
+   * 同时保留设置页渲染，让用户可以重新开启功能。
+   *
    * @async
+   * @returns {Promise<void>}
+   * @throws {TypeError} 当浏览器运行环境缺失关键 DOM API 时可能抛出错误
+   * @example
+   * await visualEditor.init();
    */
   async init() {
     logger.debug('[VisualEditor.init] 开始初始化可视化编辑器');
@@ -117,8 +148,17 @@ export class VisualEditor {
 
     // 加载功能开关状态
     const settings = extension_settings['Acsus-Paws-Puffs'].visualEditor;
+    this.enabled = settings.enabled === true;
     this.compilerEnabled = settings.compilerEnabled === true; // 默认关闭
     this.panelEnabled = settings.panelEnabled === true; // 默认关闭
+
+    logger.info('visual', `[VisualEditor.init] 总开关状态: ${this.enabled ? '启用' : '禁用'}`);
+
+    if (!this.enabled) {
+      this.destroy();
+      logger.info('visual', '[VisualEditor.init] 总开关关闭，跳过可视化编辑器初始化');
+      return;
+    }
 
     logger.debug('[VisualEditor.init] 中文CSS编译:', this.compilerEnabled ? '启用' : '禁用');
     logger.debug('[VisualEditor.init] 可视化面板:', this.panelEnabled ? '启用' : '禁用');
@@ -168,8 +208,14 @@ export class VisualEditor {
    * 3. 监听主题切换
    * 4. 初始化独立弹窗DOM（不显示）
    * 
+   * Why：即使总开关关闭，也要渲染最小设置面板，让用户能看到并重新开启总开关。
+   *
    * @async
    * @param {HTMLElement} container - UI 容器元素
+   * @returns {Promise<void>}
+   * @throws {TypeError} 当传入容器不是有效 DOM 节点时可能抛出错误
+   * @example
+   * await visualEditor.renderUI(document.getElementById('paws-puffs-visual-editor-panel'));
    */
   async renderUI(container) {
     if (!container) {
@@ -181,6 +227,11 @@ export class VisualEditor {
 
     // 1. 绑定设置页面事件（HTML已在settings.html）
     this.bindSettingsEvents(container);
+
+    if (!this.enabled) {
+      logger.info('visual', '[VisualEditor.renderUI] 总开关关闭，仅保留设置面板渲染');
+      return;
+    }
 
     // 2. 设置输入框监听（主控职责：监听官方#customCSS）
     this.setupInputBoxSync();
@@ -474,10 +525,24 @@ export class VisualEditor {
 
   /**
    * 绑定功能开关
-   * 
+   *
+   * @description
+   * 统一绑定并执行子功能开关逻辑：
+   * 1. compiler 开关负责“是否执行中文CSS编译”
+   * 2. panel 开关负责“是否允许打开可视化弹窗”
+   * 3. panel 关闭时立即隐藏入口按钮并清理弹窗运行态资源
+   *
+   * Why：子开关必须具备实质控制能力，而不是仅保存布尔值。
+   *
    * @param {HTMLElement} container - 设置页面容器
+   * @returns {void}
+   * @throws {TypeError} 当浏览器环境缺失关键 DOM API 时可能抛出错误
+   * @example
+   * this.bindSwitches(container);
    */
   bindSwitches(container) {
+    const openDialogBtn = /** @type {HTMLButtonElement|null} */ (container.querySelector('#paws-puffs-ve-open-dialog'));
+
     // 开关1：启用中文CSS编译
     const compilerCheckbox = /** @type {HTMLInputElement} */ (container.querySelector('#paws-puffs-ve-enable-compiler'));
     if (compilerCheckbox) {
@@ -515,14 +580,21 @@ export class VisualEditor {
         saveSettingsDebounced();
         logger.info('[VisualEditor.bindSwitches] 可视化编辑面板:', panelCheckbox.checked ? '启用' : '禁用');
 
-        // 开关控制导航栏按钮的显示/隐藏
-        // 实际的弹窗打开由导航栏按钮触发
-        logger.debug('[VisualEditor.bindSwitches] 面板开关已切换，导航栏按钮会相应显示/隐藏');
+        if (this.panelEnabled) {
+          this.setOpenDialogButtonVisibility(openDialogBtn, true);
+          await this.initDialog();
+          logger.debug('[VisualEditor.bindSwitches] 面板已启用，允许打开弹窗');
+          return;
+        }
+
+        this.setOpenDialogButtonVisibility(openDialogBtn, false);
+        this.closeDialog();
+        this.cleanupDialogResources();
+        logger.debug('[VisualEditor.bindSwitches] 面板已禁用，弹窗资源已清理');
       });
     }
 
     // 打开可视化编辑器弹窗按钮
-    const openDialogBtn = container.querySelector('#paws-puffs-ve-open-dialog');
     if (openDialogBtn) {
       openDialogBtn.addEventListener('click', async () => {
         logger.debug('[VisualEditor.bindSwitches] 用户点击打开可视化编辑器');
@@ -630,8 +702,20 @@ export class VisualEditor {
 
   /**
    * 加载功能开关状态
-   * 
+   *
+   * @description
+   * 将存储中的子开关状态同步到设置页复选框与运行态。
+   * 默认策略保持与 init() 一致：
+   * - compilerEnabled: 默认 false
+   * - panelEnabled: 默认 false
+   *
+   * Why：避免“首次加载默认值”和“设置页展示默认值”不一致导致误操作。
+   *
    * @param {HTMLElement} container - 设置页面容器
+   * @returns {void}
+   * @throws {TypeError} 当浏览器环境缺失关键 DOM API 时可能抛出错误
+   * @example
+   * this.loadSettings(container);
    */
   loadSettings(container) {
     if (!container) return;
@@ -639,17 +723,76 @@ export class VisualEditor {
     logger.debug('[VisualEditor.loadSettings] 加载设置');
     const settings = extension_settings['Acsus-Paws-Puffs']?.visualEditor || {};
 
-    // 加载开关1：启用中文CSS编译（默认开启）
+    // 加载开关1：启用中文CSS编译（默认关闭）
     const compilerCheckbox = /** @type {HTMLInputElement} */ (container.querySelector('#paws-puffs-ve-enable-compiler'));
     if (compilerCheckbox) {
-      compilerCheckbox.checked = settings.compilerEnabled !== false;
+      compilerCheckbox.checked = settings.compilerEnabled === true;
+      this.compilerEnabled = compilerCheckbox.checked;
     }
 
     // 加载开关2：启用可视化编辑面板（默认关闭）
     const panelCheckbox = /** @type {HTMLInputElement} */ (container.querySelector('#paws-puffs-ve-enable-panel'));
     if (panelCheckbox) {
       panelCheckbox.checked = settings.panelEnabled === true;
+      this.panelEnabled = panelCheckbox.checked;
     }
+
+    const openDialogBtn = /** @type {HTMLButtonElement|null} */ (container.querySelector('#paws-puffs-ve-open-dialog'));
+    this.setOpenDialogButtonVisibility(openDialogBtn, this.panelEnabled);
+  }
+
+  /**
+   * 控制“打开可视化编辑器”按钮显隐
+   *
+   * @param {HTMLButtonElement|null} button - 打开弹窗按钮
+   * @param {boolean} visible - 是否显示
+   * @returns {void}
+   */
+  setOpenDialogButtonVisibility(button, visible) {
+    if (!button) return;
+    button.style.display = visible ? '' : 'none';
+  }
+
+  /**
+   * 清理弹窗相关运行态资源（仅 panel 子开关）
+   *
+   * @description
+   * 在 panel 子开关关闭时执行最小必要清理：
+   * 1. 反注册拖拽相关监听器（document + header）
+   * 2. 移除弹窗 DOM 与弹窗样式链接
+   * 3. 重置弹窗和拖拽状态
+   *
+   * Why：panel 的语义是“关闭后不应继续保留弹窗副作用”，
+   * 但不应影响控件/输入框CSS注入功能。
+   *
+   * @returns {void}
+   * @throws {TypeError} 当浏览器环境缺失事件 API 时可能抛出错误
+   * @example
+   * this.cleanupDialogResources();
+   */
+  cleanupDialogResources() {
+    if (this._handlers.documentMouseMove) {
+      document.removeEventListener('mousemove', this._handlers.documentMouseMove);
+      this._handlers.documentMouseMove = null;
+    }
+    if (this._handlers.documentMouseUp) {
+      document.removeEventListener('mouseup', this._handlers.documentMouseUp);
+      this._handlers.documentMouseUp = null;
+    }
+    if (this._handlers.dialogHeaderMouseDown) {
+      const header = document.querySelector('.paws-puffs-ve-dialog-header');
+      if (header) {
+        header.removeEventListener('mousedown', this._handlers.dialogHeaderMouseDown);
+      }
+      this._handlers.dialogHeaderMouseDown = null;
+    }
+
+    document.getElementById('paws-puffs-ve-dialog-overlay')?.remove();
+    document.querySelector('link[href$="visual-editor/visual-editor-dialog.css"]')?.remove();
+
+    this.dialogOpen = false;
+    this._dragState.isDragging = false;
+    this._dragState.dialogContainer = null;
   }
 
   /**
@@ -716,6 +859,14 @@ export class VisualEditor {
    * 2. document mousemove - 移动弹窗
    * 3. document mouseup - 结束拖动
    * 4. 边界检测 - 防止超出屏幕（考虑dvh单位）
+   *
+   * Why：mousemove/mouseup 是 document 级监听器，必须保存引用，
+   * 以便在 destroy() 中可靠移除，避免关闭功能后仍有全局事件残留。
+   *
+   * @returns {void}
+   * @throws {TypeError} 当弹窗 DOM 结构异常导致节点类型不匹配时可能抛出错误
+   * @example
+   * this.initDialogDrag();
    */
   initDialogDrag() {
     const header = document.querySelector('.paws-puffs-ve-dialog-header');
@@ -726,53 +877,50 @@ export class VisualEditor {
       return;
     }
 
-    let isDragging = false;
-    let startX = 0;
-    let startY = 0;
-    let initialLeft = 0;
-    let initialTop = 0;
+    this._dragState.dialogContainer = dialogContainer;
 
     // 鼠标按下 - 开始拖动
-    header.addEventListener('mousedown', (/** @type {MouseEvent} */ e) => {
+    this._handlers.dialogHeaderMouseDown = (/** @type {MouseEvent} */ e) => {
       // 点击关闭按钮不触发拖动
       const target = /** @type {HTMLElement} */ (e.target);
       if (target.closest('.paws-puffs-ve-dialog-close-btn')) {
         return;
       }
 
-      isDragging = true;
-      startX = e.clientX;
-      startY = e.clientY;
+      this._dragState.isDragging = true;
+      this._dragState.startX = e.clientX;
+      this._dragState.startY = e.clientY;
 
       // 获取当前位置（拖动前的实际位置）
       const rect = dialogContainer.getBoundingClientRect();
-      initialLeft = rect.left;
-      initialTop = rect.top;
+      this._dragState.initialLeft = rect.left;
+      this._dragState.initialTop = rect.top;
 
       // 第一次拖动时，切换为absolute定位并保持当前位置
       if (!dialogContainer.style.position || dialogContainer.style.position !== 'absolute') {
         dialogContainer.style.position = 'absolute';
-        dialogContainer.style.left = `${initialLeft}px`;
-        dialogContainer.style.top = `${initialTop}px`;
+        dialogContainer.style.left = `${this._dragState.initialLeft}px`;
+        dialogContainer.style.top = `${this._dragState.initialTop}px`;
         logger.debug('[VisualEditor.initDialogDrag] 切换为absolute定位');
       } else {
         // 如果已经是absolute，直接读取当前位置
-        initialLeft = parseFloat(dialogContainer.style.left);
-        initialTop = parseFloat(dialogContainer.style.top);
+        this._dragState.initialLeft = parseFloat(dialogContainer.style.left);
+        this._dragState.initialTop = parseFloat(dialogContainer.style.top);
       }
 
       logger.debug('[VisualEditor.initDialogDrag] 开始拖动');
-    });
+    };
+    header.addEventListener('mousedown', this._handlers.dialogHeaderMouseDown);
 
     // 鼠标移动 - 移动弹窗
-    document.addEventListener('mousemove', (/** @type {MouseEvent} */ e) => {
-      if (!isDragging) return;
+    this._handlers.documentMouseMove = (/** @type {MouseEvent} */ e) => {
+      if (!this._dragState.isDragging) return;
 
-      const deltaX = e.clientX - startX;
-      const deltaY = e.clientY - startY;
+      const deltaX = e.clientX - this._dragState.startX;
+      const deltaY = e.clientY - this._dragState.startY;
 
-      let newLeft = initialLeft + deltaX;
-      let newTop = initialTop + deltaY;
+      let newLeft = this._dragState.initialLeft + deltaX;
+      let newTop = this._dragState.initialTop + deltaY;
 
       // 边界检测
       const rect = dialogContainer.getBoundingClientRect();
@@ -799,21 +947,24 @@ export class VisualEditor {
       // 应用新位置
       dialogContainer.style.left = `${newLeft}px`;
       dialogContainer.style.top = `${newTop}px`;
-    });
+    };
+    document.addEventListener('mousemove', this._handlers.documentMouseMove);
 
     // 鼠标释放 - 结束拖动
-    document.addEventListener('mouseup', () => {
-      if (isDragging) {
-        isDragging = false;
+    this._handlers.documentMouseUp = () => {
+      if (this._dragState.isDragging) {
+        this._dragState.isDragging = false;
         logger.debug('[VisualEditor.initDialogDrag] 结束拖动');
       }
-    });
+    };
+    document.addEventListener('mouseup', this._handlers.documentMouseUp);
   }
 
   /**
    * 打开独立弹窗
    * 
    * @description
+   * 在 panel 子开关开启后才允许打开弹窗。
    * 显示弹窗并初始化内部UI：
    * 1. 显示弹窗
    * 2. 绑定标签页切换
@@ -822,8 +973,16 @@ export class VisualEditor {
    * 5. 同步插件CSS输入框
    * 
    * @async
+   * @returns {Promise<void>}
+   * @throws {TypeError} 当浏览器环境缺失关键 DOM API 时可能抛出错误
    */
   async openDialog() {
+    if (!this.panelEnabled) {
+      toastr.warning('请先开启“启用可视化编辑面板”');
+      logger.warn('visual', '[VisualEditor.openDialog] panel 子开关关闭，阻止打开弹窗');
+      return;
+    }
+
     if (this.dialogOpen) {
       logger.debug('[VisualEditor.openDialog] 弹窗已打开');
       return;
@@ -831,7 +990,12 @@ export class VisualEditor {
 
     logger.debug('[VisualEditor.openDialog] 打开弹窗');
 
-    const overlay = document.querySelector('#paws-puffs-ve-dialog-overlay');
+    let overlay = document.querySelector('#paws-puffs-ve-dialog-overlay');
+    if (!overlay) {
+      await this.initDialog();
+      overlay = document.querySelector('#paws-puffs-ve-dialog-overlay');
+    }
+
     if (!overlay) {
       logger.error('[VisualEditor.openDialog] 未找到弹窗DOM');
       return;
@@ -1040,7 +1204,67 @@ export class VisualEditor {
     }
 
     this.dialogOpen = false;
+    this._dragState.isDragging = false;
     logger.info('[VisualEditor.closeDialog] 弹窗已关闭');
+  }
+
+  /**
+   * 销毁可视化编辑器运行态资源
+   *
+   * @description
+   * 在总开关关闭或模块重建时，统一清理所有副作用：
+   * 1. 移除可视化编辑器注入的 style 标签
+   * 2. 移除 document 级拖拽监听器（mousemove/mouseup）
+   * 3. 移除弹窗标题栏 mousedown 监听器与弹窗 DOM
+   * 4. 重置内部运行态（弹窗状态、模式实例、拖拽状态）
+   *
+   * Why：总开关语义是“关闭 = 不执行且不残留”，destroy 是保证该语义的唯一出口。
+   *
+   * @returns {void}
+   * @throws {TypeError} 当浏览器环境缺失事件 API 时可能抛出错误
+   * @example
+   * this.destroy();
+   */
+  destroy() {
+    logger.info('visual', '[VisualEditor.destroy] 开始清理可视化编辑器资源');
+
+    document.getElementById('paws-puffs-custom-style')?.remove();
+    document.getElementById('paws-puffs-controls-style')?.remove();
+    document.getElementById('paws-puffs-input-style')?.remove();
+
+    if (this._handlers.documentMouseMove) {
+      document.removeEventListener('mousemove', this._handlers.documentMouseMove);
+      this._handlers.documentMouseMove = null;
+    }
+    if (this._handlers.documentMouseUp) {
+      document.removeEventListener('mouseup', this._handlers.documentMouseUp);
+      this._handlers.documentMouseUp = null;
+    }
+    if (this._handlers.dialogHeaderMouseDown) {
+      const header = document.querySelector('.paws-puffs-ve-dialog-header');
+      if (header) {
+        header.removeEventListener('mousedown', this._handlers.dialogHeaderMouseDown);
+      }
+      this._handlers.dialogHeaderMouseDown = null;
+    }
+
+    const overlay = document.getElementById('paws-puffs-ve-dialog-overlay');
+    overlay?.remove();
+    document.querySelector('link[href$="visual-editor/visual-editor-dialog.css"]')?.remove();
+
+    this.dialogOpen = false;
+    this.beginnerMode = null;
+    this.expertMode = null;
+    this._dragState = {
+      isDragging: false,
+      startX: 0,
+      startY: 0,
+      initialLeft: 0,
+      initialTop: 0,
+      dialogContainer: null,
+    };
+
+    logger.info('visual', '[VisualEditor.destroy] 可视化编辑器资源清理完成');
   }
 
   /**
@@ -1267,11 +1491,18 @@ export class VisualEditor {
    *
    * @description
    * 接收用户在弹窗输入框中写的CSS（中文或英文均可）：
-   * 1. 调用编译器将中文CSS翻译为英文CSS
-   * 2. 注入到独立的 <style id="paws-puffs-input-style"> 标签
+   * 1. compiler 开启时：调用编译器将中文CSS翻译为英文CSS
+   * 2. compiler 关闭时：跳过编译，直接注入原始CSS
+   * 3. 注入到独立的 <style id="paws-puffs-input-style"> 标签
    * 优先级：最高（覆盖控件CSS和ST官方CSS）。
    *
+   * Why：compiler 子开关关闭后，任何输入框链路都不应继续执行编译。
+   *
    * @param {string} content - 用户输入的CSS内容（可含中文CSS）
+   * @returns {void}
+   * @throws {TypeError} 当浏览器环境缺失关键 DOM API 时可能抛出错误
+   * @example
+   * this.applyInputCSS('用户消息 { 背景颜色: #ffd1dc }');
    */
   applyInputCSS(content) {
     logger.debug('[VisualEditor.applyInputCSS] 处理输入框CSS，长度:', content?.length ?? 0);
@@ -1290,6 +1521,12 @@ export class VisualEditor {
       return;
     }
 
+    if (!this.compilerEnabled) {
+      style.textContent = content;
+      logger.info('[VisualEditor.applyInputCSS] 编译器关闭，已直接注入原始CSS');
+      return;
+    }
+
     // 编译器负责处理中英文混写（纯英文CSS也能通过）
     const englishCSS = compileToEnglishCSS(content);
     style.textContent = englishCSS || '';
@@ -1301,8 +1538,14 @@ export class VisualEditor {
    *
    * @description
    * 监听弹窗内 #paws-puffs-ve-dialog-css-input 的输入事件。
-   * 防抖300ms后调用 applyInputCSS() 编译注入。
+   * 防抖300ms后调用 applyInputCSS() 执行注入。
+   * compiler 子开关关闭时，走“原始CSS直注入”路径，不触发编译。
    * 每次打开弹窗时调用，重复调用安全（检查已绑定标记）。
+   *
+   * @returns {void}
+   * @throws {TypeError} 当浏览器环境缺失关键 DOM API 时可能抛出错误
+   * @example
+   * this.setupPluginInputSync();
    */
   setupPluginInputSync() {
     const pluginInput = /** @type {HTMLTextAreaElement} */ (document.querySelector('#paws-puffs-ve-dialog-css-input'));
@@ -1322,7 +1565,11 @@ export class VisualEditor {
     pluginInput.addEventListener('input', () => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
-        logger.debug('[VisualEditor.setupPluginInputSync] 输入框内容变化，触发编译并保存');
+        if (this.compilerEnabled) {
+          logger.debug('[VisualEditor.setupPluginInputSync] 输入框内容变化，触发编译并保存');
+        } else {
+          logger.debug('[VisualEditor.setupPluginInputSync] 输入框内容变化，编译器关闭，走原始CSS注入');
+        }
         this.applyInputCSS(pluginInput.value);
         savePluginCSS(pluginInput.value);
       }, 300);

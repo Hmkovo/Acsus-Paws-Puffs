@@ -36,6 +36,9 @@ let bgTagAddBtn = null;
 /** @type {HTMLUListElement|null} 标签列表元素 */
 let bgTabsList = null;
 
+/** @type {ReturnType<typeof setTimeout>|null} 背景抽屉延迟任务 ID */
+let bgTagTimeoutId = null;
+
 
 // ==========================================
 // 公开 API
@@ -106,6 +109,11 @@ function enableBgTagManager() {
  * 禁用背景图标签管理功能
  */
 function disableBgTagManager() {
+  if (bgTagTimeoutId) {
+    clearTimeout(bgTagTimeoutId);
+    bgTagTimeoutId = null;
+  }
+
   // 移除抽屉打开监听
   document.body.removeEventListener('click', handleBgDrawerToggle);
 
@@ -136,8 +144,18 @@ function handleBgDrawerToggle(e) {
   if (bgButton) {
     logger.debug('beautify', '[BgTagManager] 检测到背景图按钮点击');
     // 延迟检查，因为抽屉打开有动画
-    setTimeout(() => {
+    if (bgTagTimeoutId) {
+      clearTimeout(bgTagTimeoutId);
+      bgTagTimeoutId = null;
+    }
+    bgTagTimeoutId = setTimeout(() => {
+      // 延迟任务执行前再次检查开关，避免关闭后越开关执行
+      if (!extension_settings[EXT_ID]?.beautify?.bgTagManagerEnabled) {
+        bgTagTimeoutId = null;
+        return;
+      }
       attemptAddBgTagButton();
+      bgTagTimeoutId = null;
     }, 500);
   }
 }
@@ -257,7 +275,7 @@ function addTempTestButtonToRow(tagRow) {
 
   // 绑定点击事件
   btn.addEventListener('click', function () {
-    console.log('[BgTagManager] 创建标签按钮被点击');
+    logger.debug('beautify', '[BgTagManager] 创建标签按钮被点击');
     openTagManagerPopup();
   });
 

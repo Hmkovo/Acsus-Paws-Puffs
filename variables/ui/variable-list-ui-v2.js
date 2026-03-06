@@ -51,8 +51,10 @@ let draggedItem = null;
 /** @type {string|null} */
 let draggedItemId = null;
 
-/** @type {boolean} CHAT_CHANGED 监听器是否已绑定，防止重复绑定 */
-let chatChangedListenerBound = false;
+/** @type {{onChatChanged: ((...args: any[]) => void)|null}} 模块级监听器引用 */
+let savedHandlers = {
+  onChatChanged: null
+};
 
 // ============================================
 // 辅助函数
@@ -90,17 +92,39 @@ export async function renderVariableListPageV2(container) {
     addExtensionsMenuButton();
   }
 
-  // 监听角色切换事件，刷新条目列表（char-prompt 条目随角色变化）
-  if (!chatChangedListenerBound) {
-    eventSource.on(event_types.CHAT_CHANGED, () => {
-      if (!windowElement) return;
-      refreshItemsList();
-      updatePreview();
-    });
-    chatChangedListenerBound = true;
-  }
+  bindChatChangedListener();
 
   logger.info('variable', '[VariableListUIV2] 设置页渲染完成');
+}
+
+/**
+ * CHAT_CHANGED 回调
+ * @returns {void}
+ */
+function onChatChangedForVariableUI() {
+  if (!windowElement) return;
+  refreshItemsList();
+  updatePreview();
+}
+
+/**
+ * 绑定 CHAT_CHANGED 监听
+ * @returns {void}
+ */
+function bindChatChangedListener() {
+  if (savedHandlers.onChatChanged) return;
+  savedHandlers.onChatChanged = onChatChangedForVariableUI;
+  eventSource.on(event_types.CHAT_CHANGED, savedHandlers.onChatChanged);
+}
+
+/**
+ * 解绑 CHAT_CHANGED 监听
+ * @returns {void}
+ */
+function unbindChatChangedListener() {
+  if (!savedHandlers.onChatChanged) return;
+  eventSource.removeListener(event_types.CHAT_CHANGED, savedHandlers.onChatChanged);
+  savedHandlers.onChatChanged = null;
 }
 
 /**
@@ -149,25 +173,61 @@ function buildSettingsHTML(enabled) {
 
 /**
  * 绑定设置页事件
- * @param {HTMLElement} container
+ *
+ * @description
+ * 开关变更时不仅更新 UI，还会触发变量系统完整的 init/destroy 生命周期，
+ * 确保关闭后事件监听、宏注册和后台处理全部停止。
+ *
+ * @param {HTMLElement} container - 设置页容器
+ * @returns {void}
+ * @throws {Error} 当启用流程初始化失败时抛出，调用方可据此回滚 UI 状态
+ * @example
+ * bindSettingsEvents(container);
  */
 function bindSettingsEvents(container) {
   const toggle = container.querySelector('#variable-v2-enabled');
   toggle?.addEventListener('change', async (e) => {
-    const enabled = /** @type {HTMLInputElement} */ (e.target).checked;
+    const toggleElement = /** @type {HTMLInputElement} */ (e.target);
+    const enabled = toggleElement.checked;
     const settings = await storage.getSettingsV2();
     settings.enabled = enabled;
     await storage.saveSettingsV2(settings);
 
+    const { initVariables, destroyVariables } = await import('../index.js');
+
     if (enabled) {
+      const result = await initVariables();
+      if (!result.success) {
+        settings.enabled = false;
+        await storage.saveSettingsV2(settings);
+        toggleElement.checked = false;
+        logger.error('variable', '[VariableListUIV2.bindSettingsEvents] 启用失败，已回滚开关');
+        toastr.error('动态变量 V2 初始化失败，已恢复为关闭状态');
+        return;
+      }
+
       addExtensionsMenuButton();
       toastr.success('动态变量 V2 已启用');
     } else {
-      removeExtensionsMenuButton();
-      closeWindow();
+      destroyVariables();
       toastr.info('动态变量 V2 已禁用');
     }
   });
+}
+
+/**
+ * 销毁 V2 列表 UI
+ *
+ * @description
+ * 统一处理 UI 层资源清理：关闭窗口、移除菜单按钮、解绑 CHAT_CHANGED 监听，
+ * 避免开关反复切换后监听器泄漏。
+ *
+ * @returns {void}
+ */
+export function destroyVariableListUIV2() {
+  closeWindow();
+  removeExtensionsMenuButton();
+  unbindChatChangedListener();
 }
 
 // ============================================
@@ -3962,5 +4022,6 @@ export default {
   renderVariableListPageV2,
   addExtensionsMenuButton,
   removeExtensionsMenuButton,
+  destroyVariableListUIV2,
   openVariableManagerPopupV2: openWindow
 };

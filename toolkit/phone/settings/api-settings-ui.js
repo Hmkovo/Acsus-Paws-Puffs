@@ -1,4 +1,4 @@
-/**
+﻿/**
  * API设置页面UI
  * @module phone/settings/api-settings-ui
  *
@@ -72,7 +72,7 @@ function createAPISettingsHTML() {
       <!-- API来源选择（简化版：只有默认和自定义） -->
       <div class="api-settings-section">
         <div class="api-settings-section-title">API来源</div>
-        <select id="phoneApiSource" class="api-settings-select">
+        <select id="phoneApiSource" class="api-settings-select text_pole">
           <option value="default">跟随酒馆设置（默认）</option>
           <option value="custom">自定义API</option>
         </select>
@@ -108,7 +108,7 @@ function createAPISettingsHTML() {
         <!-- API类型选择（移到最上面，参考官方chat_completion_source） -->
         <div class="api-settings-section">
           <div class="api-settings-section-title">API类型</div>
-          <select id="phoneApiFormat" class="api-settings-select">
+          <select id="phoneApiFormat" class="api-settings-select text_pole">
             <optgroup label="常用">
               <option value="openai">OpenAI</option>
               <option value="claude">Claude (Anthropic)</option>
@@ -147,8 +147,8 @@ function createAPISettingsHTML() {
         <div id="phoneApiKeySection" class="api-settings-section" data-phone-source="openai,claude,makersuite,deepseek,mistralai,cohere,perplexity,groq,xai,ai21,moonshot,fireworks,electronhub,chutes,nanogpt,aimlapi,siliconflow,zai">
           <div class="api-settings-section-title">API密钥</div>
           <div class="api-settings-password-wrapper">
-            <input type="password" id="phoneApiKey" class="api-settings-input" placeholder="sk-...">
-            <button id="phoneApiKeyToggle" class="api-settings-password-toggle">
+            <input type="password" id="phoneApiKey" class="api-settings-input text_pole" placeholder="sk-...">
+            <button id="phoneApiKeyToggle" class="api-settings-password-toggle menu_button">
               <i class="fa-solid fa-eye"></i>
             </button>
           </div>
@@ -158,22 +158,22 @@ function createAPISettingsHTML() {
         </div>
 
         <!-- 反向代理配置（适用于部分API，复刻官方样式） -->
-        <div id="phoneReverseProxySection" class="api-settings-section" data-phone-source="openai,claude,mistralai,makersuite,vertexai,deepseek,xai" style="display: none;">
-          <div class="api-settings-section-title" style="cursor: pointer; user-select: none;" id="phoneReverseProxyToggle">
+        <div id="phoneReverseProxySection" class="api-settings-section inline-drawer" data-phone-source="openai,claude,mistralai,makersuite,vertexai,deepseek,xai,zai,moonshot" style="display: none;">
+          <div class="api-settings-section-title inline-drawer-header inline-drawer-toggle" style="cursor: pointer; user-select: none;" id="phoneReverseProxyToggle">
             <i class="fa-solid fa-chevron-right" id="phoneReverseProxyIcon"></i>
             反向代理
           </div>
-          <div id="phoneReverseProxyContent" style="display: none; margin-top: 0.5em;">
+          <div id="phoneReverseProxyContent" class="inline-drawer-content" style="display: none; margin-top: 0.5em;">
             <!-- 代理预设选择（复刻官方） -->
             <div style="margin-bottom: 0.8em;">
               <div class="api-settings-row">
-                <select id="phoneProxyPreset" class="api-settings-select" style="flex: 1;">
+                <select id="phoneProxyPreset" class="api-settings-select text_pole" style="flex: 1;">
                   <option value="">无</option>
                 </select>
-                <button id="phoneProxySave" class="api-settings-btn" title="保存代理">
+                <button id="phoneProxySave" class="api-settings-btn menu_button" title="保存代理">
                   <i class="fa-solid fa-floppy-disk"></i>
                 </button>
-                <button id="phoneProxyDelete" class="api-settings-btn api-settings-btn-danger" title="删除代理">
+                <button id="phoneProxyDelete" class="api-settings-btn menu_button api-settings-btn-danger" title="删除代理">
                   <i class="fa-solid fa-trash"></i>
                 </button>
               </div>
@@ -181,7 +181,7 @@ function createAPISettingsHTML() {
             <!-- 代理服务器URL -->
             <div style="margin-bottom: 0.8em;">
               <div class="api-settings-hint" style="margin-bottom: 0.3em;">代理服务器 URL</div>
-              <input type="text" id="phoneReverseProxyUrl" class="api-settings-input" placeholder="https://api.openai.com/v1">
+              <input type="text" id="phoneReverseProxyUrl" class="api-settings-input text_pole" placeholder="https://api.openai.com/v1">
               <div class="api-settings-hint" style="font-size: 0.8em; margin-top: 0.3em;">
                 备用服务器URL（留空使用默认值）。不行？试试在末尾添加 <code>/v1</code>
               </div>
@@ -190,8 +190,8 @@ function createAPISettingsHTML() {
             <div>
               <div class="api-settings-hint" style="margin-bottom: 0.3em;">代理密码</div>
               <div class="api-settings-password-wrapper">
-                <input type="password" id="phoneReverseProxyPassword" class="api-settings-input" placeholder="将用作代理密码，而不是API密钥">
-                <button id="phoneReverseProxyPasswordToggle" class="api-settings-password-toggle">
+                <input type="password" id="phoneReverseProxyPassword" class="api-settings-input text_pole" placeholder="将用作代理密码，而不是API密钥">
+                <button id="phoneReverseProxyPasswordToggle" class="api-settings-password-toggle menu_button">
                   <i class="fa-solid fa-eye"></i>
                 </button>
               </div>
@@ -212,13 +212,13 @@ function createAPISettingsHTML() {
             <a href="https://openrouter.ai/account" target="_blank">查看剩余额度</a>
           </div>
           <div class="api-settings-password-wrapper">
-            <input type="password" id="phoneOpenRouterKey" class="api-settings-input" placeholder="sk-or-...">
-            <button id="phoneOpenRouterKeyToggle" class="api-settings-password-toggle">
+            <input type="password" id="phoneOpenRouterKey" class="api-settings-input text_pole" placeholder="sk-or-...">
+            <button id="phoneOpenRouterKeyToggle" class="api-settings-password-toggle menu_button">
               <i class="fa-solid fa-eye"></i>
             </button>
           </div>
           <div class="api-settings-row" style="margin-top: 0.5em;">
-            <button id="phoneOpenRouterAuth" class="api-settings-btn api-settings-btn-primary">
+            <button id="phoneOpenRouterAuth" class="api-settings-btn menu_button api-settings-btn-primary">
               <i class="fa-solid fa-key"></i> 授权
             </button>
           </div>
@@ -228,7 +228,7 @@ function createAPISettingsHTML() {
         <div id="phoneCustomSection" class="api-settings-section" data-phone-source="custom" style="display: none;">
           <!-- 自定义端点URL -->
           <div class="api-settings-section-title">自定义端点（Base URL）</div>
-          <input type="text" id="phoneApiBaseUrl" class="api-settings-input" placeholder="例如：http://localhost:1234/v1">
+          <input type="text" id="phoneApiBaseUrl" class="api-settings-input text_pole" placeholder="例如：http://localhost:1234/v1">
           <div class="api-settings-hint">
             不行？试试在URL末尾添加 <code>/v1</code>。<code>/chat/completions</code> 后缀会自动补全。
           </div>
@@ -238,8 +238,8 @@ function createAPISettingsHTML() {
             自定义 API 密钥 <small style="opacity: 0.7;">（可选）</small>
           </div>
           <div class="api-settings-password-wrapper">
-            <input type="password" id="phoneCustomApiKey" class="api-settings-input" placeholder="sk-...">
-            <button id="phoneCustomApiKeyToggle" class="api-settings-password-toggle">
+            <input type="password" id="phoneCustomApiKey" class="api-settings-input text_pole" placeholder="sk-...">
+            <button id="phoneCustomApiKeyToggle" class="api-settings-password-toggle menu_button">
               <i class="fa-solid fa-eye"></i>
             </button>
           </div>
@@ -249,7 +249,7 @@ function createAPISettingsHTML() {
 
           <!-- 输入模型名 -->
           <div class="api-settings-section-title" style="margin-top: 1em;">输入模型名</div>
-          <input type="text" id="phoneCustomModelId" class="api-settings-input" list="phoneCustomModelList" placeholder="例如：gpt-4o">
+          <input type="text" id="phoneCustomModelId" class="api-settings-input text_pole" list="phoneCustomModelList" placeholder="例如：gpt-4o">
           <datalist id="phoneCustomModelList">
             <!-- 模型列表将动态填充 -->
           </datalist>
@@ -257,10 +257,10 @@ function createAPISettingsHTML() {
           <!-- 可用模型下拉 -->
           <div class="api-settings-section-title" style="margin-top: 1em;">可用模型</div>
           <div class="api-settings-row">
-            <select id="phoneCustomModelSelect" class="api-settings-select" style="flex: 1;">
+            <select id="phoneCustomModelSelect" class="api-settings-select text_pole" style="flex: 1;">
               <option value="">无</option>
             </select>
-            <button id="phoneCustomRefreshModels" class="api-settings-btn" title="刷新模型列表">
+            <button id="phoneCustomRefreshModels" class="api-settings-btn menu_button" title="刷新模型列表">
               <i class="fa-solid fa-rotate"></i>
             </button>
           </div>
@@ -270,7 +270,7 @@ function createAPISettingsHTML() {
         <div id="phoneVertexAISection" class="api-settings-section" data-phone-source="vertexai" style="display: none;">
           <!-- 认证模式选择 -->
           <div class="api-settings-section-title">认证模式</div>
-          <select id="phoneVertexAuthMode" class="api-settings-select">
+          <select id="phoneVertexAuthMode" class="api-settings-select text_pole">
             <option value="express">Express 模式（API Key）</option>
             <option value="full">完整版（服务账号）</option>
           </select>
@@ -279,8 +279,8 @@ function createAPISettingsHTML() {
           <div id="phoneVertexExpressConfig" style="margin-top: 1em;">
             <div class="api-settings-section-title">API 密钥</div>
             <div class="api-settings-password-wrapper">
-              <input type="password" id="phoneVertexApiKey" class="api-settings-input" placeholder="AIza...">
-              <button id="phoneVertexApiKeyToggle" class="api-settings-password-toggle">
+              <input type="password" id="phoneVertexApiKey" class="api-settings-input text_pole" placeholder="AIza...">
+              <button id="phoneVertexApiKeyToggle" class="api-settings-password-toggle menu_button">
                 <i class="fa-solid fa-eye"></i>
               </button>
             </div>
@@ -290,7 +290,7 @@ function createAPISettingsHTML() {
 
             <!-- 项目ID（Express模式） -->
             <div class="api-settings-section-title" style="margin-top: 1em;">项目 ID <small style="opacity: 0.7;">（可选）</small></div>
-            <input type="text" id="phoneVertexProjectId" class="api-settings-input" placeholder="your-project-id">
+            <input type="text" id="phoneVertexProjectId" class="api-settings-input text_pole" placeholder="your-project-id">
             <div class="api-settings-hint">
               非 us-central1 区域时需要填写。可在 404 错误信息中找到。
             </div>
@@ -299,7 +299,7 @@ function createAPISettingsHTML() {
           <!-- Full 模式配置 -->
           <div id="phoneVertexFullConfig" style="margin-top: 1em; display: none;">
             <div class="api-settings-section-title">服务账号 JSON</div>
-            <textarea id="phoneVertexServiceAccount" class="api-settings-input" rows="4" placeholder='{"type": "service_account", ...}'></textarea>
+            <textarea id="phoneVertexServiceAccount" class="api-settings-input text_pole" rows="4" placeholder='{"type": "service_account", ...}'></textarea>
             <div class="api-settings-hint">
               粘贴完整的服务账号 JSON 内容。<a href="https://cloud.google.com/vertex-ai/docs/authentication" target="_blank">认证文档</a>
             </div>
@@ -307,7 +307,7 @@ function createAPISettingsHTML() {
 
           <!-- 区域选择 -->
           <div class="api-settings-section-title" style="margin-top: 1em;">区域</div>
-          <input type="text" id="phoneVertexRegion" class="api-settings-input" list="phoneVertexRegionList" value="us-central1" placeholder="us-central1">
+          <input type="text" id="phoneVertexRegion" class="api-settings-input text_pole" list="phoneVertexRegionList" value="us-central1" placeholder="us-central1">
           <datalist id="phoneVertexRegionList">
             <option value="global">global</option>
             <option value="us-central1">us-central1</option>
@@ -327,21 +327,21 @@ function createAPISettingsHTML() {
         <div id="phoneAzureSection" class="api-settings-section" data-phone-source="azure_openai" style="display: none;">
           <!-- Base URL -->
           <div class="api-settings-section-title">Azure Base URL</div>
-          <input type="text" id="phoneAzureBaseUrl" class="api-settings-input" placeholder="https://your-resource.openai.azure.com/">
+          <input type="text" id="phoneAzureBaseUrl" class="api-settings-input text_pole" placeholder="https://your-resource.openai.azure.com/">
           <div class="api-settings-hint">
             Azure OpenAI 资源的端点 URL
           </div>
 
           <!-- 部署名称 -->
           <div class="api-settings-section-title" style="margin-top: 1em;">部署名称</div>
-          <input type="text" id="phoneAzureDeploymentName" class="api-settings-input" placeholder="your-deployment-name">
+          <input type="text" id="phoneAzureDeploymentName" class="api-settings-input text_pole" placeholder="your-deployment-name">
           <div class="api-settings-hint">
             Azure 中模型部署的名称
           </div>
 
           <!-- API版本 -->
           <div class="api-settings-section-title" style="margin-top: 1em;">API 版本</div>
-          <select id="phoneAzureApiVersion" class="api-settings-select">
+          <select id="phoneAzureApiVersion" class="api-settings-select text_pole">
             <option value="2025-04-01-preview">2025-04-01-preview</option>
             <option value="2024-10-21">2024-10-21</option>
             <option value="2024-02-15-preview">2024-02-15-preview</option>
@@ -350,8 +350,8 @@ function createAPISettingsHTML() {
           <!-- API密钥 -->
           <div class="api-settings-section-title" style="margin-top: 1em;">Azure API 密钥</div>
           <div class="api-settings-password-wrapper">
-            <input type="password" id="phoneAzureApiKey" class="api-settings-input" placeholder="your-azure-api-key">
-            <button id="phoneAzureApiKeyToggle" class="api-settings-password-toggle">
+            <input type="password" id="phoneAzureApiKey" class="api-settings-input text_pole" placeholder="your-azure-api-key">
+            <button id="phoneAzureApiKeyToggle" class="api-settings-password-toggle menu_button">
               <i class="fa-solid fa-eye"></i>
             </button>
           </div>
@@ -361,7 +361,7 @@ function createAPISettingsHTML() {
 
           <!-- 模型名称 -->
           <div class="api-settings-section-title" style="margin-top: 1em;">模型名称</div>
-          <input type="text" id="phoneAzureModelName" class="api-settings-input" placeholder="gpt-4o">
+          <input type="text" id="phoneAzureModelName" class="api-settings-input text_pole" placeholder="gpt-4o">
           <div class="api-settings-hint">
             部署的底层模型名称（如 gpt-4o、gpt-4-turbo）
           </div>
@@ -386,34 +386,34 @@ function createAPISettingsHTML() {
         <div id="phoneModelSection" class="api-settings-section" data-phone-source="openai,claude,makersuite,openrouter,deepseek,mistralai,cohere,perplexity,groq,xai,ai21,moonshot,fireworks,electronhub,chutes,nanogpt,aimlapi,siliconflow,zai">
           <div class="api-settings-section-title">模型</div>
           <div class="api-settings-row">
-            <select id="phoneApiModelSelect" class="api-settings-select" style="flex: 1;">
+            <select id="phoneApiModelSelect" class="api-settings-select text_pole" style="flex: 1;">
               <option value="">请选择模型...</option>
               <option value="__manual__">手动输入...</option>
             </select>
-            <button id="phoneApiRefreshModels" class="api-settings-btn" title="刷新模型列表">
+            <button id="phoneApiRefreshModels" class="api-settings-btn menu_button" title="刷新模型列表">
               <i class="fa-solid fa-rotate"></i>
             </button>
           </div>
           <!-- 手动输入模型（默认隐藏） -->
           <div id="phoneApiModelManualWrapper" style="display: none; margin-top: 0.5em;">
-            <input type="text" id="phoneApiModelManual" class="api-settings-input" placeholder="gpt-4o-mini">
+            <input type="text" id="phoneApiModelManual" class="api-settings-input text_pole" placeholder="gpt-4o-mini">
           </div>
         </div>
 
         <!-- 测试连接 -->
         <div class="api-settings-section">
-          <button id="phoneApiTest" class="api-settings-btn api-settings-btn-test">
+          <button id="phoneApiTest" class="api-settings-btn menu_button api-settings-btn-test">
             <i class="fa-solid fa-flask"></i> 测试连接
           </button>
         </div>
 
         <!-- 高级参数（动态生成） -->
-        <div class="api-settings-section">
-          <div class="api-settings-section-title" style="cursor: pointer; user-select: none;" id="phoneApiParamsToggle">
+        <div class="api-settings-section inline-drawer">
+          <div class="api-settings-section-title inline-drawer-header inline-drawer-toggle" style="cursor: pointer; user-select: none;" id="phoneApiParamsToggle">
             <i class="fa-solid fa-chevron-down" id="phoneApiParamsIcon"></i>
             高级参数
           </div>
-          <div id="phoneApiParamsContainer" style="display: block; margin-top: 1em;">
+          <div id="phoneApiParamsContainer" class="inline-drawer-content" style="display: block; margin-top: 1em;">
             <!-- 参数将根据选择的API格式动态插入到这里 -->
           </div>
         </div>
@@ -429,4 +429,5 @@ function createAPISettingsHTML() {
     </div>
   `;
 }
+
 

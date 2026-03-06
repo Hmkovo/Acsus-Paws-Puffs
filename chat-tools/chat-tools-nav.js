@@ -53,6 +53,11 @@ let searchCloseButton = null;
 /** 是否已注册切换聊天事件监听器 */
 let chatChangedListenerRegistered = false;
 
+/** @type {{chatChanged: Function|null}} */
+let savedHandlers = {
+  chatChanged: null,
+};
+
 // ========================================
 // 初始化
 // ========================================
@@ -82,11 +87,24 @@ export function initChatToolsNav() {
 
 /**
  * 设置切换聊天的事件监听
- * 只在功能开启时才会被调用
+ *
+ * @description
+ * 注册 CHAT_CHANGED 全局监听并保存 handler 引用，确保关闭功能时可被 removeListener 清理。
+ * 这是解决监听器永久驻留问题的关键步骤。
+ *
+ * @returns {void}
+ * @throws {Error} 当 eventSource 不可用时，事件系统会抛出运行时异常
+ * @example
+ * setupChatChangedListener();
  */
 function setupChatChangedListener() {
+  if (savedHandlers.chatChanged) {
+    logger.debug(MODULE_NAME, `${LOG_PREFIX} CHAT_CHANGED 监听已存在，跳过重复绑定`);
+    return;
+  }
+
   // 监听聊天切换事件
-  eventSource.on(event_types.CHAT_CHANGED, () => {
+  savedHandlers.chatChanged = () => {
     // 从存储中读取启用状态
     const enabled = extension_settings[EXT_ID]?.chatTools?.['chat-tools-nav-enabled'];
 
@@ -102,7 +120,8 @@ function setupChatChangedListener() {
     removeNavControls();
     // 重新初始化
     waitForQuickReplyBar();
-  });
+  };
+  eventSource.on(event_types.CHAT_CHANGED, savedHandlers.chatChanged);
 
   chatChangedListenerRegistered = true;
   logger.debug(MODULE_NAME, `${LOG_PREFIX} CHAT_CHANGED 事件监听已设置`);
@@ -789,19 +808,39 @@ function saveNavSettings() {
  * 重新加载导航控件
  */
 function reloadNavControls() {
-  // 移除现有控件
-  if (navContainer && navContainer.parentNode) {
-    navContainer.parentNode.removeChild(navContainer);
-  }
+  removeNavControls();
 
-  // 重置状态
-  navContainer = null;
-  searchInput = null;
-  jumpInput = null;
-  searchResultsDropdown = null;
+  const enabled = extension_settings[EXT_ID]?.chatTools?.['chat-tools-nav-enabled'];
+  if (!enabled) {
+    disableChatToolsNav();
+    return;
+  }
 
   // 重新初始化
   initChatToolsNav();
+}
+
+/**
+ * 禁用聊天记录导航功能
+ *
+ * @description
+ * 在关闭功能时主动移除 CHAT_CHANGED 全局监听，并清理注入的 DOM，
+ * 避免监听器常驻导致的重复初始化和内存泄漏。
+ *
+ * @returns {void}
+ * @throws {Error} 当事件系统异常时，removeListener 调用会抛出运行时异常
+ * @example
+ * disableChatToolsNav();
+ */
+export function disableChatToolsNav() {
+  if (savedHandlers.chatChanged) {
+    eventSource.removeListener(event_types.CHAT_CHANGED, savedHandlers.chatChanged);
+    savedHandlers.chatChanged = null;
+  }
+
+  chatChangedListenerRegistered = false;
+  removeNavControls();
+  logger.info(MODULE_NAME, `${LOG_PREFIX} 聊天记录导航已禁用并完成清理`);
 }
 
 // ========================================

@@ -63,6 +63,20 @@ let floatingBtnEnabled = false;
 /** @type {HTMLElement|null} 悬浮按钮元素 */
 let floatingBtn = null;
 
+/** @type {(() => void)|null} 悬浮按钮窗口缩放监听器引用 */
+let floatingBtnResizeHandler = null;
+
+/** @type {Object} 美化模块全局监听器引用 */
+let globalEventHandlers = {
+  bound: false,
+  chatChanged: null,
+  characterMessageRendered: null,
+  userMessageRendered: null,
+  escapeKeydown: null,
+  chatScroll: null,
+  chatScrollElement: null
+};
+
 /** @type {boolean} 全宽文字模式是否启用 */
 let fullwidthEnabled = false;
 
@@ -140,6 +154,15 @@ let personaSelectHighlightEnabled = false;
 
 /** @type {boolean} 人设输入框显示头像是否启用 */
 let personaAvatarPreviewEnabled = false;
+
+/** @type {Function|null} 人设头像预览 SETTINGS_UPDATED 监听器引用 */
+let personaAvatarSettingsUpdatedHandler = null;
+
+/** @type {Function|null} 防窥滑块文档 mousemove/touchmove 监听器引用 */
+let privacySliderDoDragHandler = null;
+
+/** @type {Function|null} 防窥滑块文档 mouseup/touchend 监听器引用 */
+let privacySliderEndDragHandler = null;
 
 /** @type {boolean} 修复旧版美化类名是否启用 */
 let fixOldCssEnabled = false;
@@ -1109,7 +1132,15 @@ function bindPersonaAvatarPreview() {
 
 /**
  * 创建人设头像预览
- * @description 在 persona_description 输入框左边插入头像
+ *
+ * @description
+ * 在 persona_description 输入框左侧创建头像预览，并绑定 SETTINGS_UPDATED 监听。
+ * 这里保存监听器引用是为了在功能关闭时可以反注册，避免重复绑定和内存泄漏。
+ *
+ * @returns {void}
+ * @throws {Error} 不直接抛出；依赖模块可能在动态导入失败时记录错误日志。
+ * @example
+ * createPersonaAvatarPreview();
  */
 function createPersonaAvatarPreview() {
   const textarea = document.getElementById('persona_description');
@@ -1144,7 +1175,11 @@ function createPersonaAvatarPreview() {
 
   // 监听人设切换事件（SETTINGS_UPDATED 在人设切换时触发）
   // 使用闭包捕获 wrapper 引用，当 wrapper 被移除时自动停止更新
-  const updateHandler = () => {
+  if (personaAvatarSettingsUpdatedHandler) {
+    eventSource.removeListener(event_types.SETTINGS_UPDATED, personaAvatarSettingsUpdatedHandler);
+  }
+
+  personaAvatarSettingsUpdatedHandler = () => {
     // 检查 wrapper 是否还存在于 DOM 中
     const currentWrapper = document.getElementById('beautify-persona-preview-wrapper');
     if (!currentWrapper || !personaAvatarPreviewEnabled) {
@@ -1156,8 +1191,8 @@ function createPersonaAvatarPreview() {
     }
   };
 
-  // 注册事件监听（事件会一直存在，但 handler 会检查 wrapper 是否存在）
-  eventSource.on(event_types.SETTINGS_UPDATED, updateHandler);
+  // 先移除旧监听，再注册新监听，避免重复注册
+  eventSource.on(event_types.SETTINGS_UPDATED, personaAvatarSettingsUpdatedHandler);
 
   logger.info('beautify', '[Beautify] 人设头像预览已创建');
 }
@@ -1187,11 +1222,26 @@ function updatePersonaAvatarPreview(avatarEl) {
 
 /**
  * 移除人设头像预览
- * @description 通过设置 _disabled 标记禁用事件处理，然后移除 DOM 元素
+ *
+ * @description
+ * 先移除 SETTINGS_UPDATED 监听，再移除预览 DOM，
+ * 避免功能关闭后仍响应配置变更事件。
+ *
+ * @returns {void}
+ * @throws {Error} 不直接抛出。
+ * @example
+ * removePersonaAvatarPreview();
  */
 function removePersonaAvatarPreview() {
+  if (personaAvatarSettingsUpdatedHandler) {
+    eventSource.removeListener(event_types.SETTINGS_UPDATED, personaAvatarSettingsUpdatedHandler);
+    personaAvatarSettingsUpdatedHandler = null;
+  }
+
   const wrapper = document.getElementById('beautify-persona-preview-wrapper');
-  if (!wrapper) return;
+  if (!wrapper) {
+    return;
+  }
 
   const textarea = wrapper.querySelector('#persona_description');
 
@@ -1473,6 +1523,18 @@ function bindFixOldCss() {
     });
   }
 
+  // 监听官方 #customCSS 实时输入：同步更新副本
+  // 原因：applyCompatCSS 会把 #custom-style 的内容复制一份，
+  // 如果不跟着更新，用户在官方输入框修改后视觉不会立刻变化。
+  const customCSSInput = document.getElementById('customCSS');
+  if (customCSSInput) {
+    customCSSInput.addEventListener('input', () => {
+      if (fixOldCssEnabled) {
+        applyCompatCSS();
+      }
+    });
+  }
+
   // 如果已启用，页面加载时自动应用
   if (fixOldCssEnabled) {
     applyCompatCSS();
@@ -1686,6 +1748,9 @@ async function enableBeautify() {
     logger.info('beautify', '[Beautify] 检测到未完整初始化，开始加载');
     await fullInitialize();
   } else {
+    // 主开关关闭后会解绑全局事件，重新启用时需要重新绑定
+    bindGlobalEvents();
+
     // 已初始化，但需要确保悬浮栏在当前 #chat 中
     // 因为切换角色时 #chat 会被替换，悬浮栏可能已不在 DOM 中
     ensureStickyHeaderInDOM();
@@ -1696,11 +1761,25 @@ async function enableBeautify() {
     initializeFirstMessage();
   }
 
+  // 主开关恢复后，按设置恢复悬浮按钮
+  if (extension_settings[EXT_ID]?.beautify?.floatingBtnEnabled) {
+    enableFloatingBtn();
+  }
+
   logger.info('beautify', '[Beautify] 功能已启用');
 }
 
 /**
  * 禁用美化功能
+ *
+ * @description
+ * 关闭主开关时不仅隐藏 UI，还会主动清理全局监听器和子功能监听器，
+ * 避免功能关闭后事件回调继续驻留并消耗资源。
+ *
+ * @returns {void}
+ * @throws {Error} 不直接抛出。
+ * @example
+ * disableBeautify();
  */
 function disableBeautify() {
   enabled = false;
@@ -1712,6 +1791,15 @@ function disableBeautify() {
   if (immersiveMode) {
     exitImmersiveMode();
   }
+
+  // 主开关关闭时，彻底清理全局事件监听
+  unbindGlobalEvents();
+
+  // 主开关关闭时，确保悬浮按钮相关监听全部停止
+  disableFloatingBtn();
+
+  // 清理人设头像预览及其监听
+  removePersonaAvatarPreview();
 
   logger.info('beautify', '[Beautify] 功能已禁用');
 }
@@ -2308,10 +2396,23 @@ function updateBackground(isUser) {
 
 /**
  * 绑定全局事件
+ *
+ * @description
+ * 统一保存监听器引用，确保主开关关闭时能完整 removeListener/removeEventListener。
+ *
+ * @returns {void}
+ * @throws {Error} 不直接抛出。
+ * @example
+ * bindGlobalEvents();
  */
 function bindGlobalEvents() {
+  // 避免重复绑定
+  if (globalEventHandlers.bound) {
+    return;
+  }
+
   // 切换聊天时：退出沉浸模式 + 解锁 + 重新插入悬浮栏
-  eventSource.on(event_types.CHAT_CHANGED, () => {
+  globalEventHandlers.chatChanged = () => {
     // 如果功能未启用，不执行任何操作
     if (!enabled) return;
 
@@ -2337,40 +2438,87 @@ function bindGlobalEvents() {
       observeAllMessages();
       initializeFirstMessage();
     }, 200);
-  });
+  };
+  eventSource.on(event_types.CHAT_CHANGED, globalEventHandlers.chatChanged);
 
   // 监听新消息渲染（用户和角色消息都要监听）
-  eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, () => {
+  globalEventHandlers.characterMessageRendered = () => {
     // 如果功能未启用，不执行
     if (!enabled) return;
     logger.debug('beautify', '[Beautify] 检测到角色消息渲染，重新观察消息');
     observeAllMessages();
-  });
-  eventSource.on(event_types.USER_MESSAGE_RENDERED, () => {
+  };
+  eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, globalEventHandlers.characterMessageRendered);
+
+  globalEventHandlers.userMessageRendered = () => {
     // 如果功能未启用，不执行
     if (!enabled) return;
     logger.debug('beautify', '[Beautify] 检测到用户消息渲染，重新观察消息');
     observeAllMessages();
-  });
+  };
+  eventSource.on(event_types.USER_MESSAGE_RENDERED, globalEventHandlers.userMessageRendered);
 
   // ESC 键退出沉浸模式
-  document.addEventListener('keydown', (e) => {
+  globalEventHandlers.escapeKeydown = (e) => {
     if (e.key === 'Escape' && immersiveMode) {
       exitImmersiveMode();
     }
-  });
+  };
+  document.addEventListener('keydown', globalEventHandlers.escapeKeydown);
 
   // 滚动到顶部时退出沉浸模式
-  const chatElement = document.getElementById('chat');
-  if (chatElement) {
-    chatElement.addEventListener('scroll', () => {
+  globalEventHandlers.chatScrollElement = document.getElementById('chat');
+  if (globalEventHandlers.chatScrollElement) {
+    const chatElement = globalEventHandlers.chatScrollElement;
+    globalEventHandlers.chatScroll = () => {
       if (immersiveMode && chatElement.scrollTop < 50) {
         exitImmersiveMode();
       }
-    });
+    };
+    globalEventHandlers.chatScrollElement.addEventListener('scroll', globalEventHandlers.chatScroll);
   }
 
+  globalEventHandlers.bound = true;
   logger.debug('beautify', '[Beautify] 全局事件已绑定');
+}
+
+/**
+ * 解绑全局事件
+ * @description 主开关关闭时调用，彻底清理 bindGlobalEvents 注册的所有监听器。
+ * @returns {void}
+ * @throws {Error} 不直接抛出。
+ * @example
+ * unbindGlobalEvents();
+ */
+function unbindGlobalEvents() {
+  if (!globalEventHandlers.bound) {
+    return;
+  }
+
+  if (globalEventHandlers.chatChanged) {
+    eventSource.removeListener(event_types.CHAT_CHANGED, globalEventHandlers.chatChanged);
+  }
+  if (globalEventHandlers.characterMessageRendered) {
+    eventSource.removeListener(event_types.CHARACTER_MESSAGE_RENDERED, globalEventHandlers.characterMessageRendered);
+  }
+  if (globalEventHandlers.userMessageRendered) {
+    eventSource.removeListener(event_types.USER_MESSAGE_RENDERED, globalEventHandlers.userMessageRendered);
+  }
+  if (globalEventHandlers.escapeKeydown) {
+    document.removeEventListener('keydown', globalEventHandlers.escapeKeydown);
+  }
+  if (globalEventHandlers.chatScrollElement && globalEventHandlers.chatScroll) {
+    globalEventHandlers.chatScrollElement.removeEventListener('scroll', globalEventHandlers.chatScroll);
+  }
+
+  globalEventHandlers.chatChanged = null;
+  globalEventHandlers.characterMessageRendered = null;
+  globalEventHandlers.userMessageRendered = null;
+  globalEventHandlers.escapeKeydown = null;
+  globalEventHandlers.chatScroll = null;
+  globalEventHandlers.chatScrollElement = null;
+  globalEventHandlers.bound = false;
+  logger.debug('beautify', '[Beautify] 全局事件已解绑');
 }
 
 
@@ -2389,10 +2537,12 @@ function enableFloatingBtn() {
     createFloatingBtn();
   }
 
+  // 重新绑定窗口缩放监听（disable 时会移除）
+  bindFloatingBtnResizeListener();
+
   // 初始化等待动画监听器（只初始化一次）
   if (!waitingAnimState.listenersInitialized) {
     initWaitingAnimationListeners();
-    waitingAnimState.listenersInitialized = true;
   }
 
   // 显示悬浮按钮
@@ -2407,6 +2557,15 @@ function enableFloatingBtn() {
  */
 function disableFloatingBtn() {
   floatingBtnEnabled = false;
+
+  // 关闭时清理等待动画监听和定时器
+  destroyWaitingAnimationListeners();
+
+  // 关闭时移除窗口缩放监听
+  if (floatingBtnResizeHandler) {
+    window.removeEventListener('resize', floatingBtnResizeHandler);
+    floatingBtnResizeHandler = null;
+  }
 
   // 隐藏悬浮按钮
   if (floatingBtn) {
@@ -2625,7 +2784,7 @@ function createFloatingBtn() {
   bindFloatingBtnEvents();
 
   // 监听窗口缩放，确保按钮不超出可见区域
-  window.addEventListener('resize', () => constrainFloatingBtnPosition());
+  bindFloatingBtnResizeListener();
 
   // 添加到 body
   document.body.appendChild(floatingBtn);
@@ -2634,6 +2793,20 @@ function createFloatingBtn() {
   applyFloatingBtnSettings();
 
   logger.debug('beautify', '[Beautify] 悬浮按钮已创建');
+}
+
+/**
+ * 绑定悬浮按钮窗口缩放监听
+ * @description 统一保存 resize 处理器引用，确保 disable 时可反注册。
+ * @returns {void}
+ */
+function bindFloatingBtnResizeListener() {
+  if (floatingBtnResizeHandler) {
+    window.removeEventListener('resize', floatingBtnResizeHandler);
+  }
+
+  floatingBtnResizeHandler = () => constrainFloatingBtnPosition();
+  window.addEventListener('resize', floatingBtnResizeHandler);
 }
 
 /**
@@ -3486,6 +3659,15 @@ function showPrivacyOverlay() {
 
 /**
  * 绑定防窥滑块事件
+ *
+ * @description
+ * 绑定滑块拖拽逻辑，并保存 document 级拖拽监听器引用，
+ * 以便遮罩关闭时能完整移除监听，防止监听残留。
+ *
+ * @returns {void}
+ * @throws {Error} 不直接抛出。
+ * @example
+ * bindPrivacySliderEvents();
  */
 function bindPrivacySliderEvents() {
   if (!privacyOverlay) return;
@@ -3518,7 +3700,7 @@ function bindPrivacySliderEvents() {
     const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
     currentX = Math.max(0, Math.min(clientX - startX, maxMove));
 
-    knob.style.transform = `translateX(${currentX}px`;
+    knob.style.transform = `translateX(${currentX}px)`;
     fill.style.width = `${currentX + knobWidth}px`;
   };
 
@@ -3553,21 +3735,53 @@ function bindPrivacySliderEvents() {
     }
   };
 
+  // 先清理上一次注册的文档级拖拽监听，避免重复绑定
+  if (privacySliderDoDragHandler) {
+    document.removeEventListener('mousemove', privacySliderDoDragHandler);
+    document.removeEventListener('touchmove', privacySliderDoDragHandler);
+  }
+  if (privacySliderEndDragHandler) {
+    document.removeEventListener('mouseup', privacySliderEndDragHandler);
+    document.removeEventListener('touchend', privacySliderEndDragHandler);
+  }
+  privacySliderDoDragHandler = doDrag;
+  privacySliderEndDragHandler = endDrag;
+
   // 鼠标事件
   knob.addEventListener('mousedown', startDrag);
-  document.addEventListener('mousemove', doDrag);
-  document.addEventListener('mouseup', endDrag);
+  document.addEventListener('mousemove', privacySliderDoDragHandler);
+  document.addEventListener('mouseup', privacySliderEndDragHandler);
 
   // 触摸事件
   knob.addEventListener('touchstart', startDrag, { passive: false });
-  document.addEventListener('touchmove', doDrag, { passive: false });
-  document.addEventListener('touchend', endDrag);
+  document.addEventListener('touchmove', privacySliderDoDragHandler, { passive: false });
+  document.addEventListener('touchend', privacySliderEndDragHandler);
 }
 
 /**
  * 隐藏防窥遮罩
+ *
+ * @description
+ * 移除防窥遮罩 DOM 前先清理 document 级拖拽监听器，
+ * 确保多次开关不会累积 mousemove/touchmove 监听。
+ *
+ * @returns {void}
+ * @throws {Error} 不直接抛出。
+ * @example
+ * hidePrivacyOverlay();
  */
 function hidePrivacyOverlay() {
+  if (privacySliderDoDragHandler) {
+    document.removeEventListener('mousemove', privacySliderDoDragHandler);
+    document.removeEventListener('touchmove', privacySliderDoDragHandler);
+    privacySliderDoDragHandler = null;
+  }
+  if (privacySliderEndDragHandler) {
+    document.removeEventListener('mouseup', privacySliderEndDragHandler);
+    document.removeEventListener('touchend', privacySliderEndDragHandler);
+    privacySliderEndDragHandler = null;
+  }
+
   if (privacyOverlay) {
     privacyOverlay.remove();
     privacyOverlay = null;
@@ -3987,21 +4201,83 @@ let waitingAnimState = {
   listenersInitialized: false  // 监听器是否已初始化
 };
 
+/** @type {{started: Function|null, ended: Function|null, stopped: Function|null}} 等待动画事件监听器引用 */
+let waitingAnimationHandlers = {
+  started: null,
+  ended: null,
+  stopped: null
+};
+
 /**
  * 初始化等待动画监听器
  * @description 监听发送消息和生成完成事件，自动切换等待动画
+ * @returns {void}
+ * @throws {Error} 不直接抛出。
+ * @example
+ * initWaitingAnimationListeners();
  */
 export function initWaitingAnimationListeners() {
+  if (waitingAnimState.listenersInitialized) {
+    return;
+  }
+
+  waitingAnimationHandlers.started = (...args) => {
+    if (!floatingBtnEnabled) return;
+    handleGenerationStarted(...args);
+  };
+  waitingAnimationHandlers.ended = (...args) => {
+    if (!floatingBtnEnabled) return;
+    handleGenerationEnded(...args);
+  };
+  waitingAnimationHandlers.stopped = (...args) => {
+    if (!floatingBtnEnabled) return;
+    handleGenerationStopped(...args);
+  };
+
   // 监听生成开始事件（用户点击发送后触发）
-  eventSource.on(event_types.GENERATION_STARTED, handleGenerationStarted);
+  eventSource.on(event_types.GENERATION_STARTED, waitingAnimationHandlers.started);
 
   // 监听生成结束事件（AI输出完成后触发）
-  eventSource.on(event_types.GENERATION_ENDED, handleGenerationEnded);
+  eventSource.on(event_types.GENERATION_ENDED, waitingAnimationHandlers.ended);
 
   // 监听生成终止事件（用户点击终止按钮后触发）
-  eventSource.on(event_types.GENERATION_STOPPED, handleGenerationStopped);
+  eventSource.on(event_types.GENERATION_STOPPED, waitingAnimationHandlers.stopped);
 
+  waitingAnimState.listenersInitialized = true;
   logger.info('beautify', '[Beautify] 等待动画监听器已初始化');
+}
+
+/**
+ * 销毁等待动画监听器
+ * @description 反注册生成事件并清理等待动画定时器，确保悬浮按钮关闭后不再执行动画逻辑。
+ * @returns {void}
+ * @throws {Error} 不直接抛出。
+ * @example
+ * destroyWaitingAnimationListeners();
+ */
+function destroyWaitingAnimationListeners() {
+  if (!waitingAnimState.listenersInitialized) {
+    return;
+  }
+
+  if (waitingAnimationHandlers.started) {
+    eventSource.removeListener(event_types.GENERATION_STARTED, waitingAnimationHandlers.started);
+  }
+  if (waitingAnimationHandlers.ended) {
+    eventSource.removeListener(event_types.GENERATION_ENDED, waitingAnimationHandlers.ended);
+  }
+  if (waitingAnimationHandlers.stopped) {
+    eventSource.removeListener(event_types.GENERATION_STOPPED, waitingAnimationHandlers.stopped);
+  }
+
+  waitingAnimationHandlers.started = null;
+  waitingAnimationHandlers.ended = null;
+  waitingAnimationHandlers.stopped = null;
+  waitingAnimState.listenersInitialized = false;
+
+  // 复用已有清理逻辑，确保定时器被正确释放
+  restoreToIdleState();
+  logger.debug('beautify', '[Beautify] 等待动画监听器已销毁');
 }
 
 /**
@@ -4737,405 +5013,6 @@ function bindPrivacyEditPopup() {
   logger.debug('beautify', '[Beautify] 防窥编辑弹窗事件已绑定');
 }
 
-/**
- * 绑定解锁文字相关事件
- */
-function bindPrivacyTextEvents() {
-  const textInput = document.getElementById('beautify-privacy-unlock-text');
-  const addPresetBtn = document.getElementById('beautify-privacy-add-preset');
-
-  // 实时保存解锁文字
-  textInput?.addEventListener('input', () => {
-    const settings = getPrivacySettings();
-    settings.unlockText = textInput.value;
-    extension_settings[EXT_ID].beautify.privacy = settings;
-    saveSettingsDebounced();
-  });
-
-  // 添加预设
-  addPresetBtn?.addEventListener('click', () => {
-    const settings = getPrivacySettings();
-    const currentText = textInput?.value || '';
-    if (currentText && !settings.textPresets.includes(currentText)) {
-      settings.textPresets.push(currentText);
-      extension_settings[EXT_ID].beautify.privacy = settings;
-      saveSettingsDebounced();
-      renderPrivacyTextPresets(settings.textPresets);
-      toastr.success('已添加预设');
-      logger.info('beautify', '[Beautify] 添加解锁文字预设:', currentText);
-    }
-  });
-}
-
-/**
- * 渲染解锁文字预设列表
- * @param {Array} presets - 预设列表
- */
-function renderPrivacyTextPresets(presets) {
-  const container = document.getElementById('beautify-privacy-presets-list');
-  if (!container) return;
-
-  container.innerHTML = presets.map((text, index) => `
-    <div class="beautify-privacy-preset-item" data-index="${index}">
-      <span class="beautify-privacy-preset-text">${text}</span>
-      <button class="beautify-privacy-preset-delete" data-index="${index}" title="删除">
-        <i class="fa-solid fa-trash"></i>
-      </button>
-    </div>
-  `).join('');
-
-  // 绑定预设点击事件（应用预设）
-  container.querySelectorAll('.beautify-privacy-preset-item').forEach(item => {
-    item.addEventListener('click', (e) => {
-      if (e.target.closest('.beautify-privacy-preset-delete')) return;
-      const index = parseInt(item.dataset.index);
-      const text = presets[index];
-      const textInput = document.getElementById('beautify-privacy-unlock-text');
-      if (textInput) {
-        textInput.value = text;
-        // 同步保存
-        const settings = getPrivacySettings();
-        settings.unlockText = text;
-        extension_settings[EXT_ID].beautify.privacy = settings;
-        saveSettingsDebounced();
-      }
-    });
-  });
-
-  // 绑定删除事件
-  container.querySelectorAll('.beautify-privacy-preset-delete').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const index = parseInt(btn.dataset.index);
-      const settings = getPrivacySettings();
-      settings.textPresets.splice(index, 1);
-      extension_settings[EXT_ID].beautify.privacy = settings;
-      saveSettingsDebounced();
-      renderPrivacyTextPresets(settings.textPresets);
-      toastr.success('已删除预设');
-      logger.info('beautify', '[Beautify] 删除解锁文字预设，索引:', index);
-    });
-  });
-}
-
-/**
- * 绑定自定义CSS相关事件
- */
-function bindPrivacyCssEvents() {
-  logger.info('beautify', '[Debug] bindPrivacyCssEvents被调用');
-
-  const cssTextarea = document.getElementById('beautify-privacy-custom-css');
-  const saveBtn = document.getElementById('beautify-css-save');
-  const importBtn = document.getElementById('beautify-css-import');
-  const exportBtn = document.getElementById('beautify-css-export');
-  const helpBtn = document.getElementById('beautify-css-help');
-  const searchInput = document.getElementById('beautify-css-search');
-  const fileInput = document.getElementById('beautify-privacy-css-file');
-
-  // 渲染CSS方案列表
-  renderCssPresets();
-
-  // 搜索功能
-  searchInput?.addEventListener('input', () => {
-    const keyword = searchInput.value.toLowerCase();
-    renderCssPresets(keyword);
-  });
-
-  // 实时保存CSS（防抖）
-  let cssDebounceTimer = null;
-  cssTextarea?.addEventListener('input', () => {
-    clearTimeout(cssDebounceTimer);
-    cssDebounceTimer = setTimeout(() => {
-      // 如果正在应用方案，不清除选中状态
-      if (cssTextarea?.dataset.applyingPreset === 'true') {
-        logger.debug('beautify', '[Debug] 正在应用方案，跳过清除currentCssPresetId');
-        return;
-      }
-
-      const settings = getPrivacySettings();
-      // 只有当 textarea 的内容和当前方案不同时才清除选中状态
-      const currentPreset = settings.cssPresets?.find(p => p.id === settings.currentCssPresetId);
-      if (currentPreset && currentPreset.css !== cssTextarea.value) {
-        settings.currentCssPresetId = null;
-        logger.debug('beautify', '[Debug] CSS内容已修改，清除currentCssPresetId');
-      }
-      settings.customCss = cssTextarea.value;
-      extension_settings[EXT_ID].beautify.privacy = settings;
-      saveSettingsDebounced();
-      // 更新方案列表中的当前方案
-      renderCssPresets(searchInput?.value?.toLowerCase() || '');
-      logger.debug('beautify', '[Beautify] 防窥自定义CSS已更新');
-    }, 500);
-  });
-
-  // 保存方案
-  saveBtn?.addEventListener('click', () => {
-    const settings = getPrivacySettings();
-    const currentCss = cssTextarea?.value || '';
-    const currentId = settings.currentCssPresetId;
-
-    if (currentId) {
-      // 更新现有方案
-      const preset = settings.cssPresets.find(p => p.id === currentId);
-      if (preset) {
-        preset.css = currentCss;
-        preset.savedTime = new Date().toISOString();
-      }
-    } else {
-      // 新建方案
-      const name = prompt('请输入方案名称：', `方案${settings.cssPresets.length + 1}`);
-      if (!name) return;
-
-      const newPreset = {
-        id: `css_preset_${Date.now()}`,
-        name: name,
-        css: currentCss,
-        savedTime: new Date().toISOString()
-      };
-      settings.cssPresets.push(newPreset);
-      settings.currentCssPresetId = newPreset.id;
-    }
-
-    settings.customCss = currentCss;
-    extension_settings[EXT_ID].beautify.privacy = settings;
-    saveSettingsDebounced();
-    renderCssPresets(searchInput?.value?.toLowerCase() || '');
-    toastr.success('方案已保存');
-    logger.info('beautify', '[Beautify] 防窥CSS方案已保存');
-  });
-
-  // 导入方案
-  importBtn?.addEventListener('click', () => {
-    fileInput?.click();
-  });
-
-  fileInput?.addEventListener('change', (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const data = JSON.parse(event.target?.result);
-        if (data.customCss !== undefined) {
-          if (cssTextarea) {
-            cssTextarea.value = data.customCss;
-          }
-          const settings = getPrivacySettings();
-          settings.customCss = data.customCss;
-          settings.currentCssPresetId = null; // 导入的不是方案列表
-          extension_settings[EXT_ID].beautify.privacy = settings;
-          saveSettingsDebounced();
-          renderCssPresets();
-          toastr.success('CSS方案导入成功');
-          logger.info('beautify', '[Beautify] 防窥CSS方案导入成功');
-        }
-      } catch (error) {
-        toastr.error('导入失败：格式错误');
-        logger.error('beautify', '[Beautify] 防窥CSS方案导入失败:', error.message);
-      }
-    };
-    reader.readAsText(file);
-    fileInput.value = '';
-  });
-
-  // 导出方案
-  exportBtn?.addEventListener('click', () => {
-    const settings = getPrivacySettings();
-    const data = {
-      customCss: settings.customCss,
-      exportedAt: new Date().toISOString()
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `beautify-privacy-css-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toastr.success('CSS方案已导出');
-    logger.info('beautify', '[Beautify] 防窥CSS方案已导出');
-  });
-
-  // 帮助按钮 - 显示类名说明
-  helpBtn?.addEventListener('click', () => {
-    const helpText = `防窥遮罩CSS类名说明：
-
-【容器】
-#beautify-privacy-overlay - 整个遮罩层
-
-【内容区】
-.privacy-overlay-content - 内容容器
-
-【滑块】
-.privacy-slider-container - 滑块容器
-.privacy-slider-track - 滑块轨道
-.privacy-slider-fill - 滑块进度条
-.privacy-slider-knob - 滑块按钮（可拖动）
-
-【文字】
-.privacy-overlay-text - 解锁文字
-
-【示例】
-/* 修改背景 */
-#beautify-privacy-overlay { background: #333; }
-
-/* 修改滑块按钮 */
-.privacy-slider-knob { background: red; }`;
-    alert(helpText);
-  });
-}
-
-/**
- * 渲染CSS方案列表
- * @param {string} keyword - 搜索关键词
- */
-function renderCssPresets(keyword = '') {
-  const container = document.getElementById('beautify-css-preset-list');
-  if (!container) return;
-
-  const settings = getPrivacySettings();
-  const presets = settings.cssPresets || [];
-  const currentId = settings.currentCssPresetId;
-
-  logger.info('beautify', '[Debug] renderCssPresets调用:', {
-    currentId,
-    presetsCount: presets.length,
-    keyword
-  });
-
-  // 过滤方案
-  const filteredPresets = keyword
-    ? presets.filter(p => p.name.toLowerCase().includes(keyword))
-    : presets;
-
-  if (filteredPresets.length === 0) {
-    container.innerHTML = '<div class="beautify-preset-empty">暂无方案</div>';
-    return;
-  }
-
-  container.innerHTML = filteredPresets.map(preset => {
-    const date = new Date(preset.savedTime);
-    const timeStr = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-    const isActive = preset.id === currentId ? 'active' : '';
-
-    return `
-      <div class="beautify-preset-item ${isActive}" data-id="${preset.id}">
-        <div class="beautify-preset-info">
-          <span class="beautify-preset-name">${preset.name}</span>
-          <span class="beautify-preset-time">${timeStr}</span>
-        </div>
-        <div class="beautify-preset-actions">
-          <button class="beautify-preset-load" data-id="${preset.id}" title="应用">
-            <i class="fa-solid fa-check"></i>
-          </button>
-          <button class="beautify-preset-delete" data-id="${preset.id}" title="删除">
-            <i class="fa-solid fa-trash"></i>
-          </button>
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  // 绑定应用方案事件
-  container.querySelectorAll('.beautify-preset-load').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const id = btn.dataset.id;
-      applyCssPreset(id);
-    });
-  });
-
-  // 绑定删除方案事件
-  container.querySelectorAll('.beautify-preset-delete').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const id = btn.dataset.id;
-      deleteCssPreset(id);
-    });
-  });
-
-  // 绑定点击方案应用事件
-  container.querySelectorAll('.beautify-preset-item').forEach(item => {
-    item.addEventListener('click', (e) => {
-      if (e.target.closest('.beautify-preset-actions')) return;
-      const id = item.dataset.id;
-      applyCssPreset(id);
-    });
-  });
-}
-
-/**
- * 应用CSS方案
- * @param {string} id - 方案ID
- */
-function applyCssPreset(id) {
-  logger.info('beautify', '[Debug] applyCssPreset被调用:', { id });
-
-  const settings = getPrivacySettings();
-  const preset = settings.cssPresets.find(p => p.id === id);
-
-  if (!preset) {
-    toastr.error('方案不存在');
-    return;
-  }
-
-  // 设置标记，防止实时保存清除currentCssPresetId
-  const cssTextarea = document.getElementById('beautify-privacy-custom-css');
-  if (cssTextarea) {
-    cssTextarea.dataset.applyingPreset = 'true';
-  }
-
-  // 更新 textarea
-  if (cssTextarea) {
-    cssTextarea.value = preset.css;
-  }
-
-  // 保存设置
-  settings.customCss = preset.css;
-  settings.currentCssPresetId = id;
-  extension_settings[EXT_ID].beautify.privacy = settings;
-  saveSettingsDebounced();
-
-  // 延迟清除标记，确保保存完成
-  setTimeout(() => {
-    if (cssTextarea) {
-      cssTextarea.dataset.applyingPreset = 'false';
-    }
-  }, 1000);
-
-  // 更新列表显示
-  renderCssPresets(document.getElementById('beautify-css-search')?.value?.toLowerCase() || '');
-
-  toastr.success(`已应用：${preset.name}`);
-  logger.info('beautify', '[Beautify] 应用CSS方案:', preset.name);
-}
-
-/**
- * 删除CSS方案
- * @param {string} id - 方案ID
- */
-function deleteCssPreset(id) {
-  const settings = getPrivacySettings();
-  const preset = settings.cssPresets.find(p => p.id === id);
-
-  if (!preset) return;
-
-  if (!confirm(`确定删除方案"${preset.name}"吗？`)) return;
-
-  settings.cssPresets = settings.cssPresets.filter(p => p.id !== id);
-  // 如果删除的是当前选中的方案，清除选中状态
-  if (settings.currentCssPresetId === id) {
-    settings.currentCssPresetId = null;
-  }
-  extension_settings[EXT_ID].beautify.privacy = settings;
-  saveSettingsDebounced();
-
-  renderCssPresets(document.getElementById('beautify-css-search')?.value?.toLowerCase() || '');
-  toastr.success('方案已删除');
-  logger.info('beautify', '[Beautify] 删除CSS方案:', preset.name);
-}
-
 // ==========================================
 // 美化主题管理（委托给新模块）
 // ==========================================
@@ -5178,3 +5055,4 @@ function bindThemeManagerToggle() {
     });
   }
 }
+

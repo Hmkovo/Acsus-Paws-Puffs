@@ -712,7 +712,7 @@ export class DiaryUI {
 
     if (commentsEl) {
       const commentCount = diary.comments?.length || 0;
-      logger.debug(`[DiaryUI.createDiaryCard] 渲染日记"${diary.title}"的评论，数据中有 ${commentCount} 条顶层评论`);
+      logger.debug('diary', `[DiaryUI.createDiaryCard] 渲染日记"${diary.title}"的评论，数据中有 ${commentCount} 条顶层评论`);
       const commentsHTML = this.renderComments(diary.comments);
 
       commentsEl.innerHTML = '';
@@ -941,7 +941,7 @@ export class DiaryUI {
         if (!clickedInContent) {
           commentItem.classList.toggle('expanded');
           const isExpanded = commentItem.classList.contains('expanded');
-          logger.debug(`[DiaryUI] 第3层评论折叠/展开: ${isExpanded ? '展开' : '收起'} ID:${commentItem.dataset.commentId}`);
+          logger.debug('diary', `[DiaryUI] 第3层评论折叠/展开: ${isExpanded ? '展开' : '收起'} ID:${commentItem.dataset.commentId}`);
           e.stopPropagation();
           return;
         }
@@ -958,7 +958,7 @@ export class DiaryUI {
 
         const commentId = commentItem.dataset.commentId;
         const commentLevel = commentItem.dataset.level;
-        logger.debug(`[DiaryUI] 点击评论 ID:${commentId} Level:${commentLevel}`);
+        logger.debug('diary', `[DiaryUI] 点击评论 ID:${commentId} Level:${commentLevel}`);
 
         // 阻止事件冒泡到父评论
         e.stopPropagation();
@@ -968,13 +968,13 @@ export class DiaryUI {
         if (activeComment && activeComment !== commentItem) {
           const prevId = activeComment.dataset.commentId;
           activeComment.classList.remove('show-actions');
-          logger.debug(`[DiaryUI] 隐藏之前的评论按钮 ID:${prevId}`);
+          logger.debug('diary', `[DiaryUI] 隐藏之前的评论按钮 ID:${prevId}`);
         }
 
         // 显示当前评论的按钮
         commentItem.classList.add('show-actions');
         activeComment = commentItem;
-        logger.debug(`[DiaryUI] 显示当前评论按钮 ID:${commentId}`);
+        logger.debug('diary', `[DiaryUI] 显示当前评论按钮 ID:${commentId}`);
 
         // 手机端3秒后自动隐藏
         if (window.innerWidth <= 768) {
@@ -984,7 +984,7 @@ export class DiaryUI {
             if (activeComment === commentItem) {
               activeComment = null;
             }
-            logger.debug(`[DiaryUI] 手机端自动隐藏按钮 ID:${commentId}`);
+            logger.debug('diary', `[DiaryUI] 手机端自动隐藏按钮 ID:${commentId}`);
           }, 3000);
         }
       }
@@ -1475,12 +1475,12 @@ export class DiaryUI {
    * 调试方法：检查日记数据和DOM一致性
    */
   debugDiaryComments() {
-    console.log('\n========== 📊 日记数据检查（extension_settings中的原始数据） ==========\n');
+    logger.debug('diary', '\n========== 📊 日记数据检查（extension_settings中的原始数据） ==========\n');
 
     const diaries = this.dataManager.getDiaries();
     diaries.forEach((diary, index) => {
-      console.log(`[${index}] ${diary.title} (ID: ${diary.id})`);
-      console.log(`  📝 顶层评论数: ${diary.comments?.length || 0}`);
+      logger.debug('diary', `[${index}] ${diary.title} (ID: ${diary.id})`);
+      logger.debug('diary', `  📝 顶层评论数: ${diary.comments?.length || 0}`);
 
       if (diary.comments && diary.comments.length > 0) {
         let totalComments = 0;
@@ -1493,15 +1493,15 @@ export class DiaryUI {
           });
         };
         countReplies(diary.comments);
-        console.log(`  💬 总评论数（含回复）: ${totalComments}`);
+        logger.debug('diary', `  💬 总评论数（含回复）: ${totalComments}`);
 
         diary.comments.forEach((comment, i) => {
-          console.log(`    [${i}] ${comment.authorName}: ${comment.content.substring(0, 40)}...`);
+          logger.debug('diary', `    [${i}] ${comment.authorName}: ${comment.content.substring(0, 40)}...`);
           if (comment.replies && comment.replies.length > 0) {
             const showReplies = (replies, level) => {
               replies.forEach((reply, j) => {
                 const indent = '  '.repeat(level);
-                console.log(`    ${indent}└─ [${j}] ${reply.authorName}: ${reply.content.substring(0, 30)}...`);
+                logger.debug('diary', `    ${indent}└─ [${j}] ${reply.authorName}: ${reply.content.substring(0, 30)}...`);
                 if (reply.replies && reply.replies.length > 0) {
                   showReplies(reply.replies, level + 1);
                 }
@@ -1511,12 +1511,12 @@ export class DiaryUI {
           }
         });
       }
-      console.log('');
+      logger.debug('diary', '');
     });
 
-    console.log('\n========== 🎨 DOM卡片检查（实际渲染的HTML） ==========\n');
+    logger.debug('diary', '\n========== 🎨 DOM卡片检查（实际渲染的HTML） ==========\n');
     const allCards = this.sliderElement.querySelectorAll('.diary-card');
-    console.log(`总卡片数: ${allCards.length}\n`);
+    logger.debug('diary', `总卡片数: ${allCards.length}\n`);
 
     allCards.forEach((card, index) => {
       const cardElement = /** @type {HTMLElement} */ (card);
@@ -1528,19 +1528,19 @@ export class DiaryUI {
       const diaryData = diaries.find(d => d.id === diaryId);
       const dataCommentCount = diaryData?.comments?.length || 0;
 
-      console.log(`[${index}] ${title} (ID: ${diaryId})`);
-      console.log(`  📝 数据中的评论数: ${dataCommentCount}`);
-      console.log(`  🎨 DOM中的评论元素数: ${commentItems.length}`);
+      logger.debug('diary', `[${index}] ${title} (ID: ${diaryId})`);
+      logger.debug('diary', `  📝 数据中的评论数: ${dataCommentCount}`);
+      logger.debug('diary', `  🎨 DOM中的评论元素数: ${commentItems.length}`);
 
       if (dataCommentCount !== commentItems.length) {
         console.error(`  ⚠️ 不一致！数据有${dataCommentCount}条，DOM只显示${commentItems.length}条`);
       } else if (dataCommentCount > 0) {
-        console.log(`  ✅ 一致`);
+        logger.debug('diary', '  ✅ 一致');
       }
-      console.log('');
+      logger.debug('diary', '');
     });
 
-    console.log('========================================\n');
+    logger.debug('diary', '========================================\n');
   }
 
   /**
@@ -1562,9 +1562,7 @@ if (typeof window !== 'undefined') {
     if (diarySystem?.ui) {
       diarySystem.ui.debugDiaryComments();
     } else {
-      console.error('日记系统未初始化');
+      logger.error('diary', '[DiaryUI.debugDiaryComments] 日记系统未初始化');
     }
   };
 }
-
-

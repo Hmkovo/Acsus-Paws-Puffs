@@ -27,6 +27,8 @@ const registeredMacros = new Set();
 let variableManagerRef = null;
 let storageRef = null;
 let preprocessorSetup = false;
+let macroRegistryEnabled = false;
+let onTextCompletionSettingsReady = null;
 
 // ============================================
 // 核心注册函数
@@ -38,6 +40,7 @@ let preprocessorSetup = false;
  */
 export async function registerAllGlobalMacros() {
   logger.info('variable', '[GlobalMacroRegistry] 开始注册全局宏...');
+  macroRegistryEnabled = true;
 
   try {
     // 延迟导入，避免循环依赖
@@ -66,6 +69,7 @@ export async function registerAllGlobalMacros() {
 
     logger.info('variable', '[GlobalMacroRegistry] 全局宏注册完成，已注册:', registeredMacros.size, '个');
   } catch (error) {
+    macroRegistryEnabled = false;
     logger.error('variable', '[GlobalMacroRegistry] 注册失败:', error.message);
   }
 }
@@ -129,6 +133,10 @@ function registerChatFloorMacro() {
   try {
     macros.registry.registerMacro(CHAT_FLOOR_MACRO_NAME, {
       handler: (context) => {
+        if (!macroRegistryEnabled) {
+          return '';
+        }
+
         // 如果有参数，返回楼层内容；否则返回提示
         if (context.raw) {
           return getChatFloorContentForMacro(context.raw);
@@ -196,6 +204,10 @@ export function registerVariableMacro(variableName) {
     if (alias !== variableName) {
       macros.registry.registerMacro(alias, {
         handler: (context) => {
+          if (!macroRegistryEnabled) {
+            return '';
+          }
+
           const rangeStr = context.raw || '';
           return getVariableContentForMacro(variableName, rangeStr);
         },
@@ -210,6 +222,10 @@ export function registerVariableMacro(variableName) {
     // 也注册原名（可能用于预处理替换后的识别）
     macros.registry.registerMacro(variableName, {
       handler: (context) => {
+        if (!macroRegistryEnabled) {
+          return '';
+        }
+
         const rangeStr = context.raw || '';
         return getVariableContentForMacro(variableName, rangeStr);
       },
@@ -227,13 +243,21 @@ export function registerVariableMacro(variableName) {
 /**
  * 注销单个变量宏
  * 使用新引擎 API
+ * @description
+ * 这里会同时注销原变量名和别名（如 `dv_中文名`），确保关闭功能后宏不会残留。
  * @param {string} variableName - 变量名
+ * @returns {void}
  */
 export function unregisterVariableMacro(variableName) {
   if (!variableName) return;
 
-  registeredMacros.delete(variableName);
-  macros.registry.unregisterMacro(variableName);
+  const alias = generateMacroAlias(variableName);
+  unregisterMacroByName(variableName);
+
+  if (alias !== variableName) {
+    unregisterMacroByName(alias);
+  }
+
   logger.debug('variable', '[GlobalMacroRegistry] 已注销变量宏:', variableName);
 }
 
@@ -250,9 +274,9 @@ export async function refreshVariableMacros() {
   const currentNames = new Set(variables.map(v => v.name));
 
   // 1. 注销所有变量宏（包括别名）
-  for (const name of registeredMacros) {
+  for (const name of Array.from(registeredMacros)) {
     if (name !== CHAT_FLOOR_MACRO_NAME) {
-      unregisterVariableMacro(name);
+      unregisterMacroByName(name);
     }
   }
 
@@ -268,8 +292,7 @@ export async function refreshVariableMacros() {
 
 /**
  * 设置宏预处理器
- * 监听 TEXT_COMPLETION_SETTINGS_READY 和 CHAT_COMPLETION_SETTINGS_READY 两个事件
- * 覆盖所有API后端（Text Generation 和 Chat Completion）
+ * 监听 TEXT_COMPLETION_SETTINGS_READY 事件
  */
 function setupMacroPreprocessor() {
   if (preprocessorSetup) return;
@@ -303,17 +326,67 @@ function setupMacroPreprocessor() {
   };
 
   // 监听 TEXT_COMPLETION_SETTINGS_READY（Text Generation 后端：Ooba/KoboldAI）
-  eventSource.on(event_types.TEXT_COMPLETION_SETTINGS_READY, (params) => {
+  onTextCompletionSettingsReady = (params) => {
     processMacros(params, 'TEXT_COMPLETION_SETTINGS_READY');
-  });
-
-  // 监听 CHAT_COMPLETION_SETTINGS_READY（Chat Completion 后端：OpenAI/Claude/手机端）
-  eventSource.on(event_types.CHAT_COMPLETION_SETTINGS_READY, (params) => {
-    processMacros(params, 'CHAT_COMPLETION_SETTINGS_READY');
-  });
+  };
+  eventSource.on(event_types.TEXT_COMPLETION_SETTINGS_READY, onTextCompletionSettingsReady);
 
   preprocessorSetup = true;
-  logger.info('variable', '[GlobalMacroRegistry] 宏预处理器已设置（双事件监听：TEXT + CHAT）');
+  logger.info('variable', '[GlobalMacroRegistry] 宏预处理器已设置（监听：TEXT_COMPLETION_SETTINGS_READY）');
+}
+
+/**
+ * 注销单个宏（兼容旧版宏系统）
+ * @param {string} macroName - 宏名
+ * @returns {void}
+ */
+function unregisterMacroByName(macroName) {
+  if (!macroName) return;
+
+  registeredMacros.delete(macroName);
+  if (typeof macros?.registry?.unregisterMacro === 'function') {
+    macros.registry.unregisterMacro(macroName);
+    return;
+  }
+
+  logger.warn('variable', `[GlobalMacroRegistry.unregisterMacroByName] 宏系统不支持 unregisterMacro，无法主动注销: ${macroName}`);
+}
+
+/**
+ * 销毁全局宏注册器
+ *
+ * @description
+ * 关闭变量模块时必须彻底清理宏和监听器，否则宏仍会参与 SillyTavern 解析链路。
+ * 本函数会注销变量宏与固定宏、移除预处理监听并重置内部状态。
+ *
+ * @returns {void}
+ * @throws {Error} 当销毁流程出现不可恢复错误时抛出
+ * @example
+ * destroyGlobalMacros();
+ */
+export function destroyGlobalMacros() {
+  logger.info('variable', '[GlobalMacroRegistry] 开始销毁全局宏...');
+
+  try {
+    for (const macroName of Array.from(registeredMacros)) {
+      unregisterMacroByName(macroName);
+    }
+
+    unregisterMacroByName(CHAT_FLOOR_MACRO_NAME);
+
+    if (onTextCompletionSettingsReady) {
+      eventSource.removeListener(event_types.TEXT_COMPLETION_SETTINGS_READY, onTextCompletionSettingsReady);
+      onTextCompletionSettingsReady = null;
+    }
+
+    preprocessorSetup = false;
+    macroRegistryEnabled = false;
+    registeredMacros.clear();
+    logger.info('variable', '[GlobalMacroRegistry] 全局宏已销毁');
+  } catch (error) {
+    logger.error('variable', '[GlobalMacroRegistry] 销毁失败:', error.message);
+    throw error;
+  }
 }
 
 /**
@@ -387,19 +460,9 @@ export function preprocessMacros(text) {
  * @returns {string}
  */
 function getVariableContentForMacro(variableName, rangeStr) {
-  // [DEBUG] 添加调试日志，验证 handler 是否被调用
-  console.log('[DEBUG] getVariableContentForMacro 被调用:', {
-    variableName,
-    rangeStr,
-    chatId: getContext()?.chatId,
-    registeredMacros: Array.from(registeredMacros)
-  });
-
   try {
     const ctx = getContext();
     const chatId = ctx?.chatId;
-
-    console.log('[DEBUG] chatId:', chatId, 'registeredMacros.has:', registeredMacros.has(variableName));
 
     if (!chatId || !registeredMacros.has(variableName)) {
       return '';
@@ -411,8 +474,6 @@ function getVariableContentForMacro(variableName, rangeStr) {
 
     const variableManager = variableManagerRef();
     const variable = variableManager.getDefinitionByName(variableName);
-
-    console.log('[DEBUG] 找到变量定义:', variable);
 
     if (!variable) {
       return '';
@@ -585,6 +646,7 @@ export { registeredMacros };
 
 export default {
   registerAllGlobalMacros,
+  destroyGlobalMacros,
   registerVariableMacro,
   unregisterVariableMacro,
   refreshVariableMacros,

@@ -209,6 +209,7 @@ function bindDialogEvents(dialog, resolve) {
 
     // 取消按钮
     dialog.on('click', '.btn-cancel', function() {
+        $(document).off('keydown.branch-inherit');
         dialog.remove();
         resolve(null);
     });
@@ -239,6 +240,7 @@ function bindDialogEvents(dialog, resolve) {
             };
         }
 
+        $(document).off('keydown.branch-inherit');
         dialog.remove();
         resolve(config);
     });

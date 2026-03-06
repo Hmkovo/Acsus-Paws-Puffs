@@ -7935,7 +7935,7 @@
   height: 2.75em;
   padding: 0;
   background: var(--phone-bg-white);
-  border-bottom: 1px solid var(--phone-border);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--phone-text-primary) 8%, transparent);
   flex-shrink: 0;
   /* 固定高度，不参与flex伸缩 */
 }
@@ -8003,11 +8003,11 @@
 .api-settings-select {
   width: 100%;
   padding: 0.625em;
-  background: var(--phone-bg-main);
-  border: 1px solid var(--phone-border);
+  background: color-mix(in srgb, var(--phone-bg-main) 86%, var(--phone-bg-white));
+  border: none;
   border-radius: 0.25em;
   color: var(--phone-text-primary);
-  font-size: 1em;
+  font-size: 0.95em;
   cursor: pointer;
 }
 
@@ -8051,11 +8051,11 @@
 .api-settings-input {
   width: 100%;
   padding: 0.625em;
-  background: var(--phone-bg-main);
-  border: 1px solid var(--phone-border);
+  background: color-mix(in srgb, var(--phone-bg-main) 86%, var(--phone-bg-white));
+  border: none;
   border-radius: 0.25em;
   color: var(--phone-text-primary);
-  font-size: 1em;
+  font-size: 0.95em;
 }
 
 .api-settings-input::placeholder {
@@ -8082,6 +8082,7 @@
   color: var(--phone-text-tertiary);
   cursor: pointer;
   padding: 0.25em;
+  font-size: 0.9em;
   transition: color 0.2s;
 }
 
@@ -8092,14 +8093,18 @@
 /* 按钮 */
 .api-settings-btn {
   padding: 0.625em 1em;
-  background: var(--phone-bg-white);
-  border: 1px solid var(--phone-border);
+  background: color-mix(in srgb, var(--phone-bg-main) 86%, var(--phone-bg-white));
+  border: none;
   border-radius: 0.25em;
   color: var(--phone-text-primary);
   font-size: 0.875em;
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
+}
+
+.api-settings-page button {
+  font-size: 0.875em;
 }
 
 .api-settings-btn:hover {
@@ -8114,7 +8119,6 @@
 .api-settings-btn-primary {
   background: var(--phone-primary);
   color: white;
-  border-color: var(--phone-primary);
 }
 
 .api-settings-btn-primary:hover {
@@ -8126,7 +8130,6 @@
 .api-settings-btn-danger {
   background: #ff3b30;
   color: white;
-  border-color: #ff3b30;
   padding: 0.625em;
 }
 
@@ -8140,7 +8143,6 @@
   width: 100%;
   background: var(--phone-primary);
   color: white;
-  border-color: var(--phone-primary);
   padding: 0.75em;
   font-size: 1em;
 }
@@ -8148,6 +8150,14 @@
 .api-settings-btn-test:hover {
   opacity: 0.9;
   background: var(--phone-primary);
+}
+
+.api-settings-page .text_pole {
+  font-size: 0.95em;
+}
+
+.api-settings-page button.menu_button {
+  font-size: 0.875em;
 }
 
 /* ========================================

@@ -24,6 +24,9 @@ let messageObserver = null;
 /** @type {boolean} 是否已绑定全局点击事件 */
 let globalClickBound = false;
 
+/** @type {((event: JQuery.ClickEvent) => void)|null} 收藏按钮点击处理器引用（用于解绑） */
+let favoriteClickHandler = null;
+
 /**
  * 初始化消息按钮注入
  *
@@ -49,14 +52,36 @@ export function initMessageInject() {
 
 /**
  * 停止消息按钮注入
- * @description 断开 MutationObserver，停止监听新消息
+ *
+ * @description
+ * 在功能禁用时做完整收尾，确保“关闭 = 不执行”：
+ * 1. 断开 MutationObserver，停止新消息注入
+ * 2. 解绑全局收藏点击事件，避免禁用后仍响应
+ * 3. 回收扩展注入的收藏按钮，避免 UI 残留
+ *
+ * @returns {void}
  */
 export function stopMessageInject() {
     if (messageObserver) {
         messageObserver.disconnect();
         messageObserver = null;
-        logger.info('archive', '[ChatArchive.Inject] 消息按钮注入已停止');
     }
+
+    if (globalClickBound && favoriteClickHandler) {
+        $(document).off('click', '.mes_favorite', favoriteClickHandler);
+        favoriteClickHandler = null;
+        globalClickBound = false;
+        logger.debug('archive', '[ChatArchive.Inject] 已解绑全局收藏点击事件');
+    }
+
+    // .mes_favorite 仅由本扩展注入，禁用时可安全回收
+    const injectedButtons = document.querySelectorAll('.mes_favorite');
+    if (injectedButtons.length > 0) {
+        injectedButtons.forEach(button => button.remove());
+        logger.debug('archive', '[ChatArchive.Inject] 已回收收藏按钮数量:', injectedButtons.length);
+    }
+
+    logger.info('archive', '[ChatArchive.Inject] 消息按钮注入已停止');
 }
 
 /**
@@ -161,8 +186,7 @@ function bindGlobalClickEvent() {
         return;
     }
 
-    // 使用 jQuery 事件委托（和 SillyTavern 官方一样）
-    $(document).on('click', '.mes_favorite', function(e) {
+    favoriteClickHandler = function(e) {
         e.stopPropagation();
         e.preventDefault();
 
@@ -172,7 +196,10 @@ function bindGlobalClickEvent() {
         if (messageElement) {
             handleFavoriteClick(messageElement, button);
         }
-    });
+    };
+
+    // 使用 jQuery 事件委托（和 SillyTavern 官方一样）
+    $(document).on('click', '.mes_favorite', favoriteClickHandler);
 
     globalClickBound = true;
     logger.debug('archive', '[ChatArchive.Inject] 全局点击事件已绑定');

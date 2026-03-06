@@ -75,7 +75,7 @@ export class DiaryAPIParser {
 
     // 提取 [评论]...[/评论]
     const commentMatches = [...response.matchAll(/\[评论\]([\s\S]*?)\[\/评论\]/g)];
-    if (commentMatches.length > 0 && targetDiaryId) {
+    if (commentMatches.length > 0) {
       commentMatches.forEach(match => {
         const commentContent = match[1].trim();
         const comments = this.parseAndSaveComments(commentContent, targetDiaryId);
@@ -337,6 +337,11 @@ export class DiaryAPIParser {
    * @returns {Array} 解析的评论数组
    */
   parseSingleComment(commentText, diaryId) {
+    if (!diaryId) {
+      logger.warn('[DiaryAPIParser.parseSingleComment] 缺少目标日记ID，跳过单条评论保存');
+      return [];
+    }
+
     const lines = commentText.split('\n').map(l => l.trim()).filter(l => l);
     const authorMap = {};
     const allComments = [];

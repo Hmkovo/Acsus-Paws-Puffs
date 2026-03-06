@@ -130,6 +130,12 @@ let popupOverlay = null;
 /** @type {Object} 当前设置（从 extension_settings 加载） */
 let currentSettings = null;
 
+/** @type {Function|null} 主设置弹窗 ESC 监听器引用 */
+let popupEscHandler = null;
+
+/** @type {Function|null} 悬浮按钮图片弹窗 ESC 监听器引用 */
+let floatingBtnPopupEscHandler = null;
+
 
 // ==========================================
 // 公开函数
@@ -166,6 +172,11 @@ export function closeBeautifyPopup() {
 
   // 隐藏动画
   popupOverlay.classList.remove('show');
+
+  if (popupEscHandler) {
+    document.removeEventListener('keydown', popupEscHandler);
+    popupEscHandler = null;
+  }
 
   // 动画结束后移除 DOM
   setTimeout(() => {
@@ -1109,13 +1120,15 @@ function bindPopupEvents() {
   closeBtn?.addEventListener('click', closeBeautifyPopup);
 
   // ESC 键关闭
-  const handleEsc = (e) => {
+  if (popupEscHandler) {
+    document.removeEventListener('keydown', popupEscHandler);
+  }
+  popupEscHandler = (e) => {
     if (e.key === 'Escape' && popupOverlay) {
       closeBeautifyPopup();
-      document.removeEventListener('keydown', handleEsc);
     }
   };
-  document.addEventListener('keydown', handleEsc);
+  document.addEventListener('keydown', popupEscHandler);
 
   // 标签页切换
   const tabs = popupOverlay.querySelectorAll('.beautify-popup-tab');
@@ -3485,6 +3498,11 @@ function closeFloatingBtnImagePopup() {
   const overlay = document.querySelector('.floating-btn-popup-overlay');
   if (!overlay) return;
 
+  if (floatingBtnPopupEscHandler) {
+    document.removeEventListener('keydown', floatingBtnPopupEscHandler);
+    floatingBtnPopupEscHandler = null;
+  }
+
   overlay.classList.remove('show');
 
   setTimeout(() => {
@@ -3545,13 +3563,15 @@ function bindFloatingBtnPopupEvents(overlay) {
   closeBtn?.addEventListener('click', closeFloatingBtnImagePopup);
 
   // ESC 键关闭
-  const handleEsc = (e) => {
+  if (floatingBtnPopupEscHandler) {
+    document.removeEventListener('keydown', floatingBtnPopupEscHandler);
+  }
+  floatingBtnPopupEscHandler = (e) => {
     if (e.key === 'Escape') {
       closeFloatingBtnImagePopup();
-      document.removeEventListener('keydown', handleEsc);
     }
   };
-  document.addEventListener('keydown', handleEsc);
+  document.addEventListener('keydown', floatingBtnPopupEscHandler);
 
   // Tab切换
   const tabs = overlay.querySelectorAll('.floating-btn-tab');

@@ -27,19 +27,38 @@ export class PresetStitchModule {
     this.presetManager = presetManager;
     this.initialized = false;
     this.ui = null; // UI 实例，后续创建
+    this._handlers = {};
   }
 
   /**
    * 初始化模块
+   *
+   * @description
+   * 缝合器关闭时不应创建 UI 或注册任何监听器，否则会出现“关闭仍执行”的运行时副作用。
+   * 这里在入口做开关守卫，确保禁用状态下直接返回，从初始化阶段阻断后续逻辑。
+   *
+   * @returns {Promise<void>}
+   * @throws {Error} 当后续流程抛出异常时向上抛出，避免半初始化状态
+   *
+   * @example
+   * await stitchModule.init();
    */
   async init() {
-    logger.debug('preset', 'PresetStitch.init] 初始化预设缝合器...');
+    logger.debug('preset', '[PresetStitch.init] 初始化预设缝合器...');
+
+    if (!stitchData.isEnabled()) {
+      this.initialized = true;
+      logger.info('preset', '[PresetStitch.init] 预设缝合器处于禁用状态，跳过运行时初始化');
+      return;
+    }
 
     // 加载数据
     stitchData.loadData();
 
     // 创建 UI 实例
-    this.ui = new PresetStitchUI(this);
+    if (!this.ui) {
+      this.ui = new PresetStitchUI(this);
+    }
 
     // 设置事件监听
     this.setupEventListeners();
@@ -50,10 +69,35 @@ export class PresetStitchModule {
 
   /**
    * 设置启用状态
+   *
+   * @description
+   * 关闭时不仅要隐藏入口，还要停止运行时资源（事件监听和 UI 实例），
+   * 否则会保留活跃逻辑导致“关闭仍生效”。
+   *
    * @param {boolean} enabled - 是否启用
+   * @returns {void}
+   * @throws {Error} 当启用路径下 UI 初始化失败时抛出
+   *
+   * @example
+   * stitchModule.setEnabled(false);
    */
   setEnabled(enabled) {
     stitchData.setEnabled(enabled);
+
+    if (enabled) {
+      if (!this.ui) {
+        this.ui = new PresetStitchUI(this);
+      }
+      this.setupEventListeners();
+      this.initialized = true;
+    } else {
+      this.teardownEventListeners();
+
+      if (this.ui) {
+        this.ui.destroy();
+        this.ui = null;
+      }
+    }
 
     // 更新按钮显示状态
     const btn = document.querySelector('#paws-stitch-btn');
@@ -299,21 +343,50 @@ export class PresetStitchModule {
 
   /**
    * 设置事件监听器
+   * @returns {void}
    */
   setupEventListeners() {
+    if (this._handlers.onStitchEnabledChanged) {
+      return;
+    }
+
     // 监听功能开关变化，更新按钮显示状态
-    eventSource.on('pawsStitchEnabledChanged', (enabled) => {
+    this._handlers.onStitchEnabledChanged = (enabled) => {
       const btn = document.querySelector('#paws-stitch-btn');
       if (btn) {
         btn.style.display = enabled ? '' : 'none';
       }
-    });
+    };
+
+    eventSource.on('pawsStitchEnabledChanged', this._handlers.onStitchEnabledChanged);
+  }
+
+  /**
+   * 移除事件监听器
+   * @returns {void}
+   */
+  teardownEventListeners() {
+    if (!this._handlers.onStitchEnabledChanged) {
+      return;
+    }
+
+    eventSource.removeListener('pawsStitchEnabledChanged', this._handlers.onStitchEnabledChanged);
+    this._handlers.onStitchEnabledChanged = null;
   }
 
   /**
    * 销毁模块
+   *
+   * @description
+   * 统一走与禁用路径一致的清理逻辑，保证 eventSource 监听和 UI 资源都被释放。
+   *
+   * @returns {void}
+   * @example
+   * stitchModule.destroy();
    */
   destroy() {
+    this.teardownEventListeners();
+
     // 移除按钮
     const btn = document.querySelector('#paws-stitch-btn');
     if (btn) {
@@ -327,6 +400,6 @@ export class PresetStitchModule {
     }
 
     this.initialized = false;
-    logger.debug('preset', 'PresetStitch] 模块已销毁');
+    logger.debug('preset', '[PresetStitch.destroy] 模块已销毁');
   }
 }

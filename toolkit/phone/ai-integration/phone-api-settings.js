@@ -21,13 +21,21 @@ import { showInfoToast, showSuccessToast, showErrorToast } from '../ui-component
 import { showConfirmPopup } from '../utils/popup-helper.js';
 import { extension_settings } from '../../../../../../../scripts/extensions.js';
 import { saveSettingsDebounced } from '../../../../../../../script.js';
-import { getSupportedParams, PARAMS_DEFINITIONS, getDefaultParams } from './phone-api-params-config.js';
+import { getSupportedParams, getParamDefinitions } from '../../../shared/api/api-params-config.js';
+import { refreshModelList } from '../../../shared/api/api-model-refresh.js';
+import {
+  resolveSource,
+  getDefaultUrl,
+  SOURCE_CAPABILITIES
+} from '../../../shared/api/api-config-schema.js';
 
 // ========================================
 // [CONST] 常量
 // ========================================
 const EXT_ID = 'acsusPawsPuffs';
 const MODULE_NAME = 'phone';
+const PARAMS_DEFINITIONS = getParamDefinitions('phone');
+const NO_VALIDATE_SOURCES = new Set(['claude', 'ai21', 'vertexai', 'perplexity', 'zai']);
 
 // ========================================
 // [CORE] API配置管理类
@@ -51,6 +59,261 @@ export class PhoneAPIConfig {
     this.api = options.api;
     // ✅ 临时参数存储（用于新建配置时保存参数）
     this.tempParams = {};
+  }
+
+  /**
+   * 获取当前选择的 API 格式。
+   *
+   * @returns {string} API 格式
+   */
+  getCurrentFormat() {
+    const formatSelect = /** @type {HTMLSelectElement|null} */ (
+      this.pageElement.querySelector('#phoneApiFormat')
+    );
+    return formatSelect?.value || 'openai';
+  }
+
+  /**
+   * 根据格式获取默认 URL。
+   *
+   * @param {string} format - API 格式
+   * @returns {string} 默认 URL
+   */
+  getDefaultUrlForFormat(format) {
+    return getDefaultUrl(resolveSource(format));
+  }
+
+  /**
+   * 按当前 UI 输入构建共享模型刷新配置。
+   *
+   * @param {string} format - API 格式
+   * @returns {Object|null} 可用于 refreshModelList 的配置
+   */
+  buildSharedRefreshConfig(format) {
+    const source = resolveSource(format);
+
+    if (source === 'custom') {
+      const baseUrlInput = /** @type {HTMLInputElement|null} */ (
+        this.pageElement.querySelector('#phoneApiBaseUrl')
+      );
+      const apiKeyInput = /** @type {HTMLInputElement|null} */ (
+        this.pageElement.querySelector('#phoneCustomApiKey')
+      );
+      const customUrl = baseUrlInput?.value.trim() || '';
+
+      if (!customUrl) {
+        return null;
+      }
+
+      return {
+        source: 'openai',
+        baseUrl: customUrl,
+        apiKey: apiKeyInput?.value.trim() || '',
+      };
+    }
+
+    if (source === 'azure_openai') {
+      const baseUrlInput = /** @type {HTMLInputElement|null} */ (
+        this.pageElement.querySelector('#phoneAzureBaseUrl')
+      );
+      const deploymentNameInput = /** @type {HTMLInputElement|null} */ (
+        this.pageElement.querySelector('#phoneAzureDeploymentName')
+      );
+      const apiVersionSelect = /** @type {HTMLSelectElement|null} */ (
+        this.pageElement.querySelector('#phoneAzureApiVersion')
+      );
+      const apiKeyInput = /** @type {HTMLInputElement|null} */ (
+        this.pageElement.querySelector('#phoneAzureApiKey')
+      );
+
+      const azureBaseUrl = baseUrlInput?.value.trim() || '';
+      const azureDeploymentName = deploymentNameInput?.value.trim() || '';
+      const azureApiVersion = apiVersionSelect?.value.trim() || '';
+
+      if (!azureBaseUrl || !azureDeploymentName || !azureApiVersion) {
+        return null;
+      }
+
+      return {
+        source: 'azure_openai',
+        apiKey: apiKeyInput?.value.trim() || '',
+        azureConfig: {
+          baseUrl: azureBaseUrl,
+          deploymentName: azureDeploymentName,
+          apiVersion: azureApiVersion,
+        },
+      };
+    }
+
+    if (source === 'openrouter') {
+      const apiKeyInput = /** @type {HTMLInputElement|null} */ (
+        this.pageElement.querySelector('#phoneOpenRouterKey')
+      );
+      return {
+        source: source,
+        baseUrl: this.getDefaultUrlForFormat(format),
+        apiKey: apiKeyInput?.value.trim() || '',
+      };
+    }
+
+    const reverseProxyUrlInput = /** @type {HTMLInputElement|null} */ (
+      this.pageElement.querySelector('#phoneReverseProxyUrl')
+    );
+    const reverseProxyPasswordInput = /** @type {HTMLInputElement|null} */ (
+      this.pageElement.querySelector('#phoneReverseProxyPassword')
+    );
+    const reverseProxyUrl = reverseProxyUrlInput?.value.trim() || '';
+    const reverseProxyPassword = reverseProxyPasswordInput?.value.trim() || '';
+    const apiKeyInput = /** @type {HTMLInputElement|null} */ (
+      this.pageElement.querySelector('#phoneApiKey')
+    );
+
+    const supportsReverseProxy = SOURCE_CAPABILITIES[source]?.supportsReverseProxy === true;
+    const useReverseProxy = supportsReverseProxy && Boolean(reverseProxyUrl);
+    let baseUrl = '';
+    let apiKey = '';
+    if (useReverseProxy) {
+      baseUrl = reverseProxyUrl;
+      apiKey = reverseProxyPassword;
+    } else {
+      baseUrl = this.getDefaultUrlForFormat(format);
+      apiKey = apiKeyInput?.value.trim() || '';
+    }
+
+    return {
+      source: source,
+      baseUrl: baseUrl,
+      apiKey: apiKey,
+    };
+  }
+
+  /**
+   * 归一化模型列表数据结构。
+   *
+   * @param {string} source - API source
+   * @param {Array<Object>} models - 原始模型列表
+   * @returns {Array<{id: string}>} 标准模型列表
+   */
+  normalizeModelsForSource(source, models) {
+    if (!Array.isArray(models)) {
+      return [];
+    }
+
+    const normalized = models
+      .map((item) => {
+        const modelId = typeof item === 'string' ? item : item?.id;
+        return typeof modelId === 'string' && modelId.trim()
+          ? { id: modelId.trim() }
+          : null;
+      })
+      .filter(Boolean);
+
+    logger.debug('phone', '[PhoneAPIConfig] 模型归一化完成', source, normalized.length);
+    return normalized;
+  }
+
+  /**
+   * 应用主模型下拉选项。
+   *
+   * @param {Array<{id: string}>} models - 标准模型列表
+   */
+  applyMainModelOptions(models) {
+    const modelSelect = /** @type {HTMLSelectElement|null} */ (
+      this.pageElement.querySelector('#phoneApiModelSelect')
+    );
+    if (!modelSelect) {
+      return;
+    }
+
+    const currentValue = modelSelect.value;
+    modelSelect.innerHTML = '<option value="">请选择模型...</option>';
+
+    models.forEach((model) => {
+      const option = document.createElement('option');
+      option.value = model.id;
+      option.textContent = model.id;
+      modelSelect.appendChild(option);
+    });
+
+    const manualOption = document.createElement('option');
+    manualOption.value = '__manual__';
+    manualOption.textContent = '手动输入...';
+    modelSelect.appendChild(manualOption);
+
+    if (currentValue && Array.from(modelSelect.options).some((opt) => opt.value === currentValue)) {
+      modelSelect.value = currentValue;
+    }
+  }
+
+  /**
+   * 应用 Custom 模型选项。
+   *
+   * @param {Array<{id: string}>} models - 标准模型列表
+   */
+  applyCustomModelOptions(models) {
+    const modelSelect = /** @type {HTMLSelectElement|null} */ (
+      this.pageElement.querySelector('#phoneCustomModelSelect')
+    );
+    const modelDatalist = this.pageElement.querySelector('#phoneCustomModelList');
+
+    if (modelSelect) {
+      modelSelect.innerHTML = '<option value="">无</option>';
+      models.forEach((model) => {
+        const option = document.createElement('option');
+        option.value = model.id;
+        option.textContent = model.id;
+        modelSelect.appendChild(option);
+      });
+    }
+
+    if (modelDatalist) {
+      modelDatalist.innerHTML = '';
+      models.forEach((model) => {
+        const option = document.createElement('option');
+        option.value = model.id;
+        modelDatalist.appendChild(option);
+      });
+    }
+  }
+
+  /**
+   * 清空主模型下拉框。
+   */
+  clearMainModelOptions() {
+    const modelSelect = /** @type {HTMLSelectElement|null} */ (
+      this.pageElement.querySelector('#phoneApiModelSelect')
+    );
+    const modelManualInput = /** @type {HTMLInputElement|null} */ (
+      this.pageElement.querySelector('#phoneApiModelManual')
+    );
+    const modelManualWrapper = /** @type {HTMLElement|null} */ (
+      this.pageElement.querySelector('#phoneApiModelManualWrapper')
+    );
+
+    if (modelSelect) {
+      modelSelect.innerHTML = '<option value="">请选择模型...</option><option value="__manual__">手动输入...</option>';
+      modelSelect.value = '';
+    }
+    if (modelManualInput) {
+      modelManualInput.value = '';
+    }
+    if (modelManualWrapper) {
+      modelManualWrapper.style.display = 'none';
+    }
+  }
+
+  /**
+   * 处理 API 格式切换后的事件链。
+   *
+   * @async
+   * @param {string} format - API 格式
+   * @returns {Promise<void>}
+   */
+  async handleApiFormatChange(format) {
+    this.clearMainModelOptions();
+    this.toggleApiSourceForms(format);
+    this.renderAdvancedParams(format);
+    await this.refreshModelsFromAPI({ silent: true, showEmptyToast: false });
   }
 
   /**
@@ -97,12 +360,8 @@ export class PhoneAPIConfig {
         const container = this.pageElement.querySelector('#phoneApiParamsContainer');
         if (source === 'custom') {
           // 使用自定义API：渲染参数UI
-          if (settings.apiConfig.currentConfigId) {
-            this.loadApiConfig(settings.apiConfig.currentConfigId);
-          } else {
-            const defaultFormat = this.getDefaultFormatFromTavern();
-            this.renderAdvancedParams(defaultFormat);
-          }
+          const defaultFormat = this.getCurrentFormat() || this.getDefaultFormatFromTavern();
+          this.renderAdvancedParams(defaultFormat);
         } else {
           // 跟随酒馆设置：显示提示
           if (container) {
@@ -333,7 +592,7 @@ export class PhoneAPIConfig {
     // ✅ API格式选择（动态显示高级参数 + 切换配置区块 + 保存到settings）
     const apiFormatSelect = /** @type {HTMLSelectElement|null} */ (this.pageElement.querySelector('#phoneApiFormat'));
     if (apiFormatSelect) {
-      apiFormatSelect.addEventListener('change', () => {
+      apiFormatSelect.addEventListener('change', async () => {
         const format = apiFormatSelect.value;
         const settings = this.getSettings();
 
@@ -346,8 +605,7 @@ export class PhoneAPIConfig {
         });
 
         logger.debug('phone','[PhoneAPIConfig] API格式已切换并保存:', format);
-        this.toggleApiSourceForms(format);  // 切换配置区块显示
-        this.renderAdvancedParams(format);
+        await this.handleApiFormatChange(format);
       });
       // 初始化时也触发一次，确保显示正确的配置区块
       this.toggleApiSourceForms(apiFormatSelect.value);
@@ -1079,7 +1337,7 @@ export class PhoneAPIConfig {
 
     // API版本
     const apiVersionSelect = /** @type {HTMLSelectElement|null} */ (this.pageElement.querySelector('#phoneAzureApiVersion'));
-    if (apiVersionSelect) apiVersionSelect.value = azureConfig.apiVersion || '2024-02-15-preview';
+    if (apiVersionSelect) apiVersionSelect.value = azureConfig.apiVersion || '2025-04-01-preview';
 
     // API密钥
     const apiKeyInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#phoneAzureApiKey'));
@@ -1096,80 +1354,33 @@ export class PhoneAPIConfig {
    * 刷新 Custom API 的模型列表
    */
   async refreshCustomModels() {
-    const baseUrlInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#phoneApiBaseUrl'));
-    const apiKeyInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#phoneCustomApiKey'));
-    const modelSelect = /** @type {HTMLSelectElement|null} */ (this.pageElement.querySelector('#phoneCustomModelSelect'));
-    const modelDatalist = this.pageElement.querySelector('#phoneCustomModelList');
-
-    const baseUrl = baseUrlInput?.value.trim();
-    const apiKey = apiKeyInput?.value.trim();
-
-    if (!baseUrl) {
+    const refreshConfig = this.buildSharedRefreshConfig('custom');
+    if (!refreshConfig) {
       showErrorToast('请先填写自定义端点 URL');
       return;
     }
 
     showInfoToast('正在获取模型列表...');
-    logger.info('phone','[PhoneAPIConfig] 开始获取 Custom API 模型列表');
+    logger.info('phone', '[PhoneAPIConfig] 开始获取 Custom API 模型列表（共享刷新链）');
 
     try {
-      let cleanBaseUrl = baseUrl;
-      if (cleanBaseUrl.endsWith('/v1')) {
-        cleanBaseUrl = cleanBaseUrl.slice(0, -3);
-      }
-      const modelsUrl = `${cleanBaseUrl}/v1/models`;
-
-      const headers = { 'Content-Type': 'application/json' };
-      if (apiKey) {
-        headers['Authorization'] = `Bearer ${apiKey}`;
+      const result = await refreshModelList(refreshConfig);
+      if (!result.success) {
+        throw new Error(result.error || '模型刷新失败');
       }
 
-      const response = await fetch(modelsUrl, { headers });
-
-      if (!response.ok) {
-        throw new Error(`API 返回错误: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      let models = [];
-      if (data.data && Array.isArray(data.data)) {
-        models = data.data.map(m => m.id || m).filter(m => m);
-      } else if (Array.isArray(data)) {
-        models = data.map(m => m.id || m).filter(m => m);
-      }
-
+      const models = this.normalizeModelsForSource('custom', result.models || []);
       if (models.length === 0) {
         showErrorToast('未获取到模型列表');
         return;
       }
 
-      // 更新下拉框
-      if (modelSelect) {
-        modelSelect.innerHTML = '<option value="">无</option>';
-        models.forEach(model => {
-          const option = document.createElement('option');
-          option.value = model;
-          option.textContent = model;
-          modelSelect.appendChild(option);
-        });
-      }
-
-      // 更新 datalist
-      if (modelDatalist) {
-        modelDatalist.innerHTML = '';
-        models.forEach(model => {
-          const option = document.createElement('option');
-          option.value = model;
-          modelDatalist.appendChild(option);
-        });
-      }
-
+      this.applyCustomModelOptions(models);
       showSuccessToast(`已获取 ${models.length} 个模型`);
-      logger.info('phone','[PhoneAPIConfig] Custom API 模型列表已更新，共', models.length, '个');
+      logger.info('phone', '[PhoneAPIConfig] Custom API 模型列表已更新，共', models.length, '个');
 
     } catch (error) {
-      logger.error('phone','[PhoneAPIConfig] 获取 Custom API 模型失败:', error);
+      logger.error('phone', '[PhoneAPIConfig] 获取 Custom API 模型失败:', error);
       showErrorToast('获取模型列表失败：' + error.message);
     }
   }
@@ -1205,85 +1416,19 @@ export class PhoneAPIConfig {
       'claude': 'claude',
 
       // Google AI
-      'makersuite': 'google',
-      'vertexai': 'google',
+      'makersuite': 'makersuite',
+      'vertexai': 'vertexai',
 
       // 其他
       'openrouter': 'openrouter',
       'ai21': 'ai21',
-      'mistralai': 'mistral'
+      'mistralai': 'mistralai'
     };
 
     const detectedFormat = reverseMap[tavernSource] || 'openai';
     logger.debug('phone','[PhoneAPIConfig.getDefaultFormatFromTavern] 从酒馆API源推断默认格式:', tavernSource, '→', detectedFormat);
 
     return detectedFormat;
-  }
-
-  /**
-   * 获取API源的显示名称
-   *
-   * @param {string} source - API源ID
-   * @returns {string} 显示名称
-   */
-  getApiSourceDisplayName(source) {
-    const displayNames = {
-      'default': '跟随酒馆设置',
-      'openai': 'OpenAI',
-      'claude': 'Claude (Anthropic)',
-      'makersuite': 'Google AI (Gemini)',
-      'vertexai': 'Vertex AI',
-      'openrouter': 'OpenRouter',
-      'mistralai': 'Mistral AI',
-      'cohere': 'Cohere',
-      'perplexity': 'Perplexity',
-      'groq': 'Groq',
-      'deepseek': 'DeepSeek',
-      'xai': 'xAI (Grok)',
-      'ai21': 'AI21',
-      'moonshot': 'Moonshot (Kimi)',
-      'fireworks': 'Fireworks',
-      'electronhub': 'ElectronHub',
-      'nanogpt': 'NanoGPT',
-      'aimlapi': 'AIMLAPI',
-      'pollinations': 'Pollinations',
-      'cometapi': 'CometAPI',
-      'azure_openai': 'Azure OpenAI',
-      'zai': 'ZAI',
-      'siliconflow': 'Silicon Flow',
-      'custom': '自定义API'
-    };
-    return displayNames[source] || source;
-  }
-
-  /**
-   * 获取API类型的默认端点URL
-   *
-   * @param {string} format - API类型
-   * @returns {string} 默认端点URL
-   */
-  getDefaultBaseUrl(format) {
-    const defaultUrls = {
-      'openai': 'https://api.openai.com',
-      'claude': 'https://api.anthropic.com',
-      'makersuite': 'https://generativelanguage.googleapis.com',
-      'deepseek': 'https://api.deepseek.com',
-      'mistralai': 'https://api.mistral.ai',
-      'cohere': 'https://api.cohere.ai',
-      'perplexity': 'https://api.perplexity.ai',
-      'groq': 'https://api.groq.com/openai',
-      'xai': 'https://api.x.ai',
-      'ai21': 'https://api.ai21.com',
-      'moonshot': 'https://api.moonshot.cn',
-      'fireworks': 'https://api.fireworks.ai/inference',
-      'electronhub': 'https://api.electronhub.top',
-      'nanogpt': 'https://nano-gpt.com/api',
-      'aimlapi': 'https://api.aimlapi.com',
-      'pollinations': 'https://text.pollinations.ai',
-      'siliconflow': 'https://api.siliconflow.cn',
-      'openrouter': 'https://openrouter.ai/api'
-    };
-    return defaultUrls[format] || '';
   }
 
   /**
@@ -1298,128 +1443,66 @@ export class PhoneAPIConfig {
    *   - 无反向代理时：使用默认端点和通用API密钥
    *
    * @async
+   * @param {Object} [options={}] - 刷新选项
+   * @param {boolean} [options.silent=false] - 是否静默（不显示开始提示）
+   * @param {boolean} [options.showEmptyToast=true] - 模型为空时是否提示
    */
-  async refreshModelsFromAPI() {
+  async refreshModelsFromAPI(options = {}) {
     const formatSelect = /** @type {HTMLSelectElement|null} */ (this.pageElement.querySelector('#phoneApiFormat'));
-    const modelSelect = /** @type {HTMLSelectElement|null} */ (this.pageElement.querySelector('#phoneApiModelSelect'));
     const format = formatSelect?.value || 'openai';
+    const silent = options.silent === true;
+    const showEmptyToast = options.showEmptyToast !== false;
+    const source = resolveSource(format);
+    const refreshConfig = this.buildSharedRefreshConfig(format);
+    const requiresCustomUrl = source === 'custom' || source === 'azure_openai';
 
-    // 根据API类型获取正确的端点和密钥
-    let baseUrl = '';
-    let apiKey = '';
-
-    if (format === 'custom') {
-      // Custom API：从专用输入框读取
-      const baseUrlInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#phoneApiBaseUrl'));
-      const apiKeyInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#phoneCustomApiKey'));
-      baseUrl = baseUrlInput?.value.trim() || '';
-      apiKey = apiKeyInput?.value.trim() || '';
-    } else if (format === 'openrouter') {
-      // OpenRouter：使用固定端点和专用密钥
-      baseUrl = 'https://openrouter.ai/api';
-      const apiKeyInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#phoneOpenRouterKey'));
-      apiKey = apiKeyInput?.value.trim() || '';
-    } else {
-      // 其他API：检查是否有反向代理
-      const reverseProxyUrlInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#phoneReverseProxyUrl'));
-      const reverseProxyPasswordInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#phoneReverseProxyPassword'));
-      const reverseProxyUrl = reverseProxyUrlInput?.value.trim() || '';
-      const reverseProxyPassword = reverseProxyPasswordInput?.value.trim() || '';
-
-      if (reverseProxyUrl) {
-        // ✅ 有反向代理：使用反向代理URL和密码（复刻官方逻辑）
-        baseUrl = reverseProxyUrl;
-        apiKey = reverseProxyPassword;
-        logger.debug('phone','[PhoneAPIConfig] 使用反向代理:', baseUrl);
-      } else {
-        // 无反向代理：使用默认端点和通用API密钥
-        baseUrl = this.getDefaultBaseUrl(format);
-        const apiKeyInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#phoneApiKey'));
-        apiKey = apiKeyInput?.value.trim() || '';
-      }
-    }
-
-    // 验证必填项
-    if (!baseUrl) {
+    if (!refreshConfig || (requiresCustomUrl && !refreshConfig.baseUrl && !refreshConfig.customUrl)) {
       showErrorToast('请先填写 API 端点或反向代理 URL');
       return;
     }
-
-    if (!apiKey) {
-      showErrorToast('请先填写 API 密钥或反向代理密码');
-      return;
+    if (!silent) {
+      showInfoToast('正在获取模型列表...');
     }
-
-    showInfoToast('正在获取模型列表...');
-    logger.info('phone','[PhoneAPIConfig] 开始获取模型列表, baseUrl:', baseUrl);
+    logger.info('phone', '[PhoneAPIConfig] 开始获取模型列表（共享刷新链）', {
+      source: refreshConfig.source,
+      hasReverseProxy: Boolean(refreshConfig.baseUrl),
+      hasCustomUrl: Boolean(refreshConfig.customUrl)
+    });
 
     try {
-      // 调用 /v1/models API
-      let cleanBaseUrl = baseUrl;
-      if (cleanBaseUrl.endsWith('/v1')) {
-        cleanBaseUrl = cleanBaseUrl.slice(0, -3);
-        logger.debug('phone','[PhoneAPIConfig] 检测到 baseUrl 末尾有 /v1，已去除:', cleanBaseUrl);
+      const result = await refreshModelList(refreshConfig);
+      if (!result.success) {
+        throw new Error(result.error || '模型刷新失败');
       }
-      const modelsUrl = `${cleanBaseUrl}/v1/models`;
-      logger.debug('phone','[PhoneAPIConfig] 最终模型列表 URL:', modelsUrl);
-
-      const response = await fetch(modelsUrl, {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`API 返回错误: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      // 提取模型列表
-      let models = [];
-      if (data.data && Array.isArray(data.data)) {
-        models = data.data.map(m => m.id || m).filter(m => m);
-      } else if (Array.isArray(data)) {
-        models = data.map(m => m.id || m).filter(m => m);
-      }
+      const models = this.normalizeModelsForSource(source, result.models || []);
 
       if (models.length === 0) {
-        showErrorToast('未获取到模型列表');
-        logger.warn('phone','[PhoneAPIConfig] 模型列表为空');
+        this.clearMainModelOptions();
+        if (NO_VALIDATE_SOURCES.has(source)) {
+          const manualWrapper = /** @type {HTMLElement|null} */ (
+            this.pageElement.querySelector('#phoneApiModelManualWrapper')
+          );
+          if (manualWrapper) {
+            manualWrapper.style.display = 'block';
+          }
+          if (showEmptyToast) {
+            showInfoToast('当前来源不返回模型列表，请手动输入模型名称');
+          }
+          logger.info('phone', '[PhoneAPIConfig] 当前来源需手动输入模型:', source);
+          return;
+        }
+        if (showEmptyToast) {
+          showErrorToast('未获取到模型列表');
+        }
+        logger.warn('phone', '[PhoneAPIConfig] 模型列表为空');
         return;
       }
-
-      // 更新下拉框
-      if (modelSelect) {
-        const currentValue = modelSelect.value;
-
-        modelSelect.innerHTML = '<option value="">请选择模型...</option>';
-
-        models.forEach(model => {
-          const option = document.createElement('option');
-          option.value = model;
-          option.textContent = model;
-          modelSelect.appendChild(option);
-        });
-
-        // 添加"手动输入..."选项
-        const manualOption = document.createElement('option');
-        manualOption.value = '__manual__';
-        manualOption.textContent = '手动输入...';
-        modelSelect.appendChild(manualOption);
-
-        // 恢复之前的选择
-        if (currentValue && models.includes(currentValue)) {
-          modelSelect.value = currentValue;
-        }
-      }
-
+      this.applyMainModelOptions(models);
       showSuccessToast(`已获取 ${models.length} 个模型`);
-      logger.info('phone','[PhoneAPIConfig] 模型列表已更新，共', models.length, '个');
+      logger.info('phone', '[PhoneAPIConfig] 模型列表已更新，共', models.length, '个');
 
     } catch (error) {
-      logger.error('phone','[PhoneAPIConfig] 获取失败:', error);
+      logger.error('phone', '[PhoneAPIConfig] 获取失败:', error);
       showErrorToast('获取模型列表失败：' + error.message);
     }
   }
@@ -1440,6 +1523,7 @@ export class PhoneAPIConfig {
     const modelSelect = /** @type {HTMLSelectElement|null} */ (this.pageElement.querySelector('#phoneApiModelSelect'));
     const modelManualInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#phoneApiModelManual'));
     const format = formatSelect?.value.trim() || 'openai';
+    const source = resolveSource(format);
 
     // 根据API类型获取正确的端点和密钥
     let baseUrl = '';
@@ -1451,7 +1535,7 @@ export class PhoneAPIConfig {
       baseUrl = baseUrlInput?.value.trim() || '';
       apiKey = apiKeyInput?.value.trim() || '';
     } else if (format === 'openrouter') {
-      baseUrl = 'https://openrouter.ai/api';
+      baseUrl = this.getDefaultUrlForFormat(format);
       const apiKeyInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#phoneOpenRouterKey'));
       apiKey = apiKeyInput?.value.trim() || '';
     } else {
@@ -1467,7 +1551,7 @@ export class PhoneAPIConfig {
         apiKey = reverseProxyPassword;
       } else {
         // 无反向代理：使用默认端点和通用API密钥
-        baseUrl = this.getDefaultBaseUrl(format);
+        baseUrl = this.getDefaultUrlForFormat(format);
         const apiKeyInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#phoneApiKey'));
         apiKey = apiKeyInput?.value.trim() || '';
       }
@@ -1482,13 +1566,27 @@ export class PhoneAPIConfig {
     }
 
     const testConfig = {
-      source: 'custom',
+      source: source,
       stream: false,
       baseUrl: baseUrl,
       apiKey: apiKey,
       format: format,
       model: model || 'gpt-4o-mini'
     };
+
+    if (source === 'azure_openai') {
+      const deploymentInput = /** @type {HTMLInputElement|null} */ (
+        this.pageElement.querySelector('#phoneAzureDeploymentName')
+      );
+      const versionSelect = /** @type {HTMLSelectElement|null} */ (
+        this.pageElement.querySelector('#phoneAzureApiVersion')
+      );
+      testConfig.azureConfig = {
+        baseUrl: baseUrl,
+        deploymentName: deploymentInput?.value.trim() || '',
+        apiVersion: versionSelect?.value.trim() || ''
+      };
+    }
 
     // 验证必填项
     if (!testConfig.baseUrl) {
@@ -1546,19 +1644,6 @@ export class PhoneAPIConfig {
   }
 
   /**
-   * 从临时存储读取参数值
-   *
-   * @param {string} format - API格式
-   * @returns {Object.<string, number>} 参数名 -> 参数值的映射
-   */
-  readParamsFromUI(format) {
-    // 使用临时存储的参数
-    const params = { ...this.tempParams };
-    logger.debug('phone','[PhoneAPIConfig.readParamsFromUI] 读取了', Object.keys(params).length, '个参数');
-    return params;
-  }
-
-  /**
    * 清理不支持的参数（避免格式切换后残留）
    *
    * @param {string} format - 新的API格式
@@ -1595,6 +1680,16 @@ export class PhoneAPIConfig {
       /** @type {HTMLElement} */ (element).style.display = shouldShow ? '' : 'none';
     });
 
+    const reverseProxySection = /** @type {HTMLElement|null} */ (
+      this.pageElement.querySelector('#phoneReverseProxySection')
+    );
+    if (reverseProxySection) {
+      const supportsReverseProxy = SOURCE_CAPABILITIES[resolveSource(source)]?.supportsReverseProxy === true;
+      if (!supportsReverseProxy) {
+        reverseProxySection.style.display = 'none';
+      }
+    }
+
     logger.debug('phone','[PhoneAPIConfig.toggleApiSourceForms] 已切换配置区块，当前API类型:', source);
   }
 
@@ -1614,7 +1709,7 @@ export class PhoneAPIConfig {
     }
 
     // 获取该格式支持的参数列表
-    const supportedParams = getSupportedParams(format);
+    const supportedParams = getSupportedParams(format, 'phone');
     logger.debug('phone','[PhoneAPIConfig.renderAdvancedParams] 开始渲染参数，格式:', format, '参数列表:', supportedParams);
 
     // ✅ 关键修复：清理不支持的旧参数（避免格式切换后残留）
@@ -1734,7 +1829,7 @@ export class PhoneAPIConfig {
   loadParamValuesToUI(format) {
     const settings = this.getSettings();
     const savedParams = settings.apiConfig.params || {};
-    const supportedParams = getSupportedParams(format);
+    const supportedParams = getSupportedParams(format, 'phone');
 
     for (const paramName of supportedParams) {
       // 优先从 extension_settings 读取，其次从临时存储读取
@@ -1755,4 +1850,3 @@ export class PhoneAPIConfig {
     }
   }
 }
-

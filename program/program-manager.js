@@ -32,7 +32,7 @@ import {
 } from '../../../../slash-commands.js';
 
 import logger from '../logger.js';
-import { updateBadge } from './program-manager-ui.js';
+import { createProgramPanel, updateBadge } from './program-manager-ui.js';
 
 // ========================================
 // [CONSTANTS] 常量定义
@@ -239,6 +239,12 @@ const state = {
   settings: {                        // 用户设置
     scale: 1
   }
+};
+
+/** @type {{windowResize: (null|((event: UIEvent) => void)), programToggleChange: (null|((event: Event) => void))}} */
+let savedHandlers = {
+  windowResize: null,
+  programToggleChange: null
 };
 
 // ========================================
@@ -713,6 +719,10 @@ export function isProgramPanelOpen() {
 
 /**
  * 创建悬浮按钮
+ *
+ * @description
+ * 创建前会先清理旧按钮和旧的 window.resize 监听器，避免重复启用后
+ * 同一个全局监听器被多次注册，导致关闭后仍有后台回调执行。
  */
 export function createProgramFloatingBtn() {
   // 如果已存在，先删除
@@ -736,7 +746,11 @@ export function createProgramFloatingBtn() {
   bindFloatingBtnEvents(btn);
 
   // 监听窗口缩放
-  window.addEventListener('resize', constrainFloatingBtnPosition);
+  if (savedHandlers.windowResize) {
+    window.removeEventListener('resize', savedHandlers.windowResize);
+  }
+  savedHandlers.windowResize = constrainFloatingBtnPosition;
+  window.addEventListener('resize', savedHandlers.windowResize);
 
   // 添加到 body
   document.body.appendChild(btn);
@@ -938,11 +952,16 @@ export function disableProgramFloatingBtn() {
  * 启用节目单
  *
  * @description
- * 总开关开启：注册消息监听 + 创建悬浮按钮
+ * 总开关开启：注册消息监听 + 确保面板存在 + 创建悬浮按钮
  */
 export function enableProgram() {
   state.enabled = true;
   saveSettings();
+
+  // 如果禁用时已销毁面板，这里补建，确保重新启用后可正常打开
+  if (!document.getElementById('pp-container')) {
+    createProgramPanel();
+  }
 
   // 注册消息监听（如果还没注册）
   if (!state.messageReceivedCallback) {
@@ -959,7 +978,8 @@ export function enableProgram() {
  * 禁用节目单
  *
  * @description
- * 总开关关闭：关闭面板 + 销毁悬浮按钮 + 清理消息监听，后台完全停止运行
+ * 总开关关闭：关闭面板 + 销毁悬浮按钮 + 清理全局监听 + 销毁面板 DOM + 清理消息监听，
+ * 确保关闭后不再有任何后台回调和残留 UI。
  */
 export function disableProgram() {
   state.enabled = false;
@@ -973,6 +993,15 @@ export function disableProgram() {
   if (btn) {
     btn.remove();
   }
+
+  // 清理 window.resize 监听（防止关闭后仍执行）
+  if (savedHandlers.windowResize) {
+    window.removeEventListener('resize', savedHandlers.windowResize);
+    savedHandlers.windowResize = null;
+  }
+
+  // 销毁面板容器（而非仅隐藏）
+  document.querySelector('#pp-container')?.remove();
 
   // 清理消息监听
   destroyMessageListener();
@@ -992,14 +1021,22 @@ export function bindProgramToggle() {
   if (enabledCheckbox) {
     enabledCheckbox.checked = state.enabled;
 
-    enabledCheckbox.addEventListener('change', function () {
-      const newState = this.checked;
+    // 防止设置面板重复渲染时累计绑定
+    if (savedHandlers.programToggleChange) {
+      enabledCheckbox.removeEventListener('change', savedHandlers.programToggleChange);
+    }
+
+    savedHandlers.programToggleChange = function (event) {
+      const target = /** @type {HTMLInputElement} */ (event.target);
+      const newState = target.checked;
       if (newState) {
         enableProgram();
       } else {
         disableProgram();
       }
-    });
+    };
+
+    enabledCheckbox.addEventListener('change', savedHandlers.programToggleChange);
 
     logger.debug('program', '[ProgramManager.bindProgramToggle] 总开关已绑定');
   }
@@ -1011,37 +1048,6 @@ export function bindProgramToggle() {
     }
     createProgramFloatingBtn();
   }
-}
-
-// ========================================
-// [DESTROY] 销毁模块
-// ========================================
-
-/**
- * 销毁节目单模块
- * 
- * @description
- * 清理所有监听器和 DOM 元素
- */
-export function destroyProgramManager() {
-  logger.info('program', '[ProgramManager.destroy] 开始销毁节目单模块');
-
-  // 清理消息监听
-  destroyMessageListener();
-
-  // 移除悬浮按钮
-  const btn = document.getElementById(BTN_ID);
-  if (btn) {
-    btn.remove();
-  }
-
-  // 移除面板
-  const panel = document.getElementById(PANEL_ID);
-  if (panel) {
-    panel.remove();
-  }
-
-  logger.info('program', '[ProgramManager.destroy] 节目单模块已销毁');
 }
 
 // ========================================

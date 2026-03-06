@@ -204,6 +204,7 @@
               <option value="vertexai">Vertex AI</option>
               <option value="xai">xAI (Grok)</option>
               <option value="zai">Z.AI (GLM)</option>
+              <option value="cometapi" disabled>CometAPI（暂未启用）</option>
             </optgroup>
             <optgroup label="通用">
               <option value="custom">自定义（OpenAI兼容）</option>
@@ -228,7 +229,7 @@
         </div>
 
         <!-- 反向代理配置（折叠式） -->
-        <div id="diaryReverseProxySection" class="diary-api-section" data-diary-source="openai,claude,mistralai,makersuite,vertexai,deepseek,xai" style="display: none;">
+        <div id="diaryReverseProxySection" class="diary-api-section" data-diary-source="openai,claude,mistralai,makersuite,vertexai,deepseek,xai,moonshot,zai" style="display: none;">
           <div class="diary-setting-label diary-collapsible-header" id="diaryReverseProxyToggle">
             <i class="fa-solid fa-chevron-right" id="diaryReverseProxyIcon"></i>
             <span>反向代理</span>
@@ -427,7 +428,7 @@
         </div>
 
         <!-- ========== 模型选择（非 Custom API 使用） ========== -->
-        <div id="diaryModelSection" class="diary-api-section" data-diary-source="openai,claude,makersuite,openrouter,deepseek,mistralai,cohere,perplexity,groq,xai,ai21,moonshot,fireworks,electronhub,chutes,nanogpt,aimlapi,siliconflow,zai">
+        <div id="diaryModelSection" class="diary-api-section" data-diary-source="openai,claude,makersuite,openrouter,deepseek,mistralai,cohere,perplexity,groq,xai,ai21,moonshot,fireworks,electronhub,chutes,nanogpt,aimlapi,siliconflow,zai,vertexai,pollinations">
           <label class="diary-setting-item" style="flex-direction: column; align-items: flex-start;">
             <span class="diary-setting-label">模型</span>
             <div class="diary-setting-row">

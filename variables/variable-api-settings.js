@@ -21,61 +21,19 @@ import { oai_settings } from '../../../../openai.js';
 import logger from '../logger.js';
 import { extension_settings } from '../../../../extensions.js';
 import { saveSettingsDebounced } from '../../../../../script.js';
-import { getSupportedParams, PARAMS_DEFINITIONS, getDefaultParams } from './variable-api-params-config.js';
-
-// ========================================
-// [TOAST] 简易 Toast 工具（使用 SillyTavern 原生 toastr）
-// ========================================
-
-/**
- * 显示信息提示
- * @param {string} message - 消息
- */
-function showInfoToast(message) {
-    // @ts-ignore - toastr 是全局变量
-    if (typeof toastr !== 'undefined') {
-        toastr.info(message);
-    } else {
-        console.info('[VariableAPI]', message);
-    }
-}
-
-/**
- * 显示成功提示
- * @param {string} message - 消息
- */
-function showSuccessToast(message) {
-    // @ts-ignore - toastr 是全局变量
-    if (typeof toastr !== 'undefined') {
-        toastr.success(message);
-    } else {
-        console.log('[VariableAPI]', message);
-    }
-}
-
-/**
- * 显示错误提示
- * @param {string} message - 消息
- */
-function showErrorToast(message) {
-    // @ts-ignore - toastr 是全局变量
-    if (typeof toastr !== 'undefined') {
-        toastr.error(message);
-    } else {
-        console.error('[VariableAPI]', message);
-    }
-}
+import { getSupportedParams, getParamDefinitions } from '../shared/api/api-params-config.js';
+import { refreshModelList } from '../shared/api/api-model-refresh.js';
+import { resolveSource, SOURCE_CAPABILITIES } from '../shared/api/api-config-schema.js';
 
 /**
  * 显示确认弹窗
  * @param {string} title - 标题
  * @param {string} message - 消息
- * @param {Object} [options] - 选项
  * @returns {Promise<boolean>} 是否确认
  */
-async function showConfirmPopup(title, message, options = {}) {
-    // 使用原生 confirm（简单实现）
-    return confirm(`${title}\n\n${message}`);
+async function showConfirmPopup(title, message) {
+  // 使用原生 confirm（简单实现）
+  return confirm(`${title}\n\n${message}`);
 }
 
 // ========================================
@@ -83,6 +41,8 @@ async function showConfirmPopup(title, message, options = {}) {
 // ========================================
 const EXT_ID = 'acsusPawsPuffs';
 const MODULE_NAME = 'variables_v2';
+const NO_VALIDATE_SOURCES = new Set(['claude', 'ai21', 'vertexai', 'perplexity', 'zai']);
+const PARAMS_DEFINITIONS = getParamDefinitions('variable');
 
 // ========================================
 // [CORE] API配置管理类
@@ -106,6 +66,139 @@ export class VariableAPIConfig {
     this.api = options.api;
     // ✅ 临时参数存储（用于新建配置时保存参数）
     this.tempParams = {};
+  }
+
+  /**
+   * 清空模型下拉选项与手动输入框状态。
+   *
+   * @returns {void}
+   */
+  clearModelOptions() {
+    const modelSelect = /** @type {HTMLSelectElement|null} */ (this.pageElement.querySelector('#var-v2ApiModelSelect'));
+    const customModelSelect = /** @type {HTMLSelectElement|null} */ (this.pageElement.querySelector('#var-v2CustomModelSelect'));
+    const manualWrapper = /** @type {HTMLElement|null} */ (this.pageElement.querySelector('#var-v2ApiModelManualWrapper'));
+    const manualInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2ApiModelManual'));
+
+    if (modelSelect) {
+      modelSelect.innerHTML = `
+        <option value="">请选择...</option>
+        <option value="__manual__">手动输入</option>
+      `;
+    }
+    if (customModelSelect) {
+      customModelSelect.innerHTML = '<option value="">可用模型</option>';
+    }
+    if (manualWrapper) {
+      manualWrapper.style.display = 'none';
+    }
+    if (manualInput) {
+      manualInput.value = '';
+    }
+  }
+
+  /**
+   * 构造共享刷新函数所需配置。
+   *
+   * @param {string} format - 当前 UI 选择的格式。
+   * @returns {Object} 刷新配置对象。
+   */
+  buildSharedRefreshConfig(format) {
+    const resolvedSource = resolveSource(format);
+    const reverseProxyUrlInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2ReverseProxyUrl'));
+    const reverseProxyPasswordInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2ReverseProxyPassword'));
+    const reverseProxyUrl = reverseProxyUrlInput?.value.trim() || '';
+    const reverseProxyPassword = reverseProxyPasswordInput?.value.trim() || '';
+
+    if (format === 'custom') {
+      const baseUrlInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2ApiBaseUrl'));
+      const apiKeyInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2CustomApiKey'));
+      const customUrl = baseUrlInput?.value.trim() || '';
+      const customApiKey = apiKeyInput?.value.trim() || '';
+
+      if (customApiKey) {
+        return {
+          source: 'openai',
+          baseUrl: customUrl,
+          apiKey: customApiKey
+        };
+      }
+
+      return {
+        source: 'custom',
+        customUrl: customUrl
+      };
+    }
+
+    if (format === 'openrouter') {
+      const apiKeyInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2OpenRouterKey'));
+      return {
+        source: resolvedSource,
+        baseUrl: 'https://openrouter.ai/api/v1',
+        apiKey: apiKeyInput?.value.trim() || ''
+      };
+    }
+
+    if (format === 'azure_openai') {
+      const baseUrlInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2AzureBaseUrl'));
+      const deploymentInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2AzureDeploymentName'));
+      const versionSelect = /** @type {HTMLSelectElement|null} */ (this.pageElement.querySelector('#var-v2AzureApiVersion'));
+      return {
+        source: resolvedSource,
+        azureConfig: {
+          baseUrl: baseUrlInput?.value.trim() || '',
+          deploymentName: deploymentInput?.value.trim() || '',
+          apiVersion: versionSelect?.value.trim() || ''
+        }
+      };
+    }
+
+    const apiKeyInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2ApiKey'));
+    const supportsReverseProxy = SOURCE_CAPABILITIES[resolvedSource]?.supportsReverseProxy === true;
+    const useReverseProxy = supportsReverseProxy && Boolean(reverseProxyUrl);
+    return {
+      source: resolvedSource,
+      baseUrl: useReverseProxy ? reverseProxyUrl : '',
+      apiKey: useReverseProxy ? reverseProxyPassword : (apiKeyInput?.value.trim() || '')
+    };
+  }
+
+  /**
+   * 处理 API 格式切换后的完整事件链。
+   *
+   * @async
+   * @param {string} format - API 格式。
+   * @returns {Promise<void>}
+   */
+  async handleApiFormatChange(format) {
+    this.clearModelOptions();
+    this.toggleApiSourceForms(format);
+    this.renderAdvancedParams(format);
+    await this.refreshModelsFromAPI();
+  }
+
+  /**
+   * 按当前 source 解析测试连接使用的模型。
+   *
+   * @param {string} source - chat completion source。
+   * @returns {string} 模型名称。
+   */
+  resolveModelForTest(source) {
+    if (source === 'azure_openai') {
+      const azureModelInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2AzureModelName'));
+      return azureModelInput?.value.trim() || '';
+    }
+
+    if (source === 'custom') {
+      const customModelInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2CustomModelId'));
+      return customModelInput?.value.trim() || '';
+    }
+
+    const modelSelect = /** @type {HTMLSelectElement|null} */ (this.pageElement.querySelector('#var-v2ApiModelSelect'));
+    const modelManualInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2ApiModelManual'));
+    if (modelSelect?.value === '__manual__') {
+      return modelManualInput?.value.trim() || '';
+    }
+    return modelSelect?.value.trim() || '';
   }
 
 
@@ -135,6 +228,7 @@ export class VariableAPIConfig {
       apiSourceSelect.addEventListener('change', () => {
         const source = apiSourceSelect.value;
         const settings = this.getSettings();
+        const apiFormatSelect = /** @type {HTMLSelectElement|null} */ (this.pageElement.querySelector('#var-v2ApiFormat'));
 
         // 更新配置
         this.updateSettings({
@@ -155,9 +249,14 @@ export class VariableAPIConfig {
           // 使用自定义API：渲染参数UI
           if (settings.apiConfig.currentConfigId) {
             this.loadApiConfig(settings.apiConfig.currentConfigId);
+            this.refreshModelsFromAPI().catch((error) => {
+              logger.error('variable', '[VariableAPIConfig] 加载已保存配置后自动刷新模型失败:', error);
+            });
           } else {
-            const defaultFormat = this.getDefaultFormatFromTavern();
-            this.renderAdvancedParams(defaultFormat);
+            const format = apiFormatSelect?.value || settings.apiConfig.format || this.getDefaultFormatFromTavern();
+            this.handleApiFormatChange(format).catch((error) => {
+              logger.error('variable', '[VariableAPIConfig] API类型切换后自动刷新模型失败:', error);
+            });
           }
         } else {
           // 跟随酒馆设置：显示提示
@@ -166,7 +265,7 @@ export class VariableAPIConfig {
           }
         }
 
-        logger.info('[VariableAPIConfig] API来源已切换:', source);
+        logger.info('variable', '[VariableAPIConfig] API来源已切换:', source);
       });
     }
 
@@ -183,7 +282,7 @@ export class VariableAPIConfig {
           }
         });
 
-        logger.info('[VariableAPIConfig] 流式生成已', apiStreamCheckbox.checked ? '启用' : '禁用');
+        logger.info('variable', '[VariableAPIConfig] 流式生成已', apiStreamCheckbox.checked ? '启用' : '禁用');
       });
     }
 
@@ -200,7 +299,7 @@ export class VariableAPIConfig {
           }
         });
 
-        logger.info('[VariableAPIConfig] 工具调用已', apiToolCallingCheckbox.checked ? '启用' : '禁用');
+        logger.info('variable', '[VariableAPIConfig] 工具调用已', apiToolCallingCheckbox.checked ? '启用' : '禁用');
       });
     }
 
@@ -255,21 +354,12 @@ export class VariableAPIConfig {
       openRouterAuthBtn.addEventListener('click', () => {
         // 打开 OpenRouter OAuth 授权页面
         window.open('https://openrouter.ai/auth?callback_url=' + encodeURIComponent(window.location.origin), '_blank');
-        logger.info('[VariableAPIConfig] 打开 OpenRouter 授权页面');
+        logger.info('variable', '[VariableAPIConfig] 打开 OpenRouter 授权页面');
       });
     }
 
-    // 反向代理折叠/展开
-    const reverseProxyToggle = this.pageElement.querySelector('#var-v2ReverseProxyToggle');
-    const reverseProxyContent = this.pageElement.querySelector('#var-v2ReverseProxyContent');
-    const reverseProxyIcon = this.pageElement.querySelector('#var-v2ReverseProxyIcon');
-    if (reverseProxyToggle && reverseProxyContent && reverseProxyIcon) {
-      reverseProxyToggle.addEventListener('click', () => {
-        const isExpanded = reverseProxyContent.style.display !== 'none';
-        reverseProxyContent.style.display = isExpanded ? 'none' : 'block';
-        reverseProxyIcon.className = isExpanded ? 'fa-solid fa-chevron-right' : 'fa-solid fa-chevron-down';
-      });
-    }
+    // ✅ 反向代理折叠由官方 inline-drawer 机制处理
+    // 不再手动绑定 click 事件，避免与官方机制冲突
 
     // 反向代理密码显示/隐藏
     const reverseProxyPasswordToggle = this.pageElement.querySelector('#var-v2ReverseProxyPasswordToggle');
@@ -330,7 +420,7 @@ export class VariableAPIConfig {
               }
             }
           });
-          logger.debug('[VariableAPIConfig] Custom API模型已保存（从下拉框选择）:', customModelSelect.value);
+          logger.debug('variable', '[VariableAPIConfig] Custom API模型已保存（从下拉框选择）:', customModelSelect.value);
         }
       });
     }
@@ -365,7 +455,7 @@ export class VariableAPIConfig {
               model: value
             }
           });
-          logger.debug('[VariableAPIConfig] 模型已保存:', value);
+          logger.debug('variable', '[VariableAPIConfig] 模型已保存:', value);
         }
       });
     }
@@ -389,7 +479,7 @@ export class VariableAPIConfig {
     // ✅ API格式选择（动态显示高级参数 + 切换配置区块 + 保存到settings）
     const apiFormatSelect = /** @type {HTMLSelectElement|null} */ (this.pageElement.querySelector('#var-v2ApiFormat'));
     if (apiFormatSelect) {
-      apiFormatSelect.addEventListener('change', () => {
+      apiFormatSelect.addEventListener('change', async () => {
         const format = apiFormatSelect.value;
         const settings = this.getSettings();
 
@@ -401,9 +491,8 @@ export class VariableAPIConfig {
           }
         });
 
-        logger.debug('[VariableAPIConfig] API格式已切换并保存:', format);
-        this.toggleApiSourceForms(format);  // 切换配置区块显示
-        this.renderAdvancedParams(format);
+        logger.debug('variable', '[VariableAPIConfig] API格式已切换并保存:', format);
+        await this.handleApiFormatChange(format);
       });
       // 初始化时也触发一次，确保显示正确的配置区块
       this.toggleApiSourceForms(apiFormatSelect.value);
@@ -420,7 +509,7 @@ export class VariableAPIConfig {
             apiKey: var2ApiKeyInput.value.trim()
           }
         });
-        logger.debug('[VariableAPIConfig] 通用API密钥已保存');
+        logger.debug('variable', '[VariableAPIConfig] 通用API密钥已保存');
       });
     }
 
@@ -435,7 +524,7 @@ export class VariableAPIConfig {
             openRouterKey: var2OpenRouterKeyInput.value.trim()
           }
         });
-        logger.debug('[VariableAPIConfig] OpenRouter密钥已保存');
+        logger.debug('variable', '[VariableAPIConfig] OpenRouter密钥已保存');
       });
     }
 
@@ -450,7 +539,7 @@ export class VariableAPIConfig {
             model: apiModelManualInput.value.trim()
           }
         });
-        logger.debug('[VariableAPIConfig] 手动输入模型已保存:', apiModelManualInput.value.trim());
+        logger.debug('variable', '[VariableAPIConfig] 手动输入模型已保存:', apiModelManualInput.value.trim());
       });
     }
 
@@ -469,7 +558,7 @@ export class VariableAPIConfig {
             }
           }
         });
-        logger.debug('[VariableAPIConfig] Custom API端点已保存');
+        logger.debug('variable', '[VariableAPIConfig] Custom API端点已保存');
       });
     }
 
@@ -488,7 +577,7 @@ export class VariableAPIConfig {
             }
           }
         });
-        logger.debug('[VariableAPIConfig] Custom API密钥已保存');
+        logger.debug('variable', '[VariableAPIConfig] Custom API密钥已保存');
       });
     }
 
@@ -507,21 +596,13 @@ export class VariableAPIConfig {
             }
           }
         });
-        logger.debug('[VariableAPIConfig] Custom API模型已保存');
+        logger.debug('variable', '[VariableAPIConfig] Custom API模型已保存');
       });
     }
 
-    // ✅ 高级参数折叠/展开
-    const paramsToggle = this.pageElement.querySelector('#var-v2ApiParamsToggle');
-    const paramsContainer = this.pageElement.querySelector('#var-v2ApiParamsContainer');
-    const paramsIcon = this.pageElement.querySelector('#var-v2ApiParamsIcon');
-    if (paramsToggle && paramsContainer && paramsIcon) {
-      paramsToggle.addEventListener('click', () => {
-        const isExpanded = paramsContainer.style.display !== 'none';
-        paramsContainer.style.display = isExpanded ? 'none' : 'block';
-        paramsIcon.className = isExpanded ? 'fa-solid fa-chevron-right' : 'fa-solid fa-chevron-down';
-      });
-    }
+    // ✅ 高级参数折叠由官方 inline-drawer 机制处理
+    // 不再手动绑定 click 事件，避免与官方机制冲突导致"闪一下"
+    // 注意：HTML 中已有 inline-drawer-toggle 类，官方 script.js 会自动处理
 
     // ========== Vertex AI 配置事件绑定 ==========
 
@@ -544,7 +625,7 @@ export class VariableAPIConfig {
             vertexConfig: { ...vertexConfig, authMode: mode }
           }
         });
-        logger.debug('[VariableAPIConfig] Vertex AI 认证模式已切换:', mode);
+        logger.debug('variable', '[VariableAPIConfig] Vertex AI 认证模式已切换:', mode);
       });
     }
 
@@ -571,7 +652,7 @@ export class VariableAPIConfig {
             vertexConfig: { ...vertexConfig, apiKey: vertexApiKeyInput.value.trim() }
           }
         });
-        logger.debug('[VariableAPIConfig] Vertex AI API密钥已保存');
+        logger.debug('variable', '[VariableAPIConfig] Vertex AI API密钥已保存');
       });
     }
 
@@ -587,7 +668,7 @@ export class VariableAPIConfig {
             vertexConfig: { ...vertexConfig, projectId: vertexProjectIdInput.value.trim() }
           }
         });
-        logger.debug('[VariableAPIConfig] Vertex AI 项目ID已保存');
+        logger.debug('variable', '[VariableAPIConfig] Vertex AI 项目ID已保存');
       });
     }
 
@@ -603,7 +684,7 @@ export class VariableAPIConfig {
             vertexConfig: { ...vertexConfig, serviceAccount: vertexServiceAccountInput.value.trim() }
           }
         });
-        logger.debug('[VariableAPIConfig] Vertex AI 服务账号已保存');
+        logger.debug('variable', '[VariableAPIConfig] Vertex AI 服务账号已保存');
       });
     }
 
@@ -619,7 +700,7 @@ export class VariableAPIConfig {
             vertexConfig: { ...vertexConfig, region: vertexRegionInput.value.trim() }
           }
         });
-        logger.debug('[VariableAPIConfig] Vertex AI 区域已保存');
+        logger.debug('variable', '[VariableAPIConfig] Vertex AI 区域已保存');
       });
     }
 
@@ -637,7 +718,7 @@ export class VariableAPIConfig {
             azureConfig: { ...azureConfig, baseUrl: azureBaseUrlInput.value.trim() }
           }
         });
-        logger.debug('[VariableAPIConfig] Azure Base URL已保存');
+        logger.debug('variable', '[VariableAPIConfig] Azure Base URL已保存');
       });
     }
 
@@ -653,7 +734,7 @@ export class VariableAPIConfig {
             azureConfig: { ...azureConfig, deploymentName: azureDeploymentNameInput.value.trim() }
           }
         });
-        logger.debug('[VariableAPIConfig] Azure 部署名称已保存');
+        logger.debug('variable', '[VariableAPIConfig] Azure 部署名称已保存');
       });
     }
 
@@ -669,7 +750,7 @@ export class VariableAPIConfig {
             azureConfig: { ...azureConfig, apiVersion: azureApiVersionSelect.value }
           }
         });
-        logger.debug('[VariableAPIConfig] Azure API版本已保存');
+        logger.debug('variable', '[VariableAPIConfig] Azure API版本已保存');
       });
     }
 
@@ -696,7 +777,7 @@ export class VariableAPIConfig {
             azureConfig: { ...azureConfig, apiKey: azureApiKeyInput.value.trim() }
           }
         });
-        logger.debug('[VariableAPIConfig] Azure API密钥已保存');
+        logger.debug('variable', '[VariableAPIConfig] Azure API密钥已保存');
       });
     }
 
@@ -712,14 +793,14 @@ export class VariableAPIConfig {
             azureConfig: { ...azureConfig, modelName: azureModelNameInput.value.trim() }
           }
         });
-        logger.debug('[VariableAPIConfig] Azure 模型名称已保存');
+        logger.debug('variable', '[VariableAPIConfig] Azure 模型名称已保存');
       });
     }
 
     // 加载现有设置到 UI
     this.loadApiSettingsToUI();
 
-    logger.debug('[VariableAPIConfig] API设置事件已绑定');
+    logger.debug('variable', '[VariableAPIConfig] API设置事件已绑定');
   }
 
 
@@ -855,6 +936,9 @@ export class VariableAPIConfig {
       // 使用自定义API：渲染参数UI
       const format = apiFormatSelect?.value || 'openai';
       this.renderAdvancedParams(format);
+      this.refreshModelsFromAPI().catch((error) => {
+        logger.error('variable', '[VariableAPIConfig] 初始化 API 类型时自动刷新模型失败:', error);
+      });
     } else {
       // 跟随酒馆设置：显示提示
       if (container) {
@@ -862,7 +946,7 @@ export class VariableAPIConfig {
       }
     }
 
-    logger.debug('[VariableAPIConfig] API设置已加载到UI');
+    logger.debug('variable', '[VariableAPIConfig] API设置已加载到UI');
   }
 
   /**
@@ -893,7 +977,7 @@ export class VariableAPIConfig {
       this.loadProxyPreset(settings.apiConfig.currentProxyPreset);
     }
 
-    logger.debug('[VariableAPIConfig] 反向代理预设列表已刷新，共', presets.length, '个');
+    logger.debug('variable', '[VariableAPIConfig] 反向代理预设列表已刷新，共', presets.length, '个');
   }
 
   /**
@@ -940,7 +1024,7 @@ export class VariableAPIConfig {
       // ✅ 自动展开反向代理区块（让用户看到已加载的配置）
       this.expandReverseProxySection();
 
-      logger.info('[VariableAPIConfig] 已加载反向代理预设:', presetName);
+      logger.info('variable', '[VariableAPIConfig] 已加载反向代理预设:', presetName);
     }
   }
 
@@ -952,13 +1036,9 @@ export class VariableAPIConfig {
    */
   expandReverseProxySection() {
     const reverseProxyContent = /** @type {HTMLElement|null} */ (this.pageElement.querySelector('#var-v2ReverseProxyContent'));
-    const reverseProxyIcon = this.pageElement.querySelector('#var-v2ReverseProxyIcon');
 
     if (reverseProxyContent && reverseProxyContent.style.display === 'none') {
       reverseProxyContent.style.display = 'block';
-      if (reverseProxyIcon) {
-        reverseProxyIcon.className = 'fa-solid fa-chevron-down';
-      }
     }
   }
 
@@ -973,7 +1053,7 @@ export class VariableAPIConfig {
     const password = passwordInput?.value.trim() || '';
 
     if (!url) {
-      showErrorToast('请先填写代理服务器 URL');
+      toastr.error('请先填写代理服务器 URL');
       return;
     }
 
@@ -995,7 +1075,7 @@ export class VariableAPIConfig {
         url: url,
         password: password
       };
-      logger.info('[VariableAPIConfig] 已更新反向代理预设:', presetName);
+      logger.info('variable', '[VariableAPIConfig] 已更新反向代理预设:', presetName);
     } else {
       // 新增预设
       presets.push({
@@ -1003,7 +1083,7 @@ export class VariableAPIConfig {
         url: url,
         password: password
       });
-      logger.info('[VariableAPIConfig] 已新增反向代理预设:', presetName);
+      logger.info('variable', '[VariableAPIConfig] 已新增反向代理预设:', presetName);
     }
 
     // 保存到 settings
@@ -1018,7 +1098,7 @@ export class VariableAPIConfig {
     // 刷新预设列表
     this.refreshProxyPresetList();
 
-    showSuccessToast(`代理预设「${presetName}」已保存`);
+    toastr.success(`代理预设「${presetName}」已保存`);
   }
 
   /**
@@ -1029,7 +1109,7 @@ export class VariableAPIConfig {
     const presetName = select?.value;
 
     if (!presetName) {
-      showErrorToast('请先选择要删除的预设');
+      toastr.error('请先选择要删除的预设');
       return;
     }
 
@@ -1062,8 +1142,8 @@ export class VariableAPIConfig {
     // 清空输入框
     this.loadProxyPreset('');
 
-    showSuccessToast(`代理预设「${presetName}」已删除`);
-    logger.info('[VariableAPIConfig] 已删除反向代理预设:', presetName);
+    toastr.success(`代理预设「${presetName}」已删除`);
+    logger.info('variable', '[VariableAPIConfig] 已删除反向代理预设:', presetName);
   }
 
   /**
@@ -1116,7 +1196,7 @@ export class VariableAPIConfig {
     const regionInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2VertexRegion'));
     if (regionInput) regionInput.value = vertexConfig.region || 'us-central1';
 
-    logger.debug('[VariableAPIConfig] Vertex AI 配置已加载');
+    logger.debug('variable', '[VariableAPIConfig] Vertex AI 配置已加载');
   }
 
   /**
@@ -1146,7 +1226,7 @@ export class VariableAPIConfig {
     const modelNameInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2AzureModelName'));
     if (modelNameInput) modelNameInput.value = azureConfig.modelName || '';
 
-    logger.debug('[VariableAPIConfig] Azure OpenAI 配置已加载');
+    logger.debug('variable', '[VariableAPIConfig] Azure OpenAI 配置已加载');
   }
 
 
@@ -1154,51 +1234,31 @@ export class VariableAPIConfig {
    * 刷新 Custom API 的模型列表
    */
   async refreshCustomModels() {
-    const baseUrlInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2ApiBaseUrl'));
-    const apiKeyInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2CustomApiKey'));
     const modelSelect = /** @type {HTMLSelectElement|null} */ (this.pageElement.querySelector('#var-v2CustomModelSelect'));
     const modelDatalist = this.pageElement.querySelector('#var-v2CustomModelList');
-
-    const baseUrl = baseUrlInput?.value.trim();
-    const apiKey = apiKeyInput?.value.trim();
+    const refreshConfig = this.buildSharedRefreshConfig('custom');
+    const baseUrl = refreshConfig.baseUrl || refreshConfig.customUrl || '';
 
     if (!baseUrl) {
-      showErrorToast('请先填写自定义端点 URL');
+      toastr.error('请先填写自定义端点 URL');
       return;
     }
 
-    showInfoToast('正在获取模型列表...');
-    logger.info('[VariableAPIConfig] 开始获取 Custom API 模型列表');
+    toastr.info('正在获取模型列表...');
+    logger.info('variable', '[VariableAPIConfig] 开始获取 Custom API 模型列表（共享刷新链）');
 
     try {
-      let cleanBaseUrl = baseUrl;
-      if (cleanBaseUrl.endsWith('/v1')) {
-        cleanBaseUrl = cleanBaseUrl.slice(0, -3);
-      }
-      const modelsUrl = `${cleanBaseUrl}/v1/models`;
-
-      const headers = { 'Content-Type': 'application/json' };
-      if (apiKey) {
-        headers['Authorization'] = `Bearer ${apiKey}`;
+      const result = await refreshModelList(refreshConfig);
+      if (!result.success) {
+        throw new Error(result.error || '模型刷新失败');
       }
 
-      const response = await fetch(modelsUrl, { headers });
-
-      if (!response.ok) {
-        throw new Error(`API 返回错误: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      let models = [];
-      if (data.data && Array.isArray(data.data)) {
-        models = data.data.map(m => m.id || m).filter(m => m);
-      } else if (Array.isArray(data)) {
-        models = data.map(m => m.id || m).filter(m => m);
-      }
+      const models = (result.models || [])
+        .map(model => model?.id)
+        .filter(model => typeof model === 'string' && model.length > 0);
 
       if (models.length === 0) {
-        showErrorToast('未获取到模型列表');
+        toastr.error('未获取到模型列表');
         return;
       }
 
@@ -1223,12 +1283,12 @@ export class VariableAPIConfig {
         });
       }
 
-      showSuccessToast(`已获取 ${models.length} 个模型`);
-      logger.info('[VariableAPIConfig] Custom API 模型列表已更新，共', models.length, '个');
+      toastr.success(`已获取 ${models.length} 个模型`);
+      logger.info('variable', '[VariableAPIConfig] Custom API 模型列表已更新，共', models.length, '个');
 
     } catch (error) {
-      logger.error('[VariableAPIConfig] 获取 Custom API 模型失败:', error);
-      showErrorToast('获取模型列表失败：' + error.message);
+      logger.error('variable', '[VariableAPIConfig] 获取 Custom API 模型失败:', error);
+      toastr.error('获取模型列表失败：' + error.message);
     }
   }
 
@@ -1273,45 +1333,9 @@ export class VariableAPIConfig {
     };
 
     const detectedFormat = reverseMap[tavernSource] || 'openai';
-    logger.debug('[VariableAPIConfig.getDefaultFormatFromTavern] 从酒馆API源推断默认格式:', tavernSource, '→', detectedFormat);
+    logger.debug('variable', '[VariableAPIConfig.getDefaultFormatFromTavern] 从酒馆API源推断默认格式:', tavernSource, '→', detectedFormat);
 
     return detectedFormat;
-  }
-
-  /**
-   * 获取API源的显示名称
-   *
-   * @param {string} source - API源ID
-   * @returns {string} 显示名称
-   */
-  getApiSourceDisplayName(source) {
-    const displayNames = {
-      'default': '跟随酒馆设置',
-      'openai': 'OpenAI',
-      'claude': 'Claude (Anthropic)',
-      'makersuite': 'Google AI (Gemini)',
-      'vertexai': 'Vertex AI',
-      'openrouter': 'OpenRouter',
-      'mistralai': 'Mistral AI',
-      'cohere': 'Cohere',
-      'perplexity': 'Perplexity',
-      'groq': 'Groq',
-      'deepseek': 'DeepSeek',
-      'xai': 'xAI (Grok)',
-      'ai21': 'AI21',
-      'moonshot': 'Moonshot (Kimi)',
-      'fireworks': 'Fireworks',
-      'electronhub': 'ElectronHub',
-      'nanogpt': 'NanoGPT',
-      'aimlapi': 'AIMLAPI',
-      'pollinations': 'Pollinations',
-      'cometapi': 'CometAPI',
-      'azure_openai': 'Azure OpenAI',
-      'zai': 'ZAI',
-      'siliconflow': 'Silicon Flow',
-      'custom': '自定义API'
-    };
-    return displayNames[source] || source;
   }
 
   /**
@@ -1339,7 +1363,7 @@ export class VariableAPIConfig {
       'aimlapi': 'https://api.aimlapi.com',
       'pollinations': 'https://text.pollinations.ai',
       'siliconflow': 'https://api.siliconflow.cn',
-      'openrouter': 'https://openrouter.ai/api'
+      'openrouter': 'https://openrouter.ai/api/v1'
     };
     return defaultUrls[format] || '';
   }
@@ -1353,7 +1377,7 @@ export class VariableAPIConfig {
    * - OpenRouter：使用固定端点，从 #var-v2OpenRouterKey 读取密钥
    * - 其他API：
    *   - 有反向代理时：使用反向代理URL和反向代理密码
-   *   - 无反向代理时：使用默认端点和通用API密钥
+   *   - 无反向代理时：仅传 source 与通用 API 密钥（由 ST 后端使用默认路由）
    *
    * @async
    */
@@ -1361,90 +1385,54 @@ export class VariableAPIConfig {
     const formatSelect = /** @type {HTMLSelectElement|null} */ (this.pageElement.querySelector('#var-v2ApiFormat'));
     const modelSelect = /** @type {HTMLSelectElement|null} */ (this.pageElement.querySelector('#var-v2ApiModelSelect'));
     const format = formatSelect?.value || 'openai';
-
-    // 根据API类型获取正确的端点和密钥
-    let baseUrl = '';
-    let apiKey = '';
-
-    if (format === 'custom') {
-      // Custom API：从专用输入框读取
-      const baseUrlInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2ApiBaseUrl'));
-      const apiKeyInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2CustomApiKey'));
-      baseUrl = baseUrlInput?.value.trim() || '';
-      apiKey = apiKeyInput?.value.trim() || '';
-    } else if (format === 'openrouter') {
-      // OpenRouter：使用固定端点和专用密钥
-      baseUrl = 'https://openrouter.ai/api';
-      const apiKeyInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2OpenRouterKey'));
-      apiKey = apiKeyInput?.value.trim() || '';
-    } else {
-      // 其他API：检查是否有反向代理
-      const reverseProxyUrlInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2ReverseProxyUrl'));
-      const reverseProxyPasswordInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2ReverseProxyPassword'));
-      const reverseProxyUrl = reverseProxyUrlInput?.value.trim() || '';
-      const reverseProxyPassword = reverseProxyPasswordInput?.value.trim() || '';
-
-      if (reverseProxyUrl) {
-        // ✅ 有反向代理：使用反向代理URL和密码（复刻官方逻辑）
-        baseUrl = reverseProxyUrl;
-        apiKey = reverseProxyPassword;
-        logger.debug('[VariableAPIConfig] 使用反向代理:', baseUrl);
-      } else {
-        // 无反向代理：使用默认端点和通用API密钥
-        baseUrl = this.getDefaultBaseUrl(format);
-        const apiKeyInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2ApiKey'));
-        apiKey = apiKeyInput?.value.trim() || '';
-      }
-    }
+    const refreshConfig = this.buildSharedRefreshConfig(format);
+    const source = resolveSource(format);
+    const baseUrl = refreshConfig.baseUrl || refreshConfig.customUrl || '';
+    const requiresCustomUrl = source === 'custom' || (format === 'custom' && source === 'openai');
 
     // 验证必填项
-    if (!baseUrl) {
-      showErrorToast('请先填写 API 端点或反向代理 URL');
+    if (requiresCustomUrl && !baseUrl) {
+      toastr.error('请先填写 API 端点或反向代理 URL');
       return;
     }
 
-    if (!apiKey) {
-      showErrorToast('请先填写 API 密钥或反向代理密码');
-      return;
-    }
-
-    showInfoToast('正在获取模型列表...');
-    logger.info('[VariableAPIConfig] 开始获取模型列表, baseUrl:', baseUrl);
+    toastr.info('正在获取模型列表...');
+    logger.info('variable', '[VariableAPIConfig] 开始获取模型列表（共享刷新链）', {
+      source: refreshConfig.source,
+      hasReverseProxy: Boolean(refreshConfig.baseUrl),
+      hasCustomUrl: Boolean(refreshConfig.customUrl)
+    });
 
     try {
-      // 调用 /v1/models API
-      let cleanBaseUrl = baseUrl;
-      if (cleanBaseUrl.endsWith('/v1')) {
-        cleanBaseUrl = cleanBaseUrl.slice(0, -3);
-        logger.debug('[VariableAPIConfig] 检测到 baseUrl 末尾有 /v1，已去除:', cleanBaseUrl);
+      const result = await refreshModelList(refreshConfig);
+      if (!result.success) {
+        throw new Error(result.error || '模型刷新失败');
       }
-      const modelsUrl = `${cleanBaseUrl}/v1/models`;
-      logger.debug('[VariableAPIConfig] 最终模型列表 URL:', modelsUrl);
-
-      const response = await fetch(modelsUrl, {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`API 返回错误: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      // 提取模型列表
-      let models = [];
-      if (data.data && Array.isArray(data.data)) {
-        models = data.data.map(m => m.id || m).filter(m => m);
-      } else if (Array.isArray(data)) {
-        models = data.map(m => m.id || m).filter(m => m);
-      }
+      const models = (result.models || [])
+        .map(model => model?.id)
+        .filter(model => typeof model === 'string' && model.length > 0);
 
       if (models.length === 0) {
-        showErrorToast('未获取到模型列表');
-        logger.warn('[VariableAPIConfig] 模型列表为空');
+        if (modelSelect) {
+          modelSelect.innerHTML = `
+            <option value="">请选择模型...</option>
+            <option value="__manual__">手动输入</option>
+          `;
+          modelSelect.value = '__manual__';
+        }
+
+        const manualWrapper = /** @type {HTMLElement|null} */ (this.pageElement.querySelector('#var-v2ApiModelManualWrapper'));
+        if (manualWrapper) {
+          manualWrapper.style.display = 'block';
+        }
+
+        if (NO_VALIDATE_SOURCES.has(source)) {
+          toastr.info('当前来源不返回模型列表，请手动输入模型名称');
+          logger.info('variable', '[VariableAPIConfig] 当前来源需手动输入模型:', source);
+        } else {
+          toastr.error('未获取到模型列表');
+          logger.warn('variable', '[VariableAPIConfig] 模型列表为空');
+        }
         return;
       }
 
@@ -1473,12 +1461,12 @@ export class VariableAPIConfig {
         }
       }
 
-      showSuccessToast(`已获取 ${models.length} 个模型`);
-      logger.info('[VariableAPIConfig] 模型列表已更新，共', models.length, '个');
+      toastr.success(`已获取 ${models.length} 个模型`);
+      logger.info('variable', '[VariableAPIConfig] 模型列表已更新，共', models.length, '个');
 
     } catch (error) {
-      logger.error('[VariableAPIConfig] 获取失败:', error);
-      showErrorToast('获取模型列表失败：' + error.message);
+      logger.error('variable', '[VariableAPIConfig] 获取失败:', error);
+      toastr.error('获取模型列表失败：' + error.message);
     }
   }
 
@@ -1490,15 +1478,14 @@ export class VariableAPIConfig {
    */
   async testApiConnection() {
     if (!this.api) {
-      showErrorToast('API管理器未初始化');
+      toastr.error('API管理器未初始化');
       return;
     }
 
     // 读取当前表单数据
     const formatSelect = /** @type {HTMLSelectElement|null} */ (this.pageElement.querySelector('#var-v2ApiFormat'));
-    const modelSelect = /** @type {HTMLSelectElement|null} */ (this.pageElement.querySelector('#var-v2ApiModelSelect'));
-    const modelManualInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2ApiModelManual'));
     const format = formatSelect?.value.trim() || 'openai';
+    const source = resolveSource(format);
 
     // 根据API类型获取正确的端点和密钥
     let baseUrl = '';
@@ -1510,9 +1497,14 @@ export class VariableAPIConfig {
       baseUrl = baseUrlInput?.value.trim() || '';
       apiKey = apiKeyInput?.value.trim() || '';
     } else if (format === 'openrouter') {
-      baseUrl = 'https://openrouter.ai/api';
+      baseUrl = 'https://openrouter.ai/api/v1';
       const apiKeyInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2OpenRouterKey'));
       apiKey = apiKeyInput?.value.trim() || '';
+    } else if (format === 'azure_openai') {
+      const azureBaseUrlInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2AzureBaseUrl'));
+      const azureApiKeyInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2AzureApiKey'));
+      baseUrl = azureBaseUrlInput?.value.trim() || '';
+      apiKey = azureApiKeyInput?.value.trim() || '';
     } else {
       // 其他API：检查是否有反向代理
       const reverseProxyUrlInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2ReverseProxyUrl'));
@@ -1533,15 +1525,10 @@ export class VariableAPIConfig {
     }
 
     // 获取模型名
-    let model = '';
-    if (modelSelect?.value === '__manual__') {
-      model = modelManualInput?.value.trim() || '';
-    } else {
-      model = modelSelect?.value.trim() || '';
-    }
+    const model = this.resolveModelForTest(source);
 
     const testConfig = {
-      source: 'custom',
+      source: source,
       stream: false,
       baseUrl: baseUrl,
       apiKey: apiKey,
@@ -1549,19 +1536,29 @@ export class VariableAPIConfig {
       model: model || 'gpt-4o-mini'
     };
 
+    if (source === 'azure_openai') {
+      const deploymentInput = /** @type {HTMLInputElement|null} */ (this.pageElement.querySelector('#var-v2AzureDeploymentName'));
+      const versionSelect = /** @type {HTMLSelectElement|null} */ (this.pageElement.querySelector('#var-v2AzureApiVersion'));
+      testConfig.azureConfig = {
+        baseUrl: baseUrl,
+        deploymentName: deploymentInput?.value.trim() || '',
+        apiVersion: versionSelect?.value.trim() || ''
+      };
+    }
+
     // 验证必填项
     if (!testConfig.baseUrl) {
-      showErrorToast('请填写 API 端点或反向代理 URL');
+      toastr.error('请填写 API 端点或反向代理 URL');
       return;
     }
 
     if (!testConfig.model) {
-      showErrorToast('请选择或输入模型名称');
+      toastr.error('请选择或输入模型名称');
       return;
     }
 
-    showInfoToast('正在测试连接...');
-    logger.info('[VariableAPIConfig] 开始测试 API 连接');
+    toastr.info('正在测试连接...');
+    logger.info('variable', '[VariableAPIConfig] 开始测试 API 连接');
 
     try {
       // ✅ 修复：构造messages数组而不是字符串（照搬日记）
@@ -1591,30 +1588,17 @@ export class VariableAPIConfig {
       }
 
       if (responseText && responseText.length > 0) {
-        showSuccessToast('API 连接成功！');
-        logger.info('[VariableAPIConfig] 测试成功，响应长度:', responseText.length);
+        toastr.success('API 连接成功！');
+        logger.info('variable', '[VariableAPIConfig] 测试成功，响应长度:', responseText.length);
       } else {
-        showErrorToast('API 返回空响应');
-        logger.warn('[VariableAPIConfig] API返回空响应');
+        toastr.error('API 返回空响应');
+        logger.warn('variable', '[VariableAPIConfig] API返回空响应');
       }
 
     } catch (error) {
-      logger.error('[VariableAPIConfig] 测试失败:', error);
-      showErrorToast('连接失败：' + error.message);
+      logger.error('variable', '[VariableAPIConfig] 测试失败:', error);
+      toastr.error('连接失败：' + error.message);
     }
-  }
-
-  /**
-   * 从临时存储读取参数值
-   *
-   * @param {string} format - API格式
-   * @returns {Object.<string, number>} 参数名 -> 参数值的映射
-   */
-  readParamsFromUI(format) {
-    // 使用临时存储的参数
-    const params = { ...this.tempParams };
-    logger.debug('[VariableAPIConfig.readParamsFromUI] 读取了', Object.keys(params).length, '个参数');
-    return params;
   }
 
   /**
@@ -1630,7 +1614,7 @@ export class VariableAPIConfig {
 
     for (const paramName of unsupportedParams) {
       delete this.tempParams[paramName];
-      logger.debug('[VariableAPIConfig.cleanUnsupportedParams] 已删除不支持的参数:', paramName);
+      logger.debug('variable', '[VariableAPIConfig.cleanUnsupportedParams] 已删除不支持的参数:', paramName);
     }
   }
 
@@ -1654,7 +1638,7 @@ export class VariableAPIConfig {
       /** @type {HTMLElement} */ (element).style.display = shouldShow ? '' : 'none';
     });
 
-    logger.debug('[VariableAPIConfig.toggleApiSourceForms] 已切换配置区块，当前API类型:', source);
+    logger.debug('variable', '[VariableAPIConfig.toggleApiSourceForms] 已切换配置区块，当前API类型:', source);
   }
 
   /**
@@ -1668,13 +1652,13 @@ export class VariableAPIConfig {
   renderAdvancedParams(format) {
     const container = this.pageElement.querySelector('#var-v2ApiParamsContainer');
     if (!container) {
-      logger.warn('[VariableAPIConfig.renderAdvancedParams] 未找到参数容器');
+      logger.warn('variable', '[VariableAPIConfig.renderAdvancedParams] 未找到参数容器');
       return;
     }
 
     // 获取该格式支持的参数列表
-    const supportedParams = getSupportedParams(format);
-    logger.debug('[VariableAPIConfig.renderAdvancedParams] 开始渲染参数，格式:', format, '参数列表:', supportedParams);
+    const supportedParams = getSupportedParams(format, 'variable');
+    logger.debug('variable', '[VariableAPIConfig.renderAdvancedParams] 开始渲染参数，格式:', format, '参数列表:', supportedParams);
 
     // ✅ 关键修复：清理不支持的旧参数（避免格式切换后残留）
     this.cleanUnsupportedParams(format, supportedParams);
@@ -1686,23 +1670,21 @@ export class VariableAPIConfig {
     for (const paramName of supportedParams) {
       const definition = PARAMS_DEFINITIONS[paramName];
       if (!definition) {
-        logger.warn('[VariableAPIConfig] 未知参数定义:', paramName);
+        logger.warn('variable', '[VariableAPIConfig] 未知参数定义:', paramName);
         continue;
       }
 
       // 创建参数控件HTML
       const paramHtml = `
-        <div class="api-settings-param" data-param="${paramName}" style="margin-bottom: 1em;">
-          <div class="api-settings-section-title" style="font-size: 0.9em; margin-bottom: 0.5em;">
-            ${definition.label}
-            <span style="opacity: 0.6; font-size: 0.85em; font-weight: normal; margin-left: 0.5em;">
-              (${definition.min} - ${definition.max})
-            </span>
+        <div class="api-settings-param var-v2-api-settings-param range-block" data-param="${paramName}">
+          <div class="api-settings-section-title var-v2-api-settings-section-title range-block-title" style="font-size: 0.9em; margin-bottom: 0.5em;">
+            <span>${definition.label}</span>
+            <span class="range-block-counter">${definition.min} - ${definition.max}</span>
           </div>
           <div style="display: flex; gap: 0.5em; align-items: center;">
             <input
               type="range"
-              class="api-settings-range"
+              class="api-settings-range var-v2-api-settings-range"
               id="var-v2ApiParam_${paramName}"
               min="${definition.min}"
               max="${definition.max}"
@@ -1712,7 +1694,7 @@ export class VariableAPIConfig {
             >
             <input
               type="number"
-              class="api-settings-input"
+              class="api-settings-input var-v2-api-settings-input text_pole"
               id="var-v2ApiParamNumber_${paramName}"
               min="${definition.min}"
               max="${definition.max}"
@@ -1721,7 +1703,7 @@ export class VariableAPIConfig {
               style="width: 5em; padding: 0.3em 0.5em; text-align: center;"
             >
           </div>
-          <div class="api-settings-hint" style="font-size: 0.85em;">
+          <div class="api-settings-hint var-v2-api-settings-hint" style="font-size: 0.85em;">
             ${definition.hint}
           </div>
         </div>
@@ -1751,7 +1733,7 @@ export class VariableAPIConfig {
     // 加载保存的参数值到UI
     this.loadParamValuesToUI(format);
 
-    logger.info('[VariableAPIConfig.renderAdvancedParams] ✅ 参数UI已渲染，共', supportedParams.length, '个参数');
+    logger.info('variable', '[VariableAPIConfig.renderAdvancedParams] ✅ 参数UI已渲染，共', supportedParams.length, '个参数');
   }
 
   /**
@@ -1782,7 +1764,7 @@ export class VariableAPIConfig {
       }
     });
 
-    logger.debug('[VariableAPIConfig.saveParamValue] 已保存参数:', paramName, '=', value);
+    logger.debug('variable', '[VariableAPIConfig.saveParamValue] 已保存参数:', paramName, '=', value);
   }
 
   /**
@@ -1793,7 +1775,7 @@ export class VariableAPIConfig {
   loadParamValuesToUI(format) {
     const settings = this.getSettings();
     const savedParams = settings.apiConfig.params || {};
-    const supportedParams = getSupportedParams(format);
+    const supportedParams = getSupportedParams(format, 'variable');
 
     for (const paramName of supportedParams) {
       // 优先从 extension_settings 读取，其次从临时存储读取
@@ -1809,8 +1791,10 @@ export class VariableAPIConfig {
       if (rangeInput && numberInput) {
         rangeInput.value = String(savedValue);
         numberInput.value = String(savedValue);
-        logger.debug('[VariableAPIConfig.loadParamValuesToUI] 已加载参数:', paramName, '=', savedValue);
+        logger.debug('variable', '[VariableAPIConfig.loadParamValuesToUI] 已加载参数:', paramName, '=', savedValue);
       }
     }
   }
 }
+
+

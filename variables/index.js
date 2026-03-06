@@ -19,7 +19,7 @@ import { getTriggerManager, resetTriggerManager } from './trigger-manager.js';
 import { getVariableAnalyzerV2, resetVariableAnalyzerV2 } from './variable-analyzer-v2.js';
 import { getChatContentProcessor, resetChatContentProcessor } from './chat-content-processor.js';
 import { getSendQueueManager } from './send-queue-manager.js';
-import { registerAllGlobalMacros } from './global-macro-registry.js';
+import { registerAllGlobalMacros, destroyGlobalMacros } from './global-macro-registry.js';
 import { initBranchInherit, destroyBranchInherit } from './branch-inherit-manager.js';
 
 // 存储模块
@@ -32,7 +32,8 @@ import { VariableAPIConfig } from './variable-api-settings.js';
 import {
     renderVariableListPageV2,
     addExtensionsMenuButton,
-    removeExtensionsMenuButton
+    removeExtensionsMenuButton,
+    destroyVariableListUIV2
 } from './ui/variable-list-ui-v2.js';
 import { openChatContentEditPopup, openRegexSettingsPopup } from './ui/chat-content-ui.js';
 
@@ -180,18 +181,35 @@ async function onChatDeleted(chatId) {
 
 /**
  * 初始化动态变量系统
+ *
+ * @description
+ * 初始化前会先读取 `settings.enabled`，确保用户关闭开关时不再注册任何监听器或宏，
+ * 从根源上避免与其他扩展冲突，而不是在各回调中被动跳过。
+ *
  * @async
  * @returns {Promise<{success: boolean, error?: string}>}
+ * @throws {Error} 仅在内部模块抛出不可恢复错误时透传
+ * @example
+ * const result = await initVariables();
+ * if (!result.success) {
+ *     logger.error('variable', '[Variables.initVariables] 初始化失败');
+ * }
  */
 export async function initVariables() {
-    if (initialized) {
-        logger.debug('variable', '[Variables] 已初始化，跳过');
-        return { success: true };
-    }
-
-    logger.info('variable', '[Variables] 开始初始化...');
-
     try {
+        const settings = await variableStorage.getSettingsV2();
+        if (!settings.enabled) {
+            logger.info('variable', '[Variables] 开关关闭，跳过初始化');
+            return { success: true };
+        }
+
+        if (initialized) {
+            logger.debug('variable', '[Variables] 已初始化，跳过');
+            return { success: true };
+        }
+
+        logger.info('variable', '[Variables] 开始初始化...');
+
         // 1. 加载存储数据
         const data = await variableStorage.loadStorageV2();
         logger.debug('variable', '[Variables] 存储数据已加载');
@@ -267,33 +285,46 @@ export function isInitialized() {
 
 /**
  * 销毁动态变量系统
+ *
+ * @description
+ * 彻底移除变量模块注册的事件、观察器、UI 状态和全局宏，保证“关闭=完全不执行”。
+ *
+ * @returns {void}
+ * @throws {Error} 当宏系统销毁失败时抛出，便于上层感知系统性问题
+ * @example
+ * destroyVariables();
  */
 export function destroyVariables() {
-    if (!initialized) return;
-
     logger.info('variable', '[Variables] 开始销毁...');
 
-    // 移除聊天删除事件监听
-    eventSource.removeListener(event_types.CHAT_DELETED, onChatDeleted);
-    eventSource.removeListener(event_types.GROUP_CHAT_DELETED, onChatDeleted);
+    // 销毁变量 UI 监听与窗口状态
+    destroyVariableListUIV2();
 
-    // 销毁聊天列表变量标识监听
-    destroyChatListIndicators();
+    if (initialized) {
+        // 移除聊天删除事件监听
+        eventSource.removeListener(event_types.CHAT_DELETED, onChatDeleted);
+        eventSource.removeListener(event_types.GROUP_CHAT_DELETED, onChatDeleted);
 
-    // 销毁分支继承监听
-    destroyBranchInherit();
+        // 销毁聊天列表变量标识监听
+        destroyChatListIndicators();
 
-    // 销毁触发管理器
-    resetTriggerManager();
+        // 销毁分支继承监听
+        destroyBranchInherit();
 
-    // 销毁分析器
-    resetVariableAnalyzerV2();
+        // 销毁触发管理器
+        resetTriggerManager();
 
-    // 重置其他模块
-    resetMacroProcessor();
-    resetTagParser();
-    resetVariableManagerV2();
-    resetSuiteManager();
+        // 销毁分析器
+        resetVariableAnalyzerV2();
+
+        // 重置其他模块
+        resetMacroProcessor();
+        resetTagParser();
+        resetVariableManagerV2();
+        resetSuiteManager();
+    }
+
+    destroyGlobalMacros();
 
     // 清理存储缓存
     variableStorage.invalidateCacheV2();

@@ -57,23 +57,67 @@ export class PresetManagerModule {
 
     // DOM观察器
     this.presetObserver = null;
+
+    // 事件处理器引用（用于对称解绑）
+    this._handlers = {};
+
+    // 运行时是否已启动（监听器/Observer/子模块）
+    this._runtimeActive = false;
   }
 
   /**
    * 初始化模块
+   *
+   * @description
+   * 先加载持久化开关状态，再决定是否启动运行时资源。
+   * 这样能保证“关闭=不注册监听器，不注入，不观察DOM”，从根本上避免关闭后继续执行。
+   *
+   * @returns {Promise<void>}
+   * @throws {Error} 当子模块初始化失败时向上抛出，避免半初始化状态
+   *
+   * @example
+   * const module = new PresetManagerModule();
+   * await module.init();
    */
   async init() {
-    logger.debug('preset', 'PresetManager.init] 初始化预设管理器...');
+    logger.debug('preset', '[PresetManager.init] 初始化预设管理器...');
 
     // 加载设置
     await this.loadSettings();
 
-    // 初始化世界书集成
-    this.worldInfo = new WorldInfoIntegration(this);
-    await this.worldInfo.init();
+    await this.activateRuntime();
 
-    // 初始化预设缝合器
-    this.stitch = new PresetStitchModule(this);
+    this.initialized = true;
+    logger.info('preset', '[PresetManager.init] 预设管理器初始化完成，启用状态:', this.enabled);
+  }
+
+  /**
+   * 启动运行时资源
+   *
+   * @description
+   * 集中管理子模块初始化、DOM监听与事件绑定，确保启用路径一致且可复用。
+   * 这样 setEnabled(true) 与 init() 都走同一条路径，避免遗漏。
+   *
+   * @returns {Promise<void>}
+   * @throws {Error} 当 worldInfo/stitch 初始化失败时抛出
+   *
+   * @example
+   * await this.activateRuntime();
+   */
+  async activateRuntime() {
+    if (this._runtimeActive) {
+      logger.debug('preset', '[PresetManager.activateRuntime] 运行时已激活，跳过重复初始化');
+      return;
+    }
+
+    // 初始化世界书集成（仅在世界书工具开关启用时）
+    if (this.enabled) {
+      this.worldInfo = this.worldInfo || new WorldInfoIntegration(this);
+      await this.worldInfo.init();
+    }
+
+    // 初始化预设缝合器（独立开关，不受世界书工具开关控制）
+    this.stitch = this.stitch || new PresetStitchModule(this);
     await this.stitch.init();
 
     // 监听预设页面出现
@@ -85,15 +129,11 @@ export class PresetManagerModule {
     // 设置快照功能事件监听（只调用一次）
     this.setupSnapshotEvents();
 
-    this.initialized = true;
-    logger.info('preset', '[PresetManager.init] 预设管理器初始化完成，启用状态:', this.enabled);
+    this._runtimeActive = true;
 
-    // 如果已启用，延迟检查预设页面
-    if (this.enabled) {
-      setTimeout(() => {
-        this.checkAndEnhancePresetPage();
-      }, 500);
-    }
+    setTimeout(() => {
+      this.checkAndEnhancePresetPage();
+    }, 500);
   }
 
   /**
@@ -153,12 +193,20 @@ export class PresetManagerModule {
 
   /**
    * 设置模块启用状态
+   *
+   * @description
+   * 关闭时必须彻底停止运行时：解绑监听、断开Observer、撤销注入；启用时再按需完整恢复。
+   *
+   * @param {boolean} enabled - 是否启用模块
+   * @returns {Promise<void>}
    */
   async setEnabled(enabled) {
     this.enabled = enabled;
     await this.saveSettings();
 
     if (enabled) {
+      await this.activateRuntime();
+
       // 移除旧的增强标记，强制重新增强
       const promptList = document.querySelector('#completion_prompt_manager_list, #prompt_manager_list');
       if (promptList) {
@@ -173,13 +221,47 @@ export class PresetManagerModule {
         }, 300);
       }
     } else {
-      this.cleanupEnhancements();
+      this.deactivateRuntime();
     }
 
     eventSource.emit('pawsPresetEnabledChanged', enabled);
-    logger.debug('preset', '预设管理功能', enabled ? '已启用' : '已禁用');
+    logger.debug('preset', '[PresetManager.setEnabled] 预设管理功能', enabled ? '已启用' : '已禁用');
   }
 
+  /**
+   * 停止运行时资源
+   *
+   * @description
+   * 统一处理禁用路径的完整清理，保证“关闭即停止执行”。
+   * 包括：增强UI、Observer、DOM监听、eventSource监听、子模块副作用。
+   *
+   * @returns {void}
+   */
+  deactivateRuntime() {
+    this.cleanupEnhancements();
+
+    if (this.presetObserver) {
+      this.presetObserver.disconnect();
+      this.presetObserver = null;
+    }
+
+    if (this._handlers.onPresetSelectionChanged) {
+      document.removeEventListener('change', this._handlers.onPresetSelectionChanged);
+      this._handlers.onPresetSelectionChanged = null;
+    }
+
+    if (this._handlers.onSnapshotEnabledChanged) {
+      eventSource.removeListener('pawsSnapshotEnabledChanged', this._handlers.onSnapshotEnabledChanged);
+      this._handlers.onSnapshotEnabledChanged = null;
+    }
+
+    if (this.stitch) {
+      this.stitch.destroy();
+    }
+
+    this._runtimeActive = false;
+    logger.debug('preset', '[PresetManager.deactivateRuntime] 运行时资源已清理');
+  }
 
   /**
    * 检查并增强预设页面
@@ -221,7 +303,11 @@ export class PresetManagerModule {
    * 才能在 promptManager.render() 重建 DOM 后重新添加我们的增强功能。
    */
   observePresetPage() {
-    this.presetObserver = new MutationObserver((mutations) => {
+    if (this.presetObserver) {
+      this.presetObserver.disconnect();
+    }
+
+    this.presetObserver = new MutationObserver(() => {
       const promptList = document.querySelector('#completion_prompt_manager_list, #prompt_manager_list');
       if (!promptList) return;
 
@@ -302,6 +388,12 @@ export class PresetManagerModule {
    * 正确做法：使用 MutationObserver 监听 footer 出现，footer 一出现就立即添加按钮。
    */
   addSnapshotSaveButton() {
+    if (!snapshotData.isEnabled()) {
+      this.removeSnapshotSaveButton();
+      logger.debug('preset', '[PresetManager.addSnapshotSaveButton] 快照功能已禁用，跳过按钮创建');
+      return;
+    }
+
     const footer = document.querySelector('.completion_prompt_manager_footer');
 
     if (!footer) {
@@ -349,13 +441,14 @@ export class PresetManagerModule {
     saveBtn.tabIndex = 0;
     saveBtn.role = 'button';
 
-    // 根据功能开关状态显示/隐藏
-    saveBtn.style.display = snapshotData.isEnabled() ? '' : 'none';
+    if (!this._handlers.onSnapshotSaveClick) {
+      this._handlers.onSnapshotSaveClick = async () => {
+        await this.showSaveSnapshotDialog();
+      };
+    }
 
     // 绑定点击事件
-    saveBtn.addEventListener('click', async () => {
-      await this.showSaveSnapshotDialog();
-    });
+    saveBtn.addEventListener('click', this._handlers.onSnapshotSaveClick);
 
     // 插入到底部栏（在第一个按钮之前）
     const firstBtn = footer.querySelector('.menu_button');
@@ -369,19 +462,45 @@ export class PresetManagerModule {
   }
 
   /**
+   * 移除快照保存按钮及其事件监听
+   * @returns {void}
+   */
+  removeSnapshotSaveButton() {
+    const saveBtn = document.querySelector('#paws-save-snapshot-btn');
+    if (!saveBtn) return;
+
+    if (this._handlers.onSnapshotSaveClick) {
+      saveBtn.removeEventListener('click', this._handlers.onSnapshotSaveClick);
+    }
+
+    saveBtn.remove();
+    logger.debug('preset', '[PresetManager.removeSnapshotSaveButton] 快照保存按钮已移除');
+  }
+
+  /**
    * 设置快照功能事件监听
-   * @description 监听功能开关变化事件，更新按钮显示状态
-   * 注意：按钮被删除后的恢复逻辑已移至 observePresetPage() 的 MutationObserver 中
+   *
+   * @description
+   * 监听快照开关变化并执行对称清理：启用时恢复按钮，禁用时移除按钮和点击监听，
+   * 这样可以避免“仅隐藏UI但逻辑仍活跃”的状态残留。
+   *
+   * @returns {void}
    */
   setupSnapshotEvents() {
+    if (this._handlers.onSnapshotEnabledChanged) return;
+
     // 监听功能开关变化，更新按钮显示状态
-    eventSource.on('pawsSnapshotEnabledChanged', (enabled) => {
-      const saveBtn = document.querySelector('#paws-save-snapshot-btn');
-      if (saveBtn) {
-        saveBtn.style.display = enabled ? '' : 'none';
+    this._handlers.onSnapshotEnabledChanged = (enabled) => {
+      if (enabled) {
+        this.addSnapshotSaveButton();
+      } else {
+        this.removeSnapshotSaveButton();
       }
-      logger.debug('preset', 'PresetManager] 快照功能状态变化:', enabled ? '启用' : '禁用');
-    });
+
+      logger.debug('preset', '[PresetManager.setupSnapshotEvents] 快照功能状态变化:', enabled ? '启用' : '禁用');
+    };
+
+    eventSource.on('pawsSnapshotEnabledChanged', this._handlers.onSnapshotEnabledChanged);
   }
 
   /**
@@ -429,6 +548,8 @@ export class PresetManagerModule {
       promptList.removeAttribute('data-paws-enhanced');
     }
 
+    this.removeSnapshotSaveButton();
+
     // 删除世界书折叠栏
     if (this.worldInfo) {
       this.worldInfo.destroy();
@@ -457,12 +578,16 @@ export class PresetManagerModule {
    * 设置事件监听器
    */
   setupEventListeners() {
-    document.addEventListener('change', (e) => {
+    if (this._handlers.onPresetSelectionChanged) return;
+
+    this._handlers.onPresetSelectionChanged = (e) => {
       if (e.target.matches('#settings_preset_openai, #settings_preset')) {
         this.currentPreset = e.target.value;
         logger.debug('preset', '预设已切换到:', this.currentPreset);
       }
-    });
+    };
+
+    document.addEventListener('change', this._handlers.onPresetSelectionChanged);
 
     // 世界书功能已移至独立工具
   }
@@ -494,22 +619,10 @@ export class PresetManagerModule {
    * 销毁模块
    */
   destroy() {
-    this.cleanupEnhancements();
-
-    if (this.presetObserver) {
-      this.presetObserver.disconnect();
-    }
+    this.deactivateRuntime();
 
     if (this.ui) {
       this.ui.destroy();
-    }
-
-    if (this.worldInfo) {
-      this.worldInfo.destroy();
-    }
-
-    if (this.stitch) {
-      this.stitch.destroy();
     }
   }
 }

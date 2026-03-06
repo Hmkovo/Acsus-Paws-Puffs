@@ -36,6 +36,7 @@ export class PresetStitchUI {
     this.searchKeyword = '';       // 当前搜索关键词
     this.selectedItems = new Set(); // 选中的条目ID（用于批量操作）
     this.batchMode = false;        // 批量模式开关
+    this._handlers = {};
   }
 
   /**
@@ -51,6 +52,7 @@ export class PresetStitchUI {
    */
   hide() {
     // callGenericPopup 会自动处理关闭
+    this.removeAddDropdownDocumentClickListener();
     this.popupEl = null;
     this.selectedItems.clear();
   }
@@ -406,6 +408,14 @@ export class PresetStitchUI {
 
   /**
    * 绑定添加按钮下拉菜单
+   *
+   * @description
+   * document 级点击事件必须保存可复用引用，并在关闭/销毁时对称解绑，
+   * 否则每次打开弹窗都会叠加监听，导致关闭逻辑重复触发和内存泄漏。
+   *
+   * @returns {void}
+   * @example
+   * this.bindAddDropdown();
    */
   bindAddDropdown() {
     const addBtn = this.popupEl?.querySelector('.stitch-add-btn');
@@ -422,7 +432,7 @@ export class PresetStitchUI {
 
     // 点击菜单选项
     addMenu.querySelectorAll('.stitch-add-option').forEach(option => {
-      option.addEventListener('click', (e) => {
+      option.addEventListener('click', () => {
         const action = option.dataset.action;
         addMenu.style.display = 'none';
 
@@ -443,10 +453,34 @@ export class PresetStitchUI {
       });
     });
 
+    this.removeAddDropdownDocumentClickListener();
+
     // 点击其他地方关闭菜单
-    document.addEventListener('click', () => {
+    this._handlers.onAddDropdownDocumentClick = (event) => {
+      if (!this.popupEl || !document.body.contains(this.popupEl) || !document.body.contains(addMenu)) {
+        this.removeAddDropdownDocumentClickListener();
+        return;
+      }
+
+      const dropdown = addBtn.closest('.stitch-add-dropdown');
+      if (dropdown?.contains(event.target)) {
+        return;
+      }
+
       addMenu.style.display = 'none';
-    });
+    };
+
+    document.addEventListener('click', this._handlers.onAddDropdownDocumentClick);
+  }
+
+  /**
+   * 移除添加下拉菜单的 document 点击监听
+   * @returns {void}
+   */
+  removeAddDropdownDocumentClickListener() {
+    if (!this._handlers.onAddDropdownDocumentClick) return;
+    document.removeEventListener('click', this._handlers.onAddDropdownDocumentClick);
+    this._handlers.onAddDropdownDocumentClick = null;
   }
 
   /**
@@ -710,156 +744,13 @@ export class PresetStitchUI {
   /**
    * 显示从其他预设添加的选择器
    * @description 先选择预设，再选择该预设中的条目
-   */
+  */
   async showOtherPresetPicker() {
     // 获取预设列表
     let presetNames = [];
-    let presetSettings = [];
     try {
       const { openai_setting_names, openai_settings } = await import('../../../openai.js');
       presetNames = Object.keys(openai_setting_names || {});
-      presetSettings = openai_settings || [];
-    } catch (error) {
-      logger.error('preset', '[PresetStitchUI] 获取预设列表失败:', error);
-      toastr.error('获取预设列表失败');
-      return;
-    }
-
-    if (presetNames.length === 0) {
-      toastr.warning('没有可用的预设');
-      return;
-    }
-
-    const popupHtml = `
-      <div class="stitch-other-preset-popup">
-        <div class="stitch-preset-select">
-          <label>选择预设：</label>
-          <select class="text_pole" id="stitch-other-preset-select">
-            <option value="">-- 请选择 --</option>
-            ${presetNames.map(name => `<option value="${name}">${name}</option>`).join('')}
-          </select>
-        </div>
-        <div class="stitch-preset-entries" id="stitch-other-preset-entries">
-          <p style="text-align: center; opacity: 0.6;">请先选择预设</p>
-        </div>
-        <div class="stitch-picker-footer">
-          <button class="menu_button stitch-picker-confirm">确认添加</button>
-        </div>
-      </div>
-    `;
-
-    callGenericPopup(popupHtml, 1, '从其他预设添加');
-    fixPopupOkButton();
-
-    // 绑定事件
-    setTimeout(async () => {
-      const popup = document.querySelector('.stitch-other-preset-popup');
-      if (!popup) return;
-
-      const select = popup.querySelector('#stitch-other-preset-select');
-      const entriesContainer = popup.querySelector('#stitch-other-preset-entries');
-
-      // 预设选择变化
-      select?.addEventListener('change', async () => {
-        const presetName = select.value;
-        if (!presetName) {
-          entriesContainer.innerHTML = '<p style="text-align: center; opacity: 0.6;">请先选择预设</p>';
-          return;
-        }
-
-        entriesContainer.innerHTML = '<p style="text-align: center;"><i class="fa-solid fa-spinner fa-spin"></i> 加载中...</p>';
-
-        try {
-          // 重新获取最新的预设数据
-          const { openai_setting_names, openai_settings } = await import('../../../openai.js');
-          const presetIndex = openai_setting_names[presetName];
-          const preset = openai_settings[presetIndex];
-
-          if (!preset || !preset.prompts || preset.prompts.length === 0) {
-            entriesContainer.innerHTML = '<p style="text-align: center; opacity: 0.6;">该预设没有条目</p>';
-            return;
-          }
-
-          // 过滤掉marker类型的条目
-          const entries = preset.prompts.filter(p => !p.marker && p.name);
-
-          if (entries.length === 0) {
-            entriesContainer.innerHTML = '<p style="text-align: center; opacity: 0.6;">该预设没有可添加的条目</p>';
-            return;
-          }
-
-          const listHtml = entries.map(entry => `
-            <div class="stitch-picker-item" data-identifier="${entry.identifier}">
-              <input type="checkbox">
-              <span class="picker-item-name">${entry.name}</span>
-            </div>
-          `).join('');
-
-          entriesContainer.innerHTML = `<div class="stitch-picker-list">${listHtml}</div>`;
-
-          // 保存当前预设数据供确认时使用
-          popup.dataset.currentPreset = presetName;
-        } catch (error) {
-          logger.error('preset', '[PresetStitchUI] 加载预设条目失败:', error);
-          entriesContainer.innerHTML = '<p style="text-align: center; color: #ff6b6b;">加载失败</p>';
-        }
-      });
-
-      // 确认添加
-      popup.querySelector('.stitch-picker-confirm')?.addEventListener('click', async () => {
-        const selected = popup.querySelectorAll('.stitch-picker-item input:checked');
-        const presetName = popup.dataset.currentPreset;
-
-        if (!presetName) {
-          toastr.warning('请先选择预设');
-          return;
-        }
-
-        let addedCount = 0;
-
-        // 重新获取预设数据
-        const { openai_setting_names, openai_settings } = await import('../../../openai.js');
-        const presetIndex = openai_setting_names[presetName];
-        const preset = openai_settings[presetIndex];
-
-        if (!preset || !preset.prompts) return;
-
-        selected.forEach(checkbox => {
-          const item = checkbox.closest('.stitch-picker-item');
-          const identifier = item?.dataset.identifier;
-          const entry = preset.prompts.find(p => p.identifier === identifier);
-
-          if (entry) {
-            stitchData.addItem({
-              name: entry.name,
-              content: entry.content || '',
-              role: entry.role || 'system',
-              source: 'preset'
-            });
-            addedCount++;
-          }
-        });
-
-        if (addedCount > 0) {
-          toastr.success(`已添加 ${addedCount} 个条目`);
-          this.refreshEntryList();
-        }
-      });
-    }, 100);
-  }
-
-  /**
-   * 显示从其他预设添加的选择器
-   * @description 先选择预设，再选择该预设中的条目
-   */
-  async showOtherPresetPicker() {
-    // 获取预设列表
-    let presetNames = [];
-    let presetSettings = [];
-    try {
-      const { openai_setting_names, openai_settings } = await import('../../../openai.js');
-      presetNames = Object.keys(openai_setting_names || {});
-      presetSettings = openai_settings || [];
     } catch (error) {
       logger.error('preset', '[PresetStitchUI] 获取预设列表失败:', error);
       toastr.error('获取预设列表失败');
@@ -1510,6 +1401,7 @@ export class PresetStitchUI {
    * 销毁 UI
    */
   destroy() {
+    this.removeAddDropdownDocumentClickListener();
     this.popupEl = null;
     this.selectedItems.clear();
   }

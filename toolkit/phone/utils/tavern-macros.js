@@ -30,6 +30,11 @@ let loadContacts, buildChatHistoryInfo, buildHistoryChatInfo, loadChatHistory, g
 // 已注册的角色宏（用于清理）
 const registeredCharacterMacros = new Set();
 
+/** @type {{ contactListChanged: ((event: Event) => Promise<void>)|null }} 模块级监听器引用 */
+let savedHandlers = {
+  contactListChanged: null
+};
+
 /**
  * 注册所有手机相关的酒馆宏
  * 
@@ -125,16 +130,25 @@ async function registerAllContactMacros() {
  * 监听联系人变化事件
  * 
  * @description
- * 监听联系人列表变化事件，重新注册宏
+ * 监听联系人列表变化事件，重新注册宏。
+ * 保存处理器引用，便于在功能禁用时彻底移除，避免监听器泄漏。
  * 
  * @private
+ * @returns {void}
  */
 function setupContactChangeListener() {
-  // 监听联系人列表变化事件（新增/删除联系人时重新注册宏）
-  document.addEventListener('phone-contact-list-changed', async () => {
+  if (savedHandlers.contactListChanged) {
+    logger.debug('phone','[TavernMacros] 联系人变化监听器已存在，跳过重复注册');
+    return;
+  }
+
+  savedHandlers.contactListChanged = async () => {
     logger.debug('phone','[TavernMacros] 检测到联系人变化，重新注册宏');
     await registerAllContactMacros();
-  });
+  };
+
+  // 监听联系人列表变化事件（新增/删除联系人时重新注册宏）
+  document.addEventListener('phone-contact-list-changed', savedHandlers.contactListChanged);
 
   logger.debug('phone','[TavernMacros] 已设置联系人变化监听器');
 }
@@ -512,6 +526,12 @@ export function unregisterPhoneMacros() {
     }
     registeredCharacterMacros.clear();
 
+    if (savedHandlers.contactListChanged) {
+      document.removeEventListener('phone-contact-list-changed', savedHandlers.contactListChanged);
+      savedHandlers.contactListChanged = null;
+      logger.debug('phone','[TavernMacros] 已移除联系人变化监听器');
+    }
+
     logger.info('phone','[TavernMacros] ✅ 已注销所有手机宏');
   } catch (error) {
     logger.error('phone','[TavernMacros] 注销宏失败:', error);
@@ -535,4 +555,3 @@ export async function refreshPhoneMacros() {
   logger.info('phone','[TavernMacros] 手动刷新宏...');
   await registerAllContactMacros();
 }
-

@@ -49,6 +49,14 @@ export class FontManagerUI {
       batchDeleteMode: false,      // 批量删除模式
       selectedFontsForDelete: new Set()  // 选中待删除的字体
     };
+
+    // 全局事件处理器引用（用于 removeListener，防止重复绑定）
+    this._handlers = {
+      onFontAdded: null,
+      onFontRemoved: null,
+      onFontUpdated: null,
+      onFontTagsChanged: null
+    };
   }
 
   /**
@@ -264,6 +272,10 @@ body { font-family: "Huiwen-mincho"; }
    * 5. 导入导出按钮（click 事件）
    * 6. 清空所有字体按钮（click 事件，含确认）
    * 7. 监听 FontManager 的事件（pawsFontAdded 等）
+   *
+   * 为什么要先解绑再绑定：
+   * 本类会在局部重渲染后再次调用 bindEvents()，若不先 removeListener，
+   * eventSource 的全局监听会累计，造成一次数据变化触发多次 refresh。
    */
   bindEvents() {
     // 字体功能开关
@@ -434,14 +446,50 @@ body { font-family: "Huiwen-mincho"; }
       guideBtn.addEventListener('click', () => this.showGuide());
     }
 
-    // 监听字体管理器的事件
-    eventSource.on('pawsFontAdded', () => this.refreshFontList());
-    eventSource.on('pawsFontRemoved', () => this.refreshFontList());
-    eventSource.on('pawsFontUpdated', () => this.refreshFontList());
-    eventSource.on('pawsFontTagsChanged', () => {
+    // 监听字体管理器的全局事件（先清理旧绑定，避免累计）
+    this._unbindGlobalEvents();
+
+    this._handlers.onFontAdded = () => this.refreshFontList();
+    this._handlers.onFontRemoved = () => this.refreshFontList();
+    this._handlers.onFontUpdated = () => this.refreshFontList();
+    this._handlers.onFontTagsChanged = () => {
       this.refreshTagManager();
       this.updateTagFilter();
-    });
+    };
+
+    eventSource.on('pawsFontAdded', this._handlers.onFontAdded);
+    eventSource.on('pawsFontRemoved', this._handlers.onFontRemoved);
+    eventSource.on('pawsFontUpdated', this._handlers.onFontUpdated);
+    eventSource.on('pawsFontTagsChanged', this._handlers.onFontTagsChanged);
+  }
+
+  /**
+   * 清理全局事件监听
+   *
+   * @description
+   * SillyTavern 的 eventSource 没有 off()，必须使用 removeListener()。
+   * 这里统一回收本类注册的全局监听，避免重复渲染后回调叠加。
+   */
+  _unbindGlobalEvents() {
+    if (this._handlers.onFontAdded) {
+      eventSource.removeListener('pawsFontAdded', this._handlers.onFontAdded);
+      this._handlers.onFontAdded = null;
+    }
+
+    if (this._handlers.onFontRemoved) {
+      eventSource.removeListener('pawsFontRemoved', this._handlers.onFontRemoved);
+      this._handlers.onFontRemoved = null;
+    }
+
+    if (this._handlers.onFontUpdated) {
+      eventSource.removeListener('pawsFontUpdated', this._handlers.onFontUpdated);
+      this._handlers.onFontUpdated = null;
+    }
+
+    if (this._handlers.onFontTagsChanged) {
+      eventSource.removeListener('pawsFontTagsChanged', this._handlers.onFontTagsChanged);
+      this._handlers.onFontTagsChanged = null;
+    }
   }
 
   /**
@@ -1455,10 +1503,13 @@ body { font-family: "Huiwen-mincho"; }
    * 销毁 UI
    *
    * @description
-   * 清空容器 innerHTML，释放 UI 资源
+   * 先移除 eventSource 全局监听，再清空容器 innerHTML，释放 UI 资源。
+   * 这样可以避免 UI 销毁后，残留监听继续触发已失效实例的方法。
    * 通常在卸载扩展时由 FontManager.destroy() 调用
    */
   destroy() {
+    this._unbindGlobalEvents();
+
     if (this.container) {
       this.container.innerHTML = '';
     }

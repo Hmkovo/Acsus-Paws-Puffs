@@ -83,6 +83,23 @@ let mutationObserver = null;
 /** 是否已注册全局事件监听 */
 let eventsBound = false;
 
+/** @type {{chatChanged: Function|null, messageDeleted: Function|null, userMessageRendered: Function|null, sendButtonClick: Function|null}} */
+let savedHandlers = {
+  chatChanged: null,
+  messageDeleted: null,
+  userMessageRendered: null,
+  sendButtonClick: null,
+};
+
+/** @type {{element: HTMLElement|null, handle: HTMLElement|null, mousedown: Function|null, mousemove: Function|null, mouseup: Function|null}} */
+let dragHandlers = {
+  element: null,
+  handle: null,
+  mousedown: null,
+  mousemove: null,
+  mouseup: null,
+};
+
 // ========================================
 // 初始化
 // ========================================
@@ -102,41 +119,117 @@ export function initChatToolsHide() {
 }
 
 /**
+ * 禁用隐藏楼层管理功能并清理资源
+ *
+ * @description
+ * 关闭时需要同时清理 eventSource 监听、MutationObserver、拖拽 document 监听和面板 DOM，
+ * 否则会出现“功能关闭后仍在响应事件”的问题。
+ *
+ * @returns {void}
+ * @throws {Error} 当事件系统异常时，removeListener 调用会抛出运行时异常
+ * @example
+ * disableChatToolsHide();
+ */
+export function disableChatToolsHide() {
+  isEnabled = false;
+  if (extension_settings[EXT_ID]?.chatTools) {
+    extension_settings[EXT_ID].chatTools.hideEnabled = false;
+    saveSettingsDebounced();
+  }
+
+  if (savedHandlers.chatChanged) {
+    eventSource.removeListener(event_types.CHAT_CHANGED, savedHandlers.chatChanged);
+    savedHandlers.chatChanged = null;
+  }
+
+  if (savedHandlers.messageDeleted) {
+    eventSource.removeListener(event_types.MESSAGE_DELETED, savedHandlers.messageDeleted);
+    savedHandlers.messageDeleted = null;
+  }
+
+  if (savedHandlers.userMessageRendered) {
+    eventSource.removeListener(event_types.USER_MESSAGE_RENDERED, savedHandlers.userMessageRendered);
+    savedHandlers.userMessageRendered = null;
+  }
+
+  const sendBtn = document.getElementById('send_but');
+  if (sendBtn && savedHandlers.sendButtonClick) {
+    sendBtn.removeEventListener('click', savedHandlers.sendButtonClick);
+    savedHandlers.sendButtonClick = null;
+  }
+
+  if (mutationObserver) {
+    mutationObserver.disconnect();
+    mutationObserver = null;
+  }
+
+  removeDraggableListeners();
+  hidePanel();
+
+  if (panel) {
+    panel.remove();
+    panel = null;
+    panelContent = null;
+  }
+
+  if (quickMenu) {
+    quickMenu.remove();
+    quickMenu = null;
+  }
+
+  eventsBound = false;
+  logger.info(MODULE_NAME, `${LOG_PREFIX} 隐藏楼层管理已禁用并完成清理`);
+}
+
+/**
  * 设置全局事件监听（只绑定一次）
+ *
+ * @description
+ * 将所有需要在 disable 阶段释放的监听器都保存引用，避免匿名函数无法解绑。
+ * 这样能保证聊天切换、删除消息和发送命令的监听不会在关闭后继续驻留。
+ *
+ * @returns {void}
+ * @throws {Error} 当 eventSource 不可用时，事件系统会抛出运行时异常
+ * @example
+ * setupEvents();
  */
 function setupEvents() {
   if (eventsBound) return;
 
   // 聊天切换：关闭面板，重设观察器
-  eventSource.on(event_types.CHAT_CHANGED, () => {
+  savedHandlers.chatChanged = () => {
     logger.debug(MODULE_NAME, `${LOG_PREFIX} CHAT_CHANGED，关闭面板`);
     hidePanel();
     setupMutationObserver();
-  });
+  };
+  eventSource.on(event_types.CHAT_CHANGED, savedHandlers.chatChanged);
 
   // 消息删除：刷新面板
-  eventSource.on(event_types.MESSAGE_DELETED, () => {
+  savedHandlers.messageDeleted = () => {
     if (isPanelVisible) refreshPanel();
-  });
+  };
+  eventSource.on(event_types.MESSAGE_DELETED, savedHandlers.messageDeleted);
 
   // 用户发送消息后（包括 /hide /unhide 命令执行完毕后）：刷新面板
   // 解决问题：早期消息不在 DOM 里时，MutationObserver 无法捕获 is_system 变化
-  eventSource.on(event_types.USER_MESSAGE_RENDERED, () => {
+  savedHandlers.userMessageRendered = () => {
     if (isPanelVisible) refreshPanel();
-  });
+  };
+  eventSource.on(event_types.USER_MESSAGE_RENDERED, savedHandlers.userMessageRendered);
 
   // 监听发送按钮点击（斜杠命令不触发 USER_MESSAGE_RENDERED，改为监听发送动作本身）
   // 只有发送 /hide 或 /unhide 命令时才延迟刷新，避免浪费性能
   const sendBtn = document.getElementById('send_but');
   if (sendBtn) {
-    sendBtn.addEventListener('click', () => {
+    savedHandlers.sendButtonClick = () => {
       if (!isPanelVisible) return;
       const textarea = /** @type {HTMLTextAreaElement} */ (document.getElementById('send_textarea'));
       const text = textarea?.value?.trim() || '';
       if (text.startsWith('/hide') || text.startsWith('/unhide')) {
         setTimeout(() => refreshPanel(), 600);
       }
-    });
+    };
+    sendBtn.addEventListener('click', savedHandlers.sendButtonClick);
   }
 
   eventsBound = true;
@@ -167,6 +260,16 @@ export function bindHideSettings() {
       isEnabled = newState;
       saveSettingsDebounced();
       logger.info(MODULE_NAME, `${LOG_PREFIX} 功能开关状态变更: ${newState}`);
+
+      if (!newState) {
+        disableChatToolsHide();
+        return;
+      }
+
+      if (!eventsBound) {
+        setupEvents();
+      }
+      setupMutationObserver();
     });
   }
   
@@ -563,11 +666,46 @@ function fillInput(cmd) {
 }
 
 /**
+ * 清理拖拽监听器
+ * @returns {void}
+ */
+function removeDraggableListeners() {
+  if (dragHandlers.handle && dragHandlers.mousedown) {
+    dragHandlers.handle.removeEventListener('mousedown', dragHandlers.mousedown);
+  }
+  if (dragHandlers.mousemove) {
+    document.removeEventListener('mousemove', dragHandlers.mousemove);
+  }
+  if (dragHandlers.mouseup) {
+    document.removeEventListener('mouseup', dragHandlers.mouseup);
+  }
+
+  dragHandlers = {
+    element: null,
+    handle: null,
+    mousedown: null,
+    mousemove: null,
+    mouseup: null,
+  };
+}
+
+/**
  * 使元素可拖动
+ *
+ * @description
+ * 通过保存 mousedown/mousemove/mouseup 监听器引用，实现可逆的拖拽绑定。
+ * 这样在功能关闭或面板销毁时可以彻底移除 document 级监听，避免泄漏。
+ *
  * @param {HTMLElement} element - 要拖动的元素
  * @param {HTMLElement} handle - 拖动手柄元素（通常是头部）
+ * @returns {void}
+ * @throws {Error} 当 DOM 监听绑定异常时抛出运行时错误
+ * @example
+ * makeDraggable(panel, header);
  */
 function makeDraggable(element, handle) {
+  removeDraggableListeners();
+
   let isDragging = false;
   let startX = 0;
   let startY = 0;
@@ -576,7 +714,7 @@ function makeDraggable(element, handle) {
 
   handle.style.cursor = 'move';
 
-  handle.addEventListener('mousedown', (e) => {
+  dragHandlers.mousedown = (e) => {
     // 如果点击的是按钮，不触发拖动
     const target = /** @type {HTMLElement} */ (e.target);
     if (target.closest('.chat-tools-hide-quick-btn') || target.closest('.chat-tools-hide-close-btn')) {
@@ -592,9 +730,10 @@ function makeDraggable(element, handle) {
     initialTop = rect.top;
 
     e.preventDefault();
-  });
+  };
+  handle.addEventListener('mousedown', dragHandlers.mousedown);
 
-  document.addEventListener('mousemove', (e) => {
+  dragHandlers.mousemove = (e) => {
     if (!isDragging) return;
 
     const deltaX = e.clientX - startX;
@@ -612,9 +751,14 @@ function makeDraggable(element, handle) {
 
     element.style.left = `${newLeft}px`;
     element.style.top = `${newTop}px`;
-  });
+  };
+  document.addEventListener('mousemove', dragHandlers.mousemove);
 
-  document.addEventListener('mouseup', () => {
+  dragHandlers.mouseup = () => {
     isDragging = false;
-  });
+  };
+  document.addEventListener('mouseup', dragHandlers.mouseup);
+
+  dragHandlers.element = element;
+  dragHandlers.handle = handle;
 }

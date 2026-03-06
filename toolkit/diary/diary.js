@@ -83,6 +83,15 @@ export class DiarySystem {
      * @type {boolean}
      */
     this.enabled = false;
+
+    /**
+     * 全局事件处理器引用（用于禁用时反注册，防止关闭后继续执行）
+     * @type {{ chatChanged: ((...args: any[]) => void)|null, messageReceived: ((...args: any[]) => void)|null }}
+     */
+    this._handlers = {
+      chatChanged: null,
+      messageReceived: null,
+    };
   }
 
   /**
@@ -234,20 +243,36 @@ export class DiarySystem {
 
   /**
    * 绑定全局事件
+   * 
+   * @description
+   * 保存事件处理器引用并绑定到 eventSource。
+   * 这样在 disable 时可通过 removeListener 精确反注册，避免关闭后仍执行逻辑。
+   * 重复调用时会先判断已绑定状态，防止重复注册。
+   * 
+   * @returns {void}
    */
   bindEvents() {
-    // 监听角色切换
-    eventSource.on(event_types.CHAT_CHANGED, () => {
+    if (this._handlers.chatChanged || this._handlers.messageReceived) {
+      logger.debug('[DiarySystem] 全局事件已绑定，跳过重复注册');
+      return;
+    }
+
+    this._handlers.chatChanged = () => {
       if (this.enabled && this.ui.isPanelOpen()) {
         this.ui.refreshDiaries();
       }
-    });
+    };
 
-    // 监听消息接收（提取AI的日记和评论）
-    eventSource.on(event_types.MESSAGE_RECEIVED, (messageId, type) => {
+    this._handlers.messageReceived = (messageId) => {
       if (!this.enabled) return;
       this.api.extractFromMessage(messageId);
-    });
+    };
+
+    // 监听角色切换
+    eventSource.on(event_types.CHAT_CHANGED, this._handlers.chatChanged);
+
+    // 监听消息接收（提取AI的日记和评论）
+    eventSource.on(event_types.MESSAGE_RECEIVED, this._handlers.messageReceived);
 
     logger.debug('[DiarySystem] 全局事件已绑定');
   }
@@ -300,6 +325,7 @@ export class DiarySystem {
     } else {
       // 已经完整初始化过，只需显示菜单图标
       this.showMenuEntry();
+      this.bindEvents();
     }
 
     logger.info('[DiarySystem] 日记系统已启用');
@@ -309,9 +335,27 @@ export class DiarySystem {
    * 禁用日记系统
    * 
    * @description
-   * 禁用日记功能，同时隐藏扩展菜单中的日记图标
+   * 禁用日记功能，同时隐藏扩展菜单中的日记图标。
+   * 若存在进行中的生成请求，会先主动中止，避免禁用后仍写入数据。
+   * 同时反注册全局事件监听，确保“关闭 = 不执行”。
+   * 
+   * @returns {void}
    */
   disable() {
+    if (this.api?.isGenerating) {
+      this.api.abort();
+      logger.info('[DiarySystem] 检测到进行中的生成任务，已在禁用时中止');
+    }
+
+    if (this._handlers.chatChanged) {
+      eventSource.removeListener(event_types.CHAT_CHANGED, this._handlers.chatChanged);
+      this._handlers.chatChanged = null;
+    }
+    if (this._handlers.messageReceived) {
+      eventSource.removeListener(event_types.MESSAGE_RECEIVED, this._handlers.messageReceived);
+      this._handlers.messageReceived = null;
+    }
+
     this.enabled = false;
     extension_settings[EXT_ID][MODULE_NAME].enabled = false;
     this.saveSettings();

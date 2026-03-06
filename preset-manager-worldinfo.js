@@ -59,22 +59,52 @@ export class WorldInfoIntegration {
     // 每页显示数量
     this.availablePerPage = 10;
     this.activatedPerPage = 5;
+
+    // 事件处理器引用（用于对称解绑）
+    this._handlers = {};
+
+    // 生命周期状态
+    this.initialized = false;
   }
 
   /**
    * 初始化
+   *
+   * @description
+   * 只在启用状态下注册生成事件监听，避免模块关闭后仍继续注入提示词。
+   * 使用一次性初始化保护，防止重复注册同一监听器。
+   *
+   * @returns {Promise<void>}
+   * @throws {Error} 当初始化过程发生异常时抛出
+   *
+   * @example
+   * await worldInfo.init();
    */
   async init() {
+    if (this.initialized) {
+      logger.debug('preset', '[WorldInfoIntegration.init] 已初始化，跳过重复注册');
+      return;
+    }
+
     this.loadSelectedItems();
+
+    if (!this.presetModule?.enabled) {
+      logger.info('preset', '[WorldInfoIntegration.init] 预设模块已禁用，跳过监听注册');
+      return;
+    }
+
     // ✅ 加载后立即注入所有启用的条目
     this.injectAllItems();
 
     // ⭐ 阶段3：监听生成事件，在每次发送消息前重新检查关键词匹配
-    eventSource.on(event_types.GENERATION_STARTED, () => {
-      logger.debug('preset', '🔍 检测到消息生成，重新检查关键词匹配');
+    this._handlers.onGenerationStarted = () => {
+      if (!this.presetModule?.enabled) return;
+      logger.debug('preset', '[WorldInfoIntegration.onGenerationStarted] 检测到消息生成，重新检查关键词匹配');
       this.injectAllItems();
-    });
+    };
+    eventSource.on(event_types.GENERATION_STARTED, this._handlers.onGenerationStarted);
 
+    this.initialized = true;
     logger.info('preset', '世界书工具初始化完成');
   }
 
@@ -141,6 +171,11 @@ export class WorldInfoIntegration {
    * 注入所有启用的条目
    */
   injectAllItems() {
+    if (!this.presetModule?.enabled) {
+      logger.debug('preset', '[WorldInfoIntegration.injectAllItems] 模块已禁用，跳过注入');
+      return;
+    }
+
     logger.debug(` 🔄 刷新所有条目注入，总数: ${this.selectedItems.length}`);
 
     this.selectedItems.forEach(item => {
@@ -408,53 +443,15 @@ export class WorldInfoIntegration {
     const mainContent = this.drawerContainer.querySelector('.inline-drawer-content');
     const mainIcon = mainToggle.querySelector('.inline-drawer-icon');
 
-    mainToggle.addEventListener('click', async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+    // SillyTavern 原生处理 .inline-drawer-toggle 的展开/收起和图标切换
+    // 只在展开时加载世界书列表数据
+    mainToggle.addEventListener('click', async () => {
+      // 等 SillyTavern 原生 handler 处理完 toggle
+      await new Promise(resolve => setTimeout(resolve, 50));
       const isOpen = mainContent.style.display !== 'none';
-      mainContent.style.display = isOpen ? 'none' : 'block';
-
-      // ✅ 正确切换箭头图标
       if (isOpen) {
-        // 关闭：显示向下箭头
-        mainIcon.classList.remove('up', 'fa-circle-chevron-up');
-        mainIcon.classList.add('down', 'fa-circle-chevron-down');
-      } else {
-        // 打开：显示向上箭头
-        mainIcon.classList.remove('down', 'fa-circle-chevron-down');
-        mainIcon.classList.add('up', 'fa-circle-chevron-up');
-
-        // ⭐ 展开时自动刷新世界书列表
         logger.debug('preset', ' 展开面板，自动刷新世界书列表');
         await this.loadWorldBookList();
-      }
-    });
-
-    // 子折叠栏（已激活条目）
-    const subDrawer = mainContent.querySelector('.inline-drawer');
-    if (!subDrawer) {
-      logger.error('preset', ' 未找到已激活条目子折叠栏');
-      return;
-    }
-    const subToggle = subDrawer.querySelector('.inline-drawer-toggle');
-    const subContent = subDrawer.querySelector('.inline-drawer-content');
-    const subIcon = subToggle.querySelector('.inline-drawer-icon');
-
-    subToggle.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const isOpen = subContent.style.display !== 'none';
-      subContent.style.display = isOpen ? 'none' : 'block';
-
-      // ✅ 正确切换箭头图标
-      if (isOpen) {
-        // 关闭：显示向下箭头
-        subIcon.classList.remove('up', 'fa-circle-chevron-up');
-        subIcon.classList.add('down', 'fa-circle-chevron-down');
-      } else {
-        // 打开：显示向上箭头
-        subIcon.classList.remove('down', 'fa-circle-chevron-down');
-        subIcon.classList.add('up', 'fa-circle-chevron-up');
       }
     });
 
@@ -1526,9 +1523,40 @@ export class WorldInfoIntegration {
    * 销毁
    */
   destroy() {
+    if (this._handlers.onGenerationStarted) {
+      eventSource.removeListener(event_types.GENERATION_STARTED, this._handlers.onGenerationStarted);
+      this._handlers.onGenerationStarted = null;
+    }
+
+    this.clearInjectedPrompts();
+
     if (this.drawerContainer) {
       this.drawerContainer.remove();
       this.drawerContainer = null;
     }
+
+    this.initialized = false;
+  }
+
+  /**
+   * 清空所有条目的注入提示词
+   *
+   * @description
+   * 模块关闭时仅移除注入，不删除配置数据，保证重新启用后可恢复。
+   *
+   * @returns {void}
+   */
+  clearInjectedPrompts() {
+    this.selectedItems.forEach(item => {
+      const key = `paws_wi_${item.id}`;
+      setExtensionPrompt(
+        key,
+        '',
+        extension_prompt_types.IN_CHAT,
+        0,
+        false,
+        extension_prompt_roles.SYSTEM
+      );
+    });
   }
 }

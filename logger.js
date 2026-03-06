@@ -32,6 +32,7 @@ const MODULE_CONFIG = {
   'archive': false,    // 聊天记录管理
   'chatTools': false,  // 聊天工具
   'program': false,    // 节目单
+  'api': false,        // 共享API层
 };
 
 /**

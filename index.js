@@ -65,8 +65,7 @@ import { initVariables, renderVariablesUI } from "./variables/index.js";
 // 节目单模块
 import {
   initProgramManager,
-  bindProgramToggle,
-  destroyProgramManager
+  bindProgramToggle
 } from "./program/program-manager.js";
 import {
   createProgramPanel,
@@ -1578,4 +1577,3 @@ export {
   fontManager,
   presetManager
 };
-

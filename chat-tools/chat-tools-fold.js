@@ -56,6 +56,18 @@ let quickPresets = [];
 /** @type {boolean} 是否已绑定全局点击事件 */
 let globalClickBound = false;
 
+/** @type {{userMessageRendered: Function|null, characterMessageRendered: Function|null, moreMessagesLoaded: Function|null, chatChanged: Function|null, globalFoldButtonClick: Function|null}} */
+let savedHandlers = {
+  userMessageRendered: null,
+  characterMessageRendered: null,
+  moreMessagesLoaded: null,
+  chatChanged: null,
+  globalFoldButtonClick: null,
+};
+
+/** @type {WeakMap<HTMLElement, EventListener>} */
+const foldBarDocumentClickHandlers = new WeakMap();
+
 // ========================================
 // 工具函数
 // ========================================
@@ -316,6 +328,9 @@ function deleteFold(mesId) {
     return;
   }
 
+  // 清理折叠栏关联的 document 点击监听
+  unbindFoldBarDocumentClick(/** @type {HTMLElement} */(foldBar));
+
   // 删除折叠栏
   foldBar.remove();
   logger.info('chatTools', '[Fold] 折叠栏已从DOM中移除');
@@ -417,6 +432,36 @@ function renderPresetDropdown(presetList, mesId, titleInput) {
 }
 
 /**
+ * 绑定折叠栏外部点击监听（用于关闭预设下拉）
+ *
+ * @param {HTMLElement} foldBarElement - 折叠栏元素
+ * @param {HTMLElement} presetDropdown - 预设下拉元素
+ * @returns {void}
+ */
+function bindFoldBarDocumentClick(foldBarElement, presetDropdown) {
+  const hideDropdownHandler = (e) => {
+    if (!foldBarElement.contains(/** @type {HTMLElement} */(e.target))) {
+      presetDropdown.style.display = 'none';
+    }
+  };
+  document.addEventListener('click', hideDropdownHandler);
+  foldBarDocumentClickHandlers.set(foldBarElement, hideDropdownHandler);
+}
+
+/**
+ * 移除折叠栏外部点击监听
+ * @param {HTMLElement|null} foldBarElement - 折叠栏元素
+ * @returns {void}
+ */
+function unbindFoldBarDocumentClick(foldBarElement) {
+  if (!foldBarElement) return;
+  const handler = foldBarDocumentClickHandlers.get(foldBarElement);
+  if (!handler) return;
+  document.removeEventListener('click', handler);
+  foldBarDocumentClickHandlers.delete(foldBarElement);
+}
+
+/**
  * 绑定折叠栏的事件
  * @param {HTMLElement} foldBarElement - 折叠栏元素
  */
@@ -502,11 +547,7 @@ function bindFoldBarEvents(foldBarElement) {
   });
 
   // 点击其他地方 - 隐藏预设下拉
-  document.addEventListener('click', function hideDropdown(e) {
-    if (!foldBarElement.contains(/** @type {HTMLElement} */(e.target))) {
-      presetDropdown.style.display = 'none';
-    }
-  });
+  bindFoldBarDocumentClick(foldBarElement, presetDropdown);
 
   // 输入框回车 - 相当于确认
   titleInput?.addEventListener('keydown', (e) => {
@@ -717,7 +758,10 @@ function getFoldStats() {
  * 清除 DOM 中当前所有折叠栏，还原消息显示
  */
 function clearFoldBarDom() {
-  document.querySelectorAll('.chat-tools-fold-bar').forEach(bar => bar.remove());
+  document.querySelectorAll('.chat-tools-fold-bar').forEach((bar) => {
+    unbindFoldBarDocumentClick(/** @type {HTMLElement} */(bar));
+    bar.remove();
+  });
   document.querySelectorAll('.chat-tools-folded').forEach(mes => {
     /** @type {HTMLElement} */(mes).style.display = '';
     mes.classList.remove('chat-tools-folded', 'chat-tools-processed');
@@ -857,12 +901,13 @@ export function bindFoldSettings() {
   if (enabledCheckbox) {
     logger.debug('chatTools', '[Fold] 找到启用开关元素');
     enabledCheckbox.addEventListener('change', (e) => {
-      isEnabled = /** @type {HTMLInputElement} */ (e.target).checked;
-      saveSetting(STORAGE_KEYS.enabled, isEnabled);
-      logger.info('chatTools', '[Fold] 启用状态已更改:', isEnabled);
+      const newState = /** @type {HTMLInputElement} */ (e.target).checked;
+      logger.info('chatTools', '[Fold] 启用状态已更改:', newState);
 
-      if (isEnabled) {
-        scanAllMessages('checkbox-toggle');
+      if (newState) {
+        enableChatToolsFold();
+      } else {
+        disableChatToolsFold();
       }
     });
     // 初始化状态
@@ -1070,10 +1115,24 @@ function showInfoPopup() {
 
 /**
  * 监听聊天消息加载事件
+ *
+ * @description
+ * 统一注册 Fold 依赖的全局监听器，并将 handler 引用保存到模块级变量。
+ * 这样在 disable 阶段可以通过 removeListener 精确解绑，避免“关闭后仍执行”。
+ *
+ * @returns {void}
+ * @throws {Error} 当 eventSource 不可用时，事件系统会抛出运行时异常
+ * @example
+ * setupEventListeners();
  */
 function setupEventListeners() {
+  if (savedHandlers.userMessageRendered) {
+    logger.debug('chatTools', '[Fold.setupEventListeners] 事件监听已存在，跳过重复绑定');
+    return;
+  }
+
   // 监听用户消息渲染完成
-  eventSource.on(event_types.USER_MESSAGE_RENDERED, (messageId) => {
+  savedHandlers.userMessageRendered = (messageId) => {
     logger.debug('chatTools', '[Fold] 收到 USER_MESSAGE_RENDERED 事件, messageId:', messageId);
     if (isEnabled) {
       // messageId 可能是数字或字符串，尝试两种方式查询
@@ -1089,10 +1148,11 @@ function setupEventListeners() {
         logger.warn('chatTools', '[Fold] 未找到消息元素, messageId:', messageId);
       }
     }
-  });
+  };
+  eventSource.on(event_types.USER_MESSAGE_RENDERED, savedHandlers.userMessageRendered);
 
   // 监听 AI 消息渲染完成
-  eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, (messageId) => {
+  savedHandlers.characterMessageRendered = (messageId) => {
     logger.debug('chatTools', '[Fold] 收到 CHARACTER_MESSAGE_RENDERED 事件, messageId:', messageId);
     if (isEnabled) {
       let mesElement = /** @type {HTMLElement} */ (document.querySelector(`.mes[mesid="${messageId}"]`));
@@ -1106,10 +1166,11 @@ function setupEventListeners() {
         logger.warn('chatTools', '[Fold] 未找到消息元素, messageId:', messageId);
       }
     }
-  });
+  };
+  eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, savedHandlers.characterMessageRendered);
 
   // 监听批量加载历史消息（点击 "Show more messages" 按钮）
-  eventSource.on(event_types.MORE_MESSAGES_LOADED, () => {
+  savedHandlers.moreMessagesLoaded = () => {
     if (!isEnabled) return;
 
     logger.info('chatTools', '[Fold] 收到 MORE_MESSAGES_LOADED 事件');
@@ -1119,10 +1180,11 @@ function setupEventListeners() {
 
     // 扫描新加载的消息，添加折叠按钮
     scanAllMessages('more-messages-loaded');
-  });
+  };
+  eventSource.on(event_types.MORE_MESSAGES_LOADED, savedHandlers.moreMessagesLoaded);
 
   // 监听聊天切换（切换角色、切换聊天等）
-  eventSource.on(event_types.CHAT_CHANGED, () => {
+  savedHandlers.chatChanged = () => {
     // 每次都从存储中读取最新的启用状态，而不是依赖内存变量
     const currentEnabled = getSetting(STORAGE_KEYS.enabled, false);
 
@@ -1141,7 +1203,8 @@ function setupEventListeners() {
 
     // 顺带刷新管理面板（如果设置面板已打开）
     refreshFoldManager();
-  });
+  };
+  eventSource.on(event_types.CHAT_CHANGED, savedHandlers.chatChanged);
 
   // 绑定全局点击事件（使用事件委托）
   bindGlobalClickEvent();
@@ -1160,7 +1223,7 @@ function bindGlobalClickEvent() {
   }
 
   // 使用 jQuery 事件委托（和 SillyTavern 官方一样）
-  $(document).on('click', '.chat-tools-fold-btn', function (e) {
+  savedHandlers.globalFoldButtonClick = function (e) {
     e.preventDefault();
     e.stopPropagation();
 
@@ -1173,7 +1236,8 @@ function bindGlobalClickEvent() {
         foldMessage(mesId, mesElement);
       }
     }
-  });
+  };
+  $(document).on('click', '.chat-tools-fold-btn', savedHandlers.globalFoldButtonClick);
 
   globalClickBound = true;
   logger.debug('chatTools', '[Fold] 全局点击事件已绑定');
@@ -1204,15 +1268,53 @@ export function initChatToolsFold() {
 export function enableChatToolsFold() {
   isEnabled = true;
   saveSetting(STORAGE_KEYS.enabled, true);
+  setupEventListeners();
   scanAllMessages('enableChatToolsFold');
   logger.info('chatTools', '[Fold] 折叠功能已启用');
 }
 
 /**
  * 禁用折叠功能
+ *
+ * @description
+ * 关闭功能时主动移除全局监听器并还原折叠 DOM，而不是只改开关值。
+ * 这样可以从根源保证“关闭 = 不执行”，避免监听器驻留和 UI 残留。
+ *
+ * @returns {void}
+ * @throws {Error} 当事件系统异常时，removeListener 调用会抛出运行时异常
+ * @example
+ * disableChatToolsFold();
  */
 export function disableChatToolsFold() {
   isEnabled = false;
   saveSetting(STORAGE_KEYS.enabled, false);
+
+  if (savedHandlers.userMessageRendered) {
+    eventSource.removeListener(event_types.USER_MESSAGE_RENDERED, savedHandlers.userMessageRendered);
+    savedHandlers.userMessageRendered = null;
+  }
+
+  if (savedHandlers.characterMessageRendered) {
+    eventSource.removeListener(event_types.CHARACTER_MESSAGE_RENDERED, savedHandlers.characterMessageRendered);
+    savedHandlers.characterMessageRendered = null;
+  }
+
+  if (savedHandlers.moreMessagesLoaded) {
+    eventSource.removeListener(event_types.MORE_MESSAGES_LOADED, savedHandlers.moreMessagesLoaded);
+    savedHandlers.moreMessagesLoaded = null;
+  }
+
+  if (savedHandlers.chatChanged) {
+    eventSource.removeListener(event_types.CHAT_CHANGED, savedHandlers.chatChanged);
+    savedHandlers.chatChanged = null;
+  }
+
+  if (savedHandlers.globalFoldButtonClick && globalClickBound) {
+    $(document).off('click', '.chat-tools-fold-btn', savedHandlers.globalFoldButtonClick);
+    savedHandlers.globalFoldButtonClick = null;
+    globalClickBound = false;
+  }
+
+  clearFoldBarDom();
   logger.info('chatTools', '[Fold] 折叠功能已禁用');
 }

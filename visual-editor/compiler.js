@@ -24,6 +24,7 @@
 // [IMPORT] 导入映射表
 import { getSelector } from './st-element-map.js';
 import { translateProperty, translateValue } from './css-property-dict.js';
+import logger from '../logger.js';
 
 // [CORE] 核心翻译函数
 
@@ -188,7 +189,7 @@ export function compileToEnglishCSS(chineseCSS) {
     const selector = getSelector(elementName);
 
     if (!selector) {
-      console.warn(`[编译器] 未找到元素"${elementName}"的CSS选择器`);
+      logger.warn('visual', `[compiler.compileToEnglishCSS] 未找到元素"${elementName}"的CSS选择器`);
       continue;
     }
 
@@ -200,7 +201,7 @@ export function compileToEnglishCSS(chineseCSS) {
       const cssProp = translateProperty(chineseProp);
 
       if (!cssProp) {
-        console.warn(`[编译器] 未找到属性"${chineseProp}"的CSS属性名`);
+        logger.warn('visual', `[compiler.compileToEnglishCSS] 未找到属性"${chineseProp}"的CSS属性名`);
         continue;
       }
 

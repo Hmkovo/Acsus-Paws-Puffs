@@ -54,7 +54,8 @@ export class FontManager {
    * 1. 加载所有字体列表和标签
    * 2. 加载字体功能开关状态
    * 3. 加载当前选中的字体
-   * 4. 如果功能已开启且有选中字体，自动应用到页面
+   * 4. 若功能关闭则短路退出（仅保留数据，不应用样式）
+   * 5. 如果功能已开启且有选中字体，自动应用到页面
    *
    * @async
    */
@@ -84,8 +85,15 @@ export class FontManager {
       logger.warn('font', '[FontManager.init] 保存的字体不存在:', savedCurrent);
     }
 
+    // 关闭态短路：保留数据供 UI 使用，但不做任何字体应用
+    if (!this.fontEnabled) {
+      this.clearAppliedFont();
+      logger.info('font', '[FontManager.init] 字体功能关闭，跳过字体应用');
+      return;
+    }
+
     // 如果字体功能开启且有选中的字体，应用它
-    if (this.currentFont && this.fontEnabled) {
+    if (this.currentFont) {
       const fontData = this.fonts.get(this.currentFont);
       if (fontData) {
         this.applyFont(fontData);
@@ -1028,4 +1036,3 @@ export class FontManager {
     await this.ui.init(container);
   }
 }
-

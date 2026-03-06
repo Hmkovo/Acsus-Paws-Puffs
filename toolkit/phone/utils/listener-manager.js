@@ -341,14 +341,14 @@ export function getStats() {
  * 打印监听器清单（调试用）
  */
 export function printListeners() {
-    console.log('=== 监听器中心状态 ===');
-    console.log('统计:', stats);
-    console.log('\n页面详情:');
+    logger.debug('phone', '=== 监听器中心状态 ===');
+    logger.debug('phone', '统计:', stats);
+    logger.debug('phone', '\n页面详情:');
     
     for (const [pageId, group] of listenerRegistry.entries()) {
-        console.log(`\n📄 ${pageId} (${group.listeners.length}个监听器)`);
+        logger.debug('phone', `\n📄 ${pageId} (${group.listeners.length}个监听器)`);
         group.listeners.forEach((l, i) => {
-            console.log(`  ${i + 1}. ${l.eventName} - ${l.description || '(无描述)'}`);
+            logger.debug('phone', `  ${i + 1}. ${l.eventName} - ${l.description || '(无描述)'}`);
         });
     }
 }
@@ -388,4 +388,3 @@ export default {
     printListeners,
     getListenersByEvent,
 };
-

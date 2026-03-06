@@ -69,8 +69,8 @@ export class TriggerManager {
      * 销毁
      */
     destroy() {
-        eventSource.off(event_types.MESSAGE_RECEIVED, this._onMessageReceived);
-        eventSource.off(event_types.CHAT_CHANGED, this._onChatChanged);
+        eventSource.removeListener(event_types.MESSAGE_RECEIVED, this._onMessageReceived);
+        eventSource.removeListener(event_types.CHAT_CHANGED, this._onChatChanged);
 
         this.abortAnalysis();
         this.initialized = false;

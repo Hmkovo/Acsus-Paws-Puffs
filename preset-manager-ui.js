@@ -21,6 +21,7 @@ export class PresetManagerUI {
   constructor(presetManager) {
     this.presetManager = presetManager;
     this.container = null;
+    this._handlers = {};
   }
 
   /**
@@ -319,6 +320,12 @@ export class PresetManagerUI {
 
   /**
    * 绑定事件
+   *
+   * @description
+   * 统一保存跨模块事件总线的处理器引用，确保 destroy() 可对称解绑，
+   * 避免 UI 已销毁后仍接收事件导致的重复渲染或内存泄漏。
+   *
+   * @returns {void}
    */
   bindEvents() {
     if (!this.container) return;
@@ -347,11 +354,12 @@ export class PresetManagerUI {
     }
 
     // 监听预设名称变化
-    eventSource.on('pawsPresetEnabledChanged', (enabled) => {
+    this._handlers.onPresetEnabledChanged = (enabled) => {
       if (enabledCheckbox) {
         enabledCheckbox.checked = enabled;
       }
-    });
+    };
+    eventSource.on('pawsPresetEnabledChanged', this._handlers.onPresetEnabledChanged);
 
     // ✨ 手风琴效果：点击标题切换展开的卡片
     const accordionHeaders = this.container.querySelectorAll('.preset-accordion-header');
@@ -383,11 +391,12 @@ export class PresetManagerUI {
     this.renderSnapshotList();
 
     // 监听快照保存事件，刷新列表
-    eventSource.on('pawsSnapshotSaved', ({ presetName }) => {
+    this._handlers.onSnapshotSaved = () => {
       logger.debug('preset', 'PresetManagerUI] 收到快照保存事件，刷新列表');
       this.refreshPresetSelector();
       this.renderSnapshotList();
-    });
+    };
+    eventSource.on('pawsSnapshotSaved', this._handlers.onSnapshotSaved);
   }
 
   // ========================================
@@ -1764,13 +1773,23 @@ export class PresetManagerUI {
 
   /**
    * 渲染快照列表
-   * @description 根据选中的预设加载快照，支持按名称搜索过滤
+   * @description
+   * 快照功能关闭时直接返回并清空容器，确保“关闭 = 不可执行”。
+   * 这样可以从渲染入口阻断后续操作按钮的创建，避免禁用状态仍触发增删改用逻辑。
    * @returns {void}
    */
   renderSnapshotList() {
     const container = this.container?.querySelector('#snapshot-list-container');
     const countEl = this.container?.querySelector('#snapshot-count');
     if (!container) return;
+    if (!snapshotData.isEnabled()) {
+      container.innerHTML = '';
+      if (countEl) {
+        countEl.textContent = '(0)';
+      }
+      logger.debug('preset', '[PresetManagerUI.renderSnapshotList] 快照功能已禁用，跳过列表渲染');
+      return;
+    }
 
     const selectedPreset = this.getSelectedPreset();
     const snapshots = snapshotData.getSnapshotList(selectedPreset);
@@ -1838,10 +1857,21 @@ export class PresetManagerUI {
 
   /**
    * 绑定快照列表事件
+   *
+   * @description
+   * 快照禁用时不绑定任何操作事件，防止已有 DOM 或异步重渲染导致回调仍可触发。
+   *
+   * @returns {void}
+   * @example
+   * this.bindSnapshotListEvents();
    */
   bindSnapshotListEvents() {
     const container = this.container?.querySelector('#snapshot-list-container');
     if (!container) return;
+    if (!snapshotData.isEnabled()) {
+      logger.debug('preset', '[PresetManagerUI.bindSnapshotListEvents] 快照功能已禁用，跳过事件绑定');
+      return;
+    }
 
     // 应用按钮
     container.querySelectorAll('.snapshot-apply-btn').forEach(btn => {
@@ -1927,6 +1957,7 @@ export class PresetManagerUI {
 
       // 触发事件通知其他模块
       eventSource.emit('pawsSnapshotEnabledChanged', enabled);
+      this.renderSnapshotList();
     });
 
     // 绑定弹窗样式滑块
@@ -2294,9 +2325,21 @@ export class PresetManagerUI {
 
   /**
    * 销毁UI
+   *
+   * @description
+   * 必须手动移除 eventSource 监听，浏览器不会自动清理事件总线回调。
+   *
+   * @returns {void}
    */
   destroy() {
-    // 清理事件监听器
-    // （由于使用了简单的事件绑定，浏览器会自动清理）
+    if (this._handlers.onPresetEnabledChanged) {
+      eventSource.removeListener('pawsPresetEnabledChanged', this._handlers.onPresetEnabledChanged);
+      this._handlers.onPresetEnabledChanged = null;
+    }
+
+    if (this._handlers.onSnapshotSaved) {
+      eventSource.removeListener('pawsSnapshotSaved', this._handlers.onSnapshotSaved);
+      this._handlers.onSnapshotSaved = null;
+    }
   }
 }

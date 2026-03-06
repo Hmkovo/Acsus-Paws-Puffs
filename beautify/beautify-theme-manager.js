@@ -55,6 +55,12 @@ let isCollapsed = false;
 /** @type {Array} 官方主题列表缓存 */
 let themesCache = null;
 
+/** @type {HTMLSelectElement|null} 官方主题下拉框引用（用于反注册 change 监听） */
+let themesSelectRef = null;
+
+/** @type {Function|null} 官方主题下拉框 change 监听器引用 */
+let themesSelectChangeHandler = null;
+
 
 // ==========================================
 // 公开 API
@@ -120,6 +126,10 @@ function setItemsPerPage(value) {
 
 /**
  * 初始化主题管理
+ *
+ * @description
+ * 保存 #themes 的元素和 change 监听器引用，确保模块销毁时能完整反注册，
+ * 避免关闭后仍触发列表重渲染。
  */
 function initThemeManager() {
   if (initialized) return;
@@ -140,12 +150,13 @@ function initThemeManager() {
     document.addEventListener('beautify-theme-tags-changed', handleThemeTagsChanged);
 
     // 监听官方 #themes 下拉框切换 → 更新"当前"标记
-    const themesSelect = document.getElementById('themes');
-    if (themesSelect) {
-      themesSelect.addEventListener('change', () => {
+    themesSelectRef = /** @type {HTMLSelectElement|null} */ (document.getElementById('themes'));
+    if (themesSelectRef) {
+      themesSelectChangeHandler = function handleThemesSelectChange() {
         // 延迟等 power_user.theme 被 SillyTavern 更新后再渲染
         setTimeout(() => renderThemeList(), 150);
-      });
+      };
+      themesSelectRef.addEventListener('change', themesSelectChangeHandler);
     }
 
     initialized = true;
@@ -166,8 +177,14 @@ function destroyThemeManager() {
   if (infoOverlay) infoOverlay.remove();
 
   document.removeEventListener('beautify-theme-tags-changed', handleThemeTagsChanged);
+  if (themesSelectRef && themesSelectChangeHandler) {
+    themesSelectRef.removeEventListener('change', themesSelectChangeHandler);
+  }
+  themesSelectRef = null;
+  themesSelectChangeHandler = null;
 
   initialized = false;
+  themesCache = null;
   logger.info('beautify', '[ThemeManager] 已销毁');
 }
 

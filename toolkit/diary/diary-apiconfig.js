@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 日记 - API配置管理模块（重构版）
  *
  * @description
@@ -16,14 +16,19 @@
 // ========================================
 // [IMPORT] 依赖
 // ========================================
-import { oai_settings } from '../../../../../openai.js';
 import logger from '../../logger.js';
 import { showInfoToast, showSuccessToast, showErrorToast } from './diary-toast.js';
+import { generate } from '../../shared/api/api-client.js';
+import { refreshModelList } from '../../shared/api/api-model-refresh.js';
+import { resolveSource, SOURCE_CAPABILITIES, getDefaultUrl } from '../../shared/api/api-config-schema.js';
 import {
-  PARAMS_DEFINITIONS,
+  getParamDefinitions,
   getSupportedParams,
   getDefaultParams
-} from './diary-api-params-config.js';
+} from '../../shared/api/api-params-config.js';
+
+const NO_VALIDATE_SOURCES = new Set(['claude', 'ai21', 'vertexai', 'perplexity', 'zai']);
+const PARAMS_DEFINITIONS = getParamDefinitions('diary');
 
 // ========================================
 // [CORE] API配置管理类
@@ -49,6 +54,80 @@ export class DiaryAPIConfig {
     this.api = options.api;
   }
 
+  /**
+   * 更新 apiConfig 并持久化。
+   *
+   * @param {Object} patch - apiConfig 局部更新字段。
+   * @returns {void}
+   */
+  updateApiConfig(patch) {
+    const settings = this.dataManager.getSettings();
+    this.dataManager.updateSettings({
+      apiConfig: {
+        ...(settings.apiConfig || {}),
+        ...patch
+      }
+    });
+  }
+
+  /**
+   * 清空模型选择与手动输入状态。
+   *
+   * @returns {void}
+   */
+  clearModelOptions() {
+    const modelSelect = /** @type {HTMLSelectElement|null} */ (
+      this.panelElement.querySelector('#diaryApiModelSelect')
+    );
+    const customModelSelect = /** @type {HTMLSelectElement|null} */ (
+      this.panelElement.querySelector('#diaryCustomModelSelect')
+    );
+    const manualWrapper = /** @type {HTMLElement|null} */ (
+      this.panelElement.querySelector('#diaryApiModelManualWrapper')
+    );
+    const manualInput = /** @type {HTMLInputElement|null} */ (
+      this.panelElement.querySelector('#diaryApiModelManual')
+    );
+
+    if (modelSelect) {
+      modelSelect.innerHTML = `
+        <option value="">请选择模型...</option>
+        <option value="__manual__">手动输入...</option>
+      `;
+    }
+    if (customModelSelect) {
+      customModelSelect.innerHTML = '<option value="">无</option>';
+    }
+    if (manualWrapper) {
+      manualWrapper.style.display = 'none';
+    }
+    if (manualInput) {
+      manualInput.value = '';
+    }
+  }
+
+  /**
+   * 获取 API 类型下拉中的可用格式列表。
+   *
+   * @returns {Set<string>} 可用格式集合。
+   */
+  getAvailableFormats() {
+    const formatSelect = /** @type {HTMLSelectElement|null} */ (
+      this.panelElement.querySelector('#diaryApiFormat')
+    );
+    const values = new Set();
+    if (!formatSelect) {
+      return values;
+    }
+
+    Array.from(formatSelect.options).forEach((option) => {
+      if (option.value && !option.disabled) {
+        values.add(option.value);
+      }
+    });
+    return values;
+  }
+
 
   /**
    * 绑定 API 设置事件
@@ -65,6 +144,9 @@ export class DiaryAPIConfig {
 
     // 流式开关
     this.bindStreamToggle();
+
+    // 输入框统一持久化
+    this.bindInputPersistenceEvents();
 
     // 密钥显示/隐藏（多个）
     this.bindPasswordToggles();
@@ -112,29 +194,20 @@ export class DiaryAPIConfig {
     );
 
     if (apiSourceSelect) {
-      apiSourceSelect.addEventListener('change', () => {
+      apiSourceSelect.addEventListener('change', async () => {
         const source = apiSourceSelect.value;
-        const settings = this.dataManager.getSettings();
+        this.updateApiConfig({ source: source });
+        this.clearModelOptions();
 
-        // 更新配置
-        this.dataManager.updateSettings({
-          apiConfig: {
-            ...settings.apiConfig,
-            source: source
-          }
-        });
-
-        // 显示/隐藏自定义配置区域
         if (customApiSettings) {
           customApiSettings.style.display = source === 'custom' ? 'block' : 'none';
         }
 
-        // 如果切换到自定义，触发一次表单切换
         if (source === 'custom') {
-          this.toggleApiSourceForms();
+          await this.handleApiFormatChange();
         }
 
-        logger.info('diary', '[DiaryAPIConfig]] API来源已切换:', source);
+        logger.debug('diary', '[DiaryAPIConfig] API来源已切换:', source);
       });
     }
   }
@@ -148,25 +221,11 @@ export class DiaryAPIConfig {
     );
 
     if (formatSelect) {
-      formatSelect.addEventListener('change', () => {
+      formatSelect.addEventListener('change', async () => {
         const format = formatSelect.value;
-        const settings = this.dataManager.getSettings();
-
-        // 保存选择的格式
-        this.dataManager.updateSettings({
-          apiConfig: {
-            ...settings.apiConfig,
-            format: format
-          }
-        });
-
-        // 切换配置表单
-        this.toggleApiSourceForms();
-
-        // 重新渲染高级参数
-        this.renderAdvancedParams();
-
-        logger.info('diary', '[DiaryAPIConfig]] API类型已切换:', format);
+        this.updateApiConfig({ format: format });
+        await this.handleApiFormatChange();
+        logger.debug('diary', '[DiaryAPIConfig] API类型已切换:', format);
       });
     }
   }
@@ -193,6 +252,153 @@ export class DiaryAPIConfig {
         logger.info('diary', '[DiaryAPIConfig]] 流式生成已', streamCheckbox.checked ? '启用' : '禁用');
       });
     }
+  }
+
+  /**
+   * 绑定输入框持久化事件（input/change）。
+   *
+   * @returns {void}
+   */
+  bindInputPersistenceEvents() {
+    /**
+     * 为单个输入元素绑定持久化事件。
+     *
+     * @param {string} selector - 输入元素选择器。
+     * @param {(value: string) => void} onPersist - 保存回调。
+     * @returns {void}
+     */
+    const bindPersist = (selector, onPersist) => {
+      const input = /** @type {HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement|null} */ (
+        this.panelElement.querySelector(selector)
+      );
+      if (!input) {
+        return;
+      }
+
+      const persist = () => {
+        onPersist(input.value.trim());
+      };
+      input.addEventListener('input', persist);
+      input.addEventListener('change', persist);
+    };
+
+    bindPersist('#diaryApiKey', (value) => this.updateApiConfig({ apiKey: value }));
+    bindPersist('#diaryOpenRouterKey', (value) => this.updateApiConfig({ openRouterKey: value }));
+    bindPersist('#diaryReverseProxyUrl', (value) => this.updateApiConfig({ reverseProxyUrl: value }));
+    bindPersist('#diaryReverseProxyPassword', (value) => {
+      this.updateApiConfig({ reverseProxyPassword: value });
+    });
+
+    bindPersist('#diaryApiBaseUrl', (value) => {
+      const settings = this.dataManager.getSettings();
+      this.updateApiConfig({
+        customApiConfig: {
+          ...(settings.apiConfig?.customApiConfig || {}),
+          baseUrl: value
+        }
+      });
+    });
+    bindPersist('#diaryCustomApiKey', (value) => {
+      const settings = this.dataManager.getSettings();
+      this.updateApiConfig({
+        customApiConfig: {
+          ...(settings.apiConfig?.customApiConfig || {}),
+          apiKey: value
+        }
+      });
+    });
+    bindPersist('#diaryCustomModelId', (value) => {
+      const settings = this.dataManager.getSettings();
+      this.updateApiConfig({
+        customApiConfig: {
+          ...(settings.apiConfig?.customApiConfig || {}),
+          model: value
+        }
+      });
+    });
+
+    bindPersist('#diaryVertexApiKey', (value) => {
+      const settings = this.dataManager.getSettings();
+      this.updateApiConfig({
+        vertexConfig: {
+          ...(settings.apiConfig?.vertexConfig || {}),
+          apiKey: value
+        }
+      });
+    });
+    bindPersist('#diaryVertexProjectId', (value) => {
+      const settings = this.dataManager.getSettings();
+      this.updateApiConfig({
+        vertexConfig: {
+          ...(settings.apiConfig?.vertexConfig || {}),
+          projectId: value
+        }
+      });
+    });
+    bindPersist('#diaryVertexServiceAccount', (value) => {
+      const settings = this.dataManager.getSettings();
+      this.updateApiConfig({
+        vertexConfig: {
+          ...(settings.apiConfig?.vertexConfig || {}),
+          serviceAccount: value
+        }
+      });
+    });
+    bindPersist('#diaryVertexRegion', (value) => {
+      const settings = this.dataManager.getSettings();
+      this.updateApiConfig({
+        vertexConfig: {
+          ...(settings.apiConfig?.vertexConfig || {}),
+          region: value
+        }
+      });
+    });
+
+    bindPersist('#diaryAzureBaseUrl', (value) => {
+      const settings = this.dataManager.getSettings();
+      this.updateApiConfig({
+        azureConfig: {
+          ...(settings.apiConfig?.azureConfig || {}),
+          baseUrl: value
+        }
+      });
+    });
+    bindPersist('#diaryAzureDeploymentName', (value) => {
+      const settings = this.dataManager.getSettings();
+      this.updateApiConfig({
+        azureConfig: {
+          ...(settings.apiConfig?.azureConfig || {}),
+          deploymentName: value
+        }
+      });
+    });
+    bindPersist('#diaryAzureApiVersion', (value) => {
+      const settings = this.dataManager.getSettings();
+      this.updateApiConfig({
+        azureConfig: {
+          ...(settings.apiConfig?.azureConfig || {}),
+          apiVersion: value
+        }
+      });
+    });
+    bindPersist('#diaryAzureApiKey', (value) => {
+      const settings = this.dataManager.getSettings();
+      this.updateApiConfig({
+        azureConfig: {
+          ...(settings.apiConfig?.azureConfig || {}),
+          apiKey: value
+        }
+      });
+    });
+    bindPersist('#diaryAzureModelName', (value) => {
+      const settings = this.dataManager.getSettings();
+      this.updateApiConfig({
+        azureConfig: {
+          ...(settings.apiConfig?.azureConfig || {}),
+          modelName: value
+        }
+      });
+    });
   }
 
   /**
@@ -269,6 +475,11 @@ export class DiaryAPIConfig {
           // 清空
           if (urlInput) urlInput.value = '';
           if (passwordInput) passwordInput.value = '';
+          this.updateApiConfig({
+            reverseProxyUrl: '',
+            reverseProxyPassword: '',
+            currentProxyPreset: ''
+          });
           return;
         }
 
@@ -279,6 +490,11 @@ export class DiaryAPIConfig {
         if (preset) {
           if (urlInput) urlInput.value = preset.url || '';
           if (passwordInput) passwordInput.value = preset.password || '';
+          this.updateApiConfig({
+            reverseProxyUrl: preset.url || '',
+            reverseProxyPassword: preset.password || '',
+            currentProxyPreset: presetName
+          });
 
           // 展开反向代理区域
           const content = this.panelElement.querySelector('#diaryReverseProxyContent');
@@ -480,7 +696,7 @@ export class DiaryAPIConfig {
     const customRefreshBtn = this.panelElement.querySelector('#diaryCustomRefreshModels');
     if (customRefreshBtn) {
       customRefreshBtn.addEventListener('click', () => {
-        this.refreshCustomModelsFromAPI();
+        this.refreshModelsFromAPI();
       });
     }
   }
@@ -512,6 +728,19 @@ export class DiaryAPIConfig {
         icon.className = isHidden ? 'fa-solid fa-chevron-down' : 'fa-solid fa-chevron-right';
       });
     }
+  }
+
+  /**
+   * 处理 API 类型切换后的完整事件链。
+   *
+   * @async
+   * @returns {Promise<void>}
+   */
+  async handleApiFormatChange() {
+    this.clearModelOptions();
+    this.toggleApiSourceForms();
+    this.renderAdvancedParams();
+    await this.refreshModelsFromAPI();
   }
 
   // ========================================
@@ -578,8 +807,15 @@ export class DiaryAPIConfig {
     const formatSelect = /** @type {HTMLSelectElement|null} */ (
       this.panelElement.querySelector('#diaryApiFormat')
     );
+    const availableFormats = this.getAvailableFormats();
+    const savedFormat = apiConfig.format || 'openai';
+    const normalizedFormat = availableFormats.has(savedFormat) ? savedFormat : 'openai';
     if (formatSelect) {
-      formatSelect.value = apiConfig.format || 'openai';
+      formatSelect.value = normalizedFormat;
+    }
+    if (savedFormat !== normalizedFormat) {
+      this.updateApiConfig({ format: normalizedFormat });
+      logger.debug('diary', '[DiaryAPIConfig] 已修正无效 API 类型:', savedFormat, '->', normalizedFormat);
     }
 
     // 切换表单显示
@@ -871,230 +1107,227 @@ export class DiaryAPIConfig {
 
 
   /**
-   * 从 API 刷新模型列表（通用）
+   * 构造共享模型刷新所需配置。
    *
-   * @description
-   * 根据当前选择的 API 类型，获取对应的端点和密钥，
-   * 然后调用 API 获取可用模型列表并更新下拉框。
-   * 支持反向代理配置。
+   * @param {string} format - 当前 UI 选择格式。
+   * @returns {Object} 刷新配置对象。
+   */
+  buildSharedRefreshConfig(format) {
+    const source = resolveSource(format);
+    const reverseProxyUrlInput = /** @type {HTMLInputElement|null} */ (
+      this.panelElement.querySelector('#diaryReverseProxyUrl')
+    );
+    const reverseProxyPasswordInput = /** @type {HTMLInputElement|null} */ (
+      this.panelElement.querySelector('#diaryReverseProxyPassword')
+    );
+    const reverseProxyUrl = reverseProxyUrlInput?.value.trim() || '';
+    const reverseProxyPassword = reverseProxyPasswordInput?.value.trim() || '';
+
+    if (format === 'custom') {
+      const baseUrlInput = /** @type {HTMLInputElement|null} */ (
+        this.panelElement.querySelector('#diaryApiBaseUrl')
+      );
+      const apiKeyInput = /** @type {HTMLInputElement|null} */ (
+        this.panelElement.querySelector('#diaryCustomApiKey')
+      );
+      const customUrl = baseUrlInput?.value.trim() || '';
+      const customApiKey = apiKeyInput?.value.trim() || '';
+
+      if (customApiKey) {
+        return {
+          source: 'openai',
+          baseUrl: customUrl,
+          apiKey: customApiKey
+        };
+      }
+
+      return {
+        source: 'custom',
+        customUrl: customUrl
+      };
+    }
+
+    if (format === 'openrouter') {
+      const apiKeyInput = /** @type {HTMLInputElement|null} */ (
+        this.panelElement.querySelector('#diaryOpenRouterKey')
+      );
+      return {
+        source: source,
+        baseUrl: 'https://openrouter.ai/api/v1',
+        apiKey: apiKeyInput?.value.trim() || ''
+      };
+    }
+
+    if (format === 'azure_openai') {
+      const baseUrlInput = /** @type {HTMLInputElement|null} */ (
+        this.panelElement.querySelector('#diaryAzureBaseUrl')
+      );
+      const deploymentInput = /** @type {HTMLInputElement|null} */ (
+        this.panelElement.querySelector('#diaryAzureDeploymentName')
+      );
+      const versionSelect = /** @type {HTMLSelectElement|null} */ (
+        this.panelElement.querySelector('#diaryAzureApiVersion')
+      );
+      return {
+        source: source,
+        azureConfig: {
+          baseUrl: baseUrlInput?.value.trim() || '',
+          deploymentName: deploymentInput?.value.trim() || '',
+          apiVersion: versionSelect?.value.trim() || ''
+        }
+      };
+    }
+
+    const apiKeyInput = /** @type {HTMLInputElement|null} */ (
+      this.panelElement.querySelector('#diaryApiKey')
+    );
+    const supportsReverseProxy = SOURCE_CAPABILITIES[source]?.supportsReverseProxy === true;
+    const useReverseProxy = supportsReverseProxy && Boolean(reverseProxyUrl);
+
+    return {
+      source: source,
+      baseUrl: useReverseProxy ? reverseProxyUrl : '',
+      apiKey: useReverseProxy ? reverseProxyPassword : (apiKeyInput?.value.trim() || '')
+    };
+  }
+
+  /**
+   * 刷新主模型下拉选项。
+   *
+   * @param {string[]} models - 模型名数组。
+   * @returns {void}
+   */
+  updateMainModelSelect(models) {
+    const select = /** @type {HTMLSelectElement|null} */ (
+      this.panelElement.querySelector('#diaryApiModelSelect')
+    );
+    if (!select) {
+      return;
+    }
+
+    const currentValue = select.value;
+    select.innerHTML = '<option value="">请选择模型...</option>';
+    models.forEach((model) => {
+      const option = document.createElement('option');
+      option.value = model;
+      option.textContent = model;
+      select.appendChild(option);
+    });
+
+    const manualOption = document.createElement('option');
+    manualOption.value = '__manual__';
+    manualOption.textContent = '手动输入...';
+    select.appendChild(manualOption);
+
+    if (currentValue && models.includes(currentValue)) {
+      select.value = currentValue;
+    }
+  }
+
+  /**
+   * 刷新 Custom 模型下拉与 datalist。
+   *
+   * @param {string[]} models - 模型名数组。
+   * @returns {void}
+   */
+  updateCustomModelSelect(models) {
+    const select = /** @type {HTMLSelectElement|null} */ (
+      this.panelElement.querySelector('#diaryCustomModelSelect')
+    );
+    const datalist = this.panelElement.querySelector('#diaryCustomModelList');
+
+    if (select) {
+      const currentValue = select.value;
+      select.innerHTML = '<option value="">无</option>';
+      models.forEach((model) => {
+        const option = document.createElement('option');
+        option.value = model;
+        option.textContent = model;
+        select.appendChild(option);
+      });
+      if (currentValue && models.includes(currentValue)) {
+        select.value = currentValue;
+      }
+    }
+
+    if (datalist) {
+      datalist.innerHTML = '';
+      models.forEach((model) => {
+        const option = document.createElement('option');
+        option.value = model;
+        datalist.appendChild(option);
+      });
+    }
+  }
+
+  /**
+   * 从 ST 后端刷新模型列表（共享刷新链）。
    *
    * @async
    * @returns {Promise<void>}
    */
   async refreshModelsFromAPI() {
     const settings = this.dataManager.getSettings();
+    if (settings.apiConfig?.source !== 'custom') {
+      return;
+    }
     const format = settings.apiConfig?.format || 'openai';
+    const refreshConfig = this.buildSharedRefreshConfig(format);
+    const source = resolveSource(format);
+    const baseUrl = refreshConfig.baseUrl || refreshConfig.customUrl || '';
+    const requiresCustomUrl = source === 'custom' || (format === 'custom' && source === 'openai');
 
-    // 根据 API 类型获取端点和密钥
-    let baseUrl = '';
-    let apiKey = '';
-
-    if (format === 'openrouter') {
-      baseUrl = 'https://openrouter.ai/api';
-      const keyInput = /** @type {HTMLInputElement|null} */ (
-        this.panelElement.querySelector('#diaryOpenRouterKey')
-      );
-      apiKey = keyInput?.value.trim() || '';
-    } else {
-      // 检查是否有反向代理
-      const proxyUrl = /** @type {HTMLInputElement|null} */ (
-        this.panelElement.querySelector('#diaryReverseProxyUrl')
-      );
-      const proxyPassword = /** @type {HTMLInputElement|null} */ (
-        this.panelElement.querySelector('#diaryReverseProxyPassword')
-      );
-
-      if (proxyUrl?.value.trim()) {
-        baseUrl = proxyUrl.value.trim();
-        apiKey = proxyPassword?.value.trim() || '';
-      } else {
-        // 使用通用 API 密钥和默认端点
-        baseUrl = this.getDefaultBaseUrl(format);
-        const keyInput = /** @type {HTMLInputElement|null} */ (
-          this.panelElement.querySelector('#diaryApiKey')
-        );
-        apiKey = keyInput?.value.trim() || '';
-      }
-    }
-
-    if (!apiKey) {
-      showErrorToast('请先填写 API 密钥');
+    if (requiresCustomUrl && !baseUrl) {
+      showErrorToast('请先填写 API 端点或反向代理 URL');
       return;
     }
 
-    await this.fetchAndUpdateModels(baseUrl, apiKey, '#diaryApiModelSelect');
-  }
-
-  /**
-   * 从 Custom API 刷新模型列表
-   *
-   * @description
-   * 从用户填写的自定义端点获取模型列表，
-   * 更新 Custom API 的模型下拉框和 datalist。
-   *
-   * @async
-   * @returns {Promise<void>}
-   */
-  async refreshCustomModelsFromAPI() {
-    const baseUrlInput = /** @type {HTMLInputElement|null} */ (
-      this.panelElement.querySelector('#diaryApiBaseUrl')
-    );
-    const apiKeyInput = /** @type {HTMLInputElement|null} */ (
-      this.panelElement.querySelector('#diaryCustomApiKey')
-    );
-
-    const baseUrl = baseUrlInput?.value.trim();
-    const apiKey = apiKeyInput?.value.trim();
-
-    if (!baseUrl) {
-      showErrorToast('请先填写端点 URL');
-      return;
-    }
-
-    await this.fetchAndUpdateModels(
-      baseUrl,
-      apiKey || '',
-      '#diaryCustomModelSelect',
-      '#diaryCustomModelList'
-    );
-  }
-
-  /**
-   * 获取并更新模型列表
-   *
-   * @description
-   * 调用 API 的 /v1/models 端点获取可用模型，
-   * 然后更新指定的下拉框和 datalist。
-   *
-   * @async
-   * @param {string} baseUrl - API 端点
-   * @param {string} apiKey - API 密钥
-   * @param {string} selectSelector - 下拉框选择器
-   * @param {string} [datalistSelector] - datalist 选择器（可选）
-   * @returns {Promise<void>}
-   */
-  async fetchAndUpdateModels(baseUrl, apiKey, selectSelector, datalistSelector) {
     showInfoToast('正在获取模型列表...');
-    logger.info('diary', '[DiaryAPIConfig]] 开始获取模型列表, baseUrl:', baseUrl);
+    logger.debug('diary', '[DiaryAPIConfig] 开始获取模型列表（共享刷新链）', {
+      source: refreshConfig.source,
+      hasReverseProxy: Boolean(refreshConfig.baseUrl),
+      hasCustomUrl: Boolean(refreshConfig.customUrl)
+    });
 
     try {
-      // 清理 URL
-      let cleanBaseUrl = baseUrl;
-      if (cleanBaseUrl.endsWith('/v1')) {
-        cleanBaseUrl = cleanBaseUrl.slice(0, -3);
-      }
-      const modelsUrl = `${cleanBaseUrl}/v1/models`;
-
-      const headers = {
-        'Content-Type': 'application/json'
-      };
-      if (apiKey) {
-        headers['Authorization'] = `Bearer ${apiKey}`;
+      const result = await refreshModelList(refreshConfig);
+      if (!result.success) {
+        throw new Error(result.error || '模型刷新失败');
       }
 
-      const response = await fetch(modelsUrl, { headers });
-
-      if (!response.ok) {
-        throw new Error(`API 返回错误: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      // 提取模型列表
-      let models = [];
-      if (data.data && Array.isArray(data.data)) {
-        models = data.data.map(m => m.id || m).filter(m => m);
-      } else if (Array.isArray(data)) {
-        models = data.map(m => m.id || m).filter(m => m);
-      }
+      const models = (result.models || [])
+        .map((model) => model?.id)
+        .filter((model) => typeof model === 'string' && model.length > 0);
 
       if (models.length === 0) {
-        showErrorToast('未获取到模型列表');
+        this.updateMainModelSelect([]);
+        this.updateCustomModelSelect([]);
+
+        const manualWrapper = /** @type {HTMLElement|null} */ (
+          this.panelElement.querySelector('#diaryApiModelManualWrapper')
+        );
+        if (manualWrapper) {
+          manualWrapper.style.display = 'block';
+        }
+
+        if (NO_VALIDATE_SOURCES.has(source)) {
+          showInfoToast('当前来源不返回模型列表，请手动输入模型名称');
+        } else {
+          showErrorToast('未获取到模型列表');
+        }
         return;
       }
 
-      // 更新下拉框
-      const select = /** @type {HTMLSelectElement|null} */ (
-        this.panelElement.querySelector(selectSelector)
-      );
-      if (select) {
-        const currentValue = select.value;
-        select.innerHTML = '<option value="">请选择模型...</option>';
-
-        models.forEach(model => {
-          const option = document.createElement('option');
-          option.value = model;
-          option.textContent = model;
-          select.appendChild(option);
-        });
-
-        // 添加手动输入选项（如果是通用模型选择器）
-        if (selectSelector === '#diaryApiModelSelect') {
-          const manualOption = document.createElement('option');
-          manualOption.value = '__manual__';
-          manualOption.textContent = '手动输入...';
-          select.appendChild(manualOption);
-        }
-
-        // 恢复选择
-        if (currentValue && models.includes(currentValue)) {
-          select.value = currentValue;
-        }
-      }
-
-      // 更新 datalist（如果有）
-      if (datalistSelector) {
-        const datalist = this.panelElement.querySelector(datalistSelector);
-        if (datalist) {
-          datalist.innerHTML = '';
-          models.forEach(model => {
-            const option = document.createElement('option');
-            option.value = model;
-            datalist.appendChild(option);
-          });
-        }
-      }
+      this.updateMainModelSelect(models);
+      this.updateCustomModelSelect(models);
 
       showSuccessToast(`已获取 ${models.length} 个模型`);
-      logger.info('diary', '[DiaryAPIConfig]] 模型列表已更新，共', models.length, '个');
-
+      logger.debug('diary', '[DiaryAPIConfig] 模型列表已更新，共', models.length, '个');
     } catch (error) {
       logger.error('diary', '[DiaryAPIConfig] 获取失败:', error);
       showErrorToast('获取模型列表失败：' + error.message);
     }
   }
-
-  /**
-   * 获取 API 类型的默认端点
-   * @param {string} format - API 类型
-   * @returns {string} 默认端点 URL
-   */
-  getDefaultBaseUrl(format) {
-    const defaultUrls = {
-      openai: 'https://api.openai.com',
-      claude: 'https://api.anthropic.com',
-      makersuite: 'https://generativelanguage.googleapis.com',
-      deepseek: 'https://api.deepseek.com',
-      mistralai: 'https://api.mistral.ai',
-      cohere: 'https://api.cohere.ai',
-      perplexity: 'https://api.perplexity.ai',
-      groq: 'https://api.groq.com/openai',
-      xai: 'https://api.x.ai',
-      ai21: 'https://api.ai21.com',
-      moonshot: 'https://api.moonshot.cn',
-      fireworks: 'https://api.fireworks.ai/inference',
-      electronhub: 'https://api.electronhub.top',
-      chutes: 'https://llm.chutes.ai',
-      nanogpt: 'https://nano-gpt.com/api',
-      aimlapi: 'https://api.aimlapi.com',
-      pollinations: 'https://text.pollinations.ai',
-      siliconflow: 'https://api.siliconflow.cn',
-      zai: 'https://open.bigmodel.cn/api/paas'
-    };
-
-    return defaultUrls[format] || 'https://api.openai.com';
-  }
-
 
   // ========================================
   // [PARAMS] 高级参数渲染
@@ -1118,8 +1351,8 @@ export class DiaryAPIConfig {
     const format = settings.apiConfig?.format || 'openai';
 
     // 获取当前格式支持的参数
-    const supportedParams = getSupportedParams(format);
-    const defaultParams = getDefaultParams(format);
+    const supportedParams = getSupportedParams(format, 'diary');
+    const defaultParams = getDefaultParams(format, 'diary');
 
     logger.debug('diary', '[DiaryAPIConfig].renderAdvancedParams] 开始渲染参数，格式:', format, '参数列表:', supportedParams);
 
@@ -1241,8 +1474,8 @@ export class DiaryAPIConfig {
   loadParamValuesToUI(format) {
     const settings = this.dataManager.getSettings();
     const savedParams = settings.apiConfig?.params || {};
-    const supportedParams = getSupportedParams(format);
-    const defaultParams = getDefaultParams(format);
+    const supportedParams = getSupportedParams(format, 'diary');
+    const defaultParams = getDefaultParams(format, 'diary');
 
     // 用于收集需要保存的默认值
     const paramsToSave = { ...savedParams };
@@ -1336,102 +1569,169 @@ export class DiaryAPIConfig {
     const settings = this.dataManager.getSettings();
     const apiConfig = settings.apiConfig || {};
     const format = apiConfig.format || 'openai';
-
-    let config = {
-      format: format,
-      stream: apiConfig.stream || false,
-      model: apiConfig.model || '',
-      params: apiConfig.params || {}
+    const source = resolveSource(format);
+    const params = apiConfig.params || {};
+    const config = {
+      source: source,
+      stream: false,
+      model: this.resolveModelForTest(source),
+      maxTokens: params.max_tokens ?? params.maxTokens,
+      temperature: params.temperature,
+      topP: params.top_p ?? params.topP,
+      topK: params.top_k ?? params.topK,
+      frequencyPenalty: params.frequency_penalty ?? params.frequencyPenalty,
+      presencePenalty: params.presence_penalty ?? params.presencePenalty,
+      repetitionPenalty: params.repetition_penalty ?? params.repetitionPenalty,
+      minP: params.min_p ?? params.minP,
+      topA: params.top_a ?? params.topA
     };
 
-    // 根据 API 类型获取特定配置
     if (format === 'openrouter') {
       const keyInput = /** @type {HTMLInputElement|null} */ (
         this.panelElement.querySelector('#diaryOpenRouterKey')
       );
+      config.baseUrl = 'https://openrouter.ai/api/v1';
       config.apiKey = keyInput?.value.trim() || apiConfig.openRouterKey || '';
-      config.baseUrl = 'https://openrouter.ai/api';
-    } else if (format === 'custom') {
-      const customConfig = apiConfig.customApiConfig || {};
-      config.baseUrl = customConfig.baseUrl || '';
-      config.apiKey = customConfig.apiKey || '';
-      config.model = customConfig.model || '';
-    } else if (format === 'vertexai') {
-      const vertexConfig = apiConfig.vertexConfig || {};
-      config.vertexConfig = vertexConfig;
-    } else if (format === 'azure_openai') {
-      const azureConfig = apiConfig.azureConfig || {};
-      config.azureConfig = azureConfig;
-    } else {
-      // 通用 API
-      const keyInput = /** @type {HTMLInputElement|null} */ (
-        this.panelElement.querySelector('#diaryApiKey')
-      );
-      config.apiKey = keyInput?.value.trim() || apiConfig.apiKey || '';
+      return config;
+    }
 
-      // 检查反向代理
-      const proxyUrl = /** @type {HTMLInputElement|null} */ (
+    if (format === 'custom') {
+      const customConfig = apiConfig.customApiConfig || {};
+      const baseUrlInput = /** @type {HTMLInputElement|null} */ (
+        this.panelElement.querySelector('#diaryApiBaseUrl')
+      );
+      const apiKeyInput = /** @type {HTMLInputElement|null} */ (
+        this.panelElement.querySelector('#diaryCustomApiKey')
+      );
+      const modelInput = /** @type {HTMLInputElement|null} */ (
+        this.panelElement.querySelector('#diaryCustomModelId')
+      );
+      config.customUrl = baseUrlInput?.value.trim() || customConfig.baseUrl || '';
+      config.apiKey = apiKeyInput?.value.trim() || customConfig.apiKey || '';
+      config.model = modelInput?.value.trim() || customConfig.model || '';
+      return config;
+    }
+
+    if (format === 'vertexai') {
+      const vertexConfig = apiConfig.vertexConfig || {};
+      const authMode = vertexConfig.authMode || 'express';
+      const apiKeyInput = /** @type {HTMLInputElement|null} */ (
+        this.panelElement.querySelector('#diaryVertexApiKey')
+      );
+      const proxyUrlInput = /** @type {HTMLInputElement|null} */ (
         this.panelElement.querySelector('#diaryReverseProxyUrl')
       );
-      const proxyPassword = /** @type {HTMLInputElement|null} */ (
+      const proxyPasswordInput = /** @type {HTMLInputElement|null} */ (
         this.panelElement.querySelector('#diaryReverseProxyPassword')
       );
+      config.baseUrl = proxyUrlInput?.value.trim() || getDefaultUrl(resolveSource(format));
+      config.apiKey = proxyUrlInput?.value.trim()
+        ? (proxyPasswordInput?.value.trim() || '')
+        : (authMode === 'express'
+          ? (apiKeyInput?.value.trim() || vertexConfig.apiKey || '')
+          : '');
+      return config;
+    }
 
-      if (proxyUrl?.value.trim()) {
-        config.baseUrl = proxyUrl.value.trim();
-        config.proxyPassword = proxyPassword?.value.trim() || '';
-      } else {
-        config.baseUrl = this.getDefaultBaseUrl(format);
-      }
+    if (format === 'azure_openai') {
+      const azureConfig = apiConfig.azureConfig || {};
+      const baseUrlInput = /** @type {HTMLInputElement|null} */ (
+        this.panelElement.querySelector('#diaryAzureBaseUrl')
+      );
+      const deploymentInput = /** @type {HTMLInputElement|null} */ (
+        this.panelElement.querySelector('#diaryAzureDeploymentName')
+      );
+      const versionSelect = /** @type {HTMLSelectElement|null} */ (
+        this.panelElement.querySelector('#diaryAzureApiVersion')
+      );
+      const apiKeyInput = /** @type {HTMLInputElement|null} */ (
+        this.panelElement.querySelector('#diaryAzureApiKey')
+      );
+      const modelInput = /** @type {HTMLInputElement|null} */ (
+        this.panelElement.querySelector('#diaryAzureModelName')
+      );
+
+      config.azureConfig = {
+        baseUrl: baseUrlInput?.value.trim() || azureConfig.baseUrl || '',
+        deploymentName: deploymentInput?.value.trim() || azureConfig.deploymentName || '',
+        apiVersion: versionSelect?.value.trim() || azureConfig.apiVersion || ''
+      };
+      config.apiKey = apiKeyInput?.value.trim() || azureConfig.apiKey || '';
+      config.model = modelInput?.value.trim() || azureConfig.modelName || config.model;
+      return config;
+    }
+
+    const keyInput = /** @type {HTMLInputElement|null} */ (
+      this.panelElement.querySelector('#diaryApiKey')
+    );
+    const proxyUrlInput = /** @type {HTMLInputElement|null} */ (
+      this.panelElement.querySelector('#diaryReverseProxyUrl')
+    );
+    const proxyPasswordInput = /** @type {HTMLInputElement|null} */ (
+      this.panelElement.querySelector('#diaryReverseProxyPassword')
+    );
+    const supportsReverseProxy = SOURCE_CAPABILITIES[source]?.supportsReverseProxy === true;
+    const proxyUrl = proxyUrlInput?.value.trim() || '';
+
+    if (supportsReverseProxy && proxyUrl) {
+      config.baseUrl = proxyUrl;
+      config.apiKey = proxyPasswordInput?.value.trim() || '';
+    } else {
+      config.baseUrl = getDefaultUrl(resolveSource(format));
+      config.apiKey = keyInput?.value.trim() || apiConfig.apiKey || '';
     }
 
     return config;
   }
 
   /**
-   * 发送测试请求
+   * 解析测试连接使用的模型名。
+   *
+   * @param {string} source - chat completion source。
+   * @returns {string} 模型名。
+   */
+  resolveModelForTest(source) {
+    if (source === 'azure_openai') {
+      const modelInput = /** @type {HTMLInputElement|null} */ (
+        this.panelElement.querySelector('#diaryAzureModelName')
+      );
+      return modelInput?.value.trim() || '';
+    }
+
+    if (source === 'custom') {
+      const modelInput = /** @type {HTMLInputElement|null} */ (
+        this.panelElement.querySelector('#diaryCustomModelId')
+      );
+      return modelInput?.value.trim() || '';
+    }
+
+    const modelSelect = /** @type {HTMLSelectElement|null} */ (
+      this.panelElement.querySelector('#diaryApiModelSelect')
+    );
+    const manualInput = /** @type {HTMLInputElement|null} */ (
+      this.panelElement.querySelector('#diaryApiModelManual')
+    );
+
+    if (modelSelect?.value === '__manual__') {
+      return manualInput?.value.trim() || '';
+    }
+    if (modelSelect?.value) {
+      return modelSelect.value.trim();
+    }
+
+    const settings = this.dataManager.getSettings();
+    return settings.apiConfig?.model || '';
+  }
+
+  /**
+   * 发送测试请求（走 ST 后端 generate 路径）
+   *
    * @param {Array} messages - 消息数组
    * @param {Object} config - API 配置
    * @returns {Promise<string>} 响应文本
    */
   async sendTestRequest(messages, config) {
-    // 简化的测试请求，直接调用 OpenAI 兼容 API
-    let url = config.baseUrl || 'https://api.openai.com';
-    if (!url.endsWith('/v1')) {
-      url += '/v1';
-    }
-    url += '/chat/completions';
-
-    const body = {
-      model: config.model || 'gpt-4o-mini',
-      messages: messages,
-      max_tokens: 50,
-      stream: false
-    };
-
-    const headers = {
-      'Content-Type': 'application/json'
-    };
-
-    if (config.apiKey) {
-      headers['Authorization'] = `Bearer ${config.apiKey}`;
-    }
-    if (config.proxyPassword) {
-      headers['Authorization'] = `Bearer ${config.proxyPassword}`;
-    }
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(body)
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API 错误 ${response.status}: ${errorText.substring(0, 100)}`);
-    }
-
-    const data = await response.json();
-    return data.choices?.[0]?.message?.content || '';
+    const response = await generate(config, messages, { module: 'diary' });
+    return response.text || '';
   }
 }

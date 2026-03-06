@@ -331,9 +331,14 @@ export function getSnapshotList(presetName) {
 /**
  * 保存当前预设状态为快照
  * @param {string} name - 快照名称
- * @returns {string} 新快照的 UUID
+ * @returns {string|null} 新快照的 UUID，功能关闭时返回 null
  */
 export function saveSnapshot(name) {
+    if (!isEnabled()) {
+        logger.warn('preset', '[PresetSnapshot] 功能已禁用，跳过保存快照');
+        return null;
+    }
+
     const currentPreset = getCurrentPresetName();
     const presetData = getPresetData(currentPreset);
     const promptOrder = getCurrentPromptOrder();
@@ -369,6 +374,11 @@ export function saveSnapshot(name) {
  * @returns {boolean} 是否成功
  */
 export function applySnapshot(id) {
+    if (!isEnabled()) {
+        logger.warn('preset', '[PresetSnapshot] 功能已禁用，跳过应用快照');
+        return false;
+    }
+
     const presetName = getCurrentPresetName();
     const presetData = getPresetData(presetName);
     const snapshot = presetData.snapshots.find(s => s.id === id);
@@ -432,6 +442,11 @@ export function applySnapshot(id) {
  * @returns {boolean} 是否成功
  */
 export function renameSnapshot(id, newName) {
+    if (!isEnabled()) {
+        logger.warn('preset', '[PresetSnapshot] 功能已禁用，跳过重命名快照');
+        return false;
+    }
+
     const presetName = getCurrentPresetName();
     const presetData = getPresetData(presetName);
     const snapshot = presetData.snapshots.find(s => s.id === id);
@@ -455,6 +470,11 @@ export function renameSnapshot(id, newName) {
  * @returns {boolean} 是否成功
  */
 export function deleteSnapshot(id) {
+    if (!isEnabled()) {
+        logger.warn('preset', '[PresetSnapshot] 功能已禁用，跳过删除快照');
+        return false;
+    }
+
     const presetName = getCurrentPresetName();
     const presetData = getPresetData(presetName);
     const index = presetData.snapshots.findIndex(s => s.id === id);

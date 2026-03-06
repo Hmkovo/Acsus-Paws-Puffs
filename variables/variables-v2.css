@@ -1252,27 +1252,43 @@
 }
 
 /* 设置内容区 */
-.api-settings-content {
+.api-settings-content,
+.var-v2-api-settings-content {
   padding: 0.75em 1em;
-  background: var(--var-v2-bg-main);
+  background: var(--black20a);
 }
 
 /* 设置分组 */
-.api-settings-section {
+.api-settings-section,
+.var-v2-api-settings-section {
   margin-bottom: 1em;
-  background: var(--var-v2-bg-white);
+  background: var(--black30a);
   border-radius: 0.5em;
   padding: 0.625em 0.75em;
   overflow: hidden;
 }
 
-.api-settings-section-title {
+.api-settings-section-title,
+.var-v2-api-settings-section-title {
   font-size: 0.875em;
   color: var(--var-v2-text-secondary);
   margin-bottom: 0.5em;
 }
 
-.api-settings-hint {
+/* 折叠图标局部尺寸控制（作用于 API 设置弹窗内） */
+.var-v2-api-settings-popup .inline-drawer .inline-drawer-header .inline-drawer-icon {
+  font-size: 0.95em;
+  line-height: 1;
+  width: 1.1em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 0.35em;
+}
+
+.api-settings-hint,
+.var-v2-api-settings-hint {
   font-size: 0.813em;
   color: var(--var-v2-text-secondary);
   margin-top: 0.5em;
@@ -1280,19 +1296,15 @@
 }
 
 /* 下拉选择框 */
-.api-settings-select {
+.api-settings-select,
+.var-v2-api-settings-select {
   width: 100%;
-  padding: 0.625em;
-  background: var(--var-v2-bg-main);
-  border: 1px solid var(--var-v2-border);
-  border-radius: 0.25em;
-  color: var(--var-v2-text-primary);
-  font-size: 1em;
   cursor: pointer;
 }
 
 /* 复选框 */
-.api-settings-checkbox {
+.api-settings-checkbox,
+.var-v2-api-settings-checkbox {
   display: flex;
   align-items: center;
   gap: 0.5em;
@@ -1300,59 +1312,67 @@
   user-select: none;
 }
 
-.api-settings-checkbox input[type="checkbox"] {
+.api-settings-checkbox input[type="checkbox"],
+.var-v2-api-settings-checkbox input[type="checkbox"] {
   width: 1.25em;
   height: 1.25em;
   cursor: pointer;
 }
 
-.api-settings-checkbox span {
+.api-settings-checkbox span,
+.var-v2-api-settings-checkbox span {
   font-size: 1em;
   color: var(--var-v2-text-primary);
 }
 
 /* 自定义API配置区（可折叠） */
-.api-settings-custom {
+.api-settings-custom,
+.var-v2-api-settings-custom {
   margin-top: 1em;
 }
 
 /* 横向按钮组 */
-.api-settings-row {
+.api-settings-row,
+.var-v2-api-settings-row {
   display: flex;
   gap: 0.5em;
   align-items: center;
 }
 
-.api-settings-row .api-settings-select {
+.api-settings-row .api-settings-select,
+.var-v2-api-settings-row .var-v2-api-settings-select {
   flex: 1;
 }
 
 /* 输入框 */
-.api-settings-input {
+.api-settings-input,
+.var-v2-api-settings-input {
   width: 100%;
-  padding: 0.625em;
-  background: var(--var-v2-bg-main);
-  border: 1px solid var(--var-v2-border);
-  border-radius: 0.25em;
-  color: var(--var-v2-text-primary);
-  font-size: 1em;
 }
 
-.api-settings-input::placeholder {
+.api-settings-input::placeholder,
+.var-v2-api-settings-input::placeholder {
   color: var(--var-v2-text-secondary);
 }
 
+.api-settings-content .text_pole {
+  margin: 0;
+}
+
 /* 密码输入框容器 */
-.api-settings-password-wrapper {
+.api-settings-password-wrapper,
+.var-v2-api-settings-password-wrapper {
   position: relative;
   width: 100%;
 }
 
-.api-settings-password-wrapper .api-settings-input {
+.api-settings-password-wrapper .api-settings-input,
+.var-v2-api-settings-password-wrapper .var-v2-api-settings-input {
   padding-right: 2.5em;
 }
 
-.api-settings-password-toggle {
+.api-settings-password-toggle,
+.var-v2-api-settings-password-toggle {
   position: absolute;
   right: 0.5em;
   top: 50%;
@@ -1365,8 +1385,20 @@
   transition: color 0.2s;
 }
 
-.api-settings-password-toggle:hover {
+.api-settings-password-toggle:hover,
+.var-v2-api-settings-password-toggle:hover {
   color: var(--var-v2-text-primary);
+}
+
+.api-settings-password-toggle.menu_button,
+.var-v2-api-settings-password-toggle.menu_button {
+  min-height: 24px;
+  width: 24px;
+  padding: 0;
+}
+
+.api-settings-content .menu_button {
+  margin: 0;
 }
 
 /* 按钮 */
@@ -1431,13 +1463,60 @@
 }
 
 /* 高级参数滑块 */
-.api-settings-range {
-  width: 100%;
+.api-settings-range,
+.var-v2-api-settings-range {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
   cursor: pointer;
 }
 
-.api-settings-param {
+.api-settings-param,
+.var-v2-api-settings-param {
   margin-bottom: 1em;
+}
+
+.api-settings-param.range-block,
+.var-v2-api-settings-param.range-block {
+  background: var(--black10a);
+  border-radius: 6px;
+  padding: 8px;
+  /* 修复：让内部元素正确布局，避免被全局 justify-content 干扰 */
+  display: flex;
+  flex-direction: column;
+}
+
+/* 修复：控制行（range + number）占满宽度 */
+.api-settings-param .range-block-title,
+.var-v2-api-settings-param .range-block-title {
+  text-align: left;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.api-settings-param .range-block-counter,
+.var-v2-api-settings-param .range-block-counter {
+  margin: 0 0 6px;
+}
+
+/* 修复：滑块行使用 flex 布局，让 range 自适应、number 固定宽度 */
+.api-settings-param.range-block > div:not(.range-block-title):not(.api-settings-hint):not(.var-v2-api-settings-hint),
+.var-v2-api-settings-param.range-block > div:not(.range-block-title):not(.api-settings-hint):not(.var-v2-api-settings-hint) {
+  display: flex;
+  gap: 0.5em;
+  align-items: center;
+  width: 100%;
+}
+
+/* 修复：数字输入框固定宽度，不被拉伸 */
+.api-settings-param .api-settings-input.text_pole,
+.var-v2-api-settings-param .var-v2-api-settings-input.text_pole {
+  width: 5em;
+  min-width: 4em;
+  max-width: 80px;
+  flex-shrink: 0;
 }
 
 
