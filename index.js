@@ -38,7 +38,6 @@ import logger from "./logger.js";
 // 导入功能模块
 import { FontManager } from "./font-manager.js";
 import { PresetManagerModule } from "./preset-manager.js";
-import { VisualEditor } from "./visual-editor/visual-editor.js";
 import { SimulatedLifeModule } from "./simulated-life/simulated-life.js";
 import { initDiarySystem } from "./toolkit/diary/diary.js";
 import { initPhone, openPhoneUI, closePhoneUI, enablePhone, disablePhone } from "./toolkit/phone/index.js";
@@ -71,6 +70,15 @@ import {
   createProgramPanel,
   refreshProgramPanelUI
 } from "./program/program-manager-ui.js";
+// 视觉引擎模块（原 ST-Theme-Engine）
+import { loadStorage as loadThemeStorage } from "./theme-engine/storage.js";
+import {
+  initPanel as initThemePanel,
+  openPanel as openThemePanel,
+  closePanel as closeThemePanel,
+  restoreSavedState as restoreThemeState,
+  deactivateAll as deactivateThemeAll
+} from "./theme-engine/floating-panel.js";
 
 
 // ========================================
@@ -106,13 +114,11 @@ const defaultSettings = {
   },
 
   // 其他模块的设置（暂时为空，后面再加）
-  visualEditor: {
-    enabled: false
-  },
-  cssEnhancer: {
-    enabled: false
-  },
   presetManager: {
+    enabled: false
+  },
+  // 视觉引擎设置（原 ST-Theme-Engine）
+  themeEngine: {
     enabled: false
   },
   // 节目单设置
@@ -130,13 +136,39 @@ const defaultSettings = {
 
 let fontManager = null;  // 字体管理器实例
 let presetManager = null;  // 预设管理器实例
-let visualEditor = null;  // 可视化编辑器实例
 let simulatedLife = null;  // 模拟人生模块实例
 let diarySystem = null;  // 日记系统实例
 let phoneSystem = null;  // 手机系统实例（标记已初始化）
 let beautifySystem = null;  // 美化系统实例
 let variablesSystem = null;  // 动态变量系统实例
 // let chatArchiveSystem = null;  // 聊天记录系统实例（暂时禁用）
+
+// ========================================
+// 视觉引擎 辅助函数
+// ========================================
+
+/**
+ * 读取视觉引擎的启用状态
+ * @returns {boolean}
+ */
+function isThemeEngineEnabled() {
+  return extension_settings[EXT_ID]?.themeEngine?.enabled ?? false;
+}
+
+/**
+ * 保存视觉引擎的启用状态
+ * @param {boolean} value
+ */
+function setThemeEngineEnabled(value) {
+  if (!extension_settings[EXT_ID]) {
+    extension_settings[EXT_ID] = { ...defaultSettings };
+  }
+  if (!extension_settings[EXT_ID].themeEngine) {
+    extension_settings[EXT_ID].themeEngine = { enabled: false };
+  }
+  extension_settings[EXT_ID].themeEngine.enabled = value;
+  saveSettingsDebounced();
+}
 
 
 // ========================================
@@ -271,7 +303,19 @@ async function initPawsPuffs() {
       // 不阻断，继续初始化其他模块
     }
 
-    // 5.10 初始化设置面板UI
+    // 5.11 初始化视觉引擎（原 ST-Theme-Engine）
+    try {
+      await loadThemeStorage();
+      if (isThemeEngineEnabled()) {
+        await restoreThemeState();
+      }
+      logger.debug('themeEngine', '[Main] 视觉引擎初始化成功，启用状态:', isThemeEngineEnabled());
+    } catch (error) {
+      logger.error('themeEngine', '[Main] 视觉引擎初始化失败:', error.message || error);
+      // 不阻断，继续初始化其他模块
+    }
+
+    // 5.12 初始化设置面板UI
     await initSettingsPanel();
 
     logger.info('main', '[Main] Acsus-Paws-Puffs 初始化完成！');
@@ -331,6 +375,9 @@ async function initSettingsPanel() {
     // 4. 绑定事件（用户勾选/取消勾选时的处理）
     bindSettingsEvents();
 
+    // 绑定视觉引擎 UI（启用勾选框 + 打开面板按钮）
+    bindThemeEngineSettings();
+
     // 4.1 绑定聊天工具折叠设置（在 settings.html 加载后）
     bindFoldSettings();
 
@@ -376,16 +423,6 @@ async function initSettingsPanel() {
       } catch (error) {
         logger.error('simlife', '[Main.initSettingsPanel] 模拟人生模块UI渲染失败:', error.message);
       }
-    }
-
-    // 7. 初始化可视化编辑器（参考字体管理的架构）
-    try {
-      visualEditor = new VisualEditor();
-      await visualEditor.init();
-      await visualEditor.renderUI(document.getElementById('paws-puffs-visual-editor-panel'));
-      logger.debug('visual', '[Main.initSettingsPanel] 可视化编辑器UI渲染成功');
-    } catch (error) {
-      logger.error('visual', '[Main.initSettingsPanel] 可视化编辑器UI渲染失败:', error.message);
     }
 
     // 8. 渲染动态变量系统UI
@@ -455,6 +492,64 @@ function waitForElement(selector, timeout = 10000) {
   });
 }
 
+/**
+ * 绑定视觉引擎的 UI 事件
+ *
+ * @description
+ * 负责：
+ * 1. 同步勾选框状态
+ * 2. 启用/停用时切换效果
+ * 3. 点击"打开面板"按钮的响应
+ */
+function bindThemeEngineSettings() {
+  const enabledCb = /** @type {HTMLInputElement} */ (document.getElementById('ste-enabled-checkbox'));
+  const openBtn = document.getElementById('ste-open-panel-btn');
+
+  /**
+   * 根据启用状态同步按钮可交互性
+   * @param {boolean} enabled
+   */
+  function syncOpenBtnState(enabled) {
+    if (!openBtn) return;
+    if (enabled) {
+      openBtn.classList.add('interactable');
+      openBtn.classList.remove('ste-btn-disabled');
+      openBtn.removeAttribute('aria-disabled');
+    } else {
+      openBtn.classList.remove('interactable');
+      openBtn.classList.add('ste-btn-disabled');
+      openBtn.setAttribute('aria-disabled', 'true');
+    }
+  }
+
+  if (enabledCb) {
+    enabledCb.checked = isThemeEngineEnabled();
+    syncOpenBtnState(isThemeEngineEnabled());
+
+    enabledCb.addEventListener('change', async () => {
+      const nowEnabled = enabledCb.checked;
+      setThemeEngineEnabled(nowEnabled);
+      syncOpenBtnState(nowEnabled);
+      if (nowEnabled) {
+        await restoreThemeState();
+        logger.info('themeEngine', '[Settings] 视觉引擎已启用，效果已恢复');
+      } else {
+        closeThemePanel();
+        deactivateThemeAll();
+        logger.info('themeEngine', '[Settings] 视觉引擎已停用，效果已清除');
+      }
+    });
+  }
+
+  if (openBtn) {
+    openBtn.addEventListener('click', async () => {
+      if (!isThemeEngineEnabled()) return;
+      await initThemePanel();
+      openThemePanel();
+    });
+  }
+}
+
 
 // ========================================
 // 第七步：绑定设置面板的事件
@@ -516,7 +611,6 @@ function bindSettingsEvents() {
   bindTabVisibility();
 
   // 注意：字体功能开关现在由 font-manager-ui.js 处理，不需要在这里绑定了
-  // 注意：可视化编辑器现在由 visual-editor-ui.js 处理，不需要在这里绑定了
 }
 
 /**

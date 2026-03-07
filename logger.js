@@ -28,7 +28,7 @@ const MODULE_CONFIG = {
   'variable': false,  // 动态变量
   'phone': false,     // 手机
   'diary': false,     // 日记
-  'visual': false,    // 可视化
+  'themeEngine': false,  // 视觉引擎
   'archive': false,    // 聊天记录管理
   'chatTools': false,  // 聊天工具
   'program': false,    // 节目单
@@ -142,4 +142,6 @@ const logger = {
 // ============================================
 
 export default logger;
+
+
 

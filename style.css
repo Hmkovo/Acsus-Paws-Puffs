@@ -5,13 +5,6 @@
  * 所有类名都加 paws-puffs- 前缀，避免跟ST的样式冲突
  */
 
-/* ========================================
-   导入可视化编辑器CSS
-   ======================================== */
-@import url('visual-editor/embedded-panel.css');
-@import url('visual-editor/controls/property-controls.css');
-@import url('visual-editor/modes/beginner/beginner-mode.css');
-@import url('visual-editor/modes/expert/expert-mode.css');
 
 /* ========================================
    导入日记系统CSS
@@ -3057,1234 +3050,6 @@ select.compact {
 
 /* ==================== 关于页面样式结束 ==================== */
 
-/* ==================== 可视化编辑器样式开始 ==================== */
-/* ========== 可视化编辑器设置页面样式 ========== */
-/* 与其他页面保持视觉一致，跟随SillyTavern主题 */
-
-/* 功能开关区域 - 与字体管理页面保持一致 */
-.visual-editor-enable-section-compact {
-  padding: 6px 0;
-  margin-bottom: 8px;
-  border-bottom: 1px solid var(--SmartThemeBorderColor);
-}
-
-.visual-editor-enable-section-compact .checkbox_label {
-  display: inline-flex;
-  align-items: center;
-  font-size: 0.9em;
-}
-
-.visual-editor-enable-section-compact .hint-inline {
-  margin-left: 8px;
-  font-size: 0.8em;
-  opacity: 0.7;
-  font-style: italic;
-}
-
-/* 功能说明 */
-.visual-editor-description {
-  margin: 10px 0;
-  font-size: 0.85em;
-  opacity: 0.9;
-}
-
-.visual-editor-description p {
-  margin: 5px 0;
-}
-
-/* 可编辑元素分类 - 移除硬编码的蓝色，使用主题色 */
-.visual-editor-categories {
-  margin-top: 15px;
-}
-
-.visual-editor-categories h5 {
-  margin: 10px 0 8px 0;
-  color: var(--SmartThemeBodyColor);
-  font-size: 0.95em;
-  opacity: 0.9;
-}
-
-.category-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 8px;
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 4px;
-}
-
-.category-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 10px;
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 3px;
-  transition: background 0.2s;
-}
-
-.category-item:hover {
-  background: rgba(var(--SmartThemeQuoteColor-rgb), 0.1);
-}
-
-.category-name {
-  font-size: 0.85em;
-  white-space: nowrap;
-}
-
-/* 功能详情 */
-.feature-details {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(var(--SmartThemeBorderColor-rgb, 255, 255, 255), 0.1);
-}
-
-.feature-detail-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.feature-detail-list li {
-  font-size: 0.9em;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  opacity: 0.9;
-}
-
-.feature-detail-list li i {
-  color: var(--SmartThemeQuoteColor);
-  font-size: 0.9em;
-}
-
-/* 底部提示 */
-.beautify-hint {
-  margin-top: 20px;
-  padding: 10px 15px;
-  background: rgba(var(--SmartThemeBodyColor-rgb, 220, 220, 210), 0.05);
-  border-radius: 4px;
-  font-size: 0.85em;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  opacity: 0.8;
-}
-
-/* 主题管理部分 */
-.visual-editor-theme-section {
-  margin-top: 15px;
-}
-
-.visual-editor-theme-section h5 {
-  margin: 10px 0 8px 0;
-  color: var(--SmartThemeBodyColor);
-  font-size: 0.95em;
-  opacity: 0.9;
-}
-
-.theme-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-/* 使用说明 */
-.visual-editor-help {
-  margin-top: 15px;
-}
-
-.visual-editor-help h5 {
-  margin: 10px 0 8px 0;
-  color: var(--SmartThemeBodyColor);
-  font-size: 0.95em;
-  opacity: 0.9;
-}
-
-.help-list {
-  margin: 8px 0;
-  padding-left: 20px;
-  font-size: 0.85em;
-  opacity: 0.9;
-}
-
-.help-list li {
-  margin: 4px 0;
-  list-style-type: decimal;
-}
-
-/*
- * 这部分是在自定义CSS下方显示的内嵌编辑器面板样式
- * 包含元素选择器、属性编辑器、预设管理等功能
- * 移除了全局的 width: 100%，让输入框保持自然宽度
- * 为数字输入框设置合理的宽度：width: auto;min-width: 60px; max-width: 100px;
- * 只对需要全宽的文本输入框和选择框设置 100% 宽度
- * 2025-09-08: 添加移动端优化，元素列表增高，工具栏按钮换行
- * 2025-09-09: 添加清除CSS按钮样式，从设置页面迁移功能
- * 2025-09-10: 修复滚动问题和条件显示功能
- * 2025-01-10: 修复toggle控件勾选框显示问题
- * 2025-01-10: 修复滚动高度问题 - 完整的flex布局链
- *
- * ========== 重要：Flex布局滚动设计要点 ==========
- * 1. 完整的flex容器链：每一级都必须正确设置
- *    - .paws-puffs-ve-properties-panel (flex: 1) → 横向占满剩余空间
- *    - .paws-puffs-ve-element-panel (height: 100%, display: flex) → 纵向占满并成为flex容器
- *    - .paws-puffs-ve-panel-header (flex-shrink: 0) → 固定高度不压缩
- *    - .paws-puffs-ve-panel-body (flex: 1, height: 0) → 占满剩余高度并可滚动
- *
- * 2. 关键技巧：height: 0 + flex: 1
- *    - 这是让flex子元素可滚动的经典模式
- *    - height: 0 强制元素不占用最小内容高度
- *    - flex: 1 让它扩展填充剩余空间
- *    - overflow-y: auto 在内容超出时显示滚动条
- *
- * 3. 注意事项（不要随意修改）：
- *    - 不要在.paws-puffs-ve-panel-body上设置固定的max-height（除了calc计算）
- *    - 不要删除.paws-puffs-ve-element-panel的height: 100%
- *    - 不要在JS中用内联style设置固定高度（如max-height: 500px）
- *    - 移动端可以用固定max-height，但桌面端必须用flex
- * ================================================
- */
-
-/* 主容器 - 固定高度的内嵌面板 */
-#visual-editor-inline-panel {
-  margin-top: 10px;
-  border: 1px solid var(--SmartThemeBorderColor);
-  border-radius: 5px;
-  overflow: hidden;
-  height: 650px;
-  /* 固定在650px不能动 */
-  display: flex;
-  flex-direction: column;
-}
-
-.paws-puffs-ve-inline-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  font-size: 0.85em;
-  /* 统一字体大小，与其他页面一致 */
-}
-
-/* 顶部工具栏 */
-.paws-puffs-ve-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 10px;
-  background: var(--SmartThemeBlurTintColor);
-  border-bottom: 1px solid var(--SmartThemeBorderColor);
-  flex-shrink: 0;
-}
-
-.paws-puffs-ve-toolbar-left,
-.paws-puffs-ve-toolbar-right {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-/* 标签页按钮样式 */
-.paws-puffs-ve-tab-btn {
-  padding: 5px 10px;
-  background: transparent;
-  border: 1px solid var(--SmartThemeBorderColor);
-  border-radius: 3px;
-  color: var(--SmartThemeBodyColor);
-  cursor: pointer;
-  font-size: 0.85em;
-  transition: all 0.2s;
-}
-
-.paws-puffs-ve-tab-btn:hover {
-  background: var(--SmartThemeBlurTintColor);
-}
-
-.paws-puffs-ve-tab-btn.active {
-  background: var(--SmartThemeQuoteColor);
-  color: white;
-  border-color: var(--SmartThemeQuoteColor);
-}
-
-/* 通用按钮样式 */
-.paws-puffs-ve-btn,
-.paws-puffs-ve-btn-small,
-.paws-puffs-ve-btn-primary {
-  padding: 5px 10px;
-  background: var(--SmartThemeButtonColor);
-  border: 1px solid var(--SmartThemeBorderColor);
-  border-radius: 3px;
-  color: var(--SmartThemeBodyColor);
-  cursor: pointer;
-  font-size: 0.85em;
-  transition: all 0.2s;
-}
-
-.paws-puffs-ve-btn:hover:not(:disabled) {
-  background: var(--SmartThemeBlurTintColor);
-}
-
-.paws-puffs-ve-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.paws-puffs-ve-btn-primary {
-  background: var(--SmartThemeQuoteColor);
-  color: white;
-  border-color: var(--SmartThemeQuoteColor);
-}
-
-.paws-puffs-ve-btn-primary:hover:not(:disabled) {
-  opacity: 0.8;
-}
-
-.paws-puffs-ve-btn-small {
-  padding: 3px 6px;
-  font-size: 0.8em;
-}
-
-/* 危险按钮样式 - 清除CSS按钮 */
-.paws-puffs-ve-btn-danger {
-  background: #f44336;
-  color: white;
-  border-color: #f44336;
-}
-
-.paws-puffs-ve-btn-danger:hover:not(:disabled) {
-  background: #d32f2f;
-  border-color: #d32f2f;
-}
-
-/* 徽章 */
-.paws-puffs-ve-badge {
-  display: inline-block;
-  padding: 1px 4px;
-  margin-left: 4px;
-  background: red;
-  color: white;
-  border-radius: 10px;
-  font-size: 0.75em;
-  min-width: 16px;
-  text-align: center;
-}
-
-.paws-puffs-ve-separator {
-  width: 1px;
-  height: 20px;
-  background: var(--SmartThemeBorderColor);
-  margin: 0 5px;
-}
-
-/* 内容区域 */
-.paws-puffs-ve-content {
-  flex: 1;
-  overflow: hidden;
-  position: relative;
-}
-
-.paws-puffs-ve-tab-panel {
-  display: none;
-  height: 100%;
-  overflow: hidden;
-}
-
-.paws-puffs-ve-tab-panel.active {
-  display: block;
-}
-
-/* 元素编辑布局 - 三级下拉框模式 */
-.paws-puffs-ve-elements-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  height: 100%;
-  padding: 10px;
-}
-
-/* 三级下拉框横向排列容器 */
-.paws-puffs-ve-select-bar {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-  /* 固定高度，不被压缩 */
-}
-
-/* 保留旧的侧边栏类名兼容性（已废弃） */
-.paws-puffs-ve-elements-sidebar {
-  display: none;
-}
-
-/* 保留旧的搜索栏类名兼容性（已废弃） */
-.paws-puffs-ve-search-bar {
-  display: none;
-}
-
-.paws-puffs-ve-search-input {
-  display: none;
-}
-
-.paws-puffs-ve-filter-bar {
-  display: none;
-}
-
-/* 下拉选择框 - 使用主题样式 */
-.paws-puffs-ve-select {
-  flex: 1;
-  /* 三个下拉框平分空间 */
-  min-width: 0;
-  /* 允许缩小到最小宽度 */
-  padding: 6px 8px;
-  font-size: 0.85em;
-  border-radius: 3px;
-  border: 1px solid var(--SmartThemeBorderColor);
-  background: var(--SmartThemeBlurTintColor);
-  color: var(--SmartThemeBodyColor);
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-
-.paws-puffs-ve-select:hover:not(:disabled) {
-  border-color: var(--SmartThemeQuoteColor);
-}
-
-.paws-puffs-ve-select:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 保留旧的元素列表类名兼容性（已废弃） */
-.paws-puffs-ve-element-list {
-  display: none;
-}
-
-/* 属性面板全宽样式（三级下拉框模式） */
-.paws-puffs-ve-properties-panel {
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
-  background: var(--SmartThemeBlurTintColor);
-  border-radius: 4px;
-  padding: 8px;
-}
-
-/* 快速模板布局容器 - 完全复刻ve-elements-layout */
-.paws-puffs-ve-templates-container {
-  display: flex;
-  gap: 10px;
-  height: 100%;
-  padding: 10px;
-  flex-direction: column;
-  overflow-y: auto;
-}
-
-/* 图标组布局容器 - 完全复刻ve-elements-layout */
-.paws-puffs-ve-icons-container {
-  display: flex;
-  gap: 10px;
-  height: 100%;
-  padding: 10px;
-  flex-direction: column;
-  overflow-y: auto;
-}
-
-.paws-puffs-ve-element-item {
-  padding: 6px;
-  background: var(--SmartThemeBlurTintColor);
-  border-radius: 3px;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  position: relative;
-  font-size: 0.85em;
-}
-
-.paws-puffs-ve-element-item:hover {
-  background: rgba(var(--SmartThemeQuoteColor-rgb), 0.2);
-}
-
-.paws-puffs-ve-element-item.selected {
-  background: var(--SmartThemeQuoteColor);
-  color: white;
-}
-
-.paws-puffs-ve-element-name {
-  font-weight: bold;
-  font-size: 0.9em;
-}
-
-.paws-puffs-ve-element-selector {
-  font-size: 0.75em;
-  opacity: 0.7;
-  font-family: monospace;
-}
-
-.paws-puffs-ve-element-indicator {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  color: var(--SmartThemeQuoteColor);
-  font-size: 0.6em;
-}
-
-.paws-puffs-ve-element-item.selected .paws-puffs-ve-element-indicator {
-  color: white;
-}
-
-.paws-puffs-ve-properties-panel {
-  flex: 1;
-  background: var(--SmartThemeBlurTintColor);
-  border-radius: 4px;
-  padding: 8px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  /* 添加：允许flex收缩 */
-}
-
-/* 属性面板容器 - 新增 */
-.paws-puffs-ve-element-panel {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-
-/* ========== 属性面板主体（修复滚动） ========== */
-.paws-puffs-ve-panel-body {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 10px 15px 30px 10px;
-  max-height: calc(100% - 45px);
-  /* 这行是关键：父容器高度 - header高度 */
-  height: 0;
-  min-height: 0;
-}
-
-/* 面板头部 */
-.paws-puffs-ve-panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 10px;
-  background: var(--SmartThemeBlurTintColor);
-  border-bottom: 1px solid var(--SmartThemeBorderColor);
-  flex-shrink: 0;
-  min-height: 35px;
-}
-
-.paws-puffs-ve-panel-header h4 {
-  margin: 0;
-  font-size: 0.95em;
-}
-
-.paws-puffs-ve-panel-actions {
-  display: flex;
-  gap: 4px;
-}
-
-/* 属性分组 */
-.paws-puffs-ve-property-group {
-  margin-bottom: 15px;
-}
-
-.paws-puffs-ve-group-header {
-  position: sticky;
-  top: -10px;
-  background: var(--SmartThemeBlurTintColor);
-  z-index: 10;
-  padding: 8px 0;
-  margin: 10px 0 5px 0;
-  border-bottom: 1px solid var(--SmartThemeBorderColor);
-}
-
-.paws-puffs-ve-group-header h5 {
-  margin: 0;
-  font-size: 0.9em;
-  color: var(--SmartThemeQuoteColor);
-}
-
-.paws-puffs-ve-group-content {
-  padding: 5px 0;
-}
-
-/* ========== 条件显示样式（关键修复） ========== */
-.paws-puffs-ve-conditional-wrapper {
-  transition: all 0.3s ease;
-  overflow: hidden;
-}
-
-.paws-puffs-ve-conditional-wrapper.paws-puffs-ve-hidden {
-  display: none !important;
-  visibility: hidden !important;
-  height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
-/* 控件项 */
-.paws-puffs-ve-control-item {
-  margin-bottom: 12px;
-}
-
-.paws-puffs-ve-control-item.paws-puffs-ve-hidden {
-  display: none !important;
-}
-
-/* 必须排除toggle控件的label */
-.paws-puffs-ve-control-item:not(.paws-puffs-ve-toggle-control) label {
-  display: block;
-  font-size: 0.8em;
-  margin-bottom: 4px;
-  opacity: 0.8;
-}
-
-/* 修复滚动 - 最后一个分组额外底部空间 */
-.paws-puffs-ve-property-group:last-child {
-  margin-bottom: 50px;
-}
-
-.paws-puffs-ve-hint {
-  display: block;
-  font-size: 0.7em;
-  color: var(--SmartThemeQuoteColor);
-  opacity: 0.7;
-  margin-top: 2px;
-  font-style: italic;
-}
-
-/* 颜色输入 */
-.paws-puffs-ve-color-input {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-
-.paws-puffs-ve-control-color {
-  width: 32px;
-  height: 26px;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  padding: 0;
-  background: transparent;
-}
-
-.paws-puffs-ve-control-color-text {
-  flex: 1;
-  padding: 4px 6px;
-  font-size: 0.85em;
-  border-radius: 3px;
-  border: 1px solid var(--SmartThemeBorderColor);
-  background: var(--SmartThemeBlurTintColor);
-  color: var(--SmartThemeBodyColor);
-}
-
-/* 滑块输入 */
-.paws-puffs-ve-slider-input {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-
-.paws-puffs-ve-control-slider {
-  flex: 1;
-}
-
-.paws-puffs-ve-control-number {
-  width: 60px;
-  padding: 4px 6px;
-  font-size: 0.85em;
-  border-radius: 3px;
-  border: 1px solid var(--SmartThemeBorderColor);
-  background: var(--SmartThemeBlurTintColor);
-  color: var(--SmartThemeBodyColor);
-}
-
-/* 选择控件 */
-.paws-puffs-ve-control-select {
-  width: 100%;
-  padding: 4px 6px;
-  font-size: 0.85em;
-  border-radius: 3px;
-  border: 1px solid var(--SmartThemeBorderColor);
-  background: var(--SmartThemeBlurTintColor);
-  color: var(--SmartThemeBodyColor);
-}
-
-/* 文本控件 */
-.paws-puffs-ve-control-text {
-  width: 100%;
-  padding: 4px 6px;
-  font-size: 0.85em;
-  border-radius: 3px;
-  border: 1px solid var(--SmartThemeBorderColor);
-  background: var(--SmartThemeBlurTintColor);
-  color: var(--SmartThemeBodyColor);
-}
-
-/* 开关控件 - 修复：使用新的类名，显示原生勾选框 */
-.paws-puffs-ve-control-toggle-checkbox {
-  /* 显示原生勾选框 */
-  display: inline-block;
-  margin-right: 8px;
-  cursor: pointer;
-}
-
-.paws-puffs-ve-toggle-label {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-}
-
-.paws-puffs-ve-toggle-text {
-  user-select: none;
-  font-size: 0.85em;
-}
-
-/* 清除按钮 */
-.paws-puffs-ve-clear-btn {
-  padding: 2px 6px;
-  background: transparent;
-  border: 1px solid var(--SmartThemeBorderColor);
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 0.8em;
-  transition: all 0.2s;
-}
-
-.paws-puffs-ve-clear-btn:hover {
-  background: #ff4444;
-  color: white;
-  border-color: #ff4444;
-}
-
-/* 空状态显示 */
-.paws-puffs-ve-no-selection {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  opacity: 0.5;
-  font-size: 0.9em;
-}
-
-.paws-puffs-ve-no-selection i {
-  font-size: 2em;
-  margin-bottom: 10px;
-}
-
-.paws-puffs-ve-empty-message {
-  text-align: center;
-  opacity: 0.5;
-  padding: 20px;
-  font-size: 0.85em;
-}
-
-.paws-puffs-ve-no-properties {
-  text-align: center;
-  padding: 20px;
-  opacity: 0.6;
-  font-size: 0.85em;
-}
-
-/* 状态栏 */
-.paws-puffs-ve-statusbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 5px 10px;
-  background: var(--SmartThemeBlurTintColor);
-  border-top: 1px solid var(--SmartThemeBorderColor);
-  font-size: 0.75em;
-  opacity: 0.8;
-  flex-shrink: 0;
-}
-
-.paws-puffs-ve-status-left,
-.paws-puffs-ve-status-right {
-  display: flex;
-  gap: 15px;
-}
-
-/* 滚动条样式 */
-.paws-puffs-ve-element-list::-webkit-scrollbar,
-.paws-puffs-ve-panel-body::-webkit-scrollbar,
-.paws-puffs-ve-templates-container::-webkit-scrollbar,
-.paws-puffs-ve-icons-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-.paws-puffs-ve-element-list::-webkit-scrollbar-thumb,
-.paws-puffs-ve-panel-body::-webkit-scrollbar-thumb,
-.paws-puffs-ve-templates-container::-webkit-scrollbar-thumb,
-.paws-puffs-ve-icons-container::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 3px;
-}
-
-/* ========== 移动端优化样式 ========== */
-@media (max-width: 768px) {
-
-  /* 移动端增加主容器高度 */
-  #visual-editor-inline-panel {
-    height: 600px;
-  }
-
-  /* 工具栏响应式布局 - 允许换行 */
-  .paws-puffs-ve-toolbar {
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 10px 8px;
-  }
-
-  .paws-puffs-ve-toolbar-left,
-  .paws-puffs-ve-toolbar-right {
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  /* 移动端工具栏右侧按钮组独占一行 */
-  .paws-puffs-ve-toolbar-right {
-    width: 100%;
-    justify-content: flex-end;
-  }
-
-  /* 实时预览开关在移动端更紧凑 */
-  .paws-puffs-ve-realtime-toggle {
-    margin-left: 8px;
-  }
-
-  /* 标签页按钮调整 */
-  .paws-puffs-ve-tab-btn {
-    padding: 6px 8px;
-    font-size: 0.8em;
-  }
-
-  /* 操作按钮在移动端稍微紧凑 */
-  .paws-puffs-ve-btn {
-    padding: 6px 8px;
-    font-size: 0.8em;
-  }
-
-  /* 徽章位置调整 */
-  .paws-puffs-ve-badge {
-    font-size: 0.7em;
-    padding: 0px 3px;
-  }
-
-  /* 元素编辑布局（已经是垂直排列） */
-  .paws-puffs-ve-elements-layout {
-    padding: 8px;
-    gap: 8px;
-  }
-
-  /* 三级下拉框移动端优化 */
-  .paws-puffs-ve-select-bar {
-    gap: 6px;
-  }
-
-  .paws-puffs-ve-select {
-    padding: 5px 6px;
-    font-size: 0.8em;
-  }
-
-  /* 快速模板和图标组移动端布局 */
-  .paws-puffs-ve-templates-container,
-  .paws-puffs-ve-icons-container {
-    flex-direction: column;
-    padding: 8px;
-    gap: 8px;
-  }
-
-  /* 属性面板移动端优化 - 占满剩余空间 */
-  .paws-puffs-ve-properties-panel {
-    flex: 1;
-    min-height: 0;
-    /* 允许flex收缩 */
-    padding: 6px;
-  }
-
-  /* 修复面板主体滚动 - 简化版 */
-  .paws-puffs-ve-panel-body {
-    max-height: 300px;
-    /* 给一个固定高度，而不是none */
-    padding-bottom: 50px;
-    /* 确保底部内容可见 */
-  }
-
-
-  /* 状态栏字体更小 */
-  .paws-puffs-ve-statusbar {
-    font-size: 0.7em;
-    padding: 4px 8px;
-  }
-
-  .paws-puffs-ve-status-left,
-  .paws-puffs-ve-status-right {
-    gap: 8px;
-  }
-
-  /* 隐藏部分状态信息以节省空间 */
-  .paws-puffs-ve-status-right span:not(:first-child) {
-    display: none;
-  }
-}
-
-/* 更小屏幕的额外优化 */
-@media (max-width: 480px) {
-
-  /* 超小屏幕进一步增加高度 */
-  #visual-editor-inline-panel {
-    height: 650px;
-  }
-
-  /* 工具栏按钮更紧凑 */
-  .paws-puffs-ve-tab-btn,
-  .paws-puffs-ve-btn {
-    padding: 5px 6px;
-    font-size: 0.75em;
-  }
-
-  /* 隐藏按钮文字，只显示图标 */
-  .paws-puffs-ve-tab-btn {
-    min-width: 35px;
-  }
-
-  /* 实时预览标签文字在超小屏幕隐藏 */
-  .paws-puffs-ve-switch-label {
-    display: none;
-  }
-
-  /* 三级下拉框超小屏幕进一步优化 */
-  .paws-puffs-ve-select {
-    padding: 4px 5px;
-    font-size: 0.75em;
-  }
-}
-
-/* ========== 滑轨两列布局优化 ========== */
-/* 滑轨组容器 - 用于包裹两个滑轨 */
-.paws-puffs-ve-slider-group {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-/* 滑轨组中的控件项 */
-.paws-puffs-ve-slider-group .paws-puffs-ve-control-item {
-  flex: 1;
-  margin-bottom: 0;
-}
-
-/* 单个滑轨保持原样 */
-.paws-puffs-ve-control-item.paws-puffs-ve-slider-control {
-  margin-bottom: 12px;
-}
-
-/* 滑轨输入区域优化 */
-.paws-puffs-ve-slider-input {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-
-.paws-puffs-ve-control-slider {
-  flex: 1;
-  min-width: 0;
-  /* 防止flex子项溢出 */
-}
-
-/* 数字输入框保持小尺寸 */
-.paws-puffs-ve-control-number {
-  width: 60px;
-  flex-shrink: 0;
-  padding: 4px 6px;
-  font-size: 0.85em;
-  border-radius: 3px;
-  border: 1px solid var(--SmartThemeBorderColor);
-  background: var(--SmartThemeBlurTintColor);
-  color: var(--SmartThemeBodyColor);
-}
-
-/* 移动端响应式：滑轨组改为垂直排列 */
-@media (max-width: 768px) {
-  .paws-puffs-ve-slider-group {
-    flex-direction: column;
-  }
-
-  .paws-puffs-ve-slider-group .paws-puffs-ve-control-item {
-    width: 100%;
-  }
-}
-
-/* 模式切换开关样式（新手/专家） */
-.paws-puffs-ve-mode-switch {
-  position: relative;
-  display: inline-block;
-  width: 40px;
-  height: 20px;
-  cursor: pointer;
-}
-
-.paws-puffs-ve-mode-input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-  position: absolute;
-}
-
-.paws-puffs-ve-mode-slider {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  transition: background-color 0.3s ease;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-}
-
-.paws-puffs-ve-mode-handle {
-  position: absolute;
-  height: 14px;
-  width: 14px;
-  left: 3px;
-  background-color: white;
-  transition: transform 0.3s ease;
-  border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-.paws-puffs-ve-mode-input:checked+.paws-puffs-ve-mode-slider {
-  background-color: var(--SmartThemeQuoteColor);
-}
-
-.paws-puffs-ve-mode-input:checked+.paws-puffs-ve-mode-slider .paws-puffs-ve-mode-handle {
-  transform: translateX(20px);
-}
-
-.paws-puffs-ve-mode-input:focus+.paws-puffs-ve-mode-slider {
-  box-shadow: 0 0 0 2px rgba(var(--SmartThemeQuoteColor), 0.2);
-}
-
-/* ========== 可视化编辑器内嵌面板样式 结束 ========== */
-
-/* ========== 可视化编辑器设置页面样式 ========== */
-
-/* 外层容器 - 使用和预设管理一样的样式 */
-.visual-editor-section {
-  padding: 0;
-}
-
-/* 功能开关区域 - 完全复制预设管理的样式 */
-.visual-editor-enable-section-compact {
-  padding: 3px 0;
-  margin-bottom: 3px;
-  border-bottom: 1px solid var(--SmartThemeBorderColor);
-}
-
-.visual-editor-enable-section-compact .checkbox_label {
-  display: inline-flex;
-  align-items: center;
-  font-size: 0.9em;
-}
-
-.visual-editor-enable-section-compact .hint-inline {
-  margin-left: 8px;
-  font-size: 0.8em;
-  opacity: 0.7;
-  font-style: italic;
-}
-
-/* 清理按钮区域 */
-.visual-editor-cleanup-section {
-  margin-top: 15px;
-  padding: 15px;
-  background: color-mix(in srgb, var(--SmartThemeUnderlineColor) 5%, transparent 95%);
-  border-radius: 8px;
-  border: 1px solid color-mix(in srgb, var(--SmartThemeUnderlineColor) 15%, transparent 85%);
-}
-
-.visual-editor-cleanup-section h4 {
-  color: var(--SmartThemeBodyColor);
-}
-
-.visual-editor-cleanup-section .menu_button {
-  justify-content: flex-start;
-  text-align: left;
-}
-
-.visual-editor-cleanup-section .menu_button i {
-  margin-right: 8px;
-  min-width: 16px;
-}
-
-/* 手风琴容器 */
-.paws-puffs-settings-accordion-container {
-  display: flex;
-  gap: 0;
-  margin-bottom: 10px;
-  height: 200px;
-  border: 1px solid var(--SmartThemeBorderColor);
-  border-radius: 8px;
-  overflow: hidden;
-  background: var(--SmartThemeBlurTintColor);
-}
-
-.paws-puffs-settings-accordion-card {
-  flex: 0 0 35px;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-  border-right: 1px solid var(--SmartThemeBorderColor);
-}
-
-.paws-puffs-settings-accordion-card:last-child {
-  border-right: none;
-}
-
-.paws-puffs-settings-accordion-card.active {
-  flex: 1;
-}
-
-.paws-puffs-settings-accordion-header {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 35px;
-  height: 100%;
-  cursor: pointer;
-  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 15%, var(--SmartThemeBlurTintColor) 85%);
-  transition: all 0.3s ease;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.paws-puffs-settings-accordion-header:hover {
-  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 60%, var(--SmartThemeBlurTintColor) 40%);
-}
-
-.paws-puffs-settings-accordion-tab {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 15px 5px;
-  color: var(--SmartThemeBodyColor);
-  white-space: nowrap;
-}
-
-.paws-puffs-settings-accordion-tab i {
-  transform: rotate(90deg);
-  font-size: 1.1em;
-  color: var(--SmartThemeQuoteColor);
-}
-
-.paws-puffs-settings-accordion-tab strong {
-  font-size: 0.95em;
-}
-
-.paws-puffs-settings-accordion-card.active .paws-puffs-settings-accordion-header {
-  display: none;
-}
-
-.paws-puffs-settings-accordion-body {
-  margin-left: 35px;
-  padding: 20px;
-  font-size: 0.9em;
-  line-height: 1.6;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.3s ease;
-  height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.paws-puffs-settings-accordion-body::-webkit-scrollbar {
-  width: 6px;
-}
-
-.paws-puffs-settings-accordion-body::-webkit-scrollbar-track {
-  background: color-mix(in srgb, var(--SmartThemeBorderColor) 30%, transparent 70%);
-  border-radius: 3px;
-}
-
-.paws-puffs-settings-accordion-body::-webkit-scrollbar-thumb {
-  background: var(--SmartThemeQuoteColor);
-  border-radius: 3px;
-}
-
-.paws-puffs-settings-accordion-card.active .paws-puffs-settings-accordion-body {
-  margin-left: 0;
-  opacity: 1;
-  visibility: visible;
-}
-
-.paws-puffs-settings-accordion-body p {
-  margin: 0 0 10px 0;
-  color: var(--SmartThemeBodyColor);
-}
-
-.paws-puffs-settings-accordion-body h4 {
-  margin-top: 15px;
-  margin-bottom: 8px;
-}
-
-.paws-puffs-settings-accordion-body h4:first-child {
-  margin-top: 0;
-}
-
-.paws-puffs-settings-switch {
-  padding: 8px;
-  background: color-mix(in srgb, var(--SmartThemeBodyColor) 2%, var(--SmartThemeBlurTintColor) 98%);
-  border-radius: 4px;
-}
-
-.paws-puffs-settings-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.paws-puffs-settings-buttons button {
-  padding: 8px 12px;
-  font-size: 0.9em;
-  cursor: pointer;
-  border: 1px solid var(--SmartThemeBorderColor);
-  background: var(--SmartThemeBlurTintColor);
-  color: var(--SmartThemeBodyColor);
-  border-radius: 4px;
-  transition: all 0.2s;
-  text-align: left;
-}
-
-.paws-puffs-settings-buttons button:hover {
-  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 20%, var(--SmartThemeBlurTintColor) 80%);
-}
-
-.paws-puffs-settings-buttons button i {
-  margin-right: 8px;
-}
-
-/* ==================== 可视化编辑器样式结束 ==================== */
 
 /* ==================== 工具包样式开始 ==================== */
 
@@ -7707,5 +6472,1107 @@ body.beautify-hide-qr.beautify-qr-height-auto #send_form:hover #qr--bar:not(:emp
 .chat-tools-empty p {
   margin: 0;
   font-size: 0.9em;
+}
+
+
+
+
+/* ========================================
+   ST-Theme-Engine 视觉引擎样式
+   ======================================== */
+
+/* ST-Theme-Engine 扩展设置面板样式 */
+
+.ste-settings-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ste-settings-desc {
+    margin: 0;
+    font-size: 0.9em;
+    opacity: 0.7;
+}
+
+.ste-settings-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 启用勾选框标签 */
+.ste-enable-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+
+/* 扩展禁用时，按钮变灰不可点 */
+.ste-btn-disabled {
+    opacity: 0.4;
+    cursor: not-allowed !important;
+    pointer-events: none;
+}
+
+/* ============================================
+   浮动面板样式
+   ============================================ */
+
+/* 面板容器（位置由JS计算，不用CSS居中） */
+.ste-panel {
+    display: none;
+    position: fixed;
+    z-index: 10001;
+    width: 680px;
+    height: 500px;
+    /* 尺寸约束 */
+    min-width: 320px;
+    min-height: 250px;
+    max-width: 95vw;
+    max-height: 95vh;
+    background: var(--SmartThemeBlurTintColor, rgba(30, 30, 35, 0.95));
+    border: 1px solid var(--SmartThemeBorderColor, rgba(255, 255, 255, 0.1));
+    border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    flex-direction: column;
+    /* resize: both 让右下角出现缩放手柄 */
+    resize: both;
+    overflow: hidden;
+    backdrop-filter: blur(12px);
+}
+
+.ste-panel.visible {
+    display: flex;
+}
+
+/* 标题栏（可拖动） */
+.ste-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--SmartThemeBorderColor, rgba(255, 255, 255, 0.08));
+    cursor: move;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.ste-panel-title {
+    font-weight: 600;
+    font-size: 0.95em;
+    opacity: 0.9;
+}
+
+.ste-panel-close {
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    opacity: 0.6;
+    transition: opacity 0.15s;
+}
+
+.ste-panel-close:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* 工具栏（方案选择 + 按钮） */
+.ste-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--SmartThemeBorderColor, rgba(255, 255, 255, 0.08));
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.ste-toolbar select {
+    flex: 1;
+    min-width: 120px;
+    margin: 0;
+}
+
+.ste-toolbar-btn {
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--SmartThemeBorderColor, rgba(255, 255, 255, 0.1));
+    background: transparent;
+    color: inherit;
+    font-size: 0.9em;
+    opacity: 0.7;
+    transition: opacity 0.15s, background 0.15s;
+}
+
+.ste-toolbar-btn:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* 工具栏分隔线 */
+.ste-toolbar-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--SmartThemeBorderColor, rgba(255, 255, 255, 0.15));
+    margin: 0 2px;
+    flex-shrink: 0;
+}
+
+/* 标签页栏 */
+.ste-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--SmartThemeBorderColor, rgba(255, 255, 255, 0.08));
+    flex-shrink: 0;
+}
+
+.ste-tab {
+    padding: 6px 16px;
+    cursor: pointer;
+    font-size: 0.85em;
+    opacity: 0.5;
+    border-bottom: 2px solid transparent;
+    transition: opacity 0.15s, border-color 0.15s;
+    user-select: none;
+}
+
+.ste-tab:hover {
+    opacity: 0.8;
+}
+
+.ste-tab.active {
+    opacity: 1;
+    border-bottom-color: var(--SmartThemeBodyColor, #ddd);
+}
+
+/* 标签页内容 */
+.ste-tab-content {
+    display: none;
+    flex: 1;
+    overflow: hidden;
+    flex-direction: column;
+}
+
+.ste-tab-content.active {
+    display: flex;
+}
+
+/* CSS输入框 */
+.ste-css-input {
+    flex: 1;
+    resize: none;
+    border: none;
+    outline: none;
+    padding: 12px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    background: transparent;
+    color: var(--SmartThemeBodyColor, #ddd);
+    tab-size: 2;
+}
+
+.ste-css-input::placeholder {
+    opacity: 0.3;
+}
+
+/* CSS 优先级提示条 */
+.ste-css-priority-notice {
+    padding: 6px 12px;
+    font-size: 0.78em;
+    opacity: 0.55;
+    border-bottom: 1px solid var(--SmartThemeBorderColor, rgba(255,255,255,0.08));
+    line-height: 1.4;
+}
+
+/* 占位/空状态 */
+.ste-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    opacity: 0.3;
+    font-size: 0.9em;
+}
+
+/* ============================================
+   L2: HTML注入标签页
+   ============================================ */
+
+.ste-html-toolbar,
+.ste-js-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--SmartThemeBorderColor, rgba(255, 255, 255, 0.08));
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.ste-html-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* 单个注入项卡片 */
+.ste-html-item {
+    border: 1px solid var(--SmartThemeBorderColor, rgba(255, 255, 255, 0.1));
+    border-radius: 6px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.ste-html-item-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85em;
+}
+
+.ste-html-item-title {
+    flex: 1;
+    opacity: 0.7;
+    font-family: monospace;
+    font-size: 0.9em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ste-html-item-pos {
+    opacity: 0.4;
+    font-size: 0.8em;
+    font-family: monospace;
+}
+
+.ste-html-observe-label {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.8em;
+    opacity: 0.6;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.ste-html-selector {
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid var(--SmartThemeBorderColor, rgba(255, 255, 255, 0.1));
+    border-radius: 4px;
+    background: transparent;
+    color: var(--SmartThemeBodyColor, #ddd);
+    font-family: monospace;
+    font-size: 0.85em;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.ste-html-content {
+    width: 100%;
+    min-height: 50px;
+    max-height: 120px;
+    padding: 4px 8px;
+    border: 1px solid var(--SmartThemeBorderColor, rgba(255, 255, 255, 0.1));
+    border-radius: 4px;
+    background: transparent;
+    color: var(--SmartThemeBodyColor, #ddd);
+    font-family: monospace;
+    font-size: 0.85em;
+    resize: vertical;
+    outline: none;
+    box-sizing: border-box;
+}
+
+/* ========== 注入项折叠 ========== */
+
+.ste-html-item-header {
+    cursor: pointer;
+    min-height: 28px;
+}
+
+.ste-html-toggle-icon {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.4);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+    width: 14px;
+    text-align: center;
+}
+
+.ste-html-item:not(.ste-html-item-collapsed) .ste-html-toggle-icon {
+    transform: rotate(90deg);
+}
+
+.ste-html-item-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 4px 8px 8px;
+    overflow: hidden;
+    max-height: 420px;
+    opacity: 1;
+    transition: max-height 0.2s ease, opacity 0.2s ease, padding 0.2s ease;
+}
+
+.ste-html-item-collapsed .ste-html-item-body {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+/* ========== 装饰CSS编辑框 ========== */
+
+.ste-deco-css-input {
+    width: 100%;
+    min-height: 80px;
+    max-height: 200px;
+    resize: vertical;
+    font-family: 'Consolas', 'Noto Sans Mono', monospace;
+    font-size: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    color: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 6px 8px;
+    margin-top: 4px;
+    tab-size: 4;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.ste-deco-css-input:focus {
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* ========== 装饰优先级按钮 ========== */
+
+.ste-deco-priority-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.ste-deco-priority-btn:hover {
+    color: rgba(255, 255, 255, 0.85);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* HTML注入：选择器中文名 */
+.ste-html-cn-name {
+    opacity: 0.5;
+    font-size: 0.85em;
+    margin-left: 4px;
+    font-family: inherit;
+}
+
+/* ============================================
+   装饰模式（可视化贴图预览浮层 + 控件面板）
+   ============================================ */
+
+.ste-deco-overlay {
+    position: fixed;
+    z-index: 10002;
+    cursor: move;
+    user-select: none;
+    border: 2px dashed rgba(100, 180, 255, 0.6);
+    border-radius: 4px;
+}
+
+.ste-deco-preview-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    display: block;
+}
+
+.ste-deco-resize-handle {
+    position: absolute;
+    right: -5px;
+    bottom: -5px;
+    width: 14px;
+    height: 14px;
+    cursor: nwse-resize;
+    background: rgba(100, 180, 255, 0.8);
+    border-radius: 2px;
+}
+
+/* 控件面板：位于装饰下方 */
+.ste-deco-controls {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(30, 30, 35, 0.95);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    white-space: nowrap;
+    backdrop-filter: blur(8px);
+    cursor: default;
+}
+
+.ste-deco-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* 控件按钮（旋转/翻转/模式） */
+.ste-deco-ctrl {
+    padding: 3px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font-size: 11px;
+    opacity: 0.7;
+    transition: opacity 0.15s, background 0.15s;
+    white-space: nowrap;
+}
+
+.ste-deco-ctrl:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.ste-deco-ctrl.active {
+    opacity: 1;
+    background: rgba(100, 180, 255, 0.2);
+    border-color: rgba(100, 180, 255, 0.4);
+}
+
+/* 标签文字 */
+.ste-deco-lbl {
+    font-size: 10px;
+    opacity: 0.5;
+}
+
+/* 分隔线 */
+.ste-deco-sep {
+    width: 1px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0 2px;
+    flex-shrink: 0;
+}
+
+/* 透明度数值显示 */
+.ste-deco-val {
+    font-size: 11px;
+    min-width: 24px;
+    text-align: center;
+    opacity: 0.8;
+    font-family: monospace;
+}
+
+/* z-index 输入框 */
+.ste-deco-num {
+    width: 50px;
+    padding: 2px 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    background: transparent;
+    color: inherit;
+    font-size: 11px;
+    text-align: center;
+}
+
+/* 检测到的元素选择器文字 */
+.ste-deco-detected {
+    font-size: 10px;
+    opacity: 0.6;
+    font-family: monospace;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 确认/取消按钮行 */
+.ste-deco-actions {
+    justify-content: center;
+}
+
+/* 确认/取消圆形按钮 */
+.ste-deco-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(30, 30, 35, 0.9);
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: background 0.15s;
+}
+
+.ste-deco-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.ste-deco-confirm {
+    color: #4caf50;
+}
+
+.ste-deco-cancel {
+    color: #f44336;
+}
+
+/* ============================================
+   布局编辑模式（可视化拖拽定位，生成CSS）
+   ============================================ */
+
+/* 布局模式激活时，面板外所有元素改为十字准星光标 */
+body.ste-layout-mode *:not(#ste-panel):not(#ste-panel *):not(.ste-layout-highlight):not(.ste-layout-highlight *):not(.ste-layout-controls):not(.ste-layout-controls *) {
+    cursor: crosshair !important;
+}
+
+/* 悬停高亮框（蓝色，未选中） */
+.ste-layout-highlight {
+    position: fixed;
+    z-index: 10002;
+    border: 2px solid rgba(100, 180, 255, 0.85);
+    border-radius: 3px;
+    pointer-events: auto;
+    cursor: pointer;
+    box-shadow: 0 0 0 3px rgba(100, 180, 255, 0.15);
+    transition: border-color 0.1s, box-shadow 0.1s;
+}
+
+/* 选中状态（绿色，可拖动） */
+.ste-layout-highlight.selected {
+    border-color: rgba(100, 255, 150, 0.9);
+    box-shadow: 0 0 0 3px rgba(100, 255, 150, 0.2);
+    cursor: move;
+}
+
+/* 缩放手柄（右下角绿色小方块） */
+.ste-layout-resize-handle {
+    position: absolute;
+    right: -6px;
+    bottom: -6px;
+    width: 14px;
+    height: 14px;
+    cursor: nwse-resize;
+    background: rgba(100, 255, 150, 0.9);
+    border-radius: 2px;
+    pointer-events: auto;
+}
+
+/* 布局控制面板（悬浮在高亮框旁） */
+.ste-layout-controls {
+    position: fixed;
+    z-index: 10003;
+    background: rgba(30, 30, 35, 0.95);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    white-space: nowrap;
+    backdrop-filter: blur(8px);
+    cursor: default;
+    font-size: 12px;
+}
+
+/* 控制面板中的元素中文名 */
+.ste-layout-el-name {
+    font-weight: 600;
+    font-size: 0.95em;
+    margin-right: 4px;
+}
+
+/* 控制面板中的选择器显示文字 */
+.ste-layout-selector-display {
+    font-family: monospace;
+    font-size: 0.8em;
+    opacity: 0.6;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 布局标签页内容区 */
+.ste-layout-tab-content {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+.ste-layout-desc {
+    margin: 0;
+    opacity: 0.75;
+    font-size: 0.85em;
+    line-height: 1.6;
+}
+
+.ste-layout-hint {
+    opacity: 0.5;
+    font-size: 0.8em;
+    line-height: 1.6;
+}
+
+/* 进入布局模式按钮的激活状态 */
+#ste-layout-start.active {
+    background: rgba(100, 255, 150, 0.15);
+    border-color: rgba(100, 255, 150, 0.4);
+    opacity: 1;
+}
+
+/* 快速选择区（默认隐藏，布局模式激活后显示） */
+.ste-layout-quickpick {
+    display: none;
+}
+
+.ste-layout-quickpick.visible {
+    display: block;
+}
+
+.ste-layout-quickpick-label {
+    font-size: 0.8em;
+    opacity: 0.5;
+    margin-bottom: 7px;
+}
+
+/* 用户/角色分组 */
+.ste-layout-qp-group {
+    margin-bottom: 8px;
+}
+
+.ste-layout-qp-group-label {
+    font-size: 0.78em;
+    opacity: 0.55;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.ste-layout-quickpick-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+/* em 单位标签（字号控件旁的小字） */
+.ste-layout-unit-lbl {
+    font-size: 0.78em;
+    opacity: 0.55;
+    margin-left: 2px;
+}
+
+/* 快速选择按钮样式 */
+.ste-layout-qp-btn {
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--SmartThemeBorderColor, rgba(255, 255, 255, 0.12));
+    background: transparent;
+    color: inherit;
+    font-size: 0.82em;
+    cursor: pointer;
+    opacity: 0.65;
+    transition: opacity 0.15s, background 0.15s, border-color 0.15s;
+    white-space: nowrap;
+}
+
+.ste-layout-qp-btn:hover {
+    opacity: 1;
+    background: rgba(100, 180, 255, 0.15);
+    border-color: rgba(100, 180, 255, 0.45);
+}
+
+/* ============================================
+   L3: JS执行标签页
+   ============================================ */
+
+.ste-js-autorun-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.85em;
+    opacity: 0.7;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.ste-js-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 8px 12px 0;
+    padding: 8px 10px;
+    border-left: 3px solid #f0a030;
+    border-radius: 6px;
+    background: rgba(255, 180, 0, 0.1);
+    font-size: 0.82em;
+    line-height: 1.55;
+    color: var(--SmartThemeBodyColor, #ddd);
+    flex-shrink: 0;
+}
+
+.ste-js-warning > i {
+    color: #f0a030;
+    margin-top: 1px;
+}
+
+.ste-js-warning-text {
+    opacity: 0.92;
+}
+
+/* ============================================
+   布局子标签页
+   ============================================ */
+.ste-layout-subtabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    flex-shrink: 0;
+}
+
+.ste-layout-subtab {
+    flex: 1;
+    padding: 7px 0;
+    text-align: center;
+    font-size: 0.85em;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    color: inherit;
+    opacity: 0.55;
+    transition: opacity 0.15s, border-color 0.15s;
+    border-bottom: 2px solid transparent;
+}
+
+.ste-layout-subtab.active {
+    opacity: 1;
+    border-bottom-color: var(--SmartThemeQuoteColor, #888);
+}
+
+.ste-layout-subtab:hover:not(.active) {
+    opacity: 0.75;
+}
+
+.ste-layout-subtab-content {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.ste-layout-subtab-content.active {
+    display: flex;
+}
+
+/* ============================================
+   快速编辑面板基础样式
+   ============================================ */
+.ste-qe-panel {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+.ste-qe-no-selection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 30px 20px;
+    text-align: center;
+    opacity: 0.6;
+    font-size: 0.88em;
+    line-height: 1.6;
+}
+
+.ste-qe-selected-info {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.ste-qe-el-name {
+    font-weight: bold;
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+
+.ste-qe-selector {
+    font-size: 0.78em;
+    opacity: 0.55;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ste-qe-placeholder {
+    text-align: center;
+    padding: 20px;
+    opacity: 0.4;
+    font-size: 0.85em;
+}
+
+.ste-qe-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.ste-qe-group {
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.03);
+    overflow: hidden;
+}
+
+.ste-qe-group-header {
+    width: 100%;
+    border: none;
+    background: rgba(255,255,255,0.03);
+    color: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    cursor: pointer;
+    font-size: 0.84em;
+    font-weight: 600;
+}
+
+.ste-qe-group-header:hover {
+    background: rgba(255,255,255,0.06);
+}
+
+.ste-qe-group-arrow {
+    opacity: 0.7;
+    transform: rotate(-90deg);
+    transition: transform 0.15s ease;
+}
+
+.ste-qe-group.expanded .ste-qe-group-arrow {
+    transform: rotate(0deg);
+}
+
+.ste-qe-group-body {
+    display: none;
+    padding: 10px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    gap: 10px;
+    flex-direction: column;
+}
+
+.ste-qe-group.expanded .ste-qe-group-body {
+    display: flex;
+}
+
+.ste-qe-row {
+    display: grid;
+    grid-template-columns: 70px 44px 1fr;
+    align-items: center;
+    gap: 8px;
+}
+
+.ste-qe-row-stack {
+    grid-template-columns: 1fr;
+    gap: 6px;
+}
+
+.ste-qe-label {
+    font-size: 0.78em;
+    opacity: 0.75;
+    white-space: nowrap;
+}
+
+.ste-qe-color-picker {
+    width: 40px;
+    height: 28px;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px;
+    background: transparent;
+    padding: 2px;
+    cursor: pointer;
+}
+
+.ste-qe-color-text,
+.ste-qe-text-full,
+.ste-qe-select,
+.ste-qe-num {
+    width: 100%;
+    background: rgba(0,0,0,0.25);
+    color: inherit;
+    border: 1px solid rgba(255,255,255,0.13);
+    border-radius: 6px;
+    font-size: 0.78em;
+    padding: 5px 7px;
+}
+
+.ste-qe-color-text:focus,
+.ste-qe-text-full:focus,
+.ste-qe-select:focus,
+.ste-qe-num:focus {
+    outline: none;
+    border-color: rgba(255,255,255,0.35);
+}
+
+.ste-qe-range {
+    width: 100%;
+    accent-color: var(--SmartThemeQuoteColor, #7aa7ff);
+}
+
+.ste-qe-range-val {
+    justify-self: end;
+    min-width: 38px;
+    font-size: 0.74em;
+    opacity: 0.75;
+    text-align: right;
+}
+
+.ste-qe-shadow-presets {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.ste-qe-preset-btn {
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.05);
+    color: inherit;
+    border-radius: 6px;
+    font-size: 0.75em;
+    padding: 5px 6px;
+    cursor: pointer;
+}
+
+.ste-qe-preset-btn:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.ste-qe-preset-btn.active {
+    border-color: rgba(122,167,255,0.85);
+    background: rgba(122,167,255,0.16);
+}
+
+.ste-qe-hint {
+    font-size: 0.75em;
+    line-height: 1.5;
+    color: #f7c97d;
+    background: rgba(247, 201, 125, 0.11);
+    border: 1px solid rgba(247, 201, 125, 0.28);
+    border-radius: 6px;
+    padding: 6px 8px;
+}
+
+.ste-qe-subhint {
+    font-size: 0.72em;
+    line-height: 1.45;
+    opacity: 0.62;
+}
+
+.ste-qe-spacing-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ste-qe-spacing-title {
+    font-size: 0.76em;
+    opacity: 0.7;
+}
+
+.ste-qe-spacing-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.ste-qe-spacing-cell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.74em;
+    opacity: 0.82;
+}
+
+.ste-qe-spacing-cell .ste-qe-num {
+    padding: 4px 6px;
+}
+
+.ste-qe-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 2px;
+}
+
+/* 九宫格 fill 复选框 */
+.ste-qe-fill-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.78em;
+    opacity: 0.85;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 2px 6px;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 4px;
+}
+
+.ste-qe-fill-label:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+.ste-qe-fill-check {
+    margin: 0;
+    cursor: pointer;
+}
+
+.ste-qe-unit-hint {
+    font-size: 0.72em;
+    opacity: 0.5;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
