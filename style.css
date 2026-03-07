@@ -3385,6 +3385,131 @@ select.compact {
   border-radius: 3px;
 }
 
+/* ================================================================
+   模拟人生 手风琴（paws-puffs-settings-accordion）
+   与 beautify-accordion / chat-tools-accordion 保持一致
+   ================================================================ */
+.paws-puffs-settings-accordion-container {
+  display: flex;
+  gap: 0;
+  height: 320px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 50%, transparent 50%);
+  border: 1px solid var(--SmartThemeBorderColor);
+}
+
+/* 手风琴卡片 */
+.paws-puffs-settings-accordion-card {
+  flex: 0 0 35px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  border-right: 1px solid color-mix(in srgb, var(--SmartThemeBorderColor) 30%, transparent 70%);
+  overflow: hidden;
+}
+
+.paws-puffs-settings-accordion-card:last-child {
+  border-right: none;
+}
+
+/* 展开的卡片 */
+.paws-puffs-settings-accordion-card.active {
+  flex: 1;
+}
+
+/* 卡片标题（垂直标签） */
+.paws-puffs-settings-accordion-header {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 35px;
+  height: 100%;
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 40%, var(--SmartThemeBlurTintColor) 60%);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s ease;
+  z-index: 2;
+}
+
+.paws-puffs-settings-accordion-header:hover {
+  background: color-mix(in srgb, var(--SmartThemeQuoteColor) 60%, var(--SmartThemeBlurTintColor) 40%);
+}
+
+/* 垂直标签内容 */
+.paws-puffs-settings-accordion-tab {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 15px 5px;
+  color: var(--SmartThemeBodyColor);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.paws-puffs-settings-accordion-tab i {
+  transform: rotate(90deg);
+  font-size: 1.1em;
+  color: var(--SmartThemeQuoteColor);
+}
+
+.paws-puffs-settings-accordion-tab strong {
+  font-size: 0.95em;
+}
+
+/* 展开的卡片：隐藏垂直标签 */
+.paws-puffs-settings-accordion-card.active .paws-puffs-settings-accordion-header {
+  display: none;
+}
+
+/* 卡片内容 */
+.paws-puffs-settings-accordion-body {
+  margin-left: 35px;
+  padding: 10px 12px;
+  font-size: 0.9em;
+  line-height: 1.6;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+/* 展开的卡片：显示内容 */
+.paws-puffs-settings-accordion-card.active .paws-puffs-settings-accordion-body {
+  margin-left: 0;
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 滚动条 */
+.paws-puffs-settings-accordion-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.paws-puffs-settings-accordion-body::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--SmartThemeBorderColor) 30%, transparent 70%);
+  border-radius: 3px;
+}
+
+.paws-puffs-settings-accordion-body::-webkit-scrollbar-thumb {
+  background: var(--SmartThemeQuoteColor);
+  border-radius: 3px;
+}
+
+.paws-puffs-settings-accordion-body p {
+  margin: 0 0 10px 0;
+  color: var(--SmartThemeBodyColor);
+}
+
+.paws-puffs-settings-accordion-body p:last-child {
+  margin-bottom: 0;
+}
+
 /* ========== 设置项样式 ========== */
 .beautify-setting-item {
   margin-bottom: 8px;

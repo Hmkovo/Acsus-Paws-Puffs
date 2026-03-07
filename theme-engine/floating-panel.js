@@ -3235,48 +3235,66 @@ function toHexColor(input) {
 function bindLayoutDragResize(resizeHandle, signal) {
     const highlight = layoutHighlight;
 
-    // 拖动（整个高亮框，排除缩放手柄）
-    highlight.addEventListener('mousedown', (e) => {
+    // ── 辅助：统一提取坐标（鼠标 / 触摸） ──
+    const clientXY = (e) => {
+        if (e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        return { x: e.clientX, y: e.clientY };
+    };
+
+    // ── 拖动开始（整个高亮框，排除缩放手柄） ──
+    const onDragStart = (e) => {
         if (/** @type {HTMLElement} */ (e.target).closest('.ste-layout-resize-handle')) return;
+        const { x, y } = clientXY(e);
         layoutDragState = {
             mode: 'drag',
-            startX: e.clientX, startY: e.clientY,
+            startX: x, startY: y,
             initL: highlight.offsetLeft, initT: highlight.offsetTop,
             initW: 0, initH: 0
         };
         e.preventDefault();
         e.stopPropagation();
-    }, { signal });
+    };
+    highlight.addEventListener('mousedown', onDragStart, { signal });
+    highlight.addEventListener('touchstart', onDragStart, { passive: false, signal });
 
-    // 缩放
-    resizeHandle.addEventListener('mousedown', (e) => {
+    // ── 缩放开始 ──
+    const onResizeStart = (e) => {
+        const { x, y } = clientXY(e);
         layoutDragState = {
             mode: 'resize',
-            startX: e.clientX, startY: e.clientY,
+            startX: x, startY: y,
             initL: 0, initT: 0,
             initW: highlight.offsetWidth, initH: highlight.offsetHeight
         };
         e.preventDefault();
         e.stopPropagation();
-    }, { signal });
+    };
+    resizeHandle.addEventListener('mousedown', onResizeStart, { signal });
+    resizeHandle.addEventListener('touchstart', onResizeStart, { passive: false, signal });
 
-    // 全局鼠标移动
-    document.addEventListener('mousemove', (e) => {
+    // ── 全局移动（鼠标 + 触摸） ──
+    const onMove = (e) => {
         if (!layoutDragState.mode) return;
+        const { x, y } = clientXY(e);
         if (layoutDragState.mode === 'drag') {
-            highlight.style.left = `${layoutDragState.initL + e.clientX - layoutDragState.startX}px`;
-            highlight.style.top  = `${layoutDragState.initT + e.clientY - layoutDragState.startY}px`;
+            highlight.style.left = `${layoutDragState.initL + x - layoutDragState.startX}px`;
+            highlight.style.top  = `${layoutDragState.initT + y - layoutDragState.startY}px`;
         } else {
-            const newW = Math.max(10, layoutDragState.initW + (e.clientX - layoutDragState.startX));
-            const newH = Math.max(10, layoutDragState.initH + (e.clientY - layoutDragState.startY));
+            const newW = Math.max(10, layoutDragState.initW + (x - layoutDragState.startX));
+            const newH = Math.max(10, layoutDragState.initH + (y - layoutDragState.startY));
             highlight.style.width  = `${newW}px`;
             highlight.style.height = `${newH}px`;
         }
-    }, { signal });
+        if (e.cancelable) e.preventDefault();   // 阻止页面滚动
+    };
+    document.addEventListener('mousemove', onMove, { signal });
+    document.addEventListener('touchmove', onMove, { passive: false, signal });
 
-    document.addEventListener('mouseup', () => {
-        layoutDragState.mode = null;
-    }, { signal });
+    // ── 全局松手 ──
+    const onEnd = () => { layoutDragState.mode = null; };
+    document.addEventListener('mouseup', onEnd, { signal });
+    document.addEventListener('touchend', onEnd, { signal });
+    document.addEventListener('touchcancel', onEnd, { signal });
 }
 
 /**
@@ -3655,6 +3673,20 @@ function startLayoutMode() {
     document.addEventListener('mouseover', (e) => {
         if (layoutSelected) return;
         // 忽略面板内部 + 高亮框自身（否则鼠标移到高亮框时会触发 remove → 重建 → 闪烁）
+        const evtEl = /** @type {HTMLElement} */ (e.target);
+        if (evtEl.closest('#ste-panel')) return;
+        if (evtEl.closest('.ste-layout-highlight') || evtEl.closest('.ste-layout-controls')) return;
+        const target = findLayoutTarget(evtEl);
+        if (target) {
+            updateLayoutHighlight(target);
+        } else {
+            removeLayoutHighlight();
+        }
+    }, { signal });
+
+    // 触摸检测（手机端：点击元素高亮，再次点击选中）
+    document.addEventListener('touchstart', (e) => {
+        if (layoutSelected) return;
         const evtEl = /** @type {HTMLElement} */ (e.target);
         if (evtEl.closest('#ste-panel')) return;
         if (evtEl.closest('.ste-layout-highlight') || evtEl.closest('.ste-layout-controls')) return;
