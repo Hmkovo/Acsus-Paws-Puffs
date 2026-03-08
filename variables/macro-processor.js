@@ -166,8 +166,16 @@ export class MacroProcessor {
                 // 酒馆楼层引用
                 content = this.getChatFloorContent(rangeStr, context);
             } else {
-                // 变量引用
-                content = await this.getVariableContent(name, rangeStr, context);
+                // 变量引用：
+                // 仅处理当前变量系统中已定义的变量。
+                // 未定义变量（如 SillyTavern 内置变量 {{user}}/{{char}}）保留原样，
+                // 后续由 ST 的变量替换流程处理，避免被误替换为空字符串。
+                const hasVariable = context?.variables instanceof Map && context.variables.has(name);
+                if (!hasVariable) {
+                    content = fullMatch;
+                } else {
+                    content = await this.getVariableContent(name, rangeStr, context);
+                }
             }
 
             result = result.replace(fullMatch, content);

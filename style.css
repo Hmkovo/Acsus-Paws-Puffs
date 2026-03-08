@@ -6651,7 +6651,7 @@ body.beautify-hide-qr.beautify-qr-height-auto #send_form:hover #qr--bar:not(:emp
 .ste-panel {
     display: none;
     position: fixed;
-    z-index: 10001;
+    z-index: 10010;
     width: 680px;
     height: 500px;
     /* 尺寸约束 */

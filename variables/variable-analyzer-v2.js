@@ -12,6 +12,7 @@
 
 import logger from '../logger.js';
 import { getContext } from '../../../../extensions.js';
+import { substituteParamsExtended } from '../../../../../script.js';
 import { getSuiteManager } from './suite-manager.js';
 import { getVariableManagerV2 } from './variable-manager-v2.js';
 import { getMacroProcessor } from './macro-processor.js';
@@ -126,11 +127,12 @@ export class VariableAnalyzerV2 {
             const tagParser = getTagParser();
             const tagInstructions = tagParser.generateTagInstructions(enabledVariables);
             const fullPrompt = prompt + '\n\n' + tagInstructions;
+            const finalPrompt = this._applySillyTavernBuiltins(fullPrompt, chat);
 
-            logger.debug('[VariableAnalyzerV2] 发送提示词:', fullPrompt.substring(0, 200) + '...');
+            logger.debug('[VariableAnalyzerV2] 发送提示词:', finalPrompt.substring(0, 200) + '...');
 
             // 7. 调用 API
-            const response = await this._callAPI(fullPrompt, signal);
+            const response = await this._callAPI(finalPrompt, signal);
             if (!response) {
                 return { success: false, error: '分析被中止或失败' };
             }
@@ -300,6 +302,36 @@ export class VariableAnalyzerV2 {
         }
 
         return { prompt: parts.join('\n'), floorRange };
+    }
+
+    /**
+     * 对提示词应用 SillyTavern 内置变量替换。
+     *
+     * @description
+     * 变量模块会先处理自己的宏（如 {{变量名}}、{{变量@范围}}）。
+     * 这一步在发送前补做 ST 的内置变量替换，确保 {{user}}/{{char}} 等
+     * 能按当前聊天上下文正确展开。
+     *
+     * @param {string} prompt - 原始提示词
+     * @param {Array} chat - 当前聊天数组
+     * @returns {string} 替换后的提示词
+     */
+    _applySillyTavernBuiltins(prompt, chat) {
+        if (!prompt) return '';
+
+        // 从当前聊天中获取最后一条用户消息，供 {{lastUserMessage}} 使用。
+        const lastUserMessage = [...(chat || [])]
+            .reverse()
+            .find(msg => msg?.is_user && typeof msg?.mes === 'string')?.mes || '';
+
+        try {
+            return substituteParamsExtended(prompt, {
+                lastUserMessage
+            });
+        } catch (error) {
+            logger.warn('[VariableAnalyzerV2._applySillyTavernBuiltins] 内置变量替换失败，回退原文:', error.message);
+            return prompt;
+        }
     }
 
     /**
