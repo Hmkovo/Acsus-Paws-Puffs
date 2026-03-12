@@ -1,47 +1,51 @@
 /**
  * 酒馆宏注册器
  * @module phone/utils/tavern-macros
- * 
+ *
  * @description
- * 将手机变量注册到 SillyTavern 的全局宏系统
- * 使手机数据可在酒馆的任何提示词位置使用
- * 
- * 支持的宏：
- * - {{最新消息}} - 当前角色的最新消息
- * - {{历史消息}} - 当前角色的历史消息
- * - {{最新消息_角色名}} - 指定角色的最新消息
- * - {{历史消息_角色名}} - 指定角色的历史消息
- * - {{当前时间}} - 当前时间（手机格式）
- * - {{当前天气}} - 当前天气（手机格式）
- * 
- * @example
- * // 在酒馆提示词中使用
- * "看看我和李四的聊天记录：{{最新消息_李四}}"
- * "今天的天气：{{当前天气}}"
+ * 将手机变量注册到 SillyTavern 的新宏系统。
+ *
+ * 支持的新宏：
+ * - {{phoneRecent}} - 当前角色的最新消息
+ * - {{phoneRecent::角色名}} - 指定角色的最新消息
+ * - {{phoneHistory}} - 当前角色的历史消息
+ * - {{phoneHistory::角色名}} - 指定角色的历史消息
+ * - {{phoneTime}} - 当前时间（手机格式）
+ * - {{phoneWeather}} - 当前天气（手机格式）
  */
 
 import logger from '../../../logger.js';
+import { macros } from '../../../../../../macros/macro-system.js';
 import { extension_settings } from '../../../../../../extensions.js';
 import { getUserDisplayName } from './contact-display-helper.js';
 
 // 延迟导入，避免循环依赖
 let loadContacts, buildChatHistoryInfo, buildHistoryChatInfo, loadChatHistory, getChatSendSettings;
 
-// 已注册的角色宏（用于清理）
-const registeredCharacterMacros = new Set();
-
 /** @type {{ contactListChanged: ((event: Event) => Promise<void>)|null }} 模块级监听器引用 */
 let savedHandlers = {
   contactListChanged: null
 };
 
+/** @type {boolean} 宏是否已注册（防止重复注册） */
+let macrosRegistered = false;
+
 /**
  * 注册所有手机相关的酒馆宏
- * 
+ *
+ * @description
+ * 初始化动态依赖后，注册新引擎英文宏，
+ * 并保留联系人变化监听器用于日志追踪。
+ *
  * @async
  * @returns {Promise<void>}
  */
 export async function registerPhoneMacros() {
+  if (macrosRegistered) {
+    logger.debug('phone','[TavernMacros] 宏已注册，跳过');
+    return;
+  }
+
   // 动态导入依赖
   const contactModule = await import('../contacts/contact-list-data.js');
   const contextModule = await import('../ai-integration/ai-context-builder.js');
@@ -53,86 +57,96 @@ export async function registerPhoneMacros() {
   loadChatHistory = chatDataModule.loadChatHistory;
   getChatSendSettings = chatDataModule.getChatSendSettings;
 
-  // 使用官方 API（不直接导入 SillyTavern 内部模块）
-  const { registerMacro } = SillyTavern.getContext();
-
-  // 注册固定宏（当前角色）
-  registerMacro('最新消息', getRecentMessages, '当前角色的手机最新消息（QQ聊天记录）');
-  registerMacro('历史消息', getHistoryMessages, '当前角色的手机历史消息');
-  registerMacro('当前时间', getCurrentTime, '当前时间（手机格式）');
-  registerMacro('当前天气', getCurrentWeather, '当前天气（手机格式）');
-
-  // 注册所有联系人的宏
-  await registerAllContactMacros();
-
-  logger.info('phone','[TavernMacros] 已注册手机宏: {{最新消息}}, {{历史消息}}, {{当前时间}}, {{当前天气}}');
-
-  // 监听联系人变化事件（只监听联系人列表变化）
+  registerNewEngineMacros();
   setupContactChangeListener();
+
+  macrosRegistered = true;
+  logger.info('phone','[TavernMacros] ✅ 手机宏注册完成: {{phoneRecent}}, {{phoneHistory}}, {{phoneTime}}, {{phoneWeather}}');
 }
 
-
 /**
- * 注册所有联系人的专属宏
- * 
- * @async
- * @private
- * @returns {Promise<void>}
+ * 用新引擎 API 注册所有手机宏
+ *
+ * @description
+ * 注册以下宏：
+ * - {{phoneRecent}} / {{phoneRecent::角色名}} - 最新消息
+ * - {{phoneHistory}} / {{phoneHistory::角色名}} - 历史消息
+ * - {{phoneTime}} - 当前时间
+ * - {{phoneWeather}} - 当前天气
+ *
+ * @returns {void}
  */
-async function registerAllContactMacros() {
+function registerNewEngineMacros() {
   try {
-    const contacts = await loadContacts();
-
-    // 使用官方 API
-    const { registerMacro, unregisterMacro } = SillyTavern.getContext();
-
-    // 先清理旧的宏
-    for (const macroName of registeredCharacterMacros) {
-      unregisterMacro(macroName);
-    }
-    registeredCharacterMacros.clear();
-
-    // 为每个联系人注册宏
-    for (const contact of contacts) {
-      const safeName = sanitizeMacroName(contact.name);
-
-      if (!safeName) {
-        logger.warn('phone',`[TavernMacros] 联系人名字无效，跳过: ${contact.name}`);
-        continue;
+    macros.register('phoneRecent', {
+      category: 'custom',
+      description: '手机最新消息。无参数=当前角色，有参数=指定角色',
+      returns: '格式化的聊天记录文本',
+      unnamedArgs: [
+        {
+          name: 'contactName',
+          optional: true,
+          type: 'string',
+          description: '角色名（可选，不填则使用当前角色）'
+        }
+      ],
+      handler: ({ unnamedArgs: [contactName] }) => {
+        const targetName = typeof contactName === 'string' ? contactName.trim() : '';
+        if (targetName) {
+          return getMessagesByCharName('recent', targetName);
+        }
+        return getRecentMessages();
       }
+    });
 
-      // 注册最新消息宏
-      const recentMacroName = `最新消息_${safeName}`;
-      registerMacro(
-        recentMacroName,
-        () => getContactMessages('recent', contact.id),
-        `${contact.name}的手机最新消息`
-      );
-      registeredCharacterMacros.add(recentMacroName);
+    macros.register('phoneHistory', {
+      category: 'custom',
+      description: '手机历史消息。无参数=当前角色，有参数=指定角色',
+      returns: '格式化的聊天记录文本',
+      unnamedArgs: [
+        {
+          name: 'contactName',
+          optional: true,
+          type: 'string',
+          description: '角色名（可选，不填则使用当前角色）'
+        }
+      ],
+      handler: ({ unnamedArgs: [contactName] }) => {
+        const targetName = typeof contactName === 'string' ? contactName.trim() : '';
+        if (targetName) {
+          return getMessagesByCharName('history', targetName);
+        }
+        return getHistoryMessages();
+      }
+    });
 
-      // 注册历史消息宏
-      const historyMacroName = `历史消息_${safeName}`;
-      registerMacro(
-        historyMacroName,
-        () => getContactMessages('history', contact.id),
-        `${contact.name}的手机历史消息`
-      );
-      registeredCharacterMacros.add(historyMacroName);
-    }
+    macros.register('phoneTime', {
+      category: 'custom',
+      description: '当前时间（手机格式）',
+      returns: '格式化的时间字符串，如 [2025-10-28 21:43]',
+      handler: () => getCurrentTime()
+    });
 
-    logger.info('phone',`[TavernMacros] 已为 ${contacts.length} 个联系人注册专属宏`);
+    macros.register('phoneWeather', {
+      category: 'custom',
+      description: '当前天气（手机格式）',
+      returns: '天气信息，如“北京 晴 29°C”',
+      handler: () => getCurrentWeather()
+    });
+
+    logger.info('phone','[TavernMacros] ✅ 新引擎宏已注册');
   } catch (error) {
-    logger.error('phone','[TavernMacros] 注册联系人宏失败:', error);
+    logger.error('phone','[TavernMacros] 新引擎宏注册失败:', error);
   }
 }
 
 /**
  * 监听联系人变化事件
- * 
+ *
  * @description
- * 监听联系人列表变化事件，重新注册宏。
- * 保存处理器引用，便于在功能禁用时彻底移除，避免监听器泄漏。
- * 
+ * 参数宏不需要为每个联系人重新注册。
+ * 这里只保留监听器，便于记录联系人列表变化并在禁用时清理监听。
+ *
  * @private
  * @returns {void}
  */
@@ -143,37 +157,11 @@ function setupContactChangeListener() {
   }
 
   savedHandlers.contactListChanged = async () => {
-    logger.debug('phone','[TavernMacros] 检测到联系人变化，重新注册宏');
-    await registerAllContactMacros();
+    logger.debug('phone','[TavernMacros] 联系人列表变化（参数宏无需重新注册）');
   };
 
-  // 监听联系人列表变化事件（新增/删除联系人时重新注册宏）
   document.addEventListener('phone-contact-list-changed', savedHandlers.contactListChanged);
-
   logger.debug('phone','[TavernMacros] 已设置联系人变化监听器');
-}
-
-/**
- * 清理宏名（移除不允许的字符）
- * 
- * @description
- * MacrosParser 不允许宏名包含某些特殊字符
- * 这里只保留中文、英文、数字、下划线
- * 
- * @param {string} name - 原始名字
- * @returns {string} 清理后的名字
- * 
- * @example
- * sanitizeMacroName('张三@123') // '张三123'
- * sanitizeMacroName('李四 (VIP)') // '李四VIP'
- */
-function sanitizeMacroName(name) {
-  if (!name || typeof name !== 'string') {
-    return '';
-  }
-
-  // 移除特殊字符，只保留中文、英文、数字、下划线
-  return name.replace(/[^\u4e00-\u9fa5a-zA-Z0-9_]/g, '').trim();
 }
 
 /**
@@ -499,38 +487,30 @@ function getCurrentWeather() {
 
 /**
  * 注销所有手机宏（供外部调用）
- * 
+ *
  * @description
- * 当手机功能被禁用时调用，注销所有手机相关宏
- * 包括：{{最新消息}}、{{历史消息}}、{{当前时间}}、{{当前天气}}、所有联系人专属宏
- * 
+ * 当手机功能被禁用时调用，注销新引擎英文宏，并清理兼容预处理器与监听器。
+ *
  * @returns {void}
- * 
- * @example
- * import { unregisterPhoneMacros } from './utils/tavern-macros.js';
- * unregisterPhoneMacros(); // 注销所有宏
  */
 export function unregisterPhoneMacros() {
   try {
-    const { unregisterMacro } = SillyTavern.getContext();
-
-    // 注销固定宏
-    unregisterMacro('最新消息');
-    unregisterMacro('历史消息');
-    unregisterMacro('当前时间');
-    unregisterMacro('当前天气');
-
-    // 注销所有联系人专属宏
-    for (const macroName of registeredCharacterMacros) {
-      unregisterMacro(macroName);
+    try {
+      macros.registry.unregisterMacro('phoneRecent');
+      macros.registry.unregisterMacro('phoneHistory');
+      macros.registry.unregisterMacro('phoneTime');
+      macros.registry.unregisterMacro('phoneWeather');
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      logger.debug('phone','[TavernMacros] 新引擎宏注销跳过: ' + errorMessage);
     }
-    registeredCharacterMacros.clear();
 
     if (savedHandlers.contactListChanged) {
       document.removeEventListener('phone-contact-list-changed', savedHandlers.contactListChanged);
       savedHandlers.contactListChanged = null;
-      logger.debug('phone','[TavernMacros] 已移除联系人变化监听器');
     }
+
+    macrosRegistered = false;
 
     logger.info('phone','[TavernMacros] ✅ 已注销所有手机宏');
   } catch (error) {
@@ -539,19 +519,14 @@ export function unregisterPhoneMacros() {
 }
 
 /**
- * 手动刷新所有宏（供外部调用）
- * 
+ * 手动刷新所有宏（兼容保留导出）
+ *
  * @description
- * 重新注册所有联系人的宏（当联系人列表变化时）
- * 
+ * 已废弃：新引擎使用参数宏，不需要为每个联系人单独刷新注册。
+ *
  * @async
  * @returns {Promise<void>}
- * 
- * @example
- * import { refreshPhoneMacros } from './utils/tavern-macros.js';
- * await refreshPhoneMacros(); // 手动刷新宏
  */
 export async function refreshPhoneMacros() {
-  logger.info('phone','[TavernMacros] 手动刷新宏...');
-  await registerAllContactMacros();
+  logger.debug('phone','[TavernMacros] refreshPhoneMacros 已废弃（参数宏不需要刷新）');
 }

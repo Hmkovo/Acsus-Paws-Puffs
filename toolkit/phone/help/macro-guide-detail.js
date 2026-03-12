@@ -30,6 +30,15 @@ export async function renderMacroGuideDetail() {
 
     <!-- 内容区（可滚动） -->
     <div class="macro-guide-detail-content">
+      <div class="macro-guide-migration-notice" style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid #f44336; padding: 12px; margin-bottom: 16px; border-radius: 4px;">
+        <strong style="color: #f44336;">⚠️ 宏写法已更新</strong>
+        <p style="margin: 8px 0 0 0; line-height: 1.6;">
+          旧版中文宏名（如 <code>{{最新消息}}</code>、<code>{{历史消息}}</code>）已停用。<br>
+          请使用新写法：<code>{{phoneRecent}}</code>、<code>{{phoneHistory}}</code>、<code>{{phoneTime}}</code>、<code>{{phoneWeather}}</code><br>
+          指定角色格式：<code>{{phoneRecent::角色名}}</code>
+        </p>
+      </div>
+
       <!-- 什么是宏变量 -->
       <div class="macro-guide-section">
         <div class="macro-guide-section-title">
@@ -38,12 +47,12 @@ export async function renderMacroGuideDetail() {
         </div>
         <div class="macro-guide-section-content">
           <p>宏变量是一种<strong>占位符</strong>，就像"填空题"一样。</p>
-          <p>你在酒馆的提示词或世界书里写 <code>{{最新消息}}</code>，SillyTavern 跑起来的时候会<strong>自动替换</strong>成手机里的真实聊天记录。</p>
+          <p>你在酒馆的提示词或世界书里写 <code>{{phoneRecent}}</code>，SillyTavern 跑起来的时候会<strong>自动替换</strong>成手机里的真实聊天记录。</p>
           
           <h4>举个例子：</h4>
           <p><strong>你写的提示词：</strong></p>
           <div class="macro-guide-code-block">
-            <code>请根据我和角色的手机聊天记录继续对话：{{最新消息}}</code>
+            <code>请根据我和角色的手机聊天记录继续对话：{{phoneRecent}}</code>
           </div>
           
           <p><strong>AI 实际收到的：</strong></p>
@@ -63,37 +72,43 @@ export async function renderMacroGuideDetail() {
           <span>有哪些宏变量可以用？</span>
         </div>
         <div class="macro-guide-section-content">
-          <h4><code>{{最新消息}}</code></h4>
+          <h4><code>{{phoneRecent}}</code></h4>
           <p>获取<strong>当前角色</strong>的最新 20 条手机聊天记录</p>
+          <p>⚠️ 旧写法 <code>{{最新消息}}</code> 已停用，请使用上方新写法。</p>
           <p class="macro-guide-note">
             <i class="fa-solid fa-circle-info"></i>
             适用场景：让 AI 根据最近的手机对话继续剧情
           </p>
 
-          <h4><code>{{历史消息}}</code></h4>
+          <h4><code>{{phoneHistory}}</code></h4>
           <p>获取<strong>当前角色</strong>的历史手机聊天记录（除最新 20 条外的所有消息）</p>
+          <p>⚠️ 旧写法 <code>{{历史消息}}</code> 已停用，请使用上方新写法。</p>
           <p class="macro-guide-note">
             <i class="fa-solid fa-circle-info"></i>
             适用场景：让 AI 了解更早的聊天背景
           </p>
 
-          <h4><code>{{最新消息_角色名}}</code></h4>
+          <h4><code>{{phoneRecent::角色名}}</code></h4>
           <p>获取<strong>指定角色</strong>的最新 20 条手机聊天记录</p>
-          <p>举例：<code>{{最新消息_李四}}</code> 获取和李四的聊天记录</p>
+          <p>举例：<code>{{phoneRecent::李四}}</code> 获取和李四的聊天记录</p>
+          <p>⚠️ 旧写法 <code>{{最新消息_角色名}}</code> 已停用，请使用上方新写法。</p>
           <p class="macro-guide-warning">
             <i class="fa-solid fa-triangle-exclamation"></i>
             注意：把"角色名"换成实际的角色名字，必须和手机联系人列表里的名字<strong>完全一致</strong>
           </p>
 
-          <h4><code>{{历史消息_角色名}}</code></h4>
+          <h4><code>{{phoneHistory::角色名}}</code></h4>
           <p>获取<strong>指定角色</strong>的历史手机聊天记录</p>
-          <p>举例：<code>{{历史消息_张三}}</code> 获取和张三的早期聊天</p>
+          <p>举例：<code>{{phoneHistory::张三}}</code> 获取和张三的早期聊天</p>
+          <p>⚠️ 旧写法 <code>{{历史消息_角色名}}</code> 已停用，请使用上方新写法。</p>
 
-          <h4><code>{{当前时间}}</code></h4>
+          <h4><code>{{phoneTime}}</code></h4>
           <p>获取当前时间（格式：[2025-11-10 14:30]）</p>
+          <p>⚠️ 旧写法 <code>{{当前时间}}</code> 已停用，请使用上方新写法。</p>
 
-          <h4><code>{{当前天气}}</code></h4>
+          <h4><code>{{phoneWeather}}</code></h4>
           <p>获取当前天气（从手机设置里读取）</p>
+          <p>⚠️ 旧写法 <code>{{当前天气}}</code> 已停用，请使用上方新写法。</p>
         </div>
       </div>
 
@@ -109,7 +124,7 @@ export async function renderMacroGuideDetail() {
           <div class="macro-guide-code-block">
             <code>&lt;线上消息&gt;<br>
             角色和我的手机聊天记录：<br>
-            {{最新消息}}<br>
+            {{phoneRecent}}<br>
             &lt;/线上消息&gt;</code>
           </div>
           <p class="macro-guide-note">
@@ -122,7 +137,7 @@ export async function renderMacroGuideDetail() {
           <div class="macro-guide-code-block">
             <code>&lt;手机聊天记录&gt;<br>
             我和{{char}}的手机聊天：<br>
-            {{最新消息}}<br>
+            {{phoneRecent}}<br>
             <br>
             根据最新消息，时间有推移，可能需要进行新剧情<br>
             &lt;/手机聊天记录&gt;</code>
@@ -136,8 +151,8 @@ export async function renderMacroGuideDetail() {
           <p>如果你在群聊或多角色场景，可以指定角色名：</p>
           <div class="macro-guide-code-block">
             <code>&lt;多角色聊天记录&gt;<br>
-            我和李四的聊天：{{最新消息_李四}}<br>
-            我和张三的聊天：{{最新消息_张三}}<br>
+            我和李四的聊天：{{phoneRecent::李四}}<br>
+            我和张三的聊天：{{phoneRecent::张三}}<br>
             &lt;/多角色聊天记录&gt;</code>
           </div>
         </div>
@@ -154,7 +169,7 @@ export async function renderMacroGuideDetail() {
           <p>在手机里和角色约好明天见面，然后在酒馆对话时：</p>
           <div class="macro-guide-code-block">
             <code>&lt;背景&gt;<br>
-            我们昨天在手机上聊了：{{最新消息}}<br>
+            我们昨天在手机上聊了：{{phoneRecent}}<br>
             现在我们见面了，请继续剧情。<br>
             &lt;/背景&gt;</code>
           </div>
@@ -163,8 +178,8 @@ export async function renderMacroGuideDetail() {
           <p>同时和多个角色聊天，让 AI 知道每个人的聊天进度：</p>
           <div class="macro-guide-code-block">
             <code>&lt;关系网&gt;<br>
-            我和李四的关系：{{最新消息_李四}}<br>
-            我和张三的关系：{{最新消息_张三}}<br>
+            我和李四的关系：{{phoneRecent::李四}}<br>
+            我和张三的关系：{{phoneRecent::张三}}<br>
             请根据这些背景继续对话。<br>
             &lt;/关系网&gt;</code>
           </div>
@@ -174,7 +189,7 @@ export async function renderMacroGuideDetail() {
           <div class="macro-guide-code-block">
             <code>&lt;回顾&gt;<br>
             请总结我和角色的手机聊天记录：<br>
-            {{历史消息}}<br>
+            {{phoneHistory}}<br>
             &lt;/回顾&gt;</code>
           </div>
         </div>
@@ -189,7 +204,7 @@ export async function renderMacroGuideDetail() {
         <div class="macro-guide-section-content">
           <p class="macro-guide-warning">
             <i class="fa-solid fa-triangle-exclamation"></i>
-            <strong>角色名必须匹配：</strong>使用 <code>{{最新消息_角色名}}</code> 时，"角色名"必须和手机联系人列表里的名字完全一致（包括空格、大小写）
+            <strong>角色名必须匹配：</strong>使用 <code>{{phoneRecent::角色名}}</code> 或 <code>{{phoneHistory::角色名}}</code> 时，"角色名"必须和手机联系人列表里的名字完全一致（包括空格、大小写）
           </p>
 
           <p class="macro-guide-warning">
@@ -221,7 +236,7 @@ export async function renderMacroGuideDetail() {
             <div class="macro-guide-code-block">
               <code>&lt;手机聊天记录&gt;<br>
               ##{{user}}和{{char}}的手机消息（背景信息）:<br>
-              {{最新消息}}<br>
+              {{phoneRecent}}<br>
               &lt;/手机聊天记录&gt;<br>
               <br>
               **当前场景：线下剧情**<br>
@@ -230,7 +245,7 @@ export async function renderMacroGuideDetail() {
               - 根据手机聊天内容和当前时间推移，自然推进剧情<br>
               - {{user}}的输入的user_input是**线下内容**</code>
             </div>
-            <button class="macro-guide-copy-btn" data-copy="<手机聊天记录>\n##{{user}}和{{char}}的手机消息（背景信息）:\n{{最新消息}}\n</手机聊天记录>\n\n**当前场景：线下剧情**\n- 手机聊天记录仅作为背景，{{char}}已知这些消息内容\n- 现在进行的是**线下剧情**（不是手机对话）\n- 根据手机聊天内容和当前时间推移，自然推进剧情\n- {{user}}的输入的user_input是**线下内容**">
+            <button class="macro-guide-copy-btn" data-copy="<手机聊天记录>\n##{{user}}和{{char}}的手机消息（背景信息）:\n{{phoneRecent}}\n</手机聊天记录>\n\n**当前场景：线下剧情**\n- 手机聊天记录仅作为背景，{{char}}已知这些消息内容\n- 现在进行的是**线下剧情**（不是手机对话）\n- 根据手机聊天内容和当前时间推移，自然推进剧情\n- {{user}}的输入的user_input是**线下内容**">
               <i class="fa-solid fa-copy"></i>
               <span>复制</span>
             </button>
@@ -240,11 +255,11 @@ export async function renderMacroGuideDetail() {
           <div class="macro-guide-copy-box">
             <div class="macro-guide-code-block">
               <code>&lt;多角色聊天记录&gt;<br>
-              我和李四的聊天：{{最新消息_李四}}<br>
-              我和张三的聊天：{{最新消息_张三}}<br>
+              我和李四的聊天：{{phoneRecent::李四}}<br>
+              我和张三的聊天：{{phoneRecent::张三}}<br>
               &lt;/多角色聊天记录&gt;</code>
             </div>
-            <button class="macro-guide-copy-btn" data-copy="<多角色聊天记录>\n我和李四的聊天：{{最新消息_李四}}\n我和张三的聊天：{{最新消息_张三}}\n</多角色聊天记录>">
+            <button class="macro-guide-copy-btn" data-copy="<多角色聊天记录>\n我和李四的聊天：{{phoneRecent::李四}}\n我和张三的聊天：{{phoneRecent::张三}}\n</多角色聊天记录>">
               <i class="fa-solid fa-copy"></i>
               <span>复制</span>
             </button>
@@ -255,18 +270,18 @@ export async function renderMacroGuideDetail() {
             <div class="macro-guide-code-block">
               <code>&lt;手机聊天记录&gt;<br>
               ##{{user}}和{{char}}的手机消息（背景信息）:<br>
-              {{最新消息}}<br>
+              {{phoneRecent}}<br>
               &lt;/手机聊天记录&gt;<br>
               <br>
               **当前场景：线下剧情**<br>
-              - 当前时间：{{当前时间}}<br>
-              - 当前天气：{{当前天气}}<br>
+              - 当前时间：{{phoneTime}}<br>
+              - 当前天气：{{phoneWeather}}<br>
               - 手机聊天记录仅作为背景，{{char}}已知这些消息内容<br>
               - 现在进行的是**线下剧情**（不是手机对话）<br>
               - 根据手机聊天内容和当前时间推移，自然推进剧情<br>
               - {{user}}的输入的user_input是**线下内容**</code>
             </div>
-            <button class="macro-guide-copy-btn" data-copy="<手机聊天记录>\n##{{user}}和{{char}}的手机消息（背景信息）:\n{{最新消息}}\n</手机聊天记录>\n\n**当前场景：线下剧情**\n- 当前时间：{{当前时间}}\n- 当前天气：{{当前天气}}\n- 手机聊天记录仅作为背景，{{char}}已知这些消息内容\n- 现在进行的是**线下剧情**（不是手机对话）\n- 根据手机聊天内容和当前时间推移，自然推进剧情\n- {{user}}的输入的user_input是**线下内容**">
+            <button class="macro-guide-copy-btn" data-copy="<手机聊天记录>\n##{{user}}和{{char}}的手机消息（背景信息）:\n{{phoneRecent}}\n</手机聊天记录>\n\n**当前场景：线下剧情**\n- 当前时间：{{phoneTime}}\n- 当前天气：{{phoneWeather}}\n- 手机聊天记录仅作为背景，{{char}}已知这些消息内容\n- 现在进行的是**线下剧情**（不是手机对话）\n- 根据手机聊天内容和当前时间推移，自然推进剧情\n- {{user}}的输入的user_input是**线下内容**">
               <i class="fa-solid fa-copy"></i>
               <span>复制</span>
             </button>

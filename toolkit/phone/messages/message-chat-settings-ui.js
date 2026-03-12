@@ -181,7 +181,7 @@ function createSettingsList(contact) {
                    placeholder="发送到 [历史聊天记录]"
                    data-key="historyCount">
         </div>
-        <div class="chat-settings-item-desc">影响手机发送给AI的消息条数,也影响酒馆{{最新消息}}、{{历史消息}}宏获取的条数</div>
+        <div class="chat-settings-item-desc">影响手机发送给AI的消息条数,也影响酒馆{{phoneRecent}}、{{phoneHistory}}宏获取的条数</div>
 
         <!-- 聊天设置 -->
         <div class="chat-settings-section-title">聊天设置</div>

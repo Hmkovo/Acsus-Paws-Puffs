@@ -25,6 +25,10 @@ const EXT_ID = 'acsusPawsPuffs';
 /**
  * 初始化手机系统
  *
+ * @description
+ * 初始化 PhoneSystem，并在初始化阶段直接注册手机宏。
+ * 不再等待 APP_READY 事件，避免宏注册时机竞争。
+ *
  * @async
  * @returns {Promise<Object>} 返回 PhoneSystem 实例
  */
@@ -35,8 +39,16 @@ export async function initPhone() {
     // 初始化 PhoneSystem（完全照搬日记）
     const system = await initPhoneSystem();
 
-    // ✅ 在APP_READY事件时，根据功能启用状态决定是否注册宏
-    registerMacrosOnReady(system.enabled);
+    // 如果功能启用，初始化时直接注册宏
+    if (system.enabled) {
+      try {
+        const { registerPhoneMacros } = await import('./utils/tavern-macros.js');
+        await registerPhoneMacros();
+        logger.info('phone','[Phone] ✅ 宏注册完成（直接调用）');
+      } catch (error) {
+        logger.error('phone','[Phone] 宏注册失败:', error);
+      }
+    }
 
     // 如果功能启用，注册扩展菜单
     if (system.enabled) {
@@ -49,32 +61,6 @@ export async function initPhone() {
     logger.error('phone','[Phone] 手机系统初始化失败:', error);
     throw error;
   }
-}
-
-/**
- * 在 APP_READY 事件时注册宏
- *
- * @description
- * ✅ 关键：宏必须在 APP_READY 事件时注册（SillyTavern规范）
- * ✅ 只在功能启用时注册宏（避免无用的宏污染）
- *
- * @param {boolean} shouldRegister - 是否应该注册宏
- */
-function registerMacrosOnReady(shouldRegister) {
-  eventSource.on(event_types.APP_READY, async () => {
-    try {
-      if (shouldRegister) {
-        logger.debug('phone','[Phone] APP_READY事件触发，开始注册酒馆宏');
-        const { registerPhoneMacros } = await import('./utils/tavern-macros.js');
-        await registerPhoneMacros();
-        logger.info('phone','[Phone] ✅ 酒馆宏注册完成（时机：APP_READY）');
-      } else {
-        logger.debug('phone','[Phone] 功能未启用，跳过宏注册');
-      }
-    } catch (error) {
-      logger.error('phone','[Phone] 宏注册失败:', error);
-    }
-  });
 }
 
 /**
@@ -282,4 +268,3 @@ export function hideMenuEntry() {
     logger.error('phone','[Phone] 隐藏菜单图标失败:', error);
   }
 }
-
